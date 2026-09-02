@@ -46,8 +46,9 @@ const QREngine = {
    * @param {string} elementId ID del contenidor de la càmera (ex: "qr-reader")
    * @param {function} onScanSuccess Callback en detectar un QR
    * @param {function} onScanError Callback d'error opcional
+   * @param {string} facingMode 'user' (frontal) o 'environment' (posterior)
    */
-  async startScanner(elementId, onScanSuccess, onScanError = null) {
+  async startScanner(elementId, onScanSuccess, onScanError = null, facingMode = 'user') {
     if (typeof Html5Qrcode === 'undefined') {
       throw new Error('La llibreria Html5Qrcode no està carregada.');
     }
@@ -81,26 +82,62 @@ const QREngine = {
     };
 
     const handleError = (error) => {
-      // Ignorem els errors habituals de "No QR code found in frame"
       if (onScanError && typeof onScanError === 'function') {
         onScanError(error);
       }
     };
 
     try {
-      // Intentar càmera posterior (ideal per a tauletes i mòbils Android)
+      // 1. Intentar buscar la càmera exacta mitjançant la llista de dispositius
+      const devices = await Html5Qrcode.getCameras();
+      if (devices && devices.length > 0) {
+        let chosenCamera = null;
+        if (facingMode === 'user') {
+          // Buscar paraules clau de càmera frontal
+          chosenCamera = devices.find(d => {
+            const lbl = (d.label || '').toLowerCase();
+            return lbl.includes('front') || lbl.includes('user') || lbl.includes('anterior') || lbl.includes('delantera') || lbl.includes('selfie');
+          });
+          // Si no la troba per nom però n'hi ha més d'una, la segona o primera sol ser la frontal
+          if (!chosenCamera && devices.length > 1) {
+            chosenCamera = devices[devices.length - 1];
+          }
+        } else {
+          // Càmera posterior
+          chosenCamera = devices.find(d => {
+            const lbl = (d.label || '').toLowerCase();
+            return lbl.includes('back') || lbl.includes('rear') || lbl.includes('trasera') || lbl.includes('posterior') || lbl.includes('environment');
+          });
+        }
+
+        if (!chosenCamera) chosenCamera = devices[0];
+
+        await this.html5QrScanner.start(
+          chosenCamera.id,
+          config,
+          handleSuccess,
+          handleError
+        );
+        return true;
+      }
+    } catch (camErr) {
+      console.warn('getCameras no disponible, provant facingMode directe:', camErr);
+    }
+
+    // 2. Fallback directe per facingMode
+    try {
       await this.html5QrScanner.start(
-        { facingMode: 'environment' },
+        { facingMode: facingMode },
         config,
         handleSuccess,
         handleError
       );
       return true;
     } catch (err) {
-      console.warn('No s\'ha pogut obrir la càmera posterior, provant qualsevol càmera:', err);
-      // Fallback a qualsevol càmera disponible
+      console.warn(`Error iniciant amb facingMode ${facingMode}, provant mode contrari:`, err);
+      const fallbackMode = facingMode === 'user' ? 'environment' : 'user';
       await this.html5QrScanner.start(
-        { facingMode: 'user' },
+        { facingMode: fallbackMode },
         config,
         handleSuccess,
         handleError

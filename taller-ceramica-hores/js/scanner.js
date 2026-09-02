@@ -3,7 +3,7 @@
  */
 
 let deferredPrompt = null;
-let currentFacingMode = 'environment'; // 'environment' (posterior) o 'user' (frontal)
+let currentFacingMode = localStorage.getItem('scanner_preferred_camera') || 'user'; // 'user' (frontal per defecte) o 'environment' (posterior)
 let resultAutoCloseTimer = null;
 let isProcessingScan = false;
 
@@ -31,14 +31,29 @@ async function loadScannerConfig() {
 // Iniciar càmera
 async function startCamera() {
   const statusEl = document.getElementById('camera-status-text');
-  statusEl.textContent = 'Iniciant càmera...';
+  statusEl.textContent = `Iniciant càmera ${currentFacingMode === 'user' ? 'frontal' : 'posterior'}...`;
+
+  const container = document.getElementById('qr-video-container');
+  if (currentFacingMode === 'user') {
+    container.classList.add('mirror-camera');
+  } else {
+    container.classList.remove('mirror-camera');
+  }
 
   try {
-    await QREngine.startScanner('qr-video-container', onQrScanned, onScanError);
-    statusEl.textContent = 'Càmera activa • Enfoca el codi QR';
+    await QREngine.startScanner('qr-video-container', onQrScanned, onScanError, currentFacingMode);
+    statusEl.textContent = `Càmera ${currentFacingMode === 'user' ? 'frontal' : 'posterior'} activa • Enfoca el codi QR`;
+    updateSwitchButtonText();
   } catch (err) {
     console.warn('Error iniciant càmera:', err);
     statusEl.textContent = '⚠️ Permís de càmera no concedit o dispositiu sense càmera';
+  }
+}
+
+function updateSwitchButtonText() {
+  const btn = document.getElementById('btn-switch-camera');
+  if (btn) {
+    btn.innerHTML = currentFacingMode === 'user' ? '🔄 Càmera Frontal' : '🔄 Càmera Posterior';
   }
 }
 
@@ -159,15 +174,10 @@ function setupScannerEvents() {
 
   // Alternar càmera (posterior/frontal)
   document.getElementById('btn-switch-camera').addEventListener('click', async () => {
-    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    localStorage.setItem('scanner_preferred_camera', currentFacingMode);
     await QREngine.stopScanner();
-    const config = { fps: 15, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 };
-    await QREngine.html5QrScanner.start(
-      { facingMode: currentFacingMode },
-      config,
-      onQrScanned,
-      onScanError
-    );
+    await startCamera();
   });
 
   // Modal entrada manual

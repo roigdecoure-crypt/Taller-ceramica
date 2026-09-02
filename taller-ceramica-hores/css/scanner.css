@@ -61,6 +61,9 @@
   height: 100% !important;
   object-fit: cover !important;
 }
+#qr-video-container.mirror-camera video {
+  transform: scaleX(-1);
+}
 
 /* Guia d'enfocament / marc d'escaneig */
 .scanner-overlay-guide {
