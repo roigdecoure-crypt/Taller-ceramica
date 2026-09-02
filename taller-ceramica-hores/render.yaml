@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: taller-ceramica-hores
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: python3 server.py
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.6

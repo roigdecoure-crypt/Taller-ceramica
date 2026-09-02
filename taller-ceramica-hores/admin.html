@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panell d'Administració - Taller de Ceràmica</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#C25E3A">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/card.css">
+</head>
+<body class="admin-layout">
+
+  <!-- Barra de navegació superior -->
+  <header class="admin-navbar">
+    <div class="brand">
+      <span class="brand-icon">🏺</span>
+      <div class="brand-info">
+        <h1 id="nav-workshop-name">Taller de Ceràmica</h1>
+        <p>Panell d'Administració &bull; Control d'Hores i Assistència</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
+        📷 Escàner QR
+      </a>
+      <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
+        ➕ Nou Alumne
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-configuracio" title="Configurar Stripe, Google Sheets i Taller">
+        ⚙️ Configuració
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-exportar" title="Còpies de seguretat i dades">
+        💾 Dades & Backup
+      </button>
+    </div>
+  </header>
+
+  <!-- Contingut principal -->
+  <main class="admin-content">
+
+    <!-- Secció: Alumnes al taller en viu -->
+    <section class="live-workshop-banner">
+      <div class="banner-header">
+        <div class="banner-title">
+          <span class="live-pulse"></span>
+          <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+        </div>
+        <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+      </div>
+      <div class="active-students-grid" id="active-students-container">
+        <!-- Es genera dinàmicament per JS -->
+        <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
+          No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
+        </p>
+      </div>
+    </section>
+
+    <!-- Taula principal d'alumnes -->
+    <section class="card">
+      <div class="table-toolbar">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Sincronitzar ara amb Google Sheets">
+            📊 Sincronitzar amb Google Sheets
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="students-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Alumne</th>
+              <th>Telèfon</th>
+              <th>Email</th>
+              <th>Estat</th>
+              <th>Saldo Hores (H:m:s)</th>
+              <th style="text-align: right;">Accions</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <!-- Rengleres dinàmiques -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
+  <div class="drawer-backdrop" id="student-drawer-backdrop">
+    <div class="student-drawer">
+      <div class="drawer-header">
+        <div>
+          <span class="badge badge-neutral" id="drawer-student-id">TC-100</span>
+          <h3 id="drawer-student-fullname" style="margin-top: 4px;">Nom de l'Alumne</h3>
+        </div>
+        <button class="modal-close" id="btn-close-drawer">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Resum de Saldo Hero -->
+        <div class="balance-hero-card">
+          <div class="balance-hero-main">
+            <div class="label">Saldo d'Hores Restant</div>
+            <div class="value" id="drawer-balance-value">00:00:00</div>
+            <div style="font-size: 13px; color: #E8DFD5;" id="drawer-balance-human">0h 0m 0s</div>
+          </div>
+          <div class="balance-hero-sub">
+            <div>Comprades: <strong id="drawer-total-bought">00:00:00</strong></div>
+            <div>Gastades: <strong id="drawer-total-spent">00:00:00</strong></div>
+            <div id="drawer-session-status-badge" style="margin-top: 6px;"></div>
+          </div>
+        </div>
+
+        <!-- Dades de contacte ràpides -->
+        <div class="card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 12px; color: var(--color-muted);">Dades de contacte:</div>
+              <div style="font-weight: 600; font-size: 14px;" id="drawer-student-contact">Tel: - | Email: -</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">💬 WhatsApp</a>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">💳 Veure Carnet QR</button>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">✏️ Editar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botons d'acció ràpida de temps -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" id="drawer-btn-add-hours">
+            ➕ Afegir Compra d'Hores
+          </button>
+          <button class="btn btn-secondary" id="drawer-btn-add-manual-session">
+            ⏱️ Registrar Sessió Manual
+          </button>
+          <button class="btn btn-outline" id="drawer-btn-quick-checkin">
+            ⚡ Entrada/Sortida Ara
+          </button>
+        </div>
+
+        <!-- Pestanyes d'historial dins de la fitxa -->
+        <div>
+          <div class="admin-tabs-nav">
+            <button class="tab-btn active" data-tab="tab-sessions">⏱️ Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-paquets">📦 Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
+          </div>
+
+          <!-- Tab 1: Sessions -->
+          <div id="tab-sessions" class="tab-pane">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Sortida</th>
+                    <th>Durada (H:m:s)</th>
+                    <th>Tipus</th>
+                    <th>Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="drawer-sessions-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Paquets d'hores -->
+          <div id="tab-paquets" class="tab-pane" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data Compra</th>
+                    <th>Concepte</th>
+                    <th>Hores</th>
+                    <th>Preu</th>
+                    <th>Mètode</th>
+                    <th>Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="drawer-paquets-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOU / EDITAR ALUMNE -->
+  <div class="modal-backdrop" id="modal-alumne-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-alumne-title">Donar d'Alta Nou Alumne</h3>
+        <button class="modal-close" data-close="modal-alumne-backdrop">&times;</button>
+      </div>
+      <form id="form-alumne">
+        <input type="hidden" id="alumne-form-id">
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="alumne-form-nom" class="form-control" required placeholder="ex: Maria">
+        </div>
+        <div class="form-group">
+          <label>Cognoms *</label>
+          <input type="text" id="alumne-form-cognoms" class="form-control" required placeholder="ex: Garcia Font">
+        </div>
+        <div class="form-group">
+          <label>Telèfon mòbil</label>
+          <input type="tel" id="alumne-form-telefon" class="form-control" placeholder="ex: 612345678">
+        </div>
+        <div class="form-group">
+          <label>Correu electrònic</label>
+          <input type="email" id="alumne-form-email" class="form-control" placeholder="ex: maria.garcia@email.com">
+        </div>
+        <div class="form-group">
+          <label>Número d'Identificació / PIN (opcional, es genera automàtic)</label>
+          <input type="text" id="alumne-form-pin" class="form-control" placeholder="ex: 101">
+        </div>
+        <div class="form-group">
+          <label>Observacions / Curs</label>
+          <textarea id="alumne-form-notes" class="form-control" rows="2" placeholder="Observacions o curs que realitza..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-alumne-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Desar Alumne</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AFEGIR COMPRA DE PAQUET D'HORES -->
+  <div class="modal-backdrop" id="modal-paquet-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Afegir Compra de Paquet d'Hores</h3>
+        <button class="modal-close" data-close="modal-paquet-backdrop">&times;</button>
+      </div>
+      <form id="form-paquet">
+        <input type="hidden" id="paquet-form-student-id">
+        <div class="form-group">
+          <label>Alumne</label>
+          <input type="text" id="paquet-form-student-name" class="form-control" readonly style="background:#F5F2ED;">
+        </div>
+        <div class="form-group">
+          <label>Packs ràpids:</label>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="5" data-price="65" data-name="Pack 5 Hores">5 Hores</button>
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="10" data-price="120" data-name="Pack 10 Hores">10 Hores</button>
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="20" data-price="220" data-name="Pack 20 Hores">20 Hores</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Quantitat d'Hores a Sumar *</label>
+          <input type="number" step="0.5" min="0.5" id="paquet-form-hores" class="form-control" required placeholder="ex: 10">
+        </div>
+        <div class="form-group">
+          <label>Concepte / Nom del Pack</label>
+          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: Pack 10 Hores Torn">
+        </div>
+        <div class="form-group">
+          <label>Preu Cobrat (€)</label>
+          <input type="number" step="0.01" id="paquet-form-preu" class="form-control" placeholder="ex: 120.00">
+        </div>
+        <div class="form-group">
+          <label>Mètode de Pagament</label>
+          <select id="paquet-form-metode" class="form-control">
+            <option value="Stripe">Stripe (Targeta / Apple Pay)</option>
+            <option value="Bizum">Bizum</option>
+            <option value="Efectiu">Efectiu</option>
+            <option value="Transferència">Transferència bancària</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data de Compra</label>
+          <input type="datetime-local" id="paquet-form-data" class="form-control">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-paquet-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Sumar Hores al Compte</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR SESSIÓ MANUAL -->
+  <div class="modal-backdrop" id="modal-manual-sessio-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-manual-title">Registrar Sessió Manual</h3>
+        <button class="modal-close" data-close="modal-manual-sessio-backdrop">&times;</button>
+      </div>
+      <form id="form-manual-sessio">
+        <input type="hidden" id="manual-sessio-id">
+        <input type="hidden" id="manual-sessio-student-id">
+        <div class="form-group">
+          <label>Alumne</label>
+          <input type="text" id="manual-sessio-student-name" class="form-control" readonly style="background:#F5F2ED;">
+        </div>
+        <div class="form-group">
+          <label>Hora d'Entrada *</label>
+          <input type="datetime-local" id="manual-sessio-entrada" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Hora de Sortida *</label>
+          <input type="datetime-local" id="manual-sessio-sortida" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Durada calculada aproximada:</label>
+          <div id="manual-sessio-preview" style="font-size: 16px; font-weight: 700; font-family: monospace; color: var(--color-primary);">00:00:00</div>
+        </div>
+        <div class="form-group">
+          <label>Observacions</label>
+          <input type="text" id="manual-sessio-notes" class="form-control" placeholder="ex: Pràctica de modelatge">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-manual-sessio-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Desar Sessió</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TANCAR CICLE OBLIDAT -->
+  <div class="modal-backdrop" id="modal-tancar-cicle-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⚠️ Tancar Cicle Oblidat (Forçar Sortida)</h3>
+        <button class="modal-close" data-close="modal-tancar-cicle-backdrop">&times;</button>
+      </div>
+      <form id="form-tancar-cicle">
+        <input type="hidden" id="tancar-cicle-session-id">
+        <input type="hidden" id="tancar-cicle-student-id">
+        
+        <p style="font-size: 14px; color: var(--color-muted); margin-bottom: 16px;">
+          L'alumne <strong id="tancar-cicle-student-name">-</strong> va entrar a les <span id="tancar-cicle-hora-entrada" style="font-weight:700;">-</span> i no va registrar la sortida amb el QR.
+        </p>
+
+        <div class="form-group">
+          <label>Com vols tancar aquest cicle?</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="defecte" checked>
+              <span>Aplicar durada estàndard (<strong id="lbl-durada-defecte">01:30:00</strong>)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="durada_manual">
+              <span>Indicar durada exacta (format H:m:s):</span>
+            </label>
+            <input type="text" id="tancar-cicle-durada-custom" class="form-control" placeholder="01:30:00" style="margin-left: 24px; max-width: 160px;">
+            
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="hora_exacta">
+              <span>Indicar l'hora en què va marxar:</span>
+            </label>
+            <input type="datetime-local" id="tancar-cicle-hora-sortida" class="form-control" style="margin-left: 24px;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Nota explicativa</label>
+          <input type="text" id="tancar-cicle-notes" class="form-control" value="Tancat pel professor per descuit de l'alumne">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-tancar-cicle-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-danger">Tancar Cicle i Descomptar Saldo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CARNET D'ALUMNE (VISUALITZAR / IMPRIMIR / DESCARREGAR) -->
+  <div class="modal-backdrop" id="modal-carnet-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Carnet d'Alumne amb QR</h3>
+        <button class="modal-close" data-close="modal-carnet-backdrop">&times;</button>
+      </div>
+      
+      <div class="student-card-container">
+        <!-- Targeta física renderitzada -->
+        <div class="ceramic-badge" id="printable-badge">
+          <div class="badge-top">
+            <div class="workshop-brand">
+              <span class="workshop-icon">🏺</span>
+              <span class="workshop-name" id="badge-ws-name">Taller de Ceràmica</span>
+            </div>
+            <span class="badge-type">CARNET DE SOCI</span>
+          </div>
+          <div class="badge-content">
+            <div class="badge-info">
+              <div class="badge-student-name" id="badge-nom">Nom</div>
+              <div class="badge-student-surnames" id="badge-cognoms">Cognoms</div>
+              <div class="badge-id-pill">
+                <span>ID:</span>
+                <strong id="badge-id">TC-100</strong>
+              </div>
+              <div class="badge-phone" id="badge-tel">Tel: -</div>
+            </div>
+            <div class="badge-qr-box" id="badge-qr-container">
+              <!-- QR generat per QREngine -->
+            </div>
+          </div>
+          <div class="badge-footer">
+            <span>Passa aquest QR per l'escàner</span>
+            <span id="badge-data-alta">Alta: 2026</span>
+          </div>
+        </div>
+
+        <!-- Botons d'acció -->
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" id="btn-print-card">🖨️ Imprimir Carnet</button>
+          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">🔗 Copiar Enllaç Alumne</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURACIÓ (STRIPE, GOOGLE SHEETS I TALLER) -->
+  <div class="modal-backdrop" id="modal-config-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Configuració del Taller, Stripe i Google Sheets</h3>
+        <button class="modal-close" data-close="modal-config-backdrop">&times;</button>
+      </div>
+      <form id="form-config">
+        <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏺 Dades del Taller</h4>
+        <div class="form-group">
+          <label>Nom del Taller</label>
+          <input type="text" id="cfg-taller-nom" class="form-control" placeholder="Taller de Ceràmica">
+        </div>
+        <div class="form-group">
+          <label>Telèfon de contacte</label>
+          <input type="text" id="cfg-taller-telefon" class="form-control" placeholder="+34 600 000 000">
+        </div>
+        <div class="form-group">
+          <label>Durada per defecte en tancar cicle oblidat (H:m:s)</label>
+          <input type="text" id="cfg-durada-oblit" class="form-control" placeholder="01:30:00">
+        </div>
+
+        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe</h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
+          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats:
+        </p>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 5 Hores</label>
+          <input type="url" id="cfg-stripe-pack5" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 10 Hores</label>
+          <input type="url" id="cfg-stripe-pack10" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 20 Hores</label>
+          <input type="url" id="cfg-stripe-pack20" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+
+        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">📊 Sincronització amb Google Sheets</h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
+          Enganxa l'URL de la teva aplicació web de Google Apps Script (que acaba en <code>/exec</code>):
+        </p>
+        <div class="form-group">
+          <label>URL Web App de Google Apps Script</label>
+          <input type="url" id="cfg-sheets-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-config-backdrop">Tancar</button>
+          <button type="submit" class="btn btn-primary">Desar Configuració</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DADES I BACKUP -->
+  <div class="modal-backdrop" id="modal-backup-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Gestió de Dades i Còpies de Seguretat</h3>
+        <button class="modal-close" data-close="modal-backup-backdrop">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div class="card" style="padding: 16px;">
+          <h4>💾 Còpia de Seguretat Completa (JSON)</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Descarrega un arxiu amb tots els alumnes, paquets d'hores, sessions i configuració.
+          </p>
+          <button class="btn btn-primary btn-sm" id="btn-download-json">Descarregar Còpia de Seguretat</button>
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <h4>📥 Restaurar Còpia de Seguretat</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Carrega un arxiu JSON de còpia prèvia per restaurar la base de dades.
+          </p>
+          <input type="file" id="input-restore-json" accept=".json" style="font-size: 13px;">
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <h4>📄 Exportació per a Excel (CSV)</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Exporta l'historial d'entrades i sortides amb durades (H:m:s) en format CSV compatible amb Excel.
+          </p>
+          <button class="btn btn-outline btn-sm" id="btn-export-csv">Descarregar CSV d'Assistència</button>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-outline" data-close="modal-backup-backdrop">Tancar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenidor per a Toasts -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="js/time-utils.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/qr-engine.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

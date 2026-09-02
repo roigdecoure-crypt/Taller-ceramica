@@ -1,0 +1,175 @@
+/**
+ * card.css - Disseny del Carnet d'Alumne amb QR i format per a impressió
+ */
+
+.student-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+/* Format físic de la targeta (CR80: 85.6mm x 54mm aproximat a pantalla) */
+.ceramic-badge {
+  width: 360px;
+  height: 226px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  border: 2px solid #E8DFD5;
+  box-shadow: 0 8px 20px rgba(46, 40, 37, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+}
+
+/* Capçalera de la targeta */
+.badge-top {
+  background: linear-gradient(135deg, #C25E3A 0%, #A44927 100%);
+  color: #FFFFFF;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.badge-top .workshop-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-top .workshop-icon {
+  font-size: 20px;
+}
+.badge-top .workshop-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.badge-top .badge-type {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 3px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.5px;
+}
+
+/* Cos de la targeta */
+.badge-content {
+  flex: 1;
+  display: flex;
+  padding: 14px 16px;
+  gap: 14px;
+  align-items: center;
+  background: #FFF;
+}
+
+.badge-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.badge-student-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2E2825;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge-student-surnames {
+  font-size: 13px;
+  font-weight: 600;
+  color: #736B66;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.badge-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FAF6F0;
+  border: 1px solid #E8DFD5;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #C25E3A;
+  width: fit-content;
+  margin-bottom: 8px;
+}
+.badge-phone {
+  font-size: 11px;
+  color: #8C847E;
+}
+
+/* Contenidor del QR */
+.badge-qr-box {
+  width: 105px;
+  height: 105px;
+  background: #FFFFFF;
+  border: 1px solid #E8DFD5;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.badge-qr-box img,
+.badge-qr-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Peu de la targeta */
+.badge-footer {
+  background: #FAF6F0;
+  border-top: 1px solid #E8DFD5;
+  padding: 6px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #8C847E;
+}
+
+/* Botons d'acció del carnet */
+.card-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Regles per a impressió */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ceramic-badge, .ceramic-badge * {
+    visibility: visible;
+  }
+  .ceramic-badge {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: none;
+    border: 1px solid #999;
+    width: 85.6mm;
+    height: 53.98mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

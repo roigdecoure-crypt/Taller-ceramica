@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Escàner QR - Taller de Ceràmica</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1A1817">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/scanner.css">
+</head>
+<body class="scanner-body">
+
+  <!-- Capçalera de l'escàner -->
+  <header class="scanner-header">
+    <div class="scanner-title">
+      <span style="font-size: 24px;">🏺</span>
+      <div>
+        <h2 id="scanner-ws-name">Taller de Ceràmica</h2>
+        <p>Apropa el teu carnet QR per entrar o sortir</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="btn btn-outline btn-sm" id="btn-switch-camera" style="border-color:#4A4440; color:#FFF;" title="Canviar càmera (frontal/posterior)">
+        🔄 Càmera
+      </button>
+      <a href="admin.html" class="btn btn-outline btn-sm" style="border-color:#4A4440; color:#FFF;" title="Panell d'administració">
+        ⚙️ Admin
+      </a>
+    </div>
+  </header>
+
+  <!-- Visor de la Càmera -->
+  <main class="scanner-viewport">
+    <div id="qr-video-container"></div>
+    
+    <!-- Marc d'enfocament interactiu -->
+    <div class="scanner-overlay-guide">
+      <div class="scanner-laser"></div>
+    </div>
+
+    <!-- Indicador d'estat a la part superior del visor -->
+    <div style="position: absolute; top: 16px; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 99px; font-size: 13px; z-index: 5; display: flex; align-items: center; gap: 8px;">
+      <span class="live-pulse"></span>
+      <span id="camera-status-text">Càmera activa &bull; Enfoca el codi QR</span>
+    </div>
+  </main>
+
+  <!-- Barra inferior d'accions -->
+  <footer class="scanner-bottom-bar">
+    <button class="btn btn-primary" id="btn-manual-entry" style="flex: 1; max-width: 240px;">
+      🔢 Introduir Codi Manual
+    </button>
+    <button class="btn btn-outline" id="btn-install-pwa" style="border-color:#4A4440; color:#FFF; display: none;">
+      📲 Instal·lar App
+    </button>
+  </footer>
+
+  <!-- MODAL DE RESULTAT D'ESCANEIG (ENTRADA / SORTIDA) -->
+  <div class="scan-result-overlay" id="scan-result-modal">
+    <div class="scan-result-box" id="scan-result-box">
+      <div class="result-icon" id="res-icon">🏺</div>
+      <div class="result-action-badge" id="res-badge">ENTRADA REGISTRADA</div>
+      <div class="result-student-name" id="res-student-name">Maria Garcia Font</div>
+
+      <div class="result-details">
+        <div class="result-detail-row">
+          <span class="lbl">Hora d'Entrada:</span>
+          <span class="val" id="res-hora-entrada">--:--:--</span>
+        </div>
+        <div class="result-detail-row" id="row-sortida" style="display: none;">
+          <span class="lbl">Hora de Sortida:</span>
+          <span class="val" id="res-hora-sortida">--:--:--</span>
+        </div>
+        <div class="result-detail-row highlight" id="row-durada" style="display: none;">
+          <span class="lbl">Temps de la Sessió:</span>
+          <span class="val" id="res-durada-sessio">00:00:00</span>
+        </div>
+        <div class="result-detail-row" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+          <span class="lbl">Saldo d'Hores Restant:</span>
+          <span class="val" id="res-saldo-restant">00:00:00</span>
+        </div>
+      </div>
+
+      <button class="btn btn-outline btn-block" id="btn-dismiss-result" style="border-color: rgba(255,255,255,0.3); color:#FFF;">
+        D'acord (o toca per continuar)
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL D'ENTRADA MANUAL / TECLAT -->
+  <div class="modal-backdrop" id="modal-manual-entry-backdrop">
+    <div class="modal-dialog" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3>Entrada Manual d'Alumne</h3>
+        <button class="modal-close" id="btn-close-manual-modal">&times;</button>
+      </div>
+      <form id="form-manual-code">
+        <div class="form-group">
+          <label>Codi d'Identificació o PIN</label>
+          <input type="text" id="manual-code-input" class="form-control" placeholder="ex: TC-101 o 101" autofocus style="font-size: 20px; text-align: center; letter-spacing: 2px; text-transform: uppercase;">
+        </div>
+
+        <div style="font-size: 13px; color: var(--color-muted); text-align: center; margin-bottom: 12px;">
+          O cerca directament l'alumne a la llista:
+        </div>
+
+        <div class="form-group">
+          <select id="select-student-quick" class="form-control">
+            <option value="">-- Selecciona un alumne --</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-manual" style="flex:1;">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary" style="flex:1;">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/html5-qrcode.min.js"></script>
+  <script src="js/time-utils.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/qr-engine.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/scanner.js"></script>
+</body>
+</html>
