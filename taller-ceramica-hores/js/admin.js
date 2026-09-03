@@ -70,9 +70,11 @@ async function loadConfig() {
 async function refreshStudentsList() {
   try {
     allStudents = await Store.getAlumnes();
+    if (!Array.isArray(allStudents)) allStudents = [];
     renderActiveStudentsBanner(allStudents);
     renderStudentsTable(allStudents);
   } catch (err) {
+    console.error('Error carregant alumnes:', err);
     showToast('Error carregant alumnes: ' + err.message, 'error');
   }
 }
@@ -81,7 +83,10 @@ async function refreshStudentsList() {
 function renderActiveStudentsBanner(students) {
   const container = document.getElementById('active-students-container');
   const countBadge = document.getElementById('count-alumnes-actius');
-  const activeList = students.filter(s => s.sessioActiva && s.sessioActiva.estat === 'oberta');
+  if (!container || !countBadge) return;
+
+  const list = Array.isArray(students) ? students : [];
+  const activeList = list.filter(s => s && s.sessioActiva && s.sessioActiva.estat === 'oberta');
 
   countBadge.textContent = activeList.length;
 
@@ -96,10 +101,11 @@ function renderActiveStudentsBanner(students) {
 
   container.innerHTML = '';
   activeList.forEach(s => {
-    const sess = s.sessioActiva;
-    const durSec = TimeUtils.calculateDuration(sess.entrada, new Date());
+    if (!s) return;
+    const sess = s.sessioActiva || {};
+    const durSec = sess.entrada ? TimeUtils.calculateDuration(sess.entrada, new Date()) : 0;
     const durHms = TimeUtils.secondsToHms(durSec);
-    const horaEntrada = TimeUtils.formatTime(sess.entrada);
+    const horaEntrada = sess.entrada ? TimeUtils.formatTime(sess.entrada) : '--:--';
 
     const card = document.createElement('div');
     card.className = 'active-student-card';
@@ -113,7 +119,7 @@ function renderActiveStudentsBanner(students) {
       </div>
       <div class="live-timer-row">
         <span class="live-timer-label">⏱️ Temps actual:</span>
-        <span class="live-timer-value live-student-timer" data-entrada="${sess.entrada}">${durHms}</span>
+        <span class="live-timer-value live-student-timer" data-entrada="${sess.entrada || ''}">${durHms}</span>
       </div>
       <div style="font-size: 12px; color: var(--color-muted);">
         Saldo restant: <strong>${s.balanc ? s.balanc.formatBalance : '00:00:00'}</strong>
@@ -122,7 +128,7 @@ function renderActiveStudentsBanner(students) {
         <button class="btn btn-primary btn-sm btn-action-checkout" data-id="${s.id}" style="flex:1;">
           Sortida Ara
         </button>
-        <button class="btn btn-outline btn-sm btn-action-force-close" data-id="${s.id}" data-sess-id="${sess.id}" data-nom="${s.nom}" data-entrada="${horaEntrada}" title="Tancar cicle si s'ha oblidat">
+        <button class="btn btn-outline btn-sm btn-action-force-close" data-id="${s.id}" data-sess-id="${sess.id || ''}" data-nom="${s.nom}" data-entrada="${horaEntrada}" title="Tancar cicle si s'ha oblidat">
           ⚠️ Oblit
         </button>
         <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}">
@@ -137,21 +143,26 @@ function renderActiveStudentsBanner(students) {
 // Renderitzar taula d'alumnes
 function renderStudentsTable(students) {
   const tbody = document.getElementById('students-table-body');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
-  const filterText = (document.getElementById('search-students-input').value || '').toLowerCase().trim();
-  const filtered = students.filter(s => {
+  const list = Array.isArray(students) ? students : [];
+  const searchInput = document.getElementById('search-students-input');
+  const filterText = (searchInput ? searchInput.value : '').toLowerCase().trim();
+  const filtered = list.filter(s => {
+    if (!s) return false;
     if (!filterText) return true;
-    const full = `${s.nom} ${s.cognoms} ${s.telefon} ${s.email} ${s.id} ${s.pin}`.toLowerCase();
+    const full = `${s.nom || ''} ${s.cognoms || ''} ${s.telefon || ''} ${s.email || ''} ${s.id || ''} ${s.pin || ''}`.toLowerCase();
     return full.includes(filterText);
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-muted); padding:24px;">No s'ha trobat cap alumne amb aquesta cerca.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-muted); padding:32px; font-size:15px;">ℹ️ No s'ha trobat cap alumne registrat o coincident amb la cerca.</td></tr>`;
     return;
   }
 
   filtered.forEach(s => {
+    if (!s) return;
     const isActiu = s.sessioActiva && s.sessioActiva.estat === 'oberta';
     const bal = s.balanc || { formatBalance: '00:00:00', isNegative: false, isLow: false };
     

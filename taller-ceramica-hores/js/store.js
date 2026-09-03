@@ -61,7 +61,13 @@ const Store = {
   _getLocalData() {
     this._initLocalStorage();
     try {
-      return JSON.parse(localStorage.getItem(this.STORAGE_KEY)) || {};
+      const parsed = JSON.parse(localStorage.getItem(this.STORAGE_KEY)) || {};
+      if (!parsed.alumnes || parsed.alumnes.length === 0) {
+        localStorage.removeItem(this.STORAGE_KEY);
+        this._initLocalStorage();
+        return JSON.parse(localStorage.getItem(this.STORAGE_KEY)) || {};
+      }
+      return parsed;
     } catch (e) {
       return { alumnes: [], paquets: [], sessions: [], config: {} };
     }
@@ -76,11 +82,13 @@ const Store = {
   async getAlumnes() {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/alumnes`);
+        const res = await fetch(`${this.apiBase}/api/alumnes?t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
-        if (json.ok) return json.data;
+        if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
+          return json.data;
+        }
       } catch (e) {
-        console.warn('Error connectant a l\'API, canviant a mode local');
+        console.warn('Error connectant a l\'API, canviant a mode local:', e);
         this.mode = 'local';
       }
     }
@@ -90,7 +98,9 @@ const Store = {
 
     return activeStudents.map(a => {
       const openSess = (data.sessions || []).find(s => s.student_id === a.id && s.estat === 'oberta');
-      const bal = TimeUtils.calculateStudentBalance(a.id, data.paquets || [], data.sessions || []);
+      const bal = (typeof TimeUtils !== 'undefined' && TimeUtils.calculateStudentBalance)
+        ? TimeUtils.calculateStudentBalance(a.id, data.paquets || [], data.sessions || [])
+        : { formatBalance: '00:00:00', isNegative: false, isLow: false };
       return {
         ...a,
         sessioActiva: openSess || null,
