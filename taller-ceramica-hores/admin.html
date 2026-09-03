@@ -25,6 +25,9 @@
       <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
         📷 Escàner QR
       </a>
+      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
+        ⏱️ Entrada / Sortida Manual
+      </button>
       <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
         ➕ Nou Alumne
       </button>
@@ -138,11 +141,14 @@
           <button class="btn btn-primary" id="drawer-btn-add-hours">
             ➕ Afegir Compra d'Hores
           </button>
-          <button class="btn btn-secondary" id="drawer-btn-add-manual-session">
-            ⏱️ Registrar Sessió Manual
+          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#2E7D32; border-color:#2E7D32;">
+            🟢 Marcar Entrada
           </button>
-          <button class="btn btn-outline" id="drawer-btn-quick-checkin">
-            ⚡ Entrada/Sortida Ara
+          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#1976D2; border-color:#1976D2;">
+            🔴 Marcar Sortida
+          </button>
+          <button class="btn btn-outline" id="drawer-btn-add-manual-session">
+            ⏱️ Sessió Manual (Passada)
           </button>
         </div>
 
@@ -479,6 +485,51 @@
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button type="button" class="btn btn-outline" data-close="modal-config-backdrop">Tancar</button>
           <button type="submit" class="btn btn-primary">Desar Configuració</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
+  <div class="modal-backdrop" id="modal-admin-manual-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>⏱️ Marcar Entrada o Sortida Manual</h3>
+        <button class="modal-close" data-close="modal-admin-manual-backdrop">&times;</button>
+      </div>
+      <form id="form-admin-manual-checkin">
+        <div class="form-group">
+          <label>Alumne</label>
+          <select id="admin-manual-student-select" class="form-control" required style="font-size: 15px;">
+            <option value="">-- Selecciona un alumne --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Hora del registre</label>
+          <div style="display: flex; gap: 14px; margin-bottom: 8px;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="admin_manual_time_opt" value="now" checked>
+              <span>⏰ Ara mateix</span>
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="admin_manual_time_opt" value="custom">
+              <span>✏️ Hora personalitzada</span>
+            </label>
+          </div>
+          <input type="datetime-local" id="admin-manual-custom-time" class="form-control" style="display: none;">
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label style="margin-bottom: 8px; display: block;">Acció a realitzar:</label>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="padding: 12px 8px;">
+              🟢 Registrar ENTRADA
+            </button>
+            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
+              🔴 Registrar SORTIDA
+            </button>
+          </div>
         </div>
       </form>
     </div>

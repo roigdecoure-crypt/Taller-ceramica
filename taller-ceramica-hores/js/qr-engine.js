@@ -6,6 +6,7 @@ const QREngine = {
   html5QrScanner: null,
   lastScannedCode: null,
   lastScannedTime: 0,
+  availableCameras: [],
 
   /**
    * Genera un codi QR en un element contenidor (DOM element o ID)
@@ -42,18 +43,32 @@ const QREngine = {
   },
 
   /**
+   * Obté la llista de càmeres del dispositiu
+   */
+  async getCameras() {
+    if (typeof Html5Qrcode === 'undefined') return [];
+    try {
+      this.availableCameras = await Html5Qrcode.getCameras();
+      return this.availableCameras || [];
+    } catch (e) {
+      console.warn('No s\'ha pogut obtenir getCameras():', e);
+      return [];
+    }
+  },
+
+  /**
    * Inicia la càmera i l'escàner QR utilitzant Html5Qrcode
-   * @param {string} elementId ID del contenidor de la càmera (ex: "qr-reader")
+   * @param {string} elementId ID del contenidor (ex: "qr-video-container")
    * @param {function} onScanSuccess Callback en detectar un QR
    * @param {function} onScanError Callback d'error opcional
-   * @param {string} facingMode 'user' (frontal) o 'environment' (posterior)
+   * @param {string} cameraChoice 'user' (frontal), 'environment' (posterior) o un ID de dispositiu
    */
-  async startScanner(elementId, onScanSuccess, onScanError = null, facingMode = 'user') {
+  async startScanner(elementId, onScanSuccess, onScanError = null, cameraChoice = 'user') {
     if (typeof Html5Qrcode === 'undefined') {
       throw new Error('La llibreria Html5Qrcode no està carregada.');
     }
 
-    // Aturar qualsevol escàner previ
+    // Aturar i netejar qualsevol instància prèvia
     await this.stopScanner();
 
     this.html5QrScanner = new Html5Qrcode(elementId);
@@ -69,8 +84,8 @@ const QREngine = {
 
     const handleSuccess = (decodedText, decodedResult) => {
       const now = Date.now();
-      // Debounce de 2.5 segons per al mateix codi per evitar lectures repetides accidentals
-      if (this.lastScannedCode === decodedText && now - this.lastScannedTime < 2500) {
+      // Debounce de 2 segons per al mateix codi
+      if (this.lastScannedCode === decodedText && now - this.lastScannedTime < 2000) {
         return;
       }
       this.lastScannedCode = decodedText;
@@ -87,63 +102,69 @@ const QREngine = {
       }
     };
 
+    // Cas 1: Si s'ha passat un ID de càmera concret (des del desplegable)
+    if (cameraChoice && cameraChoice !== 'user' && cameraChoice !== 'environment') {
+      await this.html5QrScanner.start(
+        cameraChoice,
+        config,
+        handleSuccess,
+        handleError
+      );
+      return true;
+    }
+
+    const wantFront = cameraChoice === 'user';
+
+    // Cas 2: Intentar seleccionar la càmera frontal o posterior
+    // Intentem primer amb la configuració estàndard de WebRTC
     try {
-      // 1. Intentar buscar la càmera exacta mitjançant la llista de dispositius
-      const devices = await Html5Qrcode.getCameras();
+      await this.html5QrScanner.start(
+        { facingMode: wantFront ? 'user' : 'environment' },
+        config,
+        handleSuccess,
+        handleError
+      );
+      return true;
+    } catch (errFacing) {
+      console.warn(`Error iniciant amb facingMode directament:`, errFacing);
+    }
+
+    // Cas 3: Si falla, busquem a la llista de càmeres del dispositiu
+    try {
+      const devices = await this.getCameras();
       if (devices && devices.length > 0) {
-        let chosenCamera = null;
-        if (facingMode === 'user') {
-          // Buscar paraules clau de càmera frontal
-          chosenCamera = devices.find(d => {
-            const lbl = (d.label || '').toLowerCase();
-            return lbl.includes('front') || lbl.includes('user') || lbl.includes('anterior') || lbl.includes('delantera') || lbl.includes('selfie');
-          });
-          // Si no la troba per nom però n'hi ha més d'una, la segona o primera sol ser la frontal
-          if (!chosenCamera && devices.length > 1) {
-            chosenCamera = devices[devices.length - 1];
+        let chosen = null;
+        if (wantFront) {
+          chosen = devices.find(d => /front|user|anterior|delantera|selfie|face/i.test(d.label || ''));
+          // Si no té nom explícit i n'hi ha més d'una, la segona acostuma a ser la frontal
+          if (!chosen && devices.length > 1) {
+            chosen = devices[1];
           }
         } else {
-          // Càmera posterior
-          chosenCamera = devices.find(d => {
-            const lbl = (d.label || '').toLowerCase();
-            return lbl.includes('back') || lbl.includes('rear') || lbl.includes('trasera') || lbl.includes('posterior') || lbl.includes('environment');
-          });
+          chosen = devices.find(d => /back|rear|trasera|posterior|environment/i.test(d.label || ''));
         }
-
-        if (!chosenCamera) chosenCamera = devices[0];
+        if (!chosen) chosen = devices[0];
 
         await this.html5QrScanner.start(
-          chosenCamera.id,
+          chosen.id,
           config,
           handleSuccess,
           handleError
         );
         return true;
       }
-    } catch (camErr) {
-      console.warn('getCameras no disponible, provant facingMode directe:', camErr);
+    } catch (errDevices) {
+      console.warn('Error provant dispositius específics:', errDevices);
     }
 
-    // 2. Fallback directe per facingMode
-    try {
-      await this.html5QrScanner.start(
-        { facingMode: facingMode },
-        config,
-        handleSuccess,
-        handleError
-      );
-      return true;
-    } catch (err) {
-      console.warn(`Error iniciant amb facingMode ${facingMode}, provant mode contrari:`, err);
-      const fallbackMode = facingMode === 'user' ? 'environment' : 'user';
-      await this.html5QrScanner.start(
-        { facingMode: fallbackMode },
-        config,
-        handleSuccess,
-        handleError
-      );
-      return true;
-    }
+    // Cas 4: Últim recurs - provar qualsevol càmera disponible
+    await this.html5QrScanner.start(
+      { facingMode: 'environment' },
+      config,
+      handleSuccess,
+      handleError
+    );
+    return true;
   },
 
   /**
@@ -157,7 +178,7 @@ const QREngine = {
         }
         await this.html5QrScanner.clear();
       } catch (err) {
-        console.warn('Error aturant l\'escàner:', err);
+        console.warn('Avís aturant escàner:', err);
       }
       this.html5QrScanner = null;
     }

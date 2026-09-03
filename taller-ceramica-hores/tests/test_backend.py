@@ -124,5 +124,57 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
         self.conn.commit()
 
+    def test_05_manual_action_and_custom_time(self):
+        test_id = "TC-TEST-MANUAL"
+        c = self.conn.cursor()
+        c.execute("DELETE FROM sessions WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM paquets_hores WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
+
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, actiu)
+            VALUES (?, 'Test', 'Manual', '611111111', 'manual@test.com', '1234', ?, 1)
+        ''', (test_id, datetime.now().isoformat()))
+        c.execute('''
+            INSERT INTO paquets_hores (id, student_id, data, hores, segons, concepte, preu, metode_pagament)
+            VALUES ('PK-MANUAL-1', ?, ?, 5.0, 18000, 'Pack 5h', 65.0, 'Efectiu')
+        ''', (test_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        # Simular entrada manual a les 10:00:00
+        t_in = datetime(2026, 9, 3, 10, 0, 0)
+        c.execute('''
+            INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat)
+            VALUES ('SES-MAN-1', ?, '2026-09-03', ?, NULL, 0, '00:00:00', 'manual', 'oberta')
+        ''', (test_id, t_in.isoformat()))
+        self.conn.commit()
+
+        # Simular sortida manual a les 11:30:15 (durada = 1h 30m 15s = 5415s)
+        t_out = datetime(2026, 9, 3, 11, 30, 15)
+        diff_sec = int((t_out - t_in).total_seconds())
+        diff_hms = server.format_hms(diff_sec)
+        self.assertEqual(diff_sec, 5415)
+        self.assertEqual(diff_hms, "01:30:15")
+
+        c.execute('''
+            UPDATE sessions
+            SET sortida = ?, durada_segons = ?, format_hms = ?, estat = 'tancada', tipus = 'manual'
+            WHERE id = 'SES-MAN-1'
+        ''', (t_out.isoformat(), diff_sec, diff_hms))
+        self.conn.commit()
+
+        bal = server.get_student_balance(test_id)
+        self.assertEqual(bal['totalSpentSeconds'], 5415)
+        self.assertEqual(bal['formatSpent'], "01:30:15")
+        # 18000 - 5415 = 12585 segons = 03:29:45
+        self.assertEqual(bal['balanceSeconds'], 12585)
+        self.assertEqual(bal['formatBalance'], "03:29:45")
+
+        # Neteja
+        c.execute("DELETE FROM sessions WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM paquets_hores WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()

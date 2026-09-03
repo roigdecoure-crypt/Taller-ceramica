@@ -3,7 +3,7 @@
  */
 
 let deferredPrompt = null;
-let currentFacingMode = localStorage.getItem('scanner_preferred_camera') || 'user'; // 'user' (frontal per defecte) o 'environment' (posterior)
+let currentFacingMode = localStorage.getItem('scanner_preferred_camera') || 'user'; // 'user' (frontal per defecte) o 'environment' o deviceId
 let resultAutoCloseTimer = null;
 let isProcessingScan = false;
 
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadStudentSelector();
   setupPwaInstall();
   setupScannerEvents();
-  startCamera();
+  startCamera(currentFacingMode);
 });
 
 // Carregar configuració
@@ -29,31 +29,70 @@ async function loadScannerConfig() {
 }
 
 // Iniciar càmera
-async function startCamera() {
-  const statusEl = document.getElementById('camera-status-text');
-  statusEl.textContent = `Iniciant càmera ${currentFacingMode === 'user' ? 'frontal' : 'posterior'}...`;
+async function startCamera(cameraModeOrId = 'user') {
+  currentFacingMode = cameraModeOrId;
+  localStorage.setItem('scanner_preferred_camera', currentFacingMode);
 
+  const statusEl = document.getElementById('camera-status-text');
+  const errorContainer = document.getElementById('camera-error-container');
   const container = document.getElementById('qr-video-container');
-  if (currentFacingMode === 'user') {
+
+  const isFront = currentFacingMode === 'user' || currentFacingMode.toLowerCase().includes('front') || currentFacingMode.toLowerCase().includes('selfie');
+  statusEl.textContent = `Iniciant càmera ${isFront ? 'frontal' : 'posterior'}...`;
+
+  if (isFront) {
     container.classList.add('mirror-camera');
   } else {
     container.classList.remove('mirror-camera');
   }
 
   try {
+    errorContainer.style.display = 'none';
     await QREngine.startScanner('qr-video-container', onQrScanned, onScanError, currentFacingMode);
-    statusEl.textContent = `Càmera ${currentFacingMode === 'user' ? 'frontal' : 'posterior'} activa • Enfoca el codi QR`;
-    updateSwitchButtonText();
+    statusEl.textContent = `Càmera ${isFront ? 'frontal' : 'posterior'} activa • Enfoca el codi QR`;
+    
+    // Un cop la càmera és activa, poblem el desplegable amb totes les càmeres detectades
+    await populateCameraDropdown();
   } catch (err) {
-    console.warn('Error iniciant càmera:', err);
-    statusEl.textContent = '⚠️ Permís de càmera no concedit o dispositiu sense càmera';
+    console.error('Error iniciant càmera:', err);
+    statusEl.textContent = '⚠️ Càmera desactivada o sense permís';
+    errorContainer.style.display = 'block';
+    document.getElementById('camera-error-message').textContent = 
+      `No s'ha pogut obrir la càmera (${err.message || err}). Prem el botó per activar-la o tria una altra càmera a dalt.`;
   }
 }
 
-function updateSwitchButtonText() {
-  const btn = document.getElementById('btn-switch-camera');
-  if (btn) {
-    btn.innerHTML = currentFacingMode === 'user' ? '🔄 Càmera Frontal' : '🔄 Càmera Posterior';
+// Poblar el desplegable de càmeres reals del dispositiu
+async function populateCameraDropdown() {
+  const select = document.getElementById('select-camera-device');
+  if (!select) return;
+
+  try {
+    const devices = await QREngine.getCameras();
+    if (devices && devices.length > 0) {
+      select.innerHTML = '';
+      devices.forEach((dev, idx) => {
+        const opt = document.createElement('option');
+        opt.value = dev.id;
+        
+        let label = dev.label || `Càmera ${idx + 1}`;
+        if (/front|user|anterior|delantera|selfie/i.test(label)) {
+          label = `🤳 ${label}`;
+        } else if (/back|rear|trasera|posterior|environment/i.test(label)) {
+          label = `📷 ${label}`;
+        } else {
+          label = `📹 ${label}`;
+        }
+        
+        opt.textContent = label;
+        if (currentFacingMode === dev.id || (currentFacingMode === 'user' && /front|user|anterior|selfie/i.test(dev.label))) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.warn('Error omplint desplegable de càmeres:', e);
   }
 }
 
@@ -63,26 +102,26 @@ async function onQrScanned(decodedText) {
   isProcessingScan = true;
 
   try {
-    await processCheckInOut(decodedText);
+    await processCheckInOut(decodedText, { action: 'auto', tipus: 'qr' });
   } catch (err) {
     console.error('Error processant codi QR:', err);
   } finally {
-    // Petit retard per tornar a permetre escanejos
     setTimeout(() => {
       isProcessingScan = false;
-    }, 1500);
+    }, 2000);
   }
 }
 
 function onScanError(error) {
-  // Errors comuns de cerca contínua ignorats
+  // Ignorem els errors continus de recerca de marcs
 }
 
 // Processar entrada o sortida
-async function processCheckInOut(code) {
+async function processCheckInOut(code, options = {}) {
   try {
-    const res = await Store.checkInOrOut(code);
+    const res = await Store.checkInOrOut(code, options);
     displayScanResult(res);
+    await loadStudentSelector(); // Actualitzar estat
   } catch (err) {
     SoundEngine.playWarning();
     alert(err.message);
@@ -105,7 +144,6 @@ function displayScanResult(res) {
   const rowSortida = document.getElementById('row-sortida');
   const rowDurada = document.getElementById('row-durada');
 
-  // Netejar classes
   box.classList.remove('is-entrada', 'is-sortida');
 
   nameEl.textContent = `${res.alumne.nom} ${res.alumne.cognoms || ''}`;
@@ -113,7 +151,6 @@ function displayScanResult(res) {
   saldoEl.textContent = res.balanc ? res.balanc.formatBalance : '--:--:--';
 
   if (res.action === 'entrada') {
-    // ENTRADA
     SoundEngine.playCheckin();
     box.classList.add('is-entrada');
     iconEl.textContent = '👋🏺';
@@ -121,7 +158,6 @@ function displayScanResult(res) {
     rowSortida.style.display = 'none';
     rowDurada.style.display = 'none';
   } else {
-    // SORTIDA
     SoundEngine.playCheckout();
     box.classList.add('is-sortida');
     iconEl.textContent = '🎨✨';
@@ -134,23 +170,28 @@ function displayScanResult(res) {
 
   modal.classList.add('active');
 
-  // Auto-tancar després de 4 segons perquè quedi a punt per al següent alumne
   if (resultAutoCloseTimer) clearTimeout(resultAutoCloseTimer);
   resultAutoCloseTimer = setTimeout(() => {
     modal.classList.remove('active');
   }, 4000);
 }
 
-// Carregar selector d'alumnes per a suport manual
+// Carregar selector d'alumnes per a suport manual indicant si són al taller
 async function loadStudentSelector() {
   try {
     const students = await Store.getAlumnes();
+    const activeSessions = await Store.getActiveSessions();
+    const activeStudentIds = new Set(activeSessions.map(s => s.student_id));
+
     const select = document.getElementById('select-student-quick');
-    select.innerHTML = '<option value="">-- Selecciona un alumne --</option>';
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- Tria un alumne de la llista --</option>';
     students.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id})`;
+      const isInside = activeStudentIds.has(s.id);
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '🟢 [Al taller]' : '⚪ [A fora]'}`;
       select.appendChild(opt);
     });
   } catch (err) {
@@ -172,44 +213,96 @@ function setupScannerEvents() {
     }
   });
 
-  // Alternar càmera (posterior/frontal)
-  document.getElementById('btn-switch-camera').addEventListener('click', async () => {
-    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    localStorage.setItem('scanner_preferred_camera', currentFacingMode);
-    await QREngine.stopScanner();
-    await startCamera();
-  });
+  // Selector desplegable de càmera
+  const camSelect = document.getElementById('select-camera-device');
+  if (camSelect) {
+    camSelect.addEventListener('change', async (e) => {
+      const selectedChoice = e.target.value;
+      await startCamera(selectedChoice);
+    });
+  }
+
+  // Botó de reintent / activació manual de càmera
+  const retryBtn = document.getElementById('btn-retry-camera');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', async () => {
+      await startCamera('user');
+    });
+  }
+
+  // Alternar ràpidament càmera amb el botó 🔄
+  const switchBtn = document.getElementById('btn-switch-camera');
+  if (switchBtn) {
+    switchBtn.addEventListener('click', async () => {
+      const isCurrentlyFront = currentFacingMode === 'user' || currentFacingMode.toLowerCase().includes('front');
+      const nextChoice = isCurrentlyFront ? 'environment' : 'user';
+      await startCamera(nextChoice);
+    });
+  }
 
   // Modal entrada manual
   const manualModal = document.getElementById('modal-manual-entry-backdrop');
+  const customTimeInput = document.getElementById('manual-custom-time-input');
+
   document.getElementById('btn-manual-entry').addEventListener('click', () => {
     document.getElementById('manual-code-input').value = '';
     document.getElementById('select-student-quick').value = '';
+    
+    // Posar hora actual per defecte a l'input de temps
+    const nowLocal = new Date();
+    nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
+    customTimeInput.value = nowLocal.toISOString().slice(0, 16);
+    customTimeInput.style.display = 'none';
+    
+    const radioNow = document.querySelector('input[name="manual_time_option"][value="now"]');
+    if (radioNow) radioNow.checked = true;
+
     manualModal.classList.add('active');
-    setTimeout(() => document.getElementById('manual-code-input').focus(), 150);
   });
 
   document.getElementById('btn-close-manual-modal').addEventListener('click', () => {
     manualModal.classList.remove('active');
   });
-  document.getElementById('btn-cancel-manual').addEventListener('click', () => {
-    manualModal.classList.remove('active');
+
+  // Alternar opció d'hora actual o manual
+  document.querySelectorAll('input[name="manual_time_option"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') {
+        customTimeInput.style.display = 'block';
+      } else {
+        customTimeInput.style.display = 'none';
+      }
+    });
   });
 
-  // Si selecciona alumne del desplegable, omple el camp
   document.getElementById('select-student-quick').addEventListener('change', (e) => {
     if (e.target.value) {
       document.getElementById('manual-code-input').value = e.target.value;
     }
   });
 
-  // Submit entrada manual
-  document.getElementById('form-manual-code').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const code = document.getElementById('manual-code-input').value.trim();
-    if (!code) return;
-    manualModal.classList.remove('active');
-    await processCheckInOut(code);
+  // Botons d'acció del formulari manual (Entrada, Sortida o Automàtic)
+  document.querySelectorAll('.btn-manual-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const studentSelect = document.getElementById('select-student-quick');
+      const manualInput = document.getElementById('manual-code-input');
+      const code = (studentSelect.value || manualInput.value).trim();
+
+      if (!code) {
+        alert('Si us plau, selecciona un alumne o escriu el seu codi.');
+        return;
+      }
+
+      const action = btn.dataset.action; // 'entrada', 'sortida' o 'auto'
+      const timeOption = document.querySelector('input[name="manual_time_option"]:checked')?.value || 'now';
+      let customTime = null;
+      if (timeOption === 'custom' && customTimeInput.value) {
+        customTime = new Date(customTimeInput.value).toISOString();
+      }
+
+      manualModal.classList.remove('active');
+      await processCheckInOut(code, { action, customTime, tipus: 'manual' });
+    });
   });
 }
 

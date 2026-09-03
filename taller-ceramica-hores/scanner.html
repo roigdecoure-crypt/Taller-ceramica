@@ -23,12 +23,16 @@
         <p>Apropa el teu carnet QR per entrar o sortir</p>
       </div>
     </div>
-    <div style="display: flex; gap: 8px;">
-      <button class="btn btn-outline btn-sm" id="btn-switch-camera" style="border-color:#4A4440; color:#FFF;" title="Canviar càmera (frontal/posterior)">
-        🔄 Càmera
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <select id="select-camera-device" class="form-control" style="background:#2E2825; color:#FFF; border-color:#554F4B; font-size:12px; padding:6px 8px; max-width:150px;">
+        <option value="user">🤳 Frontal</option>
+        <option value="environment">📷 Darrere</option>
+      </select>
+      <button class="btn btn-outline btn-sm" id="btn-switch-camera" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Canviar càmera">
+        🔄
       </button>
-      <a href="admin.html" class="btn btn-outline btn-sm" style="border-color:#4A4440; color:#FFF;" title="Panell d'administració">
-        ⚙️ Admin
+      <a href="admin.html" class="btn btn-outline btn-sm" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Panell d'administració">
+        ⚙️
       </a>
     </div>
   </header>
@@ -43,9 +47,21 @@
     </div>
 
     <!-- Indicador d'estat a la part superior del visor -->
-    <div style="position: absolute; top: 16px; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 99px; font-size: 13px; z-index: 5; display: flex; align-items: center; gap: 8px;">
+    <div style="position: absolute; top: 16px; background: rgba(0,0,0,0.7); padding: 6px 14px; border-radius: 99px; font-size: 13px; z-index: 5; display: flex; align-items: center; gap: 8px;">
       <span class="live-pulse"></span>
-      <span id="camera-status-text">Càmera activa &bull; Enfoca el codi QR</span>
+      <span id="camera-status-text">Iniciant càmera frontal...</span>
+    </div>
+
+    <!-- Panell d'activació si la càmera no s'inicia sola -->
+    <div id="camera-error-container" style="display:none; position:absolute; z-index:25; text-align:center; padding:24px 20px; max-width:320px; background:rgba(30,26,24,0.95); border-radius:16px; border:2px solid #C25E3A; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+      <div style="font-size:40px; margin-bottom:10px;">🤳</div>
+      <h3 style="font-size:16px; font-weight:700; color:#FFF; margin-bottom:8px;">Activar Càmera Frontal</h3>
+      <p id="camera-error-message" style="font-size:13px; color:#D3CBC4; margin-bottom:16px;">
+        Fes clic al botó inferior per concedir permís o activar la càmera frontal.
+      </p>
+      <button class="btn btn-primary btn-block" id="btn-retry-camera">
+        👉 Activar Càmera Ara
+      </button>
     </div>
   </main>
 
@@ -91,32 +107,53 @@
     </div>
   </div>
 
-  <!-- MODAL D'ENTRADA MANUAL / TECLAT -->
+  <!-- MODAL D'ENTRADA / SORTIDA MANUAL -->
   <div class="modal-backdrop" id="modal-manual-entry-backdrop">
-    <div class="modal-dialog" style="max-width: 380px;">
+    <div class="modal-dialog" style="max-width: 420px;">
       <div class="modal-header">
-        <h3>Entrada Manual d'Alumne</h3>
+        <h3>⏱️ Entrada / Sortida Manual</h3>
         <button class="modal-close" id="btn-close-manual-modal">&times;</button>
       </div>
       <form id="form-manual-code">
         <div class="form-group">
-          <label>Codi d'Identificació o PIN</label>
-          <input type="text" id="manual-code-input" class="form-control" placeholder="ex: TC-101 o 101" autofocus style="font-size: 20px; text-align: center; letter-spacing: 2px; text-transform: uppercase;">
-        </div>
-
-        <div style="font-size: 13px; color: var(--color-muted); text-align: center; margin-bottom: 12px;">
-          O cerca directament l'alumne a la llista:
+          <label>1. Selecciona o cerca l'alumne:</label>
+          <select id="select-student-quick" class="form-control" style="font-size: 15px; margin-bottom: 8px;">
+            <option value="">-- Tria un alumne de la llista --</option>
+          </select>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: var(--color-muted);">O escriu el codi/PIN:</span>
+            <input type="text" id="manual-code-input" class="form-control" placeholder="ex: TC-101" style="font-size: 14px; text-transform: uppercase;">
+          </div>
         </div>
 
         <div class="form-group">
-          <select id="select-student-quick" class="form-control">
-            <option value="">-- Selecciona un alumne --</option>
-          </select>
+          <label>2. Hora del registre:</label>
+          <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="manual_time_option" value="now" checked>
+              <span>⏰ Ara mateix</span>
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="manual_time_option" value="custom">
+              <span>✏️ Indicar una altra hora</span>
+            </label>
+          </div>
+          <input type="datetime-local" id="manual-custom-time-input" class="form-control" style="display: none;">
         </div>
 
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" id="btn-cancel-manual" style="flex:1;">Cancel·lar</button>
-          <button type="submit" class="btn btn-primary" style="flex:1;">Registrar</button>
+        <div style="margin-top: 20px;">
+          <label style="margin-bottom: 8px; display: block;">3. Què vols registrar?</label>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-success btn-block btn-manual-action" data-action="entrada" style="padding: 12px 8px;">
+              🟢 Marcar ENTRADA
+            </button>
+            <button type="button" class="btn btn-primary btn-block btn-manual-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
+              🔴 Marcar SORTIDA
+            </button>
+          </div>
+          <button type="button" class="btn btn-outline btn-block btn-manual-action" data-action="auto" style="margin-top: 8px; font-size: 12px;">
+            ⚡ Detecció Automàtica
+          </button>
         </div>
       </form>
     </div>

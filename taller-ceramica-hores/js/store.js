@@ -199,13 +199,20 @@ const Store = {
 
   /* ====================== CHECK-IN / CHECK-OUT (QR & MANUAL) ====================== */
 
-  async checkInOrOut(code) {
+  async checkInOrOut(code, options = {}) {
+    const payload = {
+      code: code,
+      action: options.action || 'auto',
+      customTime: options.customTime || null,
+      tipus: options.tipus || (options.action ? 'manual' : 'qr')
+    };
+
     if (this.mode === 'api') {
       try {
         const res = await fetch(`${this.apiBase}/api/checkin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: code })
+          body: JSON.stringify(payload)
         });
         const json = await res.json();
         if (json.ok) return json;
@@ -230,15 +237,25 @@ const Store = {
       throw new Error(`No s'ha trobat cap alumne amb el codi "${code}"`);
     }
 
-    const now = new Date();
+    const now = payload.customTime ? new Date(payload.customTime) : new Date();
     const nowIso = now.toISOString();
-    const today = now.toISOString().slice(0, 10);
+    const today = nowIso.slice(0, 10);
+    const requestedAction = payload.action;
 
     // Buscar sessió oberta
     const openIdx = (data.sessions || []).findIndex(s => s.student_id === student.id && s.estat === 'oberta');
+    const hasOpenSession = openIdx !== -1;
 
-    if (openIdx === -1) {
+    const shouldCheckin = (requestedAction === 'entrada') || (requestedAction === 'auto' && !hasOpenSession);
+    const shouldCheckout = (requestedAction === 'sortida') || (requestedAction === 'auto' && hasOpenSession);
+
+    if (shouldCheckin) {
       // ENTRADA (Check-in)
+      if (hasOpenSession) {
+        data.sessions[openIdx].estat = 'tancada_forçada';
+        data.sessions[openIdx].notes = 'Reemplaçada per nova entrada manual';
+      }
+
       const newSession = {
         id: `SES-${Date.now()}-${student.id}`,
         student_id: student.id,
@@ -247,7 +264,7 @@ const Store = {
         sortida: null,
         durada_segons: 0,
         format_hms: '00:00:00',
-        tipus: 'qr',
+        tipus: payload.tipus,
         estat: 'oberta',
         notes: ''
       };
@@ -262,10 +279,14 @@ const Store = {
         horaEntrada: TimeUtils.formatTime(now),
         dataEntrada: TimeUtils.formatDate(now),
         balanc: balanc,
-        message: `Benvingut/da ${student.nom}! Entrada registrada a les ${TimeUtils.formatTime(now)}.`
+        message: `Entrada registrada per a ${student.nom} a les ${TimeUtils.formatTime(now)} (${payload.tipus.toUpperCase()}).`
       };
-    } else {
+    } else if (shouldCheckout) {
       // SORTIDA (Check-out)
+      if (!hasOpenSession) {
+        throw new Error(`${student.nom} no té cap sessió oberta. Utilitza 'Sessió Manual' per registrar un dia passat.`);
+      }
+
       const openSess = data.sessions[openIdx];
       const startDt = new Date(openSess.entrada);
       const durSec = Math.max(0, Math.floor((now.getTime() - startDt.getTime()) / 1000));
@@ -275,6 +296,7 @@ const Store = {
       openSess.durada_segons = durSec;
       openSess.format_hms = durHms;
       openSess.estat = 'tancada';
+      openSess.tipus = payload.tipus;
       this._saveLocalData(data);
 
       const balanc = TimeUtils.calculateStudentBalance(student.id, data.paquets || [], data.sessions);
@@ -287,8 +309,7 @@ const Store = {
         duradaSegons: durSec,
         duradaHms: durHms,
         balanc: balanc,
-        message: `Fins aviat ${student.nom}! Has estat ${durHms}. Saldo disponible: ${balanc.formatBalance}.`
-      };
+        message: `Sortida registrada per a ${student.nom} a les ${TimeUtils.formatTime(now)}. Temps: ${duradaHms}. Saldo disponible: ${balanc.formatBalance}.`
     }
   },
 

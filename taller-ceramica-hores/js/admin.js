@@ -178,8 +178,11 @@ function renderStudentsTable(students) {
         <button class="btn btn-outline btn-sm btn-action-carnet" data-id="${s.id}" title="Veure carnet amb QR">
           💳 Carnet
         </button>
-        <button class="btn btn-primary btn-sm btn-action-toggle-sessio" data-id="${s.id}" title="Iniciar o finalitzar sessió">
-          ${isActiu ? 'Sortida' : 'Entrada'}
+        <button class="btn ${isActiu ? 'btn-primary' : 'btn-success'} btn-sm btn-action-toggle-sessio" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="${isActiu ? 'Registrar sortida ara mateix' : 'Registrar entrada ara mateix'}">
+          ${isActiu ? '🔴 Sortida' : '🟢 Entrada'}
+        </button>
+        <button class="btn btn-outline btn-sm btn-action-open-manual-time" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="Ajustar hora d'entrada o sortida">
+          ⏱️
         </button>
       </td>
     `;
@@ -308,6 +311,44 @@ async function showStudentBadgeModal(studentId) {
   document.getElementById('modal-carnet-backdrop').classList.add('active');
 }
 
+// Obrir modal de registre manual (Admin)
+async function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAction = null) {
+  const modal = document.getElementById('modal-admin-manual-backdrop');
+  const select = document.getElementById('admin-manual-student-select');
+  const customTimeInput = document.getElementById('admin-manual-custom-time');
+
+  try {
+    const students = await Store.getAlumnes();
+    const activeSessions = await Store.getActiveSessions();
+    const activeIds = new Set(activeSessions.map(s => s.student_id));
+
+    select.innerHTML = '<option value="">-- Selecciona un alumne --</option>';
+    students.forEach(s => {
+      const isInside = activeIds.has(s.id);
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '🟢 [Al taller]' : '⚪ [Fora]'}`;
+      if (preselectedStudentId && preselectedStudentId === s.id) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('Error llistant alumnes al modal:', err);
+  }
+
+  // Reset hora a ara mateix
+  const nowLocal = new Date();
+  nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
+  customTimeInput.value = nowLocal.toISOString().slice(0, 16);
+  customTimeInput.style.display = 'none';
+
+  const radioNow = document.querySelector('input[name="admin_manual_time_opt"][value="now"]');
+  if (radioNow) radioNow.checked = true;
+
+  modal.classList.add('active');
+}
+
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {
   // Cerca d'alumnes en temps real
@@ -363,8 +404,9 @@ function setupEventListeners() {
     // Entrada/Sortida ràpida des de la taula
     if (target.classList.contains('btn-action-toggle-sessio')) {
       const studentId = target.dataset.id;
+      const action = target.dataset.action || 'auto';
       try {
-        const res = await Store.checkInOrOut(studentId);
+        const res = await Store.checkInOrOut(studentId, { action, tipus: 'manual' });
         if (res.action === 'entrada') SoundEngine.playCheckin();
         else SoundEngine.playCheckout();
         showToast(res.message, 'success');
@@ -375,6 +417,13 @@ function setupEventListeners() {
       } catch (err) {
         showToast(err.message, 'error');
       }
+    }
+
+    // Obrir modal de temps manual per a aquest alumne concret
+    if (target.classList.contains('btn-action-open-manual-time')) {
+      const studentId = target.dataset.id;
+      const action = target.dataset.action;
+      openAdminManualCheckinModal(studentId, action);
     }
 
     // Obrir modal "Tancar cicle oblidat"
@@ -419,19 +468,19 @@ function setupEventListeners() {
     if (currentViewingStudent) showStudentBadgeModal(currentViewingStudent.alumne.id);
   });
 
-  document.getElementById('drawer-btn-quick-checkin').addEventListener('click', async () => {
-    if (!currentViewingStudent) return;
-    try {
-      const res = await Store.checkInOrOut(currentViewingStudent.alumne.id);
-      if (res.action === 'entrada') SoundEngine.playCheckin();
-      else SoundEngine.playCheckout();
-      showToast(res.message, 'success');
-      await refreshStudentsList();
-      openStudentDrawer(currentViewingStudent.alumne.id);
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  });
+  const btnCheckin = document.getElementById('drawer-btn-checkin');
+  if (btnCheckin) {
+    btnCheckin.addEventListener('click', () => {
+      if (currentViewingStudent) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'entrada');
+    });
+  }
+
+  const btnCheckout = document.getElementById('drawer-btn-checkout');
+  if (btnCheckout) {
+    btnCheckout.addEventListener('click', () => {
+      if (currentViewingStudent) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'sortida');
+    });
+  }
 
   document.getElementById('drawer-btn-add-hours').addEventListener('click', () => {
     if (!currentViewingStudent) return;
@@ -491,6 +540,62 @@ function setupEventListeners() {
     document.getElementById('form-alumne').reset();
     document.getElementById('alumne-form-id').value = '';
     document.getElementById('modal-alumne-backdrop').classList.add('active');
+  });
+
+  // Modal Entrada / Sortida Manual (Admin)
+  const btnAdminManual = document.getElementById('btn-admin-manual-checkin');
+  if (btnAdminManual) {
+    btnAdminManual.addEventListener('click', () => {
+      openAdminManualCheckinModal();
+    });
+  }
+
+  // Alternar hora manual al formulari admin
+  document.querySelectorAll('input[name="admin_manual_time_opt"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const customInput = document.getElementById('admin-manual-custom-time');
+      if (e.target.value === 'custom') {
+        customInput.style.display = 'block';
+      } else {
+        customInput.style.display = 'none';
+      }
+    });
+  });
+
+  // Botons d'acció manual a l'admin (Entrada o Sortida)
+  document.querySelectorAll('.btn-admin-action').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const select = document.getElementById('admin-manual-student-select');
+      const studentId = select.value;
+      if (!studentId) {
+        alert('Si us plau, selecciona un alumne.');
+        return;
+      }
+
+      const action = btn.dataset.action; // 'entrada' o 'sortida'
+      const timeOpt = document.querySelector('input[name="admin_manual_time_opt"]:checked')?.value || 'now';
+      let customTime = null;
+      if (timeOpt === 'custom') {
+        const customInput = document.getElementById('admin-manual-custom-time');
+        if (customInput.value) {
+          customTime = new Date(customInput.value).toISOString();
+        }
+      }
+
+      try {
+        const res = await Store.checkInOrOut(studentId, { action, customTime, tipus: 'manual' });
+        if (res.action === 'entrada') SoundEngine.playCheckin();
+        else SoundEngine.playCheckout();
+        showToast(res.message, 'success');
+        document.getElementById('modal-admin-manual-backdrop').classList.remove('active');
+        await refreshStudentsList();
+        if (currentViewingStudent && currentViewingStudent.alumne.id === studentId) {
+          openStudentDrawer(studentId);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
   });
 
   // Formulari Alumne Submit

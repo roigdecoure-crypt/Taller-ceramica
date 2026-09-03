@@ -414,7 +414,18 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         return
 
                     student_id = student['id']
-                    now = datetime.now()
+                    requested_action = (data.get('action') or 'auto').lower()
+                    custom_time = data.get('customTime')
+                    tipus = data.get('tipus') or ('manual' if requested_action in ('entrada', 'sortida') else 'qr')
+
+                    if custom_time:
+                        try:
+                            now = datetime.fromisoformat(custom_time)
+                        except Exception:
+                            now = datetime.now()
+                    else:
+                        now = datetime.now()
+
                     now_iso = now.isoformat()
                     today = now.strftime('%Y-%m-%d')
 
@@ -426,13 +437,21 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ''', (student_id,))
                     open_session = row_to_dict(cursor.fetchone())
 
-                    if not open_session:
+                    # Decidir l'acció: si requested_action és 'auto', depèn de si té sessió oberta
+                    should_checkin = (requested_action == 'entrada') or (requested_action == 'auto' and not open_session)
+                    should_checkout = (requested_action == 'sortida') or (requested_action == 'auto' and open_session)
+
+                    if should_checkin:
                         # INICIAR ENTRADA (Check-in)
+                        # Si ja en tenia una d'oberta i forcem nova entrada, tanquem la prèvia per seguretat
+                        if open_session:
+                            cursor.execute('UPDATE sessions SET estat = "tancada_forçada", notes = "Reemplaçada per nova entrada manual" WHERE id = ?', (open_session['id'],))
+
                         session_id = f"SES-{datetime.now().strftime('%Y%m%d%H%M%S')}-{student_id}"
                         cursor.execute('''
                             INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
-                            VALUES (?, ?, ?, ?, NULL, 0, '00:00:00', 'qr', 'oberta', '')
-                        ''', (session_id, student_id, today, now_iso))
+                            VALUES (?, ?, ?, ?, NULL, 0, '00:00:00', ?, 'oberta', '')
+                        ''', (session_id, student_id, today, now_iso, tipus))
                         conn.commit()
 
                         balanc = get_student_balance(student_id)
@@ -443,11 +462,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'horaEntrada': now.strftime('%H:%M:%S'),
                             'dataEntrada': now.strftime('%d/%m/%Y'),
                             'balanc': balanc,
-                            'message': f"Benvingut/da {student['nom']}! Entrada registrada a les {now.strftime('%H:%M:%S')}."
+                            'message': f"Entrada registrada per a {student['nom']} a les {now.strftime('%H:%M:%S')} ({tipus.upper()})."
                         })
                         return
-                    else:
+
+                    elif should_checkout:
                         # REGISTRAR SORTIDA (Check-out)
+                        if not open_session:
+                            self.send_json({
+                                'ok': False,
+                                'error': f"{student['nom']} no té cap entrada activa registrada. Per registrar una classe passada utilitza 'Sessió Manual'."
+                            }, 400)
+                            return
+
                         entrada_dt = datetime.fromisoformat(open_session['entrada'])
                         diff = now - entrada_dt
                         durada_segons = max(0, int(diff.total_seconds()))
@@ -455,9 +482,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                         cursor.execute('''
                             UPDATE sessions 
-                            SET sortida = ?, durada_segons = ?, format_hms = ?, estat = 'tancada'
+                            SET sortida = ?, durada_segons = ?, format_hms = ?, estat = 'tancada', tipus = ?
                             WHERE id = ?
-                        ''', (now_iso, durada_segons, durada_hms, open_session['id']))
+                        ''', (now_iso, durada_segons, durada_hms, tipus, open_session['id']))
                         conn.commit()
 
                         balanc = get_student_balance(student_id)
@@ -470,7 +497,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'duradaSegons': durada_segons,
                             'duradaHms': durada_hms,
                             'balanc': balanc,
-                            'message': f"Fins aviat {student['nom']}! Has estat {durada_hms}. Saldo disponible: {balanc['formatBalance']}."
+                            'message': f"Sortida registrada per a {student['nom']} a les {now.strftime('%H:%M:%S')}. Temps: {durada_hms}. Nou saldo: {balanc['formatBalance']}."
                         })
                         return
 
