@@ -491,11 +491,11 @@
   </div>
 
   <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
-  <div class="modal-backdrop" id="modal-admin-manual-backdrop">
+  <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog" style="max-width: 440px;">
       <div class="modal-header">
         <h3>⏱️ Marcar Entrada o Sortida Manual</h3>
-        <button class="modal-close" data-close="modal-admin-manual-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop">&times;</button>
       </div>
       <form id="form-admin-manual-checkin">
         <div class="form-group">
@@ -509,11 +509,11 @@
           <label>Hora del registre</label>
           <div style="display: flex; gap: 14px; margin-bottom: 8px;">
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="radio" name="admin_manual_time_opt" value="now" checked>
+              <input type="radio" name="admin_manual_time_opt" value="now" checked onchange="document.getElementById('admin-manual-custom-time').style.display='none';">
               <span>⏰ Ara mateix</span>
             </label>
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="radio" name="admin_manual_time_opt" value="custom">
+              <input type="radio" name="admin_manual_time_opt" value="custom" onchange="document.getElementById('admin-manual-custom-time').style.display='block';">
               <span>✏️ Hora personalitzada</span>
             </label>
           </div>
@@ -530,7 +530,7 @@
               🔴 Registrar SORTIDA
             </button>
           </div>
-          <button type="button" class="btn btn-outline btn-block" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
+          <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
             Cancel·lar
           </button>
         </div>

@@ -8,11 +8,16 @@ let liveTimerInterval = null;
 
 // Inicialització
 document.addEventListener('DOMContentLoaded', async () => {
-  await Store.init();
-  await loadConfig();
-  await refreshStudentsList();
   setupEventListeners();
   startLiveClock();
+
+  try {
+    await Store.init();
+    await loadConfig();
+    await refreshStudentsList();
+  } catch (err) {
+    console.error('Error inicialitzant panell d\'administració:', err);
+  }
 });
 
 function showToast(message, type = 'info') {
@@ -312,7 +317,7 @@ async function showStudentBadgeModal(studentId) {
 }
 
 // Obrir modal de registre manual (Admin)
-function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAction = null) {
+async function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAction = null) {
   const modal = document.getElementById('modal-admin-manual-backdrop');
   if (!modal) return;
 
@@ -322,10 +327,10 @@ function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAct
   const select = document.getElementById('admin-manual-student-select');
   const customTimeInput = document.getElementById('admin-manual-custom-time');
 
-  if (select) {
+  const fillSelect = (list) => {
+    if (!select) return;
     select.innerHTML = '<option value="">-- Selecciona un alumne --</option>';
-    const list = (allStudents && allStudents.length > 0) ? allStudents : [];
-    list.forEach(s => {
+    (list || []).forEach(s => {
       const isInside = s.sessioActiva && s.sessioActiva.estat === 'oberta';
       const opt = document.createElement('option');
       opt.value = s.id;
@@ -335,6 +340,19 @@ function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAct
       }
       select.appendChild(opt);
     });
+  };
+
+  if (allStudents && allStudents.length > 0) {
+    fillSelect(allStudents);
+  } else {
+    try {
+      allStudents = await Store.getAlumnes();
+      fillSelect(allStudents);
+      renderActiveStudentsBanner(allStudents);
+      renderStudentsTable(allStudents);
+    } catch (e) {
+      console.warn('Error omplint select:', e);
+    }
   }
 
   // Reset hora a ara mateix
