@@ -312,19 +312,21 @@ async function showStudentBadgeModal(studentId) {
 }
 
 // Obrir modal de registre manual (Admin)
-async function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAction = null) {
+function openAdminManualCheckinModal(preselectedStudentId = null, preselectedAction = null) {
   const modal = document.getElementById('modal-admin-manual-backdrop');
+  if (!modal) return;
+
+  // Obrir el modal immediatament
+  modal.classList.add('active');
+
   const select = document.getElementById('admin-manual-student-select');
   const customTimeInput = document.getElementById('admin-manual-custom-time');
 
-  try {
-    const students = await Store.getAlumnes();
-    const activeSessions = await Store.getActiveSessions();
-    const activeIds = new Set(activeSessions.map(s => s.student_id));
-
+  if (select) {
     select.innerHTML = '<option value="">-- Selecciona un alumne --</option>';
-    students.forEach(s => {
-      const isInside = activeIds.has(s.id);
+    const list = (allStudents && allStudents.length > 0) ? allStudents : [];
+    list.forEach(s => {
+      const isInside = s.sessioActiva && s.sessioActiva.estat === 'oberta';
       const opt = document.createElement('option');
       opt.value = s.id;
       opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '🟢 [Al taller]' : '⚪ [Fora]'}`;
@@ -333,21 +335,21 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
       }
       select.appendChild(opt);
     });
-  } catch (err) {
-    console.warn('Error llistant alumnes al modal:', err);
   }
 
   // Reset hora a ara mateix
-  const nowLocal = new Date();
-  nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-  customTimeInput.value = nowLocal.toISOString().slice(0, 16);
-  customTimeInput.style.display = 'none';
+  if (customTimeInput) {
+    const nowLocal = new Date();
+    nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
+    customTimeInput.value = nowLocal.toISOString().slice(0, 16);
+    customTimeInput.style.display = 'none';
+  }
 
   const radioNow = document.querySelector('input[name="admin_manual_time_opt"][value="now"]');
   if (radioNow) radioNow.checked = true;
-
-  modal.classList.add('active');
 }
+
+window.openAdminManualCheckinModal = openAdminManualCheckinModal;
 
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {

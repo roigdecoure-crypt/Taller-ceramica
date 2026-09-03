@@ -25,7 +25,7 @@
       <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
         📷 Escàner QR
       </a>
-      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
+      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
         ⏱️ Entrada / Sortida Manual
       </button>
       <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
@@ -530,6 +530,9 @@
               🔴 Registrar SORTIDA
             </button>
           </div>
+          <button type="button" class="btn btn-outline btn-block" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
+            Cancel·lar
+          </button>
         </div>
       </form>
     </div>
@@ -542,7 +545,7 @@
         <h3>Gestió de Dades i Còpies de Seguretat</h3>
         <button class="modal-close" data-close="modal-backup-backdrop">&times;</button>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div style="flex-direction: column; display: flex; gap: 18px;">
         <div class="card" style="padding: 16px;">
           <h4>💾 Còpia de Seguretat Completa (JSON)</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
@@ -578,10 +581,10 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js"></script>
-  <script src="js/sound.js"></script>
-  <script src="js/qr-engine.js"></script>
-  <script src="js/store.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="js/time-utils.js?v=2.2"></script>
+  <script src="js/sound.js?v=2.2"></script>
+  <script src="js/qr-engine.js?v=2.2"></script>
+  <script src="js/store.js?v=2.2"></script>
+  <script src="js/admin.js?v=2.2"></script>
 </body>
 </html>
