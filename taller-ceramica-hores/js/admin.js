@@ -13,11 +13,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     await Store.init();
-    await loadConfig();
-    await refreshStudentsList();
   } catch (err) {
-    console.error('Error inicialitzant panell d\'administració:', err);
+    console.warn('Store.init warning:', err);
   }
+
+  loadConfig();
+  await refreshStudentsList();
 });
 
 function showToast(message, type = 'info') {

@@ -320,6 +320,7 @@ const Store = {
         duradaHms: durHms,
         balanc: balanc,
         message: `Sortida registrada per a ${student.nom} a les ${TimeUtils.formatTime(now)}. Temps: ${duradaHms}. Saldo disponible: ${balanc.formatBalance}.`
+      };
     }
   },
 
