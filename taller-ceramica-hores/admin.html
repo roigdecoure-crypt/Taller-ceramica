@@ -67,9 +67,12 @@
           <span>🔍</span>
           <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Sincronitzar ara amb Google Sheets">
-            📊 Sincronitzar amb Google Sheets
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
+            🔄 Hidratar des de Sheets
+          </button>
+          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
+            📊 Sincronitzar amb Sheets
           </button>
         </div>
       </div>
@@ -485,6 +488,14 @@
           <label>URL Web App de Google Apps Script</label>
           <input type="url" id="cfg-sheets-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
+        <div style="display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-hydrate-sheets" style="flex:1;">
+            🔄 Hidratar ara (Llegir del Full)
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-push-sheets" style="flex:1;">
+            📤 Enviar dades locals al Full
+          </button>
+        </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
           <button type="button" class="btn btn-outline" data-close="modal-config-backdrop">Tancar</button>
@@ -585,10 +596,10 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.0"></script>
-  <script src="js/sound.js?v=3.0"></script>
-  <script src="js/qr-engine.js?v=3.0"></script>
-  <script src="js/store.js?v=3.0"></script>
-  <script src="js/admin.js?v=3.0"></script>
+  <script src="js/time-utils.js?v=3.1"></script>
+  <script src="js/sound.js?v=3.1"></script>
+  <script src="js/qr-engine.js?v=3.1"></script>
+  <script src="js/store.js?v=3.1"></script>
+  <script src="js/admin.js?v=3.1"></script>
 </body>
 </html>

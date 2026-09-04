@@ -1,23 +1,28 @@
 /**
- * google_apps_script.js - Sincronització amb Google Sheets per al Taller de Ceràmica
+ * google_apps_script.js - Sincronitzacio Bidireccional i Hidratacio per al Taller de Ceramica
  * 
- * INSTRUCCIONS DE CONFIGURACIÓ:
- * 1. Obre un nou full de càlcul a https://sheets.new (anomena'l "Taller de Ceràmica - Control d'Hores").
- * 2. Al menú superior, ves a: Extensions > Apps Script.
+ * INSTRUCCIONS DE CONFIGURACIO:
+ * 1. Obre un nou full de calcul a https://sheets.new (anomena-l "Taller de Ceramica - Dades").
+ * 2. Al menu superior, ves a: Extensions > Apps Script.
  * 3. Esborra qualsevol codi que hi hagi i enganxa tot aquest contingut.
- * 4. Fes clic a: Implementar (Deploy) > Nova implementació (New deployment).
- * 5. Selecciona el tipus: Aplicació web (Web app).
+ * 4. Fes clic a: Implementar (Deploy) > Nova implementacio (New deployment).
+ * 5. Selecciona el tipus: Aplicacio web (Web app).
  * 6. Executa com a: "Jo" (El teu compte).
- * 7. Qui té accés: "Tothom" (Anyone).
- * 8. Fes clic a "Implementar" i copia l'URL que et doni (acaba en /exec).
- * 9. Enganxa aquest URL a l'apartat de Configuració del Panell d'Administració (admin.html).
+ * 7. Qui te acces: "Tothom" (Anyone).
+ * 8. Fes clic a "Implementar" i copia l-URL que et doni (acaba en /exec).
+ * 9. Posa aquest URL com a Variable d-Entorn a Render: GOOGLE_SHEETS_URL
+ *    o enganxa-l a l-apartat de Configuracio d-admin.html.
  */
 
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
-    status: "ok",
-    missatge: "Connexió activa amb Google Sheets del Taller de Ceràmica!"
-  })).setMimeType(ContentService.MimeType.JSON);
+  var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "get_all";
+  
+  if (action === "ping") {
+    return jsonResponse({ status: "ok", missatge: "Connexio activa amb Google Sheets del Taller de Ceramica!" });
+  }
+
+  // Per defecte retorna totes les dades per a la hidratacio inicial
+  return handleGetAll();
 }
 
 function doPost(e) {
@@ -30,23 +35,35 @@ function doPost(e) {
     var action = data.action;
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    if (action === "sync_all") {
+    if (action === "get_all" || action === "hydrate") {
+      return handleGetAll();
+    } else if (action === "sync_all") {
       syncAlumnes(ss, data.alumnes || []);
       syncPaquets(ss, data.paquets || []);
       syncSessions(ss, data.sessions || []);
-      return jsonResponse({ status: "success", message: "Sincronització completa realitzada amb èxit!" });
+      if (data.config) syncConfig(ss, data.config);
+      return jsonResponse({ status: "success", message: "Sincronitzacio completa realitzada amb exit!" });
     } else if (action === "sync_alumne") {
-      updateAlumneRow(ss, data.alumne);
+      upsertAlumneRow(ss, data.payload || data.alumne);
       return jsonResponse({ status: "success", message: "Alumne actualitzat a Google Sheets" });
-    } else if (action === "add_session") {
-      appendSessionRow(ss, data.session);
-      return jsonResponse({ status: "success", message: "Sessió registrada a Google Sheets" });
+    } else if (action === "checkin" || action === "add_session") {
+      upsertSessionRow(ss, data.payload || data.session);
+      return jsonResponse({ status: "success", message: "Entrada/Sessio registrada a Google Sheets" });
+    } else if (action === "checkout" || action === "update_session" || action === "force_close" || action === "manual_session") {
+      upsertSessionRow(ss, data.payload || data.session);
+      return jsonResponse({ status: "success", message: "Sessio actualitzada a Google Sheets" });
     } else if (action === "add_paquet") {
-      appendPaquetRow(ss, data.paquet);
-      return jsonResponse({ status: "success", message: "Paquet d'hores afegit a Google Sheets" });
+      appendPaquetRow(ss, data.payload || data.paquet);
+      return jsonResponse({ status: "success", message: "Paquet d-hores afegit a Google Sheets" });
+    } else if (action === "delete_session") {
+      deleteSessionRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
+      return jsonResponse({ status: "success", message: "Sessio eliminada de Google Sheets" });
+    } else if (action === "delete_paquet") {
+      deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
+      return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
     }
 
-    return jsonResponse({ status: "error", message: "Acció desconeguda: " + action });
+    return jsonResponse({ status: "error", message: "Accio desconeguda: " + action });
   } catch (err) {
     return jsonResponse({ status: "error", message: err.toString() });
   } finally {
@@ -58,14 +75,33 @@ function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function getOrCreateSheet(ss, name, headers) {
+// Llegeix totes les dades actives de les fulles per a la hidratacio
+function handleGetAll() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var alumnes = readAlumnes(ss);
+  var paquets = readPaquets(ss);
+  var sessions = readSessions(ss);
+  var config = readConfig(ss);
+
+  return jsonResponse({
+    status: "success",
+    data: {
+      alumnes: alumnes,
+      paquets: paquets,
+      sessions: sessions,
+      config: config
+    }
+  });
+}
+
+function getOrCreateSheet(ss, name, headers, color) {
   var sheet = ss.getSheetByName(name);
   if (!sheet) {
     sheet = ss.insertSheet(name);
     if (headers && headers.length > 0) {
       sheet.appendRow(headers);
       var headerRange = sheet.getRange(1, 1, 1, headers.length);
-      headerRange.setBackground("#C25E3A");
+      headerRange.setBackground(color || "#C25E3A");
       headerRange.setFontColor("#FFFFFF");
       headerRange.setFontWeight("bold");
       sheet.setFrozenRows(1);
@@ -74,15 +110,15 @@ function getOrCreateSheet(ss, name, headers) {
   return sheet;
 }
 
+/* ==================== ALUMNES ==================== */
+
+var HEADERS_ALUMNES = ["ID Alumne", "Nom", "Cognoms", "Telefon", "Email", "PIN", "Data Alta", "Notes", "Actiu"];
+
 function syncAlumnes(ss, alumnes) {
-  var headers = ["ID Alumne", "Nom", "Cognoms", "Telèfon", "Email", "PIN", "Data Alta", "Saldo H:m:s", "Estat", "Notes"];
-  var sheet = getOrCreateSheet(ss, "Alumnes", headers);
+  var sheet = getOrCreateSheet(ss, "Alumnes", HEADERS_ALUMNES, "#C25E3A");
   sheet.clearContents();
-  sheet.appendRow(headers);
-  var headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setBackground("#C25E3A");
-  headerRange.setFontColor("#FFFFFF");
-  headerRange.setFontWeight("bold");
+  sheet.appendRow(HEADERS_ALUMNES);
+  sheet.getRange(1, 1, 1, HEADERS_ALUMNES.length).setBackground("#C25E3A").setFontColor("#FFFFFF").setFontWeight("bold");
   sheet.setFrozenRows(1);
 
   if (alumnes.length > 0) {
@@ -95,121 +131,282 @@ function syncAlumnes(ss, alumnes) {
         a.email || "",
         a.pin || "",
         a.data_alta || "",
-        (a.balanc ? a.balanc.formatBalance : "00:00:00"),
-        (a.sessioActiva ? "Al Taller" : "Fora"),
-        a.notes || ""
+        a.notes || "",
+        (a.actiu === undefined || a.actiu === null ? 1 : a.actiu)
       ];
     });
-    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    sheet.getRange(2, 1, rows.length, HEADERS_ALUMNES.length).setValues(rows);
   }
 }
 
+function readAlumnes(ss) {
+  var sheet = ss.getSheetByName("Alumnes");
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  var result = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = values[i];
+    if (!r[0]) continue;
+    result.push({
+      id: String(r[0]).trim(),
+      nom: String(r[1] || "").trim(),
+      cognoms: String(r[2] || "").trim(),
+      telefon: String(r[3] || "").trim(),
+      email: String(r[4] || "").trim(),
+      pin: String(r[5] || "").trim(),
+      data_alta: String(r[6] || "").trim(),
+      notes: String(r[7] || "").trim(),
+      actiu: Number(r[8] !== "" ? r[8] : 1)
+    });
+  }
+  return result;
+}
+
+function upsertAlumneRow(ss, a) {
+  if (!a || !a.id) return;
+  var sheet = getOrCreateSheet(ss, "Alumnes", HEADERS_ALUMNES, "#C25E3A");
+  var values = sheet.getDataRange().getValues();
+  var rowIdx = -1;
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(a.id).trim()) {
+      rowIdx = i + 1;
+      break;
+    }
+  }
+
+  var rowData = [
+    a.id,
+    a.nom || "",
+    a.cognoms || "",
+    a.telefon || "",
+    a.email || "",
+    a.pin || "",
+    a.data_alta || new Date().toISOString(),
+    a.notes || "",
+    (a.actiu === undefined || a.actiu === null ? 1 : a.actiu)
+  ];
+
+  if (rowIdx !== -1) {
+    sheet.getRange(rowIdx, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+}
+
+/* ==================== COMPRES D-HORES ==================== */
+
+var HEADERS_PAQUETS = ["ID Compra", "ID Alumne", "Data Compra", "Hores", "Durada Segons", "Concepte", "Preu (EUR)", "Metode Pagament", "Notes"];
+
 function syncPaquets(ss, paquets) {
-  var headers = ["ID Compra", "ID Alumne", "Alumne", "Data Compra", "Hores", "Durada H:m:s", "Concepte", "Preu (€)", "Mètode Pagament", "Notes"];
-  var sheet = getOrCreateSheet(ss, "Compres Hores", headers);
+  var sheet = getOrCreateSheet(ss, "Compres Hores", HEADERS_PAQUETS, "#5E7E6F");
   sheet.clearContents();
-  sheet.appendRow(headers);
-  var headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setBackground("#5E7E6F");
-  headerRange.setFontColor("#FFFFFF");
-  headerRange.setFontWeight("bold");
+  sheet.appendRow(HEADERS_PAQUETS);
+  sheet.getRange(1, 1, 1, HEADERS_PAQUETS.length).setBackground("#5E7E6F").setFontColor("#FFFFFF").setFontWeight("bold");
   sheet.setFrozenRows(1);
 
   if (paquets.length > 0) {
     var rows = paquets.map(function(p) {
-      var sec = p.segons || Math.round((p.hores || 0) * 3600);
-      var h = Math.floor(sec / 3600);
-      var m = Math.floor((sec % 3600) / 60);
-      var s = sec % 60;
-      var hms = (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-      var nomComplet = (p.nom ? p.nom + " " + (p.cognoms || "") : "").trim();
-
       return [
         p.id || "",
         p.student_id || "",
-        nomComplet,
         p.data || "",
         p.hores || 0,
-        hms,
+        p.segons || Math.round((p.hores || 0) * 3600),
         p.concepte || "",
         p.preu || 0,
         p.metode_pagament || "Stripe",
         p.notes || ""
       ];
     });
-    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+    sheet.getRange(2, 1, rows.length, HEADERS_PAQUETS.length).setValues(rows);
   }
 }
 
-function syncSessions(ss, sessions) {
-  var headers = ["ID Sessió", "ID Alumne", "Alumne", "Data", "Hora Entrada", "Hora Sortida", "Durada H:m:s", "Segons", "Mètode", "Estat", "Notes"];
-  var sheet = getOrCreateSheet(ss, "Sessions i Assistència", headers);
-  sheet.clearContents();
-  sheet.appendRow(headers);
-  var headerRange = sheet.getRange(1, 1, 1, headers.length);
-  headerRange.setBackground("#3A4F66");
-  headerRange.setFontColor("#FFFFFF");
-  headerRange.setFontWeight("bold");
-  sheet.setFrozenRows(1);
+function readPaquets(ss) {
+  var sheet = ss.getSheetByName("Compres Hores");
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
 
-  if (sessions.length > 0) {
-    var rows = sessions.map(function(s) {
-      var nomComplet = (s.nom ? s.nom + " " + (s.cognoms || "") : "").trim();
-      return [
-        s.id || "",
-        s.student_id || "",
-        nomComplet,
-        s.data || "",
-        s.entrada || "",
-        s.sortida || "(En curs)",
-        s.format_hms || "00:00:00",
-        s.durada_segons || 0,
-        s.tipus || "qr",
-        s.estat || "oberta",
-        s.notes || ""
-      ];
+  var result = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = values[i];
+    if (!r[0]) continue;
+    result.push({
+      id: String(r[0]).trim(),
+      student_id: String(r[1] || "").trim(),
+      data: String(r[2] || "").trim(),
+      hores: Number(r[3] || 0),
+      segons: Number(r[4] || 0),
+      concepte: String(r[5] || "").trim(),
+      preu: Number(r[6] || 0),
+      metode_pagament: String(r[7] || "Stripe").trim(),
+      notes: String(r[8] || "").trim()
     });
-    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
   }
-}
-
-function appendSessionRow(ss, s) {
-  var headers = ["ID Sessió", "ID Alumne", "Alumne", "Data", "Hora Entrada", "Hora Sortida", "Durada H:m:s", "Segons", "Mètode", "Estat", "Notes"];
-  var sheet = getOrCreateSheet(ss, "Sessions i Assistència", headers);
-  sheet.appendRow([
-    s.id || "",
-    s.student_id || "",
-    s.nomComplet || "",
-    s.data || "",
-    s.entrada || "",
-    s.sortida || "",
-    s.format_hms || "00:00:00",
-    s.durada_segons || 0,
-    s.tipus || "qr",
-    s.estat || "tancada",
-    s.notes || ""
-  ]);
+  return result;
 }
 
 function appendPaquetRow(ss, p) {
-  var headers = ["ID Compra", "ID Alumne", "Alumne", "Data Compra", "Hores", "Durada H:m:s", "Concepte", "Preu (€)", "Mètode Pagament", "Notes"];
-  var sheet = getOrCreateSheet(ss, "Compres Hores", headers);
+  if (!p || !p.id) return;
+  var sheet = getOrCreateSheet(ss, "Compres Hores", HEADERS_PAQUETS, "#5E7E6F");
   var sec = p.segons || Math.round((p.hores || 0) * 3600);
-  var h = Math.floor(sec / 3600);
-  var m = Math.floor((sec % 3600) / 60);
-  var s = sec % 60;
-  var hms = (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
-
   sheet.appendRow([
     p.id || "",
     p.student_id || "",
-    p.nomComplet || "",
-    p.data || "",
+    p.data || new Date().toISOString(),
     p.hores || 0,
-    hms,
+    sec,
     p.concepte || "",
     p.preu || 0,
     p.metode_pagament || "Stripe",
     p.notes || ""
   ]);
+}
+
+function deletePaquetRow(ss, packId) {
+  if (!packId) return;
+  var sheet = ss.getSheetByName("Compres Hores");
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(packId).trim()) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
+/* ==================== SESSIONS I ASSISTENCIA ==================== */
+
+var HEADERS_SESSIONS = ["ID Sessio", "ID Alumne", "Data", "Hora Entrada", "Hora Sortida", "Durada Segons", "Durada H:m:s", "Metode", "Estat", "Notes"];
+
+function syncSessions(ss, sessions) {
+  var sheet = getOrCreateSheet(ss, "Sessions i Assistencia", HEADERS_SESSIONS, "#3A4F66");
+  sheet.clearContents();
+  sheet.appendRow(HEADERS_SESSIONS);
+  sheet.getRange(1, 1, 1, HEADERS_SESSIONS.length).setBackground("#3A4F66").setFontColor("#FFFFFF").setFontWeight("bold");
+  sheet.setFrozenRows(1);
+
+  if (sessions.length > 0) {
+    var rows = sessions.map(function(s) {
+      return [
+        s.id || "",
+        s.student_id || "",
+        s.data || "",
+        s.entrada || "",
+        s.sortida || "",
+        s.durada_segons || 0,
+        s.format_hms || "00:00:00",
+        s.tipus || "qr",
+        s.estat || "oberta",
+        s.notes || ""
+      ];
+    });
+    sheet.getRange(2, 1, rows.length, HEADERS_SESSIONS.length).setValues(rows);
+  }
+}
+
+function readSessions(ss) {
+  var sheet = ss.getSheetByName("Sessions i Assistencia");
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  var result = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = values[i];
+    if (!r[0]) continue;
+    result.push({
+      id: String(r[0]).trim(),
+      student_id: String(r[1] || "").trim(),
+      data: String(r[2] || "").trim(),
+      entrada: String(r[3] || "").trim(),
+      sortida: r[4] ? String(r[4]).trim() : null,
+      durada_segons: Number(r[5] || 0),
+      format_hms: String(r[6] || "00:00:00").trim(),
+      tipus: String(r[7] || "qr").trim(),
+      estat: String(r[8] || "oberta").trim(),
+      notes: String(r[9] || "").trim()
+    });
+  }
+  return result;
+}
+
+function upsertSessionRow(ss, s) {
+  if (!s || !s.id) return;
+  var sheet = getOrCreateSheet(ss, "Sessions i Assistencia", HEADERS_SESSIONS, "#3A4F66");
+  var values = sheet.getDataRange().getValues();
+  var rowIdx = -1;
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(s.id).trim()) {
+      rowIdx = i + 1;
+      break;
+    }
+  }
+
+  var rowData = [
+    s.id,
+    s.student_id || "",
+    s.data || (s.entrada ? s.entrada.slice(0, 10) : ""),
+    s.entrada || "",
+    s.sortida || "",
+    s.durada_segons || 0,
+    s.format_hms || "00:00:00",
+    s.tipus || "qr",
+    s.estat || "oberta",
+    s.notes || ""
+  ];
+
+  if (rowIdx !== -1) {
+    sheet.getRange(rowIdx, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sheet.appendRow(rowData);
+  }
+}
+
+function deleteSessionRow(ss, sessId) {
+  if (!sessId) return;
+  var sheet = ss.getSheetByName("Sessions i Assistencia");
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(sessId).trim()) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
+/* ==================== CONFIGURACIO ==================== */
+
+var HEADERS_CONFIG = ["Clau", "Valor"];
+
+function syncConfig(ss, cfg) {
+  var sheet = getOrCreateSheet(ss, "Configuracio", HEADERS_CONFIG, "#8D6E63");
+  sheet.clearContents();
+  sheet.appendRow(HEADERS_CONFIG);
+  var keys = Object.keys(cfg);
+  if (keys.length > 0) {
+    var rows = keys.map(function(k) { return [k, cfg[k] || ""]; });
+    sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+  }
+}
+
+function readConfig(ss) {
+  var sheet = ss.getSheetByName("Configuracio");
+  if (!sheet) return {};
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return {};
+
+  var result = {};
+  for (var i = 1; i < values.length; i++) {
+    var k = values[i][0];
+    if (k) result[String(k).trim()] = String(values[i][1] || "").trim();
+  }
+  return result;
 }

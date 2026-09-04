@@ -556,7 +556,64 @@ const Store = {
     return { ok: true, message: 'Configuració desada' };
   },
 
+  async getSyncStatus() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/sync/status`);
+        return await res.json();
+      } catch (e) {
+        return { ok: false };
+      }
+    }
+    const cfg = await this.getConfig();
+    return { ok: true, configured: Boolean(cfg.google_sheets_url), urlPreview: cfg.google_sheets_url ? (cfg.google_sheets_url.slice(0, 30) + '...') : '' };
+  },
+
+  async hydrateFromGoogleSheets(customUrl = null) {
+    if (this.mode === 'api') {
+      const res = await fetch(`${this.apiBase}/api/sync/hydrate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: customUrl })
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Error en la hidratació');
+      return json;
+    }
+
+    // Mode Local / Offline
+    const cfg = await this.getConfig();
+    const url = customUrl || cfg.google_sheets_url;
+    if (!url) throw new Error('Cal configurar un URL de Google Sheets.');
+
+    const res = await fetch(`${url}${url.includes('?') ? '&' : '?'}action=get_all`);
+    const json = await res.json();
+    if (json.status !== 'success' || !json.data) throw new Error('Resposta no vàlida de Google Sheets');
+
+    const d = this._getLocalData();
+    if (json.data.alumnes) d.alumnes = json.data.alumnes;
+    if (json.data.paquets) d.paquets = json.data.paquets;
+    if (json.data.sessions) d.sessions = json.data.sessions;
+    if (json.data.config) d.config = { ...d.config, ...json.data.config };
+    this._saveLocalData(d);
+    return { ok: true, message: 'Dades hidratades correctament al navegador.' };
+  },
+
   async syncToGoogleSheets(customUrl = null) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/sync/all`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: customUrl })
+        });
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        console.warn('Error sincronitzant via API, provant connexió directa...');
+      }
+    }
+
     const config = await this.getConfig();
     const url = customUrl || config.google_sheets_url;
     if (!url) {
@@ -574,13 +631,14 @@ const Store = {
       timestamp: new Date().toISOString(),
       alumnes: alumnes,
       paquets: paquets,
-      sessions: sessions
+      sessions: sessions,
+      config: config
     };
 
     // Petició POST a l'aplicació web de Google Apps Script
-    const res = await fetch(url, {
+    await fetch(url, {
       method: 'POST',
-      mode: 'no-cors', // Apps Script web apps funcionen amb no-cors o redireccions
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });

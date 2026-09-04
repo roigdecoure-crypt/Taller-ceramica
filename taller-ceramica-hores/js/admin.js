@@ -794,6 +794,40 @@ function setupEventListeners() {
     }
   });
 
+  // Botons d'hidratació (llegir i bolcar del full)
+  const handleHydrateAction = async () => {
+    try {
+      showToast('⏳ Connectant amb Google Sheets i descarregant dades...', 'info');
+      const res = await Store.hydrateFromGoogleSheets();
+      showToast(res.message || 'Hidratació completada amb èxit!', 'success');
+      await refreshStudentsList();
+    } catch (err) {
+      showToast('⚠️ Error en la hidratació: ' + err.message, 'error');
+      if (err.message.includes('URL') || err.message.includes('configurat')) {
+        document.getElementById('btn-configuracio').click();
+      }
+    }
+  };
+
+  const btnHydrate = document.getElementById('btn-hydrate-sheets');
+  if (btnHydrate) btnHydrate.addEventListener('click', handleHydrateAction);
+
+  const btnCfgHydrate = document.getElementById('btn-cfg-hydrate-sheets');
+  if (btnCfgHydrate) btnCfgHydrate.addEventListener('click', handleHydrateAction);
+
+  const btnCfgPush = document.getElementById('btn-cfg-push-sheets');
+  if (btnCfgPush) {
+    btnCfgPush.addEventListener('click', async () => {
+      try {
+        showToast('Enviant dades locals cap a Google Sheets...', 'info');
+        const res = await Store.syncToGoogleSheets();
+        showToast(res.message || 'Dades enviades amb èxit!', 'success');
+      } catch (err) {
+        showToast('Error enviant dades: ' + err.message, 'error');
+      }
+    });
+  }
+
   // Modal Backup & Export
   document.getElementById('btn-exportar').addEventListener('click', () => {
     document.getElementById('modal-backup-backdrop').classList.add('active');

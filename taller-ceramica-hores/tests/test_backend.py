@@ -176,5 +176,89 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
         self.conn.commit()
 
+    def test_06_hydration_logic(self):
+        from unittest.mock import patch, MagicMock
+        import io
+
+        mock_payload = {
+            "status": "success",
+            "data": {
+                "alumnes": [
+                    {
+                        "id": "TC-HYD-1",
+                        "nom": "Aina",
+                        "cognoms": "Serra",
+                        "telefon": "644111222",
+                        "email": "aina@taller.cat",
+                        "pin": "2001",
+                        "data_alta": "2026-09-01T10:00:00",
+                        "notes": "Alumna hidratada",
+                        "actiu": 1
+                    }
+                ],
+                "paquets": [
+                    {
+                        "id": "PK-HYD-1",
+                        "student_id": "TC-HYD-1",
+                        "data": "2026-09-01T10:05:00",
+                        "hores": 15.0,
+                        "segons": 54000,
+                        "concepte": "Pack 15h Hidratat",
+                        "preu": 180.0,
+                        "metode_pagament": "Stripe",
+                        "notes": ""
+                    }
+                ],
+                "sessions": [
+                    {
+                        "id": "SES-HYD-1",
+                        "student_id": "TC-HYD-1",
+                        "data": "2026-09-02",
+                        "entrada": "2026-09-02T10:00:00",
+                        "sortida": "2026-09-02T12:00:00",
+                        "durada_segons": 7200,
+                        "format_hms": "02:00:00",
+                        "tipus": "qr",
+                        "estat": "tancada",
+                        "notes": "Classe completada"
+                    }
+                ],
+                "config": {
+                    "taller_nom": "Taller Ceràmica Test Hidratat"
+                }
+            }
+        }
+
+        mock_resp = MagicMock()
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.read.return_value = json.dumps(mock_payload).encode('utf-8')
+
+        with patch('urllib.request.OpenerDirector.open', return_value=mock_resp):
+            res = server.hydrate_from_google_sheets("https://script.google.com/macros/s/mock/exec")
+            self.assertTrue(res['ok'])
+            self.assertEqual(res['counts']['alumnes'], 1)
+            self.assertEqual(res['counts']['paquets'], 1)
+            self.assertEqual(res['counts']['sessions'], 1)
+
+        # Comprovar que s'han desat a SQLite
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM alumnes WHERE id = 'TC-HYD-1'")
+        st = server.row_to_dict(c.fetchone())
+        self.assertIsNotNone(st)
+        self.assertEqual(st['nom'], "Aina")
+
+        # Comprovar càlcul de saldo hidratat (15h - 2h = 13h = 46800s)
+        bal = server.get_student_balance("TC-HYD-1")
+        self.assertEqual(bal['totalBoughtSeconds'], 54000)
+        self.assertEqual(bal['totalSpentSeconds'], 7200)
+        self.assertEqual(bal['balanceSeconds'], 46800)
+        self.assertEqual(bal['formatBalance'], "13:00:00")
+
+        # Neteja
+        c.execute("DELETE FROM sessions WHERE student_id = 'TC-HYD-1'")
+        c.execute("DELETE FROM paquets_hores WHERE student_id = 'TC-HYD-1'")
+        c.execute("DELETE FROM alumnes WHERE id = 'TC-HYD-1'")
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()

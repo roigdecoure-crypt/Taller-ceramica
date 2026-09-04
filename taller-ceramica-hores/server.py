@@ -11,7 +11,9 @@ import re
 import socket
 import sqlite3
 import sys
+import threading
 import urllib.parse
+import urllib.request
 from datetime import datetime
 
 PORT = int(os.environ.get('PORT', 8080))
@@ -128,6 +130,192 @@ def init_db():
         conn.commit()
 
 init_db()
+
+def get_google_sheets_url():
+    """Obté l'URL de Google Sheets des de variable d'entorn (Render) o de la base de dades"""
+    env_url = os.environ.get('GOOGLE_SHEETS_URL', '').strip()
+    if env_url:
+        return env_url
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_sheets_url'")
+            row = cursor.fetchone()
+            if row and row['valor']:
+                return row['valor'].strip()
+    except Exception:
+        pass
+    return ''
+
+def hydrate_from_google_sheets(target_url=None):
+    """
+    Descàrrega inicial i bolcat (hidratació) des de Google Sheets cap a SQLite.
+    Garanteix la persistència total a Render fins i tot després de reinicis de contenidor.
+    """
+    url = (target_url or get_google_sheets_url()).strip()
+    if not url:
+        print("[Google Sheets] Cap URL configurat. S'utilitza la base de dades local SQLite.")
+        return {'ok': False, 'message': 'Cap URL de Google Sheets configurat.'}
+
+    print(f"[Google Sheets] ⏳ Iniciant hidratació des de Google Sheets...")
+    try:
+        req_url = url
+        if 'action=' not in req_url:
+            separator = '&' if '?' in req_url else '?'
+            req_url = f"{req_url}{separator}action=get_all"
+
+        req = urllib.request.Request(
+            req_url,
+            headers={'User-Agent': 'TallerCeramicaBackend/1.0', 'Accept': 'application/json'}
+        )
+
+        opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
+        with opener.open(req, timeout=25) as resp:
+            raw = resp.read().decode('utf-8')
+            res = json.loads(raw)
+
+        if res.get('status') != 'success' or 'data' not in res:
+            print(f"[Google Sheets] ⚠️ Resposta inesperada: {res}")
+            return {'ok': False, 'error': 'Resposta no reconeguda de Google Sheets', 'raw': res}
+
+        data = res['data']
+        alumnes = data.get('alumnes', [])
+        paquets = data.get('paquets', [])
+        sessions = data.get('sessions', [])
+        config = data.get('config', {})
+
+        with get_db() as conn:
+            cursor = conn.cursor()
+
+            # 1. Bolcar alumnes
+            for a in alumnes:
+                if not a.get('id'):
+                    continue
+                cursor.execute('''
+                    INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        nom = excluded.nom,
+                        cognoms = excluded.cognoms,
+                        telefon = excluded.telefon,
+                        email = excluded.email,
+                        pin = excluded.pin,
+                        data_alta = excluded.data_alta,
+                        notes = excluded.notes,
+                        actiu = excluded.actiu
+                ''', (
+                    a['id'], a.get('nom', ''), a.get('cognoms', ''),
+                    a.get('telefon', ''), a.get('email', ''), a.get('pin', '1234'),
+                    a.get('data_alta', datetime.now().isoformat()),
+                    a.get('notes', ''), int(a.get('actiu', 1))
+                ))
+
+            # 2. Bolcar paquets d'hores
+            for p in paquets:
+                if not p.get('id') or not p.get('student_id'):
+                    continue
+                cursor.execute('''
+                    INSERT INTO paquets_hores (id, student_id, data, hores, segons, concepte, preu, metode_pagament, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        student_id = excluded.student_id,
+                        data = excluded.data,
+                        hores = excluded.hores,
+                        segons = excluded.segons,
+                        concepte = excluded.concepte,
+                        preu = excluded.preu,
+                        metode_pagament = excluded.metode_pagament,
+                        notes = excluded.notes
+                ''', (
+                    p['id'], p['student_id'], p.get('data', datetime.now().isoformat()),
+                    float(p.get('hores', 0)), int(p.get('segons', 0)),
+                    p.get('concepte', 'Pack d\'hores'), float(p.get('preu', 0)),
+                    p.get('metode_pagament', 'Stripe'), p.get('notes', '')
+                ))
+
+            # 3. Bolcar sessions (preservant sessions obertes i tancades)
+            for s in sessions:
+                if not s.get('id') or not s.get('student_id'):
+                    continue
+                cursor.execute('''
+                    INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        student_id = excluded.student_id,
+                        data = excluded.data,
+                        entrada = excluded.entrada,
+                        sortida = excluded.sortida,
+                        durada_segons = excluded.durada_segons,
+                        format_hms = excluded.format_hms,
+                        tipus = excluded.tipus,
+                        estat = excluded.estat,
+                        notes = excluded.notes
+                ''', (
+                    s['id'], s['student_id'], s.get('data', ''),
+                    s.get('entrada', ''), s.get('sortida'),
+                    int(s.get('durada_segons', 0)), s.get('format_hms', '00:00:00'),
+                    s.get('tipus', 'qr'), s.get('estat', 'oberta'),
+                    s.get('notes', '')
+                ))
+
+            # 4. Bolcar configuració
+            for k, v in config.items():
+                if k:
+                    cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
+
+            conn.commit()
+
+        msg = f"Hidratació completada: {len(alumnes)} alumnes, {len(paquets)} paquets, {len(sessions)} sessions sincronitzades des de Google Sheets."
+        print(f"[Google Sheets] ✅ {msg}")
+        return {
+            'ok': True,
+            'message': msg,
+            'counts': {
+                'alumnes': len(alumnes),
+                'paquets': len(paquets),
+                'sessions': len(sessions)
+            }
+        }
+    except Exception as e:
+        err_msg = f"Error durant la hidratació: {str(e)}"
+        print(f"[Google Sheets] ⚠️ {err_msg}")
+        return {'ok': False, 'error': err_msg}
+
+def sync_to_google_sheets_async(action, payload):
+    """
+    Envia esdeveniments de forma asíncrona a Google Sheets en segon pla.
+    No bloqueja la resposta de la petició de l'usuari/escàner.
+    """
+    def _worker():
+        url = get_google_sheets_url()
+        if not url:
+            return
+        try:
+            body = json.dumps({
+                'action': action,
+                'payload': payload,
+                'timestamp': datetime.now().isoformat()
+            }, ensure_ascii=False).encode('utf-8')
+
+            req = urllib.request.Request(
+                url,
+                data=body,
+                headers={'Content-Type': 'application/json', 'User-Agent': 'TallerCeramicaBackend/1.0'}
+            )
+            opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
+            with opener.open(req, timeout=20) as resp:
+                resp.read()
+        except Exception as e:
+            print(f"[Google Sheets Sync] Avís enviant '{action}': {e}")
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
+# Intentar hidratació inicial automàtica a l'arrencada si tenim URL
+try:
+    hydrate_from_google_sheets()
+except Exception as e:
+    print(f"[Google Sheets] Avís inicialitzant hidratació: {e}")
 
 def row_to_dict(row):
     return dict(row) if row else None
@@ -330,6 +518,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path == '/api/sync/status':
+                url = get_google_sheets_url()
+                self.send_json({
+                    'ok': True,
+                    'configured': bool(url),
+                    'urlPreview': (url[:35] + '...') if url else ''
+                })
+                return
+
             else:
                 self.send_json({'ok': False, 'error': 'Ruta API no trobada'}, 404)
         except Exception as e:
@@ -392,6 +589,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             notes=excluded.notes
                     ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes))
                     conn.commit()
+
+                # Sincronitzar amb Google Sheets de forma persistent en segon pla
+                sync_to_google_sheets_async('sync_alumne', {
+                    'id': student_id,
+                    'nom': nom,
+                    'cognoms': cognoms,
+                    'telefon': telefon,
+                    'email': email,
+                    'pin': pin,
+                    'data_alta': data_alta,
+                    'notes': notes,
+                    'actiu': 1
+                })
 
                 self.send_json({'ok': True, 'id': student_id, 'message': 'Alumne desat correctament'})
                 return
@@ -457,6 +667,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         ''', (session_id, student_id, today, now_iso, tipus))
                         conn.commit()
 
+                        # Sincronitzar nova sessió oberta a Google Sheets
+                        sync_to_google_sheets_async('checkin', {
+                            'id': session_id,
+                            'student_id': student_id,
+                            'data': today,
+                            'entrada': now_iso,
+                            'sortida': '',
+                            'durada_segons': 0,
+                            'format_hms': '00:00:00',
+                            'tipus': tipus,
+                            'estat': 'oberta',
+                            'notes': ''
+                        })
+
                         balanc = get_student_balance(student_id)
                         self.send_json({
                             'ok': True,
@@ -489,6 +713,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             WHERE id = ?
                         ''', (now_iso, durada_segons, durada_hms, tipus, open_session['id']))
                         conn.commit()
+
+                        # Sincronitzar sortida a Google Sheets
+                        sync_to_google_sheets_async('checkout', {
+                            'id': open_session['id'],
+                            'student_id': student_id,
+                            'data': open_session['data'],
+                            'entrada': open_session['entrada'],
+                            'sortida': now_iso,
+                            'durada_segons': durada_segons,
+                            'format_hms': durada_hms,
+                            'tipus': tipus,
+                            'estat': 'tancada',
+                            'notes': open_session.get('notes', '')
+                        })
 
                         balanc = get_student_balance(student_id)
                         self.send_json({
@@ -567,6 +805,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ''', (sortida_iso, durada_segons, durada_hms, notes, sess['id']))
                     conn.commit()
 
+                    # Sincronitzar tancament forçat a Google Sheets
+                    sync_to_google_sheets_async('force_close', {
+                        'id': sess['id'],
+                        'student_id': sess['student_id'],
+                        'data': sess['data'],
+                        'entrada': sess['entrada'],
+                        'sortida': sortida_iso,
+                        'durada_segons': durada_segons,
+                        'format_hms': durada_hms,
+                        'tipus': sess.get('tipus', 'manual'),
+                        'estat': 'tancada_forçada',
+                        'notes': notes
+                    })
+
                     balanc = get_student_balance(sess['student_id'])
 
                 self.send_json({
@@ -602,7 +854,21 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (pack_id, student_id, data_compra, hores, segons, concepte, preu, metode, stripe_session_id, notes))
                     conn.commit()
-                    balanc = get_student_balance(student_id)
+
+                # Sincronitzar compra d'hores a Google Sheets
+                sync_to_google_sheets_async('add_paquet', {
+                    'id': pack_id,
+                    'student_id': student_id,
+                    'data': data_compra,
+                    'hores': hores,
+                    'segons': segons,
+                    'concepte': concepte,
+                    'preu': preu,
+                    'metode_pagament': metode,
+                    'notes': notes
+                })
+
+                balanc = get_student_balance(student_id)
 
                 self.send_json({
                     'ok': True,
@@ -645,7 +911,22 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', 'tancada', ?)
                         ''', (sess_id, student_id, data_sess, entrada, sortida, durada_segons, durada_hms, notes))
                     conn.commit()
-                    balanc = get_student_balance(student_id)
+
+                # Sincronitzar sessió manual a Google Sheets
+                sync_to_google_sheets_async('manual_session', {
+                    'id': sess_id,
+                    'student_id': student_id,
+                    'data': data_sess,
+                    'entrada': entrada,
+                    'sortida': sortida,
+                    'durada_segons': durada_segons,
+                    'format_hms': durada_hms,
+                    'tipus': 'manual',
+                    'estat': 'tancada',
+                    'notes': notes
+                })
+
+                balanc = get_student_balance(student_id)
 
                 self.send_json({
                     'ok': True,
@@ -701,6 +982,39 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'message': 'Dades restaurades amb èxit'})
                 return
 
+            elif path == '/api/sync/hydrate':
+                # Re-hidratació manual des de Google Sheets
+                custom_url = data.get('url') if data else None
+                res = hydrate_from_google_sheets(custom_url)
+                self.send_json(res, 200 if res.get('ok') else 400)
+                return
+
+            elif path == '/api/sync/all':
+                # Enviar totes les dades locals a Google Sheets
+                url = get_google_sheets_url()
+                if not url:
+                    self.send_json({'ok': False, 'error': 'No hi ha cap URL de Google Sheets configurat'}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM alumnes')
+                    alumnes_all = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM paquets_hores')
+                    paquets_all = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM sessions')
+                    sessions_all = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT clau, valor FROM configuracio')
+                    cfg_all = {r['clau']: r['valor'] for r in cursor.fetchall()}
+
+                sync_to_google_sheets_async('sync_all', {
+                    'alumnes': alumnes_all,
+                    'paquets': paquets_all,
+                    'sessions': sessions_all,
+                    'config': cfg_all
+                })
+                self.send_json({'ok': True, 'message': 'Sincronització completa enviada a Google Sheets en segon pla.'})
+                return
+
             else:
                 self.send_json({'ok': False, 'error': 'Ruta API no trobada'}, 404)
 
@@ -718,6 +1032,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute('UPDATE alumnes SET actiu = 0 WHERE id = ?', (student_id,))
                     conn.commit()
+
+                sync_to_google_sheets_async('sync_alumne', {'id': student_id, 'actiu': 0})
                 self.send_json({'ok': True, 'message': 'Alumne desactivat correctament'})
                 return
 
@@ -731,6 +1047,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('DELETE FROM sessions WHERE id = ?', (session_id,))
                     conn.commit()
                     balanc = get_student_balance(student_id) if student_id else None
+
+                sync_to_google_sheets_async('delete_session', {'id': session_id})
                 self.send_json({'ok': True, 'message': 'Sessió eliminada', 'balanc': balanc})
                 return
 
@@ -744,6 +1062,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('DELETE FROM paquets_hores WHERE id = ?', (pack_id,))
                     conn.commit()
                     balanc = get_student_balance(student_id) if student_id else None
+
+                sync_to_google_sheets_async('delete_paquet', {'id': pack_id})
                 self.send_json({'ok': True, 'message': 'Paquet eliminat', 'balanc': balanc})
                 return
 
