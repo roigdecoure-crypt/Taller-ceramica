@@ -364,13 +364,15 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '12'))
         self.conn.commit()
 
-        # Comprovar que amb aforament 12 totes les activitats admeten fins a 12 places
+        # Comprovar capacitats oficials: Torn 4, Modelatge 8, Vidre 8, Pintar 12, Total Franja 12
         disp_12 = server.get_disponibilitat('2026-09-12')
         franja_12 = next(f for f in disp_12['franges'] if f['id'] == 'F1')
         self.assertEqual(franja_12['totalPlaces'], 12)
-        for act in franja_12['activitats']:
-            self.assertEqual(act['capacitatMax'], 12)
-            self.assertEqual(act['placesDisponibles'], 12)
+        act_map = {a['id']: a for a in franja_12['activitats']}
+        self.assertEqual(act_map['torn']['capacitatMax'], 4)
+        self.assertEqual(act_map['modelatge']['capacitatMax'], 8)
+        self.assertEqual(act_map['vidre']['capacitatMax'], 8)
+        self.assertEqual(act_map['pintar']['capacitatMax'], 12)
 
     def test_09_edat_and_stripe_config(self):
         c = self.conn.cursor()

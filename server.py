@@ -462,9 +462,9 @@ def get_student_balance(student_id):
         }
 
 ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 12, "icon": "🏺", "color": "#3B82F6"},
-    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 12, "icon": "🗿", "color": "#10B981"},
-    {"id": "vidre", "nom": "Vidre", "descripcio": "Treball i decoració en vidre", "capacitatMax": 12, "icon": "🔮", "color": "#8B5CF6"},
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "🏺", "color": "#3B82F6"},
+    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "🗿", "color": "#10B981"},
+    {"id": "vidre", "nom": "Vidre", "descripcio": "Treball i decoració en vidre", "capacitatMax": 8, "icon": "🔮", "color": "#8B5CF6"},
     {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "🎨", "color": "#F59E0B"}
 ]
 
