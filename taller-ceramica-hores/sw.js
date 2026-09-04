@@ -1,61 +1,70 @@
-/**
- * sw.js - Service Worker per a funcionament offline i PWA al mòbil Android
- */
-
-const CACHE_NAME = 'ceramica-v1';
+// sw.js - Service Worker per al Taller de Ceramica (Suport Offline i PWA)
+const CACHE_NAME = "taller-ceramica-v3.2";
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './admin.html',
-  './scanner.html',
-  './alumne.html',
-  './manifest.json',
-  './css/styles.css',
-  './css/admin.css',
-  './css/card.css',
-  './css/scanner.css',
-  './js/time-utils.js',
-  './js/sound.js',
-  './js/qr-engine.js',
-  './js/store.js',
-  './js/admin.js',
-  './js/scanner.js',
-  './js/alumne.js',
-  './lib/qrcode.min.js',
-  './lib/html5-qrcode.min.js'
+  "./",
+  "./alumne.html",
+  "./scanner.html",
+  "./manifest.json",
+  "./css/styles.css",
+  "./css/card.css",
+  "./lib/qrcode.min.js",
+  "./lib/html5-qrcode.min.js",
+  "./js/time-utils.js",
+  "./js/sound.js",
+  "./js/qr-engine.js",
+  "./js/store.js",
+  "./js/alumne.js",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
+self.addEventListener("install", (event) => {
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('Avís guardant en cache alguns recursos:', err);
+        console.warn("Alguns fitxers no shan pogut guardar a la cache inicial:", err);
       });
     })
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
     })
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  // Ignorar peticions a l'API per assegurar dades fresques
-  if (e.request.url.includes('/api/')) {
+// Estrategia: Network first, fallback to cache (per tenir sempre les dades fresques pero funcionar offline)
+self.addEventListener("fetch", (event) => {
+  // No interceptar peticions de l-API ni d-altres dominis (com Google Sheets o Stripe)
+  if (event.request.url.includes("/api/") || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return cached || fetch(e.request).catch(() => cached);
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (event.request.headers.get("accept") && event.request.headers.get("accept").includes("text/html")) {
+            return caches.match("./alumne.html");
+          }
+        });
+      })
   );
 });

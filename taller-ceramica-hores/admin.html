@@ -6,6 +6,9 @@
   <title>Panell d'Administració - Taller de Ceràmica</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#C25E3A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/card.css">
@@ -30,6 +33,9 @@
       </button>
       <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
         ➕ Nou Alumne
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
+        🎨 Disseny & Marca
       </button>
       <button class="btn btn-outline btn-sm" id="btn-configuracio" title="Configurar Stripe, Google Sheets i Taller">
         ⚙️ Configuració
@@ -407,8 +413,9 @@
         <div class="ceramic-badge" id="printable-badge">
           <div class="badge-top">
             <div class="workshop-brand">
-              <span class="workshop-icon">🏺</span>
-              <span class="workshop-name" id="badge-ws-name">Taller de Ceràmica</span>
+              <img id="badge-ws-logo-img" src="" alt="Logo" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
+              <span class="workshop-icon" id="badge-ws-logo-icon">🏺</span>
+              <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
             </div>
             <span class="badge-type">CARNET DE SOCI</span>
           </div>
@@ -505,6 +512,225 @@
     </div>
   </div>
 
+  <!-- MODAL: ESTUDI DE DISSENY I MARCA (CUSTOMITZADOR) -->
+  <div class="modal-backdrop" id="modal-branding-backdrop">
+    <div class="modal-dialog" style="max-width: 960px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 8px;">
+            <span>🎨</span> Estudi de Disseny & Imatge Corporativa
+          </h3>
+          <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
+            Personalitza els colors, el logotip i la tipografia de l'App de l'Alumne i del Carnet Digital en temps real.
+          </p>
+        </div>
+        <button class="modal-close" data-close="modal-branding-backdrop">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-top: 14px;">
+        
+        <!-- COLUMNA ESQUERRA: CONTROLS DE DISSENY -->
+        <form id="form-branding" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Identitat del Taller -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🏛️ Identitat del Taller</h4>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Nom del Taller</label>
+              <input type="text" id="brand-input-nom" class="form-control" placeholder="ex: Roig de Coure" value="Roig de Coure" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 12px;">Subtítol o Lema</label>
+              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="ex: Taller d'Art i Ceràmica" value="Taller d'Art i Ceràmica">
+            </div>
+          </div>
+
+          <!-- Logotip del Taller -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🖼️ Logotip Oficial</h4>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div id="brand-logo-preview-box" style="width: 64px; height: 64px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
+                <span id="brand-logo-preview-placeholder" style="font-size: 28px;">🏺</span>
+                <img id="brand-logo-preview-img" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 6px;">
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">🗑️ Eliminar Logo</button>
+                </div>
+                <input type="hidden" id="brand-input-logo-url" value="">
+                <p style="font-size: 11px; color: var(--color-muted); margin-top: 4px;">PNG, SVG o JPG (es guarda i s'aplica immediatament a l'App mòbil).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paletes de Ceràmica Predefinides -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">🏺 Paletes de Color Ceràmiques</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px;">
+              <button type="button" class="btn-palette" data-primary="#C25E3A" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #C25E3A;"></span>
+                  <span style="flex: 1; background: #5E7E6F;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Roig de Coure</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#B45309" data-secondary="#78350F" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #B45309;"></span>
+                  <span style="flex: 1; background: #78350F;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Terracota & Fang</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#1E40AF" data-secondary="#0369A1" data-name="cobalt" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #1E40AF;"></span>
+                  <span style="flex: 1; background: #0369A1;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Blau Cobalt</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#3F6212" data-secondary="#65A30D" data-name="celado" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #3F6212;"></span>
+                  <span style="flex: 1; background: #65A30D;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Celadó & Esmalt</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#27272A" data-secondary="#52525B" data-name="gres" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left; grid-column: span 2;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #27272A;"></span>
+                  <span style="flex: 1; background: #52525B;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Gres Negre & Carbó</span>
+              </button>
+            </div>
+
+            <!-- Colors Personalitzats Manuals -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px dashed var(--color-border); padding-top: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Color Principal (Degradats & Botons)</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" id="brand-input-primary-color" value="#C25E3A" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-primary-hex" value="#C25E3A" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Color Secundari (Fons & Accents)</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" id="brand-input-secondary-color" value="#5E7E6F" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-secondary-hex" value="#5E7E6F" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tipografia -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">✍️ Estil de Lletra</h4>
+            <div style="display: flex; gap: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="serif" checked>
+                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="sans">
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+            <button type="button" class="btn btn-outline" data-close="modal-branding-backdrop">Tancar</button>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">💾 Desar Disseny i Aplicar</button>
+          </div>
+        </form>
+
+        <!-- COLUMNA DRETA: PREVISUALITZACIÓ EN VIU (MOCKUP MÒBIL / APP) -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+            📱 Vista Prèvia en Temps Real (App de l'Alumne)
+          </div>
+
+          <!-- Mockup Carcassa de Telèfon -->
+          <div id="brand-phone-mockup" style="width: 320px; border: 8px solid #2E2825; border-radius: 36px; background: #F8F5F0; box-shadow: 0 16px 36px rgba(0,0,0,0.18); overflow: hidden; padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s ease;">
+            
+            <!-- Notificació barra superior mòbil -->
+            <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #555; padding: 0 6px;">
+              <span>09:41</span>
+              <span>5G 🔋 100%</span>
+            </div>
+
+            <!-- Header App Alumne -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img id="preview-header-logo-img" src="" alt="Logo" style="display: none; height: 20px; width: 20px; object-fit: contain;">
+                <span id="preview-header-logo-icon" style="font-size: 18px;">🏺</span>
+                <div>
+                  <div id="preview-header-title" style="font-size: 12px; font-weight: 800; line-height: 1;">Roig de Coure</div>
+                  <div id="preview-header-sub" style="font-size: 9px; color: var(--color-muted);">Taller d'Art i Ceràmica</div>
+                </div>
+              </div>
+              <span style="font-size: 10px; background: #EFEFEF; padding: 2px 6px; border-radius: 4px;">App</span>
+            </div>
+
+            <!-- Carnet Digital Preview -->
+            <div class="ceramic-badge" id="preview-ceramic-badge" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: 0 auto; transform: scale(0.92); transform-origin: top center;">
+              <div class="badge-top" id="preview-badge-top" style="background: linear-gradient(135deg, #C25E3A 0%, #5E7E6F 100%);">
+                <div class="workshop-brand">
+                  <img id="preview-badge-logo-img" src="" alt="Logo" style="display: none; height: 22px; max-width: 80px; object-fit: contain; margin-right: 6px;">
+                  <span class="workshop-icon" id="preview-badge-logo-icon">🏺</span>
+                  <span class="workshop-name" id="preview-badge-title" style="font-size: 13px;">Roig de Coure</span>
+                </div>
+                <span class="badge-type" style="font-size: 9px;">CARNET SOCI</span>
+              </div>
+              <div class="badge-content" style="padding: 10px;">
+                <div class="badge-info">
+                  <div class="badge-student-name" style="font-size: 16px;">Maria</div>
+                  <div class="badge-student-surnames" style="font-size: 12px;">Garcia Font</div>
+                  <div class="badge-id-pill" style="font-size: 11px; padding: 2px 6px;">
+                    <span>ID:</span>
+                    <strong>TC-101</strong>
+                  </div>
+                  <div class="badge-phone" style="font-size: 10px;">Tel: 600 123 456</div>
+                </div>
+                <div class="badge-qr-box" id="preview-badge-qr" style="width: 75px; height: 75px; padding: 4px;">
+                  <!-- QR preview -->
+                </div>
+              </div>
+              <div class="badge-footer" style="padding: 6px 12px; font-size: 9px;">
+                <span>Passa aquest QR per l'escàner</span>
+                <span>Alta: 2026</span>
+              </div>
+            </div>
+
+            <!-- Saldo Card Preview -->
+            <div id="preview-balance-card" style="background: linear-gradient(135deg, #C25E3A 0%, #2E2825 100%); color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
+              <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Saldo d'Hores Disponible</div>
+              <div style="font-size: 22px; font-weight: 800; font-family: monospace; margin: 2px 0;">08:30:00</div>
+              <div style="font-size: 10px; opacity: 0.9;">8h 30m restants</div>
+            </div>
+
+            <!-- Botó Comprar Preview -->
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="preview-btn-sample" style="flex: 1; background: #C25E3A; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
+                Comprar 10h (120€)
+              </button>
+            </div>
+
+          </div>
+
+          <div style="margin-top: 12px; text-align: center;">
+            <a href="alumne.html" target="_blank" style="font-size: 12px; color: var(--color-primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              <span>📱 Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
   <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog" style="max-width: 440px;">
@@ -596,10 +822,10 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.1"></script>
-  <script src="js/sound.js?v=3.1"></script>
-  <script src="js/qr-engine.js?v=3.1"></script>
-  <script src="js/store.js?v=3.1"></script>
-  <script src="js/admin.js?v=3.1"></script>
+  <script src="js/time-utils.js?v=3.2"></script>
+  <script src="js/sound.js?v=3.2"></script>
+  <script src="js/qr-engine.js?v=3.2"></script>
+  <script src="js/store.js?v=3.2"></script>
+  <script src="js/admin.js?v=3.2"></script>
 </body>
 </html>

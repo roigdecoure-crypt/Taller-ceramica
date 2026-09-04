@@ -61,6 +61,14 @@ function doPost(e) {
     } else if (action === "delete_paquet") {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
+    } else if (action === "save_config") {
+      var cfgPayload = data.payload || {};
+      for (var cfgKey in cfgPayload) {
+        if (cfgPayload.hasOwnProperty(cfgKey)) {
+          upsertConfigKey(ss, cfgKey, cfgPayload[cfgKey]);
+        }
+      }
+      return jsonResponse({ status: "success", message: "Configuracio actualitzada a Google Sheets" });
     }
 
     return jsonResponse({ status: "error", message: "Accio desconeguda: " + action });
@@ -410,3 +418,17 @@ function readConfig(ss) {
   }
   return result;
 }
+
+function upsertConfigKey(ss, key, val) {
+  if (!key) return;
+  var sheet = getOrCreateSheet(ss, "Configuracio", HEADERS_CONFIG, "#8D6E63");
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(key).trim()) {
+      sheet.getRange(i + 1, 2).setValue(String(val || ""));
+      return;
+    }
+  }
+  sheet.appendRow([String(key), String(val || "")]);
+}
+

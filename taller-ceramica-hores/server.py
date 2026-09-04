@@ -87,9 +87,15 @@ def init_db():
 
         # Valors de configuració inicials per defecte si no existeixen
         default_config = {
-            'taller_nom': "Taller de Ceràmica",
+            'taller_nom': "Roig de Coure",
+            'taller_subtitol': "Taller d'Art i Ceràmica",
             'taller_telefon': "+34 600 000 000",
-            'taller_email': "info@tallerdecoramica.cat",
+            'taller_email': "roigdecoure@gmail.com",
+            'taller_logo_url': "",
+            'brand_primary': "#C25E3A",
+            'brand_secondary': "#5E7E6F",
+            'brand_font': "serif",
+            'brand_palette': "roigdecoure",
             'hores_per_defecte_oblit': "01:30:00",
             'stripe_pack5_url': "",
             'stripe_pack10_url': "",
@@ -945,6 +951,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     for k, v in cfg_items:
                         cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
                     conn.commit()
+
+                # Sincronitzar canvis de configuració i disseny a Google Sheets
+                sync_to_google_sheets_async('save_config', dict(cfg_items))
+
                 self.send_json({'ok': True, 'message': 'Configuració actualitzada'})
                 return
 

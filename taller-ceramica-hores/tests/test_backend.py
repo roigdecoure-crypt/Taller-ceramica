@@ -260,5 +260,32 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = 'TC-HYD-1'")
         self.conn.commit()
 
+    def test_07_brand_configuration(self):
+        c = self.conn.cursor()
+        brand_data = {
+            'taller_nom': 'Roig de Coure Prova',
+            'taller_subtitol': 'Taller d\'Art i Modelat',
+            'brand_primary': '#C25E3A',
+            'brand_secondary': '#5E7E6F',
+            'brand_font': 'serif',
+            'brand_palette': 'roigdecoure',
+            'taller_logo_url': 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='
+        }
+
+        for k, v in brand_data.items():
+            c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
+        self.conn.commit()
+
+        c.execute('SELECT clau, valor FROM configuracio')
+        cfg_rows = c.fetchall()
+        cfg = {r['clau']: r['valor'] for r in cfg_rows}
+
+        self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Prova')
+        self.assertEqual(cfg.get('taller_subtitol'), 'Taller d\'Art i Modelat')
+        self.assertEqual(cfg.get('brand_primary'), '#C25E3A')
+        self.assertEqual(cfg.get('brand_secondary'), '#5E7E6F')
+        self.assertEqual(cfg.get('brand_font'), 'serif')
+        self.assertEqual(cfg.get('taller_logo_url'), 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')
+
 if __name__ == '__main__':
     unittest.main()

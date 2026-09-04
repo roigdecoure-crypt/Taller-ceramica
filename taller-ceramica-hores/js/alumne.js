@@ -1,20 +1,72 @@
 /**
- * alumne.js - Lògica del Portal de l'Alumne i Adquisició d'Hores
+ * alumne.js - Lògica del Portal de l'Alumne, PWA i Adquisició d'Hores
  */
 
 let currentStudent = null;
 let currentSelectedPack = null;
 let liveSessionInterval = null;
+let deferredPrompt = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+// Detecció iOS i Mode Standalone (App instal·lada)
+const isIosDevice = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(ua);
+};
+const isInStandaloneMode = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return ('standalone' in window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+};
+
+// Registre de Service Worker per a suport PWA i Offline
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker actiu per al Portal de l\'Alumne:', reg.scope))
+      .catch(err => console.warn('Avis registrant Service Worker:', err));
+  });
+}
+
+// Captura de l'esdeveniment d'instal·lació de PWA (Android / Chrome / Edge)
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Mostrar banner només si no està ja en mode app i no l'ha tancat expressament
+    if (!isInStandaloneMode() && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('pwa_banner_dismissed') !== '1') {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'flex';
+    }
+  });
+
+  // Quan l'app s'instal·la correctament
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+    showToast('🎉 App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
+  });
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', async () => {
   await Store.init();
   await loadPortalConfig();
-  checkUrlParamsOrSession();
+  await checkUrlParamsOrSession();
   setupEventListeners();
-});
+
+  // Si és iOS i no està en mode standalone, mostrar el banner d'instal·lació suau
+  if (isIosDevice() && !isInStandaloneMode() && sessionStorage.getItem('pwa_banner_dismissed') !== '1') {
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+  });
+}
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
+  if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
@@ -25,32 +77,112 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-// Carregar configuració del taller
+// Carregar configuració del taller i aplicar marca personalitzada
 async function loadPortalConfig() {
   try {
     const cfg = await Store.getConfig();
-    if (cfg.taller_nom) {
-      document.getElementById('student-workshop-name').textContent = cfg.taller_nom;
-      const bWs = document.getElementById('portal-badge-ws-name');
-      if (bWs) bWs.textContent = cfg.taller_nom;
-    }
+    applyBrandingToPortal(cfg);
+
     if (cfg.taller_telefon) {
       const bPhone = document.getElementById('bizum-phone');
       if (bPhone) bPhone.textContent = cfg.taller_telefon;
     }
   } catch (err) {
-    console.warn('Error configuració:', err);
+    console.warn('Error carregant configuració del portal:', err);
   }
 }
 
-// Comprovar si hi ha paràmetres URL (ex: alumne.html?id=TC-101 o retorn de Stripe)
+// Aplicar disseny i marca (colors, tipografia, nom i logo) dinàmicament
+function applyBrandingToPortal(cfg) {
+  if (!cfg) return;
+
+  const nom = cfg.taller_nom || 'Roig de Coure';
+  const subtitol = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
+
+  // Textos de marca
+  const loginTitle = document.getElementById('login-workshop-title');
+  if (loginTitle) loginTitle.textContent = nom;
+  const loginSub = document.getElementById('login-workshop-subtitle');
+  if (loginSub) loginSub.textContent = subtitol;
+
+  const pwaTitle = document.getElementById('pwa-banner-title');
+  if (pwaTitle) pwaTitle.textContent = `Baixa l'App de ${nom}`;
+
+  const studentWs = document.getElementById('student-workshop-name');
+  if (studentWs) studentWs.textContent = nom;
+  const studentWsSub = document.getElementById('student-workshop-subtitle');
+  if (studentWsSub) studentWsSub.textContent = subtitol;
+
+  const badgeWs = document.getElementById('portal-badge-ws-name');
+  if (badgeWs) badgeWs.textContent = nom;
+
+  // Colors personalitzats
+  if (cfg.brand_primary) {
+    document.documentElement.style.setProperty('--brand-primary', cfg.brand_primary);
+    document.documentElement.style.setProperty('--color-primary', cfg.brand_primary);
+  }
+  if (cfg.brand_secondary) {
+    document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
+  }
+
+  // Tipografia
+  if (cfg.brand_font === 'sans') {
+    document.documentElement.style.setProperty('--brand-font', "'Inter', -apple-system, sans-serif");
+  } else {
+    document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
+  }
+
+  // Logotip
+  const logoUrl = cfg.taller_logo_url;
+  if (logoUrl && logoUrl.trim() !== '') {
+    // Login
+    const loginImg = document.getElementById('login-logo-img');
+    const loginIcon = document.getElementById('login-logo-icon');
+    if (loginImg) { loginImg.src = logoUrl; loginImg.style.display = 'block'; }
+    if (loginIcon) loginIcon.style.display = 'none';
+
+    // Header Portal
+    const headImg = document.getElementById('portal-header-logo-img');
+    const headIcon = document.getElementById('portal-header-logo-icon');
+    if (headImg) { headImg.src = logoUrl; headImg.style.display = 'block'; }
+    if (headIcon) headIcon.style.display = 'none';
+
+    // Badge Carnet
+    const badgeImg = document.getElementById('portal-badge-logo-img');
+    const badgeIcon = document.getElementById('portal-badge-logo-icon');
+    if (badgeImg) { badgeImg.src = logoUrl; badgeImg.style.display = 'inline-block'; }
+    if (badgeIcon) badgeIcon.style.display = 'none';
+  }
+}
+
+// Funció per activar la instal·lació de l'App (Android prompt o modal iOS)
+async function triggerPwaInstall() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      console.log('Instal·lació PWA acceptada');
+    }
+    deferredPrompt = null;
+    const banner = document.getElementById('pwa-install-banner');
+    if (banner) banner.style.display = 'none';
+  } else if (isIosDevice()) {
+    const modal = document.getElementById('modal-ios-install');
+    if (modal) modal.style.display = 'flex';
+  } else {
+    showToast('Pots instal·lar l\'aplicació prement el menú del navegador (⋮ o Share) i triant "Afegeix a la pantalla d\'inici".', 'info');
+  }
+}
+
+// Comprovar si hi ha paràmetres URL (ex: alumne.html?id=TC-101 o retorn de Stripe) o sessió guardada a localStorage
 async function checkUrlParamsOrSession() {
   const params = new URLSearchParams(window.location.search);
   const idParam = params.get('id');
   const paymentStatus = params.get('payment');
   const packHours = params.get('pack');
 
-  const savedId = sessionStorage.getItem('logged_student_id');
+  // Prioritat: Paràmetre URL > Sessió persistent a localStorage > sessionStorage antic
+  const savedId = localStorage.getItem('logged_student_id') || sessionStorage.getItem('logged_student_id');
   const targetId = idParam || savedId;
 
   if (targetId) {
@@ -59,7 +191,6 @@ async function checkUrlParamsOrSession() {
     // Si retorna d'un pagament de Stripe amb èxit
     if (paymentStatus === 'success' && packHours && currentStudent) {
       await processSuccessfulPayment(parseFloat(packHours), 'Pack Stripe (Retorn)', 0, 'Stripe');
-      // Netejar paràmetres de la URL
       window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
     }
   }
@@ -75,6 +206,8 @@ async function loginStudent(code) {
     }
 
     currentStudent = details;
+    // Guardar a localStorage per a persistència total a l'App mòbil
+    localStorage.setItem('logged_student_id', details.alumne.id);
     sessionStorage.setItem('logged_student_id', details.alumne.id);
 
     renderDashboard(details);
@@ -144,7 +277,7 @@ function renderSessionsTable(sessions) {
   const tbody = document.getElementById('portal-sessions-table-body');
   tbody.innerHTML = '';
 
-  if (sessions.length === 0) {
+  if (!sessions || sessions.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no s'ha registrat cap sessió.</td></tr>`;
     return;
   }
@@ -166,7 +299,7 @@ function renderPaquetsTable(paquets) {
   const tbody = document.getElementById('portal-paquets-table-body');
   tbody.innerHTML = '';
 
-  if (paquets.length === 0) {
+  if (!paquets || paquets.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no hi ha cap compra d'hores.</td></tr>`;
     return;
   }
@@ -211,7 +344,7 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
   }
 }
 
-// Esdeveniments
+// Configuració d'Esdeveniments
 function setupEventListeners() {
   // Login submit
   document.getElementById('form-student-login').addEventListener('submit', async (e) => {
@@ -220,8 +353,9 @@ function setupEventListeners() {
     if (code) await loginStudent(code);
   });
 
-  // Logout
+  // Tancar sessió (Logout net)
   document.getElementById('btn-logout').addEventListener('click', () => {
+    localStorage.removeItem('logged_student_id');
     sessionStorage.removeItem('logged_student_id');
     currentStudent = null;
     if (liveSessionInterval) clearInterval(liveSessionInterval);
@@ -229,7 +363,43 @@ function setupEventListeners() {
     document.getElementById('section-login').style.display = 'block';
   });
 
-  // Botons de compra de pack
+  // Botons d'instal·lació de PWA
+  const btnInstallBanner = document.getElementById('btn-pwa-install-action');
+  if (btnInstallBanner) {
+    btnInstallBanner.addEventListener('click', triggerPwaInstall);
+  }
+  const btnDismissBanner = document.getElementById('btn-pwa-dismiss');
+  if (btnDismissBanner) {
+    btnDismissBanner.addEventListener('click', () => {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.style.display = 'none';
+      sessionStorage.setItem('pwa_banner_dismissed', '1');
+    });
+  }
+  const btnLoginInstall = document.getElementById('btn-login-install-prompt');
+  if (btnLoginInstall) {
+    btnLoginInstall.addEventListener('click', triggerPwaInstall);
+  }
+  const btnPortalInstall = document.getElementById('btn-portal-install-app');
+  if (btnPortalInstall) {
+    btnPortalInstall.addEventListener('click', triggerPwaInstall);
+  }
+
+  // Modals d'instruccions iOS
+  const btnCloseIos = document.getElementById('btn-close-ios-modal');
+  if (btnCloseIos) {
+    btnCloseIos.addEventListener('click', () => {
+      document.getElementById('modal-ios-install').style.display = 'none';
+    });
+  }
+  const btnIosDone = document.getElementById('btn-ios-modal-done');
+  if (btnIosDone) {
+    btnIosDone.addEventListener('click', () => {
+      document.getElementById('modal-ios-install').style.display = 'none';
+    });
+  }
+
+  // Botons de compra de paquets d'hores
   document.querySelectorAll('.btn-buy-pack').forEach(btn => {
     btn.addEventListener('click', () => {
       const hours = parseFloat(btn.dataset.hours);
@@ -283,14 +453,11 @@ function setupEventListeners() {
     else if (currentSelectedPack.hours === 20) stripeUrl = cfg.stripe_pack20_url;
 
     if (stripeUrl && stripeUrl.startsWith('http')) {
-      // Afegir referència del client si és possible o obrir el link de Stripe
       const separator = stripeUrl.includes('?') ? '&' : '?';
-      const redirectUrl = encodeURIComponent(`${window.location.origin}${window.location.pathname}?id=${currentStudent.alumne.id}&payment=success&pack=${currentSelectedPack.hours}`);
       window.open(`${stripeUrl}${separator}client_reference_id=${currentStudent.alumne.id}`, '_blank');
       document.getElementById('modal-checkout-backdrop').classList.remove('active');
       showToast('S\'ha obert la passarel·la segura de Stripe. Quan completis el pagament les hores se sumaran automàticament.', 'info');
     } else {
-      // Si encara no han enganxat l'enllaç de Stripe a l'admin, oferim confirmació automàtica
       const confirmDirect = confirm(`L'enllaç de Stripe per a aquest pack no està configurat a l'Admin. Vols simular el pagament i sumar directament les ${currentSelectedPack.hours} hores al compte de ${currentStudent.alumne.nom}?`);
       if (confirmDirect) {
         document.getElementById('modal-checkout-backdrop').classList.remove('active');

@@ -7,19 +7,21 @@ let currentViewingStudent = null;
 let liveTimerInterval = null;
 
 // Inicialització
-document.addEventListener('DOMContentLoaded', async () => {
-  setupEventListeners();
-  startLiveClock();
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', async () => {
+    setupEventListeners();
+    startLiveClock();
 
-  try {
-    await Store.init();
-  } catch (err) {
-    console.warn('Store.init warning:', err);
-  }
+    try {
+      await Store.init();
+    } catch (err) {
+      console.warn('Store.init warning:', err);
+    }
 
-  loadConfig();
-  await refreshStudentsList();
-});
+    loadConfig();
+    await refreshStudentsList();
+  });
+}
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -59,6 +61,18 @@ async function loadConfig() {
       document.getElementById('nav-workshop-name').textContent = cfg.taller_nom;
       const wsNameBadge = document.getElementById('badge-ws-name');
       if (wsNameBadge) wsNameBadge.textContent = cfg.taller_nom;
+    }
+    if (cfg.brand_primary) {
+      document.documentElement.style.setProperty('--brand-primary', cfg.brand_primary);
+      document.documentElement.style.setProperty('--color-primary', cfg.brand_primary);
+    }
+    if (cfg.brand_secondary) {
+      document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
+    }
+    if (cfg.brand_font === 'sans') {
+      document.documentElement.style.setProperty('--brand-font', "'Inter', -apple-system, sans-serif");
+    } else {
+      document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
     }
     const lblDefecte = document.getElementById('lbl-durada-defecte');
     if (lblDefecte) lblDefecte.textContent = cfg.hores_per_defecte_oblit || '01:30:00';
@@ -314,7 +328,19 @@ async function showStudentBadgeModal(studentId) {
   if (!student) return;
 
   const cfg = await Store.getConfig();
-  document.getElementById('badge-ws-name').textContent = cfg.taller_nom || 'Taller de Ceràmica';
+  document.getElementById('badge-ws-name').textContent = cfg.taller_nom || 'Roig de Coure';
+
+  const logoUrl = cfg.taller_logo_url;
+  const badgeLogoImg = document.getElementById('badge-ws-logo-img');
+  const badgeLogoIcon = document.getElementById('badge-ws-logo-icon');
+  if (logoUrl && logoUrl.trim() !== '') {
+    if (badgeLogoImg) { badgeLogoImg.src = logoUrl; badgeLogoImg.style.display = 'inline-block'; }
+    if (badgeLogoIcon) badgeLogoIcon.style.display = 'none';
+  } else {
+    if (badgeLogoImg) { badgeLogoImg.src = ''; badgeLogoImg.style.display = 'none'; }
+    if (badgeLogoIcon) badgeLogoIcon.style.display = 'inline-block';
+  }
+
   document.getElementById('badge-nom').textContent = student.nom;
   document.getElementById('badge-cognoms').textContent = student.cognoms || '';
   document.getElementById('badge-id').textContent = student.id;
@@ -379,10 +405,14 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
   if (radioNow) radioNow.checked = true;
 }
 
-window.openAdminManualCheckinModal = openAdminManualCheckinModal;
+if (typeof window !== 'undefined') {
+  window.openAdminManualCheckinModal = openAdminManualCheckinModal;
+}
 
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {
+  initBrandStudio();
+
   // Cerca d'alumnes en temps real
   document.getElementById('search-students-input').addEventListener('input', () => {
     renderStudentsTable(allStudents);
@@ -895,3 +925,284 @@ function setupEventListeners() {
     });
   });
 }
+
+/* ==================== ESTUDI DE DISSENY & MARCA ==================== */
+
+let previewQrGenerated = false;
+
+function initBrandStudio() {
+  const btnBranding = document.getElementById('btn-branding');
+  const modalBranding = document.getElementById('modal-branding-backdrop');
+  if (!btnBranding || !modalBranding) return;
+
+  btnBranding.addEventListener('click', async () => {
+    await openBrandStudioModal();
+  });
+
+  // Controls de colors
+  const primaryColorInput = document.getElementById('brand-input-primary-color');
+  const primaryHexInput = document.getElementById('brand-input-primary-hex');
+  const secondaryColorInput = document.getElementById('brand-input-secondary-color');
+  const secondaryHexInput = document.getElementById('brand-input-secondary-hex');
+
+  if (primaryColorInput && primaryHexInput) {
+    primaryColorInput.addEventListener('input', (e) => {
+      primaryHexInput.value = e.target.value.toUpperCase();
+      updateBrandPreview();
+    });
+    primaryHexInput.addEventListener('input', (e) => {
+      let val = e.target.value.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        primaryColorInput.value = val;
+        updateBrandPreview();
+      }
+    });
+  }
+
+  if (secondaryColorInput && secondaryHexInput) {
+    secondaryColorInput.addEventListener('input', (e) => {
+      secondaryHexInput.value = e.target.value.toUpperCase();
+      updateBrandPreview();
+    });
+    secondaryHexInput.addEventListener('input', (e) => {
+      let val = e.target.value.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        secondaryColorInput.value = val;
+        updateBrandPreview();
+      }
+    });
+  }
+
+  // Paletes de Ceràmica ràpides
+  document.querySelectorAll('.btn-palette').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.primary;
+      const s = btn.dataset.secondary;
+      if (p && s && primaryColorInput && secondaryColorInput) {
+        primaryColorInput.value = p;
+        primaryHexInput.value = p.toUpperCase();
+        secondaryColorInput.value = s;
+        secondaryHexInput.value = s.toUpperCase();
+        updateBrandPreview();
+      }
+    });
+  });
+
+  // Nom i subtítol
+  const nomInput = document.getElementById('brand-input-nom');
+  const subInput = document.getElementById('brand-input-subtitol');
+  if (nomInput) nomInput.addEventListener('input', updateBrandPreview);
+  if (subInput) subInput.addEventListener('input', updateBrandPreview);
+
+  // Tipografia
+  document.querySelectorAll('input[name="brand_font_choice"]').forEach(radio => {
+    radio.addEventListener('change', updateBrandPreview);
+  });
+
+  // Pujada de logotip oficial (FileReader -> Base64)
+  const logoFileInput = document.getElementById('brand-input-logo-file');
+  const logoUrlHidden = document.getElementById('brand-input-logo-url');
+  const btnRemoveLogo = document.getElementById('btn-remove-logo');
+
+  if (logoFileInput) {
+    logoFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        alert('La imatge supera els 2MB. Si us plau, tria una imatge més lleugera.');
+        logoFileInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const base64 = loadEvt.target.result;
+        if (logoUrlHidden) logoUrlHidden.value = base64;
+        setLogoPreview(base64);
+        updateBrandPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (btnRemoveLogo) {
+    btnRemoveLogo.addEventListener('click', () => {
+      if (logoUrlHidden) logoUrlHidden.value = '';
+      if (logoFileInput) logoFileInput.value = '';
+      setLogoPreview('');
+      updateBrandPreview();
+    });
+  }
+
+  // Formulari Desar Disseny
+  const formBrand = document.getElementById('form-branding');
+  if (formBrand) {
+    formBrand.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nom = nomInput ? nomInput.value.trim() : 'Roig de Coure';
+      const sub = subInput ? subInput.value.trim() : "Taller d'Art i Ceràmica";
+      const prim = primaryHexInput ? primaryHexInput.value.trim() : '#C25E3A';
+      const sec = secondaryHexInput ? secondaryHexInput.value.trim() : '#5E7E6F';
+      const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'serif';
+      const logoUrl = logoUrlHidden ? logoUrlHidden.value : '';
+
+      try {
+        showToast('Desant i aplicant imatge corporativa...', 'info');
+        await Store.saveConfig({
+          taller_nom: nom,
+          taller_subtitol: sub,
+          taller_logo_url: logoUrl,
+          brand_primary: prim,
+          brand_secondary: sec,
+          brand_font: fontChoice
+        });
+
+        // Actualitzar interfície de l'admin
+        const wsNav = document.getElementById('nav-workshop-name');
+        if (wsNav) wsNav.textContent = nom;
+        const bWs = document.getElementById('badge-ws-name');
+        if (bWs) bWs.textContent = nom;
+
+        // Actualitzar variables CSS globals a l'admin
+        document.documentElement.style.setProperty('--brand-primary', prim);
+        document.documentElement.style.setProperty('--color-primary', prim);
+        document.documentElement.style.setProperty('--brand-secondary', sec);
+
+        modalBranding.classList.remove('active');
+        showToast('🎨 Imatge de marca actualitzada i sincronitzada amb èxit!', 'success');
+      } catch (err) {
+        showToast('Error desant el disseny: ' + err.message, 'error');
+      }
+    });
+  }
+}
+
+async function openBrandStudioModal() {
+  const modal = document.getElementById('modal-branding-backdrop');
+  if (!modal) return;
+
+  try {
+    const cfg = await Store.getConfig();
+    const nom = cfg.taller_nom || 'Roig de Coure';
+    const sub = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
+    const prim = cfg.brand_primary || '#C25E3A';
+    const sec = cfg.brand_secondary || '#5E7E6F';
+    const font = cfg.brand_font || 'serif';
+    const logoUrl = cfg.taller_logo_url || '';
+
+    const nomInput = document.getElementById('brand-input-nom');
+    if (nomInput) nomInput.value = nom;
+    const subInput = document.getElementById('brand-input-subtitol');
+    if (subInput) subInput.value = sub;
+
+    const pCol = document.getElementById('brand-input-primary-color');
+    const pHex = document.getElementById('brand-input-primary-hex');
+    if (pCol) pCol.value = prim;
+    if (pHex) pHex.value = prim.toUpperCase();
+
+    const sCol = document.getElementById('brand-input-secondary-color');
+    const sHex = document.getElementById('brand-input-secondary-hex');
+    if (sCol) sCol.value = sec;
+    if (sHex) sHex.value = sec.toUpperCase();
+
+    const radioFont = document.querySelector(`input[name="brand_font_choice"][value="${font}"]`);
+    if (radioFont) radioFont.checked = true;
+
+    const logoHidden = document.getElementById('brand-input-logo-url');
+    if (logoHidden) logoHidden.value = logoUrl;
+    const logoFile = document.getElementById('brand-input-logo-file');
+    if (logoFile) logoFile.value = '';
+    setLogoPreview(logoUrl);
+
+    // Generar QR de mostra al mockup si encara no s'ha fet
+    const qrContainer = document.getElementById('preview-badge-qr');
+    if (qrContainer && !previewQrGenerated && typeof QREngine !== 'undefined') {
+      QREngine.generateQR(qrContainer, 'TC-101', 75);
+      previewQrGenerated = true;
+    }
+
+    updateBrandPreview();
+    modal.classList.add('active');
+  } catch (err) {
+    console.warn('Error obrint estudi de disseny:', err);
+  }
+}
+
+function setLogoPreview(url) {
+  const previewImg = document.getElementById('brand-logo-preview-img');
+  const previewPlaceholder = document.getElementById('brand-logo-preview-placeholder');
+  const btnRemove = document.getElementById('btn-remove-logo');
+
+  if (url && url.trim() !== '') {
+    if (previewImg) { previewImg.src = url; previewImg.style.display = 'block'; }
+    if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+    if (btnRemove) btnRemove.style.display = 'inline-block';
+  } else {
+    if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
+    if (previewPlaceholder) previewPlaceholder.style.display = 'block';
+    if (btnRemove) btnRemove.style.display = 'none';
+  }
+}
+
+function updateBrandPreview() {
+  const nom = document.getElementById('brand-input-nom')?.value.trim() || 'Roig de Coure';
+  const sub = document.getElementById('brand-input-subtitol')?.value.trim() || "Taller d'Art i Ceràmica";
+  const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#C25E3A';
+  const sec = document.getElementById('brand-input-secondary-hex')?.value.trim() || '#5E7E6F';
+  const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'serif';
+  const logoUrl = document.getElementById('brand-input-logo-url')?.value || '';
+
+  // Textos
+  const prevHdrTitle = document.getElementById('preview-header-title');
+  if (prevHdrTitle) prevHdrTitle.textContent = nom;
+  const prevHdrSub = document.getElementById('preview-header-sub');
+  if (prevHdrSub) prevHdrSub.textContent = sub;
+  const prevBadgeTitle = document.getElementById('preview-badge-title');
+  if (prevBadgeTitle) prevBadgeTitle.textContent = nom;
+
+  // Logotip
+  const prevHdrImg = document.getElementById('preview-header-logo-img');
+  const prevHdrIcon = document.getElementById('preview-header-logo-icon');
+  const prevBadgeImg = document.getElementById('preview-badge-logo-img');
+  const prevBadgeIcon = document.getElementById('preview-badge-logo-icon');
+
+  if (logoUrl && logoUrl.trim() !== '') {
+    if (prevHdrImg) { prevHdrImg.src = logoUrl; prevHdrImg.style.display = 'block'; }
+    if (prevHdrIcon) prevHdrIcon.style.display = 'none';
+    if (prevBadgeImg) { prevBadgeImg.src = logoUrl; prevBadgeImg.style.display = 'inline-block'; }
+    if (prevBadgeIcon) prevBadgeIcon.style.display = 'none';
+  } else {
+    if (prevHdrImg) { prevHdrImg.src = ''; prevHdrImg.style.display = 'none'; }
+    if (prevHdrIcon) prevHdrIcon.style.display = 'inline-block';
+    if (prevBadgeImg) { prevBadgeImg.src = ''; prevBadgeImg.style.display = 'none'; }
+    if (prevBadgeIcon) prevBadgeIcon.style.display = 'inline-block';
+  }
+
+  // Colors al Mockup
+  const badgeTop = document.getElementById('preview-badge-top');
+  if (badgeTop) {
+    badgeTop.style.background = `linear-gradient(135deg, ${prim} 0%, ${sec} 100%)`;
+  }
+  const balanceCard = document.getElementById('preview-balance-card');
+  if (balanceCard) {
+    balanceCard.style.background = `linear-gradient(135deg, ${prim} 0%, #2E2825 100%)`;
+  }
+  const btnSample = document.getElementById('preview-btn-sample');
+  if (btnSample) {
+    btnSample.style.background = prim;
+  }
+
+  // Tipografia al Carnet
+  const badgeCard = document.getElementById('preview-ceramic-badge');
+  if (badgeCard) {
+    if (fontChoice === 'sans') {
+      badgeCard.style.fontFamily = "'Inter', -apple-system, sans-serif";
+    } else {
+      badgeCard.style.fontFamily = "'Playfair Display', Georgia, serif";
+    }
+  }
+}
+
