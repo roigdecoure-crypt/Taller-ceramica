@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal de l'Alumne - Taller de Ceràmica</title>
+  
+  <!-- PWA & Mobile Web App Tags -->
+  <link rel="manifest" href="manifest-alumne.json">
+  <meta name="theme-color" content="#C25E3A" id="meta-theme-color">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Roig de Coure">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <!-- Google Fonts per a Serif artesanal i Sans moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/card.css">
+  <style>
+    :root {
+      --brand-primary: #C25E3A;
+      --brand-secondary: #5E7E6F;
+      --brand-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      font-family: var(--brand-font);
+    }
+    .student-portal-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px 16px 40px;
+    }
+    .portal-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .portal-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-dark);
+    }
+    .portal-logo-img {
+      height: 38px;
+      max-width: 140px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+    .pwa-banner {
+      background: linear-gradient(135deg, var(--color-dark, #2E2825) 0%, #3D3531 100%);
+      color: #FFF;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      gap: 12px;
+    }
+    .pwa-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .login-container {
+      max-width: 440px;
+      margin: 40px auto;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+    }
+    .balance-card-student {
+      background: linear-gradient(135deg, var(--brand-primary, #C25E3A) 0%, #2E2825 100%);
+      color: #FFF;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+    }
+    .balance-main-num {
+      font-size: 40px;
+      font-weight: 800;
+      font-family: monospace;
+      color: #FFF;
+      letter-spacing: -1px;
+    }
+    .purchase-pack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .purchase-pack-card {
+      background: #FFF;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .purchase-pack-card:hover {
+      border-color: var(--color-primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .purchase-pack-card.popular {
+      border-color: var(--color-primary);
+      background: #FFFBF9;
+      position: relative;
+    }
+    .popular-tag {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-primary);
+      color: #FFF;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 99px;
+      letter-spacing: 0.5px;
+    }
+    .pack-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-dark);
+    }
+    .pack-hours {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="student-portal-wrapper">
+
+    <!-- BANNER INSTAL·LACIÓ APP MÒBIL (PWA) -->
+    <div id="pwa-install-banner" class="pwa-banner" style="display: none;">
+      <div class="pwa-banner-left">
+        <span style="font-size: 28px;">📲</span>
+        <div>
+          <div style="font-weight: 700; font-size: 14px;" id="pwa-banner-title">Baixa l'App de Roig de Coure</div>
+          <div style="font-size: 12px; opacity: 0.85;">Tindràs el teu carnet QR a mà fins i tot sense connexió!</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <button id="btn-pwa-install-action" class="btn btn-primary btn-sm" style="font-weight: 700;">Instal·lar</button>
+        <button id="btn-pwa-dismiss" style="background: none; border: none; color: #FFF; font-size: 18px; cursor: pointer; padding: 4px 8px;" title="Tancar">&times;</button>
+      </div>
+    </div>
+
+    <!-- PANTALLA D'ACCÉS / IDENTIFICACIÓ -->
+    <div id="section-login" class="login-container">
+      <div id="login-logo-container" style="margin-bottom: 12px;">
+        <img id="login-logo-img" src="" alt="Logo Taller" class="portal-logo-img" style="display: none; height: 55px; margin: 0 auto;">
+        <div id="login-logo-icon" style="font-size: 48px;">🏺</div>
+      </div>
+      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;" id="login-workshop-title">Roig de Coure</h2>
+      <p style="font-size: 13px; color: var(--color-primary); font-weight: 600; margin-bottom: 16px;" id="login-workshop-subtitle">Taller d'Art i Ceràmica</p>
+      <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 20px;">
+        Introdueix el teu Número d'Alumne (ex: <code>TC-101</code>) o el teu PIN per veure el teu carnet, saldo d'hores i comprar paquets.
+      </p>
+
+      <form id="form-student-login">
+        <div class="form-group">
+          <input type="text" id="login-student-id" class="form-control" placeholder="TC-101" required style="font-size: 20px; text-align: center; letter-spacing: 2px; text-transform: uppercase;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 14px;">
+          Accedir al Meu Carnet &rarr;
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; font-size: 13px; color: var(--color-muted);">
+        <p>Ets nou alumne o no saps el teu codi? Demana'l al taller.</p>
+        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 14px;">
+          <a href="index.html">&larr; Pàgina d'inici</a>
+          <button id="btn-login-install-prompt" style="background: none; border: none; color: var(--color-primary); text-decoration: underline; cursor: pointer; font-size: 13px;">📲 Instal·lar App</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANTALLA DEL PORTAL DE L'ALUMNE IDENTIFICAT -->
+    <div id="section-dashboard" style="display: none;">
+      
+      <!-- Barra superior de l'alumne -->
+      <div class="portal-top-bar">
+        <div class="portal-logo">
+          <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none;">
+          <span id="portal-header-logo-icon">🏺</span>
+          <div>
+            <div id="student-workshop-name" style="line-height: 1.1;">Roig de Coure</div>
+            <div id="student-workshop-subtitle" style="font-size: 11px; font-weight: 500; color: var(--color-muted);">Taller de Ceràmica</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn btn-outline btn-sm" id="btn-portal-install-app" title="Instal·lar l'App al mòbil" style="display: inline-flex; align-items: center; gap: 4px;">
+            <span>📲</span> <span>Instal·lar App</span>
+          </button>
+          <button class="btn btn-outline btn-sm" id="btn-logout" title="Sortir">Tancar Sessió</button>
+        </div>
+      </div>
+
+      <!-- Targeta de benvinguda i estat -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h1 style="font-size: 24px; font-weight: 800;" id="portal-student-name">Hola, Alumne!</h1>
+          <p style="font-size: 14px; color: var(--color-muted);">
+            ID de soci: <strong id="portal-student-id">TC-101</strong> &bull; Alta: <span id="portal-student-alta">--</span>
+          </p>
+        </div>
+        <div id="portal-live-status">
+          <!-- Estat en viu -->
+        </div>
+      </div>
+
+      <!-- Resum de Saldo Hero -->
+      <div class="balance-card-student">
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #D3CBC4; margin-bottom: 4px;">
+          El Teu Saldo d'Hores Disponible
+        </div>
+        <div class="balance-main-num" id="portal-balance-hms">00:00:00</div>
+        <div style="font-size: 16px; color: #F7EAE5; margin-bottom: 16px;" id="portal-balance-human">0h 0m 0s restants</div>
+        
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #D3CBC4; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+          <span>Hores Totals Adquirides: <strong id="portal-total-bought" style="color:#FFF;">00:00:00</strong></span>
+          <span>Hores Consumides: <strong id="portal-total-spent" style="color:#FFF;">00:00:00</strong></span>
+        </div>
+      </div>
+
+      <!-- SECCIÓ ADQUIRIR PAQUET D'HORES (STRIPE / COMPRA DIRECTA) -->
+      <section class="card" style="margin-bottom: 24px; border-left: 4px solid var(--color-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800; color: var(--color-dark);">🛒 Adquirir Paquet d'Hores</h2>
+            <p style="font-size: 13px; color: var(--color-muted);">
+              Compra hores directament amb Stripe o Bizum i <strong>se sumaran automàticament al teu saldo a l'instant</strong>:
+            </p>
+          </div>
+        </div>
+
+        <div class="purchase-pack-grid">
+          <!-- Pack 5 hores -->
+          <div class="purchase-pack-card">
+            <div>
+              <div class="pack-hours">🏺 5 Hores</div>
+              <div class="pack-price">65€</div>
+              <p style="font-size: 12px; color: var(--color-muted); margin-top: 4px;">13,00€ / hora</p>
+            </div>
+            <button class="btn btn-outline btn-block btn-buy-pack" data-hours="5" data-price="65" data-name="Pack 5 Hores Ceràmica">
+              Comprar 5h
+            </button>
+          </div>
+
+          <!-- Pack 10 hores (Popular) -->
+          <div class="purchase-pack-card popular">
+            <span class="popular-tag">Més Popular</span>
+            <div>
+              <div class="pack-hours">🏺 10 Hores</div>
+              <div class="pack-price">120€</div>
+              <p style="font-size: 12px; color: var(--color-muted); margin-top: 4px;">12,00€ / hora</p>
+            </div>
+            <button class="btn btn-primary btn-block btn-buy-pack" data-hours="10" data-price="120" data-name="Pack 10 Hores Ceràmica">
+              Comprar 10h
+            </button>
+          </div>
+
+          <!-- Pack 20 hores -->
+          <div class="purchase-pack-card">
+            <div>
+              <div class="pack-hours">🏺 20 Hores</div>
+              <div class="pack-price">220€</div>
+              <p style="font-size: 12px; color: var(--color-muted); margin-top: 4px;">11,00€ / hora</p>
+            </div>
+            <button class="btn btn-outline btn-block btn-buy-pack" data-hours="20" data-price="220" data-name="Pack 20 Hores Ceràmica">
+              Comprar 20h
+            </button>
+          </div>
+        </div>
+
+        <!-- Opció quantitat personalitzada -->
+        <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--color-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+          <span style="font-size: 13px; color: var(--color-muted);">Vols una quantitat d'hores diferent?</span>
+          <button class="btn btn-outline btn-sm" id="btn-custom-hours">
+            ➕ Triar Hores Personalitzades
+          </button>
+        </div>
+      </section>
+
+      <!-- CARNET DIGITAL D'ALUMNE -->
+      <section class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800;">💳 El Teu Carnet Digital</h2>
+            <p style="font-size: 13px; color: var(--color-muted);">Porta'l al mòbil i ensenya aquest codi QR a la càmera de la recepció en arribar i en marxar.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btn-portal-print-badge">🖨️ Descarregar / Imprimir</button>
+        </div>
+
+        <div style="display: flex; justify-content: center;">
+          <div class="ceramic-badge" id="student-portal-badge">
+            <div class="badge-top">
+              <div class="workshop-brand">
+                <img id="portal-badge-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
+                <span class="workshop-icon" id="portal-badge-logo-icon">🏺</span>
+                <span class="workshop-name" id="portal-badge-ws-name">Roig de Coure</span>
+              </div>
+              <span class="badge-type">CARNET DE SOCI</span>
+            </div>
+            <div class="badge-content">
+              <div class="badge-info">
+                <div class="badge-student-name" id="portal-badge-nom">Maria</div>
+                <div class="badge-student-surnames" id="portal-badge-cognoms">Garcia Font</div>
+                <div class="badge-id-pill">
+                  <span>ID:</span>
+                  <strong id="portal-badge-id">TC-101</strong>
+                </div>
+                <div class="badge-phone" id="portal-badge-tel">Tel: -</div>
+              </div>
+              <div class="badge-qr-box" id="portal-badge-qr">
+                <!-- QR renderitzat -->
+              </div>
+            </div>
+            <div class="badge-footer">
+              <span>Passa aquest QR per l'escàner</span>
+              <span id="portal-badge-footer-alta">Alta: 2026</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORIAL DE SESSIONS I ASSISTÈNCIA -->
+      <section class="card" style="margin-bottom: 24px;">
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">⏱️ Historial d'Entrades i Sortides</h2>
+        <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 14px;">Detall segon a segon del temps que has estat treballant al taller.</p>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Hora Entrada</th>
+                <th>Hora Sortida</th>
+                <th>Durada (H:m:s)</th>
+                <th>Mètode</th>
+              </tr>
+            </thead>
+            <tbody id="portal-sessions-table-body">
+              <!-- Rengleres dinàmiques -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HISTORIAL DE COMPRES D'HORES -->
+      <section class="card">
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">📦 Historial de Paquets Adquirits</h2>
+        <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 14px;">Totes les compres d'hores registrades al teu compte.</p>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data Compra</th>
+                <th>Paquet</th>
+                <th>Hores Sumades</th>
+                <th>Preu</th>
+                <th>Pagament</th>
+              </tr>
+            </thead>
+            <tbody id="portal-paquets-table-body">
+              <!-- Rengleres dinàmiques -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIRMAR COMPRA AMB STRIPE / BIZUM -->
+  <div class="modal-backdrop" id="modal-checkout-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Finalitzar Adquisició d'Hores</h3>
+        <button class="modal-close" id="btn-close-checkout">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #F8F5F0; border-radius: var(--radius-md); padding: 16px; text-align: center;">
+          <div style="font-size: 14px; color: var(--color-muted);" id="checkout-pack-name">Pack 10 Hores</div>
+          <div style="font-size: 32px; font-weight: 800; color: var(--color-dark); margin: 4px 0;" id="checkout-pack-price">120€</div>
+          <div style="font-size: 14px; color: var(--color-primary); font-weight: 700;" id="checkout-pack-hours">+10 Hores al teu compte</div>
+        </div>
+
+        <div class="form-group">
+          <label>Tria com vols pagar:</label>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+            <button class="btn btn-primary btn-block" id="btn-pay-stripe" style="background:#635BFF; border-color:#635BFF; font-size:16px;">
+              💳 Pagar amb Stripe (Targeta / Apple Pay)
+            </button>
+            <button class="btn btn-outline btn-block" id="btn-pay-bizum" style="font-size:14px;">
+              📱 Pagament per Bizum
+            </button>
+            <button class="btn btn-outline btn-sm btn-block" id="btn-simulate-pay" style="color:var(--color-muted); border-style:dashed;">
+              ⚡ Confirmar i Sumar Hores Automàticament (Test/Immediat)
+            </button>
+          </div>
+        </div>
+
+        <!-- Secció informativa Bizum (oculta per defecte) -->
+        <div id="bizum-instructions" style="display: none; background: #FFF8E1; border: 1px solid #FFE082; padding: 12px; border-radius: 8px; font-size: 13px;">
+          Envia el Bizum al número del taller <strong id="bizum-phone">+34 600 000 000</strong> amb el concepte: <code id="bizum-concept">TC-101 10h</code>.<br>
+          En prémer el botó inferior les hores es carregaran al teu compte.
+          <div style="margin-top: 10px;">
+            <button class="btn btn-secondary btn-sm btn-block" id="btn-confirm-bizum">He fet el Bizum, sumar hores ara!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INSTRUCCIONS INSTAL·LACIÓ iOS (Safari) -->
+  <div class="modal-backdrop" id="modal-ios-install" style="display: none;">
+    <div class="modal-dialog" style="max-width: 400px; text-align: center;">
+      <div class="modal-header">
+        <h3>📲 Instal·lar al teu iPhone / iPad</h3>
+        <button class="modal-close" id="btn-close-ios-modal">&times;</button>
+      </div>
+      <div style="padding: 10px 0; font-size: 14px; text-align: left; line-height: 1.6;">
+        <p style="margin-bottom: 14px; color: var(--color-dark);">
+          Afegeix l'aplicació a la teva pantalla d'inici per tenir sempre a mà el teu QR i saldo d'hores com una app oficial:
+        </p>
+        <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</span>
+            <span>Toca el botó de <strong>Compartir</strong> a Safari (<span style="font-size: 18px;">⎋</span> o <span style="font-size: 18px;">⬆️</span> al menú inferior del navegador).</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</span>
+            <span>Fes lliscar cap avall i selecciona <strong>"Afegeix a la pantalla d'inici"</strong> (<i>Add to Home Screen</i> ➕).</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</span>
+            <span>Prem <strong>"Afegeix"</strong> a la cantonada superior dreta. Llest! Tindràs la icona directa al mòbil.</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="btn-ios-modal-done" style="margin-top: 14px;">Entès!</button>
+    </div>
+  </div>
+
+  <!-- Contenidor Toasts -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="js/time-utils.js?v=3.2"></script>
+  <script src="js/sound.js?v=3.2"></script>
+  <script src="js/qr-engine.js?v=3.2"></script>
+  <script src="js/store.js?v=3.2"></script>
+  <script src="js/alumne.js?v=3.2"></script>
+</body>
+</html>

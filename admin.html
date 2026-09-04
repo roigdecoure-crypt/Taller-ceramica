@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panell d'Administració - Taller de Ceràmica</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#C25E3A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/card.css">
+</head>
+<body class="admin-layout">
+
+  <!-- Barra de navegació superior -->
+  <header class="admin-navbar">
+    <div class="brand">
+      <span class="brand-icon">🏺</span>
+      <div class="brand-info">
+        <h1 id="nav-workshop-name">Taller de Ceràmica</h1>
+        <p>Panell d'Administració &bull; Control d'Hores i Assistència</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
+        📷 Escàner QR
+      </a>
+      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
+        ⏱️ Entrada / Sortida Manual
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
+        ➕ Nou Alumne
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
+        🎨 Disseny & Marca
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-configuracio" title="Configurar Stripe, Google Sheets i Taller">
+        ⚙️ Configuració
+      </button>
+      <button class="btn btn-outline btn-sm" id="btn-exportar" title="Còpies de seguretat i dades">
+        💾 Dades & Backup
+      </button>
+    </div>
+  </header>
+
+  <!-- Contingut principal -->
+  <main class="admin-content">
+
+    <!-- Secció: Alumnes al taller en viu -->
+    <section class="live-workshop-banner">
+      <div class="banner-header">
+        <div class="banner-title">
+          <span class="live-pulse"></span>
+          <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+        </div>
+        <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+      </div>
+      <div class="active-students-grid" id="active-students-container">
+        <!-- Es genera dinàmicament per JS -->
+        <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
+          No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
+        </p>
+      </div>
+    </section>
+
+    <!-- Taula principal d'alumnes -->
+    <section class="card">
+      <div class="table-toolbar">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
+            🔄 Hidratar des de Sheets
+          </button>
+          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
+            📊 Sincronitzar amb Sheets
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="students-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Alumne</th>
+              <th>Telèfon</th>
+              <th>Email</th>
+              <th>Estat</th>
+              <th>Saldo Hores (H:m:s)</th>
+              <th style="text-align: right;">Accions</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <tr>
+              <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
+                ⏳ Carregant llista d'alumnes del taller...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
+  <div class="drawer-backdrop" id="student-drawer-backdrop">
+    <div class="student-drawer">
+      <div class="drawer-header">
+        <div>
+          <span class="badge badge-neutral" id="drawer-student-id">TC-100</span>
+          <h3 id="drawer-student-fullname" style="margin-top: 4px;">Nom de l'Alumne</h3>
+        </div>
+        <button class="modal-close" id="btn-close-drawer">&times;</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Resum de Saldo Hero -->
+        <div class="balance-hero-card">
+          <div class="balance-hero-main">
+            <div class="label">Saldo d'Hores Restant</div>
+            <div class="value" id="drawer-balance-value">00:00:00</div>
+            <div style="font-size: 13px; color: #E8DFD5;" id="drawer-balance-human">0h 0m 0s</div>
+          </div>
+          <div class="balance-hero-sub">
+            <div>Comprades: <strong id="drawer-total-bought">00:00:00</strong></div>
+            <div>Gastades: <strong id="drawer-total-spent">00:00:00</strong></div>
+            <div id="drawer-session-status-badge" style="margin-top: 6px;"></div>
+          </div>
+        </div>
+
+        <!-- Dades de contacte ràpides -->
+        <div class="card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 12px; color: var(--color-muted);">Dades de contacte:</div>
+              <div style="font-weight: 600; font-size: 14px;" id="drawer-student-contact">Tel: - | Email: -</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">💬 WhatsApp</a>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">💳 Veure Carnet QR</button>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">✏️ Editar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botons d'acció ràpida de temps -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button class="btn btn-primary" id="drawer-btn-add-hours">
+            ➕ Afegir Compra d'Hores
+          </button>
+          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#2E7D32; border-color:#2E7D32;">
+            🟢 Marcar Entrada
+          </button>
+          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#1976D2; border-color:#1976D2;">
+            🔴 Marcar Sortida
+          </button>
+          <button class="btn btn-outline" id="drawer-btn-add-manual-session">
+            ⏱️ Sessió Manual (Passada)
+          </button>
+        </div>
+
+        <!-- Pestanyes d'historial dins de la fitxa -->
+        <div>
+          <div class="admin-tabs-nav">
+            <button class="tab-btn active" data-tab="tab-sessions">⏱️ Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-paquets">📦 Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
+          </div>
+
+          <!-- Tab 1: Sessions -->
+          <div id="tab-sessions" class="tab-pane">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Sortida</th>
+                    <th>Durada (H:m:s)</th>
+                    <th>Tipus</th>
+                    <th>Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="drawer-sessions-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Paquets d'hores -->
+          <div id="tab-paquets" class="tab-pane" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data Compra</th>
+                    <th>Concepte</th>
+                    <th>Hores</th>
+                    <th>Preu</th>
+                    <th>Mètode</th>
+                    <th>Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="drawer-paquets-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOU / EDITAR ALUMNE -->
+  <div class="modal-backdrop" id="modal-alumne-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-alumne-title">Donar d'Alta Nou Alumne</h3>
+        <button class="modal-close" data-close="modal-alumne-backdrop">&times;</button>
+      </div>
+      <form id="form-alumne">
+        <input type="hidden" id="alumne-form-id">
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="alumne-form-nom" class="form-control" required placeholder="ex: Maria">
+        </div>
+        <div class="form-group">
+          <label>Cognoms *</label>
+          <input type="text" id="alumne-form-cognoms" class="form-control" required placeholder="ex: Garcia Font">
+        </div>
+        <div class="form-group">
+          <label>Telèfon mòbil</label>
+          <input type="tel" id="alumne-form-telefon" class="form-control" placeholder="ex: 612345678">
+        </div>
+        <div class="form-group">
+          <label>Correu electrònic</label>
+          <input type="email" id="alumne-form-email" class="form-control" placeholder="ex: maria.garcia@email.com">
+        </div>
+        <div class="form-group">
+          <label>Número d'Identificació / PIN (opcional, es genera automàtic)</label>
+          <input type="text" id="alumne-form-pin" class="form-control" placeholder="ex: 101">
+        </div>
+        <div class="form-group">
+          <label>Observacions / Curs</label>
+          <textarea id="alumne-form-notes" class="form-control" rows="2" placeholder="Observacions o curs que realitza..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-alumne-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Desar Alumne</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AFEGIR COMPRA DE PAQUET D'HORES -->
+  <div class="modal-backdrop" id="modal-paquet-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Afegir Compra de Paquet d'Hores</h3>
+        <button class="modal-close" data-close="modal-paquet-backdrop">&times;</button>
+      </div>
+      <form id="form-paquet">
+        <input type="hidden" id="paquet-form-student-id">
+        <div class="form-group">
+          <label>Alumne</label>
+          <input type="text" id="paquet-form-student-name" class="form-control" readonly style="background:#F5F2ED;">
+        </div>
+        <div class="form-group">
+          <label>Packs ràpids:</label>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="5" data-price="65" data-name="Pack 5 Hores">5 Hores</button>
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="10" data-price="120" data-name="Pack 10 Hores">10 Hores</button>
+            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="20" data-price="220" data-name="Pack 20 Hores">20 Hores</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Quantitat d'Hores a Sumar *</label>
+          <input type="number" step="0.5" min="0.5" id="paquet-form-hores" class="form-control" required placeholder="ex: 10">
+        </div>
+        <div class="form-group">
+          <label>Concepte / Nom del Pack</label>
+          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: Pack 10 Hores Torn">
+        </div>
+        <div class="form-group">
+          <label>Preu Cobrat (€)</label>
+          <input type="number" step="0.01" id="paquet-form-preu" class="form-control" placeholder="ex: 120.00">
+        </div>
+        <div class="form-group">
+          <label>Mètode de Pagament</label>
+          <select id="paquet-form-metode" class="form-control">
+            <option value="Stripe">Stripe (Targeta / Apple Pay)</option>
+            <option value="Bizum">Bizum</option>
+            <option value="Efectiu">Efectiu</option>
+            <option value="Transferència">Transferència bancària</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data de Compra</label>
+          <input type="datetime-local" id="paquet-form-data" class="form-control">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-paquet-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Sumar Hores al Compte</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR SESSIÓ MANUAL -->
+  <div class="modal-backdrop" id="modal-manual-sessio-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-manual-title">Registrar Sessió Manual</h3>
+        <button class="modal-close" data-close="modal-manual-sessio-backdrop">&times;</button>
+      </div>
+      <form id="form-manual-sessio">
+        <input type="hidden" id="manual-sessio-id">
+        <input type="hidden" id="manual-sessio-student-id">
+        <div class="form-group">
+          <label>Alumne</label>
+          <input type="text" id="manual-sessio-student-name" class="form-control" readonly style="background:#F5F2ED;">
+        </div>
+        <div class="form-group">
+          <label>Hora d'Entrada *</label>
+          <input type="datetime-local" id="manual-sessio-entrada" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Hora de Sortida *</label>
+          <input type="datetime-local" id="manual-sessio-sortida" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Durada calculada aproximada:</label>
+          <div id="manual-sessio-preview" style="font-size: 16px; font-weight: 700; font-family: monospace; color: var(--color-primary);">00:00:00</div>
+        </div>
+        <div class="form-group">
+          <label>Observacions</label>
+          <input type="text" id="manual-sessio-notes" class="form-control" placeholder="ex: Pràctica de modelatge">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-manual-sessio-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary">Desar Sessió</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TANCAR CICLE OBLIDAT -->
+  <div class="modal-backdrop" id="modal-tancar-cicle-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>⚠️ Tancar Cicle Oblidat (Forçar Sortida)</h3>
+        <button class="modal-close" data-close="modal-tancar-cicle-backdrop">&times;</button>
+      </div>
+      <form id="form-tancar-cicle">
+        <input type="hidden" id="tancar-cicle-session-id">
+        <input type="hidden" id="tancar-cicle-student-id">
+        
+        <p style="font-size: 14px; color: var(--color-muted); margin-bottom: 16px;">
+          L'alumne <strong id="tancar-cicle-student-name">-</strong> va entrar a les <span id="tancar-cicle-hora-entrada" style="font-weight:700;">-</span> i no va registrar la sortida amb el QR.
+        </p>
+
+        <div class="form-group">
+          <label>Com vols tancar aquest cicle?</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="defecte" checked>
+              <span>Aplicar durada estàndard (<strong id="lbl-durada-defecte">01:30:00</strong>)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="durada_manual">
+              <span>Indicar durada exacta (format H:m:s):</span>
+            </label>
+            <input type="text" id="tancar-cicle-durada-custom" class="form-control" placeholder="01:30:00" style="margin-left: 24px; max-width: 160px;">
+            
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+              <input type="radio" name="opcio_tancament" value="hora_exacta">
+              <span>Indicar l'hora en què va marxar:</span>
+            </label>
+            <input type="datetime-local" id="tancar-cicle-hora-sortida" class="form-control" style="margin-left: 24px;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label>Nota explicativa</label>
+          <input type="text" id="tancar-cicle-notes" class="form-control" value="Tancat pel professor per descuit de l'alumne">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-tancar-cicle-backdrop">Cancel·lar</button>
+          <button type="submit" class="btn btn-danger">Tancar Cicle i Descomptar Saldo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CARNET D'ALUMNE (VISUALITZAR / IMPRIMIR / DESCARREGAR) -->
+  <div class="modal-backdrop" id="modal-carnet-backdrop">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Carnet d'Alumne amb QR</h3>
+        <button class="modal-close" data-close="modal-carnet-backdrop">&times;</button>
+      </div>
+      
+      <div class="student-card-container">
+        <!-- Targeta física renderitzada -->
+        <div class="ceramic-badge" id="printable-badge">
+          <div class="badge-top">
+            <div class="workshop-brand">
+              <img id="badge-ws-logo-img" src="" alt="Logo" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
+              <span class="workshop-icon" id="badge-ws-logo-icon">🏺</span>
+              <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
+            </div>
+            <span class="badge-type">CARNET DE SOCI</span>
+          </div>
+          <div class="badge-content">
+            <div class="badge-info">
+              <div class="badge-student-name" id="badge-nom">Nom</div>
+              <div class="badge-student-surnames" id="badge-cognoms">Cognoms</div>
+              <div class="badge-id-pill">
+                <span>ID:</span>
+                <strong id="badge-id">TC-100</strong>
+              </div>
+              <div class="badge-phone" id="badge-tel">Tel: -</div>
+            </div>
+            <div class="badge-qr-box" id="badge-qr-container">
+              <!-- QR generat per QREngine -->
+            </div>
+          </div>
+          <div class="badge-footer">
+            <span>Passa aquest QR per l'escàner</span>
+            <span id="badge-data-alta">Alta: 2026</span>
+          </div>
+        </div>
+
+        <!-- Botons d'acció -->
+        <div class="card-actions">
+          <button class="btn btn-primary btn-sm" id="btn-print-card">🖨️ Imprimir Carnet</button>
+          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">🔗 Copiar Enllaç Alumne</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURACIÓ (STRIPE, GOOGLE SHEETS I TALLER) -->
+  <div class="modal-backdrop" id="modal-config-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Configuració del Taller, Stripe i Google Sheets</h3>
+        <button class="modal-close" data-close="modal-config-backdrop">&times;</button>
+      </div>
+      <form id="form-config">
+        <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏺 Dades del Taller</h4>
+        <div class="form-group">
+          <label>Nom del Taller</label>
+          <input type="text" id="cfg-taller-nom" class="form-control" placeholder="Taller de Ceràmica">
+        </div>
+        <div class="form-group">
+          <label>Telèfon de contacte</label>
+          <input type="text" id="cfg-taller-telefon" class="form-control" placeholder="+34 600 000 000">
+        </div>
+        <div class="form-group">
+          <label>Durada per defecte en tancar cicle oblidat (H:m:s)</label>
+          <input type="text" id="cfg-durada-oblit" class="form-control" placeholder="01:30:00">
+        </div>
+
+        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe</h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
+          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats:
+        </p>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 5 Hores</label>
+          <input type="url" id="cfg-stripe-pack5" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 10 Hores</label>
+          <input type="url" id="cfg-stripe-pack10" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+        <div class="form-group">
+          <label>Enllaç Stripe: Pack 20 Hores</label>
+          <input type="url" id="cfg-stripe-pack20" class="form-control" placeholder="https://buy.stripe.com/...">
+        </div>
+
+        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">📊 Sincronització amb Google Sheets</h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
+          Enganxa l'URL de la teva aplicació web de Google Apps Script (que acaba en <code>/exec</code>):
+        </p>
+        <div class="form-group">
+          <label>URL Web App de Google Apps Script</label>
+          <input type="url" id="cfg-sheets-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div style="display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-hydrate-sheets" style="flex:1;">
+            🔄 Hidratar ara (Llegir del Full)
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-push-sheets" style="flex:1;">
+            📤 Enviar dades locals al Full
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" data-close="modal-config-backdrop">Tancar</button>
+          <button type="submit" class="btn btn-primary">Desar Configuració</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ESTUDI DE DISSENY I MARCA (CUSTOMITZADOR) -->
+  <div class="modal-backdrop" id="modal-branding-backdrop">
+    <div class="modal-dialog" style="max-width: 960px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3 style="display: flex; align-items: center; gap: 8px;">
+            <span>🎨</span> Estudi de Disseny & Imatge Corporativa
+          </h3>
+          <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
+            Personalitza els colors, el logotip i la tipografia de l'App de l'Alumne i del Carnet Digital en temps real.
+          </p>
+        </div>
+        <button class="modal-close" data-close="modal-branding-backdrop">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-top: 14px;">
+        
+        <!-- COLUMNA ESQUERRA: CONTROLS DE DISSENY -->
+        <form id="form-branding" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Identitat del Taller -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🏛️ Identitat del Taller</h4>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label style="font-size: 12px;">Nom del Taller</label>
+              <input type="text" id="brand-input-nom" class="form-control" placeholder="ex: Roig de Coure" value="Roig de Coure" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="font-size: 12px;">Subtítol o Lema</label>
+              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="ex: Taller d'Art i Ceràmica" value="Taller d'Art i Ceràmica">
+            </div>
+          </div>
+
+          <!-- Logotip del Taller -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🖼️ Logotip Oficial</h4>
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div id="brand-logo-preview-box" style="width: 64px; height: 64px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
+                <span id="brand-logo-preview-placeholder" style="font-size: 28px;">🏺</span>
+                <img id="brand-logo-preview-img" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+              </div>
+              <div style="flex: 1;">
+                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 6px;">
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">🗑️ Eliminar Logo</button>
+                </div>
+                <input type="hidden" id="brand-input-logo-url" value="">
+                <p style="font-size: 11px; color: var(--color-muted); margin-top: 4px;">PNG, SVG o JPG (es guarda i s'aplica immediatament a l'App mòbil).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paletes de Ceràmica Predefinides -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">🏺 Paletes de Color Ceràmiques</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px;">
+              <button type="button" class="btn-palette" data-primary="#C25E3A" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #C25E3A;"></span>
+                  <span style="flex: 1; background: #5E7E6F;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Roig de Coure</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#B45309" data-secondary="#78350F" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #B45309;"></span>
+                  <span style="flex: 1; background: #78350F;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Terracota & Fang</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#1E40AF" data-secondary="#0369A1" data-name="cobalt" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #1E40AF;"></span>
+                  <span style="flex: 1; background: #0369A1;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Blau Cobalt</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#3F6212" data-secondary="#65A30D" data-name="celado" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #3F6212;"></span>
+                  <span style="flex: 1; background: #65A30D;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Celadó & Esmalt</span>
+              </button>
+              <button type="button" class="btn-palette" data-primary="#27272A" data-secondary="#52525B" data-name="gres" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left; grid-column: span 2;">
+                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
+                  <span style="flex: 1; background: #27272A;"></span>
+                  <span style="flex: 1; background: #52525B;"></span>
+                </span>
+                <span style="font-size: 12px; font-weight: 600;">Gres Negre & Carbó</span>
+              </button>
+            </div>
+
+            <!-- Colors Personalitzats Manuals -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px dashed var(--color-border); padding-top: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Color Principal (Degradats & Botons)</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" id="brand-input-primary-color" value="#C25E3A" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-primary-hex" value="#C25E3A" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Color Secundari (Fons & Accents)</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="color" id="brand-input-secondary-color" value="#5E7E6F" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-secondary-hex" value="#5E7E6F" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tipografia -->
+          <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">✍️ Estil de Lletra</h4>
+            <div style="display: flex; gap: 16px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="serif" checked>
+                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="sans">
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+            <button type="button" class="btn btn-outline" data-close="modal-branding-backdrop">Tancar</button>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">💾 Desar Disseny i Aplicar</button>
+          </div>
+        </form>
+
+        <!-- COLUMNA DRETA: PREVISUALITZACIÓ EN VIU (MOCKUP MÒBIL / APP) -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+            📱 Vista Prèvia en Temps Real (App de l'Alumne)
+          </div>
+
+          <!-- Mockup Carcassa de Telèfon -->
+          <div id="brand-phone-mockup" style="width: 320px; border: 8px solid #2E2825; border-radius: 36px; background: #F8F5F0; box-shadow: 0 16px 36px rgba(0,0,0,0.18); overflow: hidden; padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; transition: all 0.2s ease;">
+            
+            <!-- Notificació barra superior mòbil -->
+            <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #555; padding: 0 6px;">
+              <span>09:41</span>
+              <span>5G 🔋 100%</span>
+            </div>
+
+            <!-- Header App Alumne -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <img id="preview-header-logo-img" src="" alt="Logo" style="display: none; height: 20px; width: 20px; object-fit: contain;">
+                <span id="preview-header-logo-icon" style="font-size: 18px;">🏺</span>
+                <div>
+                  <div id="preview-header-title" style="font-size: 12px; font-weight: 800; line-height: 1;">Roig de Coure</div>
+                  <div id="preview-header-sub" style="font-size: 9px; color: var(--color-muted);">Taller d'Art i Ceràmica</div>
+                </div>
+              </div>
+              <span style="font-size: 10px; background: #EFEFEF; padding: 2px 6px; border-radius: 4px;">App</span>
+            </div>
+
+            <!-- Carnet Digital Preview -->
+            <div class="ceramic-badge" id="preview-ceramic-badge" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: 0 auto; transform: scale(0.92); transform-origin: top center;">
+              <div class="badge-top" id="preview-badge-top" style="background: linear-gradient(135deg, #C25E3A 0%, #5E7E6F 100%);">
+                <div class="workshop-brand">
+                  <img id="preview-badge-logo-img" src="" alt="Logo" style="display: none; height: 22px; max-width: 80px; object-fit: contain; margin-right: 6px;">
+                  <span class="workshop-icon" id="preview-badge-logo-icon">🏺</span>
+                  <span class="workshop-name" id="preview-badge-title" style="font-size: 13px;">Roig de Coure</span>
+                </div>
+                <span class="badge-type" style="font-size: 9px;">CARNET SOCI</span>
+              </div>
+              <div class="badge-content" style="padding: 10px;">
+                <div class="badge-info">
+                  <div class="badge-student-name" style="font-size: 16px;">Maria</div>
+                  <div class="badge-student-surnames" style="font-size: 12px;">Garcia Font</div>
+                  <div class="badge-id-pill" style="font-size: 11px; padding: 2px 6px;">
+                    <span>ID:</span>
+                    <strong>TC-101</strong>
+                  </div>
+                  <div class="badge-phone" style="font-size: 10px;">Tel: 600 123 456</div>
+                </div>
+                <div class="badge-qr-box" id="preview-badge-qr" style="width: 75px; height: 75px; padding: 4px;">
+                  <!-- QR preview -->
+                </div>
+              </div>
+              <div class="badge-footer" style="padding: 6px 12px; font-size: 9px;">
+                <span>Passa aquest QR per l'escàner</span>
+                <span>Alta: 2026</span>
+              </div>
+            </div>
+
+            <!-- Saldo Card Preview -->
+            <div id="preview-balance-card" style="background: linear-gradient(135deg, #C25E3A 0%, #2E2825 100%); color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
+              <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Saldo d'Hores Disponible</div>
+              <div style="font-size: 22px; font-weight: 800; font-family: monospace; margin: 2px 0;">08:30:00</div>
+              <div style="font-size: 10px; opacity: 0.9;">8h 30m restants</div>
+            </div>
+
+            <!-- Botó Comprar Preview -->
+            <div style="display: flex; gap: 6px;">
+              <button type="button" id="preview-btn-sample" style="flex: 1; background: #C25E3A; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
+                Comprar 10h (120€)
+              </button>
+            </div>
+
+          </div>
+
+          <div style="margin-top: 12px; text-align: center;">
+            <a href="alumne.html" target="_blank" style="font-size: 12px; color: var(--color-primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+              <span>📱 Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
+  <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>⏱️ Marcar Entrada o Sortida Manual</h3>
+        <button type="button" class="modal-close" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop">&times;</button>
+      </div>
+      <form id="form-admin-manual-checkin">
+        <div class="form-group">
+          <label>Alumne</label>
+          <select id="admin-manual-student-select" class="form-control" required style="font-size: 15px;">
+            <option value="">-- Selecciona un alumne --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Hora del registre</label>
+          <div style="display: flex; gap: 14px; margin-bottom: 8px;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="admin_manual_time_opt" value="now" checked onchange="document.getElementById('admin-manual-custom-time').style.display='none';">
+              <span>⏰ Ara mateix</span>
+            </label>
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="radio" name="admin_manual_time_opt" value="custom" onchange="document.getElementById('admin-manual-custom-time').style.display='block';">
+              <span>✏️ Hora personalitzada</span>
+            </label>
+          </div>
+          <input type="datetime-local" id="admin-manual-custom-time" class="form-control" style="display: none;">
+        </div>
+
+        <div style="margin-top: 20px;">
+          <label style="margin-bottom: 8px; display: block;">Acció a realitzar:</label>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="padding: 12px 8px;">
+              🟢 Registrar ENTRADA
+            </button>
+            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
+              🔴 Registrar SORTIDA
+            </button>
+          </div>
+          <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
+            Cancel·lar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DADES I BACKUP -->
+  <div class="modal-backdrop" id="modal-backup-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Gestió de Dades i Còpies de Seguretat</h3>
+        <button class="modal-close" data-close="modal-backup-backdrop">&times;</button>
+      </div>
+      <div style="flex-direction: column; display: flex; gap: 18px;">
+        <div class="card" style="padding: 16px;">
+          <h4>💾 Còpia de Seguretat Completa (JSON)</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Descarrega un arxiu amb tots els alumnes, paquets d'hores, sessions i configuració.
+          </p>
+          <button class="btn btn-primary btn-sm" id="btn-download-json">Descarregar Còpia de Seguretat</button>
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <h4>📥 Restaurar Còpia de Seguretat</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Carrega un arxiu JSON de còpia prèvia per restaurar la base de dades.
+          </p>
+          <input type="file" id="input-restore-json" accept=".json" style="font-size: 13px;">
+        </div>
+
+        <div class="card" style="padding: 16px;">
+          <h4>📄 Exportació per a Excel (CSV)</h4>
+          <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
+            Exporta l'historial d'entrades i sortides amb durades (H:m:s) en format CSV compatible amb Excel.
+          </p>
+          <button class="btn btn-outline btn-sm" id="btn-export-csv">Descarregar CSV d'Assistència</button>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-outline" data-close="modal-backup-backdrop">Tancar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenidor per a Toasts -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="js/time-utils.js?v=3.2"></script>
+  <script src="js/sound.js?v=3.2"></script>
+  <script src="js/qr-engine.js?v=3.2"></script>
+  <script src="js/store.js?v=3.2"></script>
+  <script src="js/admin.js?v=3.2"></script>
+</body>
+</html>
