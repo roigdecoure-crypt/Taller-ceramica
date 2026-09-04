@@ -362,5 +362,35 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '12'))
         self.conn.commit()
 
+    def test_09_edat_and_stripe_config(self):
+        c = self.conn.cursor()
+        test_id_adult = "TC-TEST-ADULT"
+        test_id_nen = "TC-TEST-NEN"
+        c.execute("DELETE FROM alumnes WHERE id IN (?, ?)", (test_id_adult, test_id_nen))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+            VALUES (?, 'Adult', 'Test', '600000001', 'adult@test.com', '1234', ?, '', 1, 35)
+        ''', (test_id_adult, datetime.now().isoformat()))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+            VALUES (?, 'Nen', 'Test', '600000002', 'nen@test.com', '1235', ?, '', 1, 9)
+        ''', (test_id_nen, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT edat FROM alumnes WHERE id = ?", (test_id_adult,))
+        self.assertEqual(c.fetchone()['edat'], 35)
+        c.execute("SELECT edat FROM alumnes WHERE id = ?", (test_id_nen,))
+        self.assertEqual(c.fetchone()['edat'], 9)
+
+        # Provar configuració de tall i urls
+        c.execute("SELECT valor FROM configuracio WHERE clau = 'edat_tall_infantil'")
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['valor'], '12')
+
+        # Neteja
+        c.execute("DELETE FROM alumnes WHERE id IN (?, ?)", (test_id_adult, test_id_nen))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()

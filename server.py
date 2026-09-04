@@ -42,7 +42,8 @@ def init_db():
                 pin TEXT,
                 data_alta TEXT NOT NULL,
                 notes TEXT,
-                actiu INTEGER DEFAULT 1
+                actiu INTEGER DEFAULT 1,
+                edat INTEGER DEFAULT NULL
             )
         ''')
         # Taula de paquets d'hores (compres)
@@ -110,6 +111,12 @@ def init_db():
             except Exception:
                 pass
 
+        # Migració de columna edat a la taula alumnes si no existeix
+        try:
+            cursor.execute("ALTER TABLE alumnes ADD COLUMN edat INTEGER DEFAULT NULL")
+        except Exception:
+            pass
+
         # Taula de configuració
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS configuracio (
@@ -138,6 +145,9 @@ def init_db():
             'brand_font': "serif",
             'brand_palette': "roigdecoure",
             'hores_per_defecte_oblit': "01:30:00",
+            'stripe_url_adults': "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n",
+            'stripe_url_infantil': "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j",
+            'edat_tall_infantil': "12",
             'stripe_pack5_url': "",
             'stripe_pack10_url': "",
             'stripe_pack20_url': "",
@@ -151,19 +161,22 @@ def init_db():
         # Migració de valors antics a configuració oficial si cal
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND valor = "8"')
         cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND valor LIKE "%mati_1%"', (default_franges_json,))
+        cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
+        cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
+        cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
 
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
         if cursor.fetchone()['count'] == 0:
             now_iso = datetime.now().isoformat()
             demo_students = [
-                ('TC-101', 'Maria', 'Garcia Font', '612345678', 'maria.garcia@email.com', '1001', now_iso, 'Curs de torn nivell mig', 1),
-                ('TC-102', 'Jordi', 'Rovira Pons', '623456789', 'jordi.rovira@email.com', '1002', now_iso, 'Modelatge i escultura', 1),
-                ('TC-103', 'Clara', 'Vidal Soler', '634567890', 'clara.vidal@email.com', '1003', now_iso, 'Esmalts i pintura', 1)
+                ('TC-101', 'Maria', 'Garcia Font', '612345678', 'maria.garcia@email.com', '1001', now_iso, 'Curs de torn nivell mig', 1, 32),
+                ('TC-102', 'Jordi', 'Rovira Pons', '623456789', 'jordi.rovira@email.com', '1002', now_iso, 'Modelatge i escultura', 1, 28),
+                ('TC-103', 'Clara', 'Vidal Soler', '634567890', 'clara.vidal@email.com', '1003', now_iso, 'Esmalts i pintura infantil', 1, 10)
             ]
             cursor.executemany('''
-                INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', demo_students)
 
             # Paquets inicials
@@ -959,6 +972,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 email = (data.get('email') or '').strip()
                 pin = (data.get('pin') or '').strip()
                 notes = (data.get('notes') or '').strip()
+                edat_raw = data.get('edat')
+                edat = None
+                if edat_raw is not None and str(edat_raw).strip() != '':
+                    try:
+                        edat = int(edat_raw)
+                    except (ValueError, TypeError):
+                        edat = None
 
                 if not nom:
                     self.send_json({'ok': False, 'error': 'El nom és obligatori'}, 400)
@@ -982,16 +1002,17 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     data_alta = data.get('data_alta') or datetime.now().isoformat()
 
                     cursor.execute('''
-                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
                         ON CONFLICT(id) DO UPDATE SET
                             nom=excluded.nom,
                             cognoms=excluded.cognoms,
                             telefon=excluded.telefon,
                             email=excluded.email,
                             pin=excluded.pin,
-                            notes=excluded.notes
-                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes))
+                            notes=excluded.notes,
+                            edat=excluded.edat
+                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes, edat))
                     conn.commit()
 
                 # Sincronitzar amb Google Sheets de forma persistent en segon pla
@@ -1004,7 +1025,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'pin': pin,
                     'data_alta': data_alta,
                     'notes': notes,
-                    'actiu': 1
+                    'actiu': 1,
+                    'edat': edat
                 })
 
                 self.send_json({'ok': True, 'id': student_id, 'message': 'Alumne desat correctament'})

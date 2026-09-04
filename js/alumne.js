@@ -274,6 +274,9 @@ function renderDashboard(details) {
 
   // Secció de Reserves i Aforament
   renderReservationsSection(a.id);
+
+  // Secció d'adquisició d'hores segons edat
+  setupStudentPurchaseSection(a);
 }
 
 let studentReservesCalendar = null;
@@ -359,6 +362,62 @@ async function loadStudentBookings(studentId) {
 
   } catch (err) {
     container.innerHTML = `<p style="font-size: 13px; color: var(--color-danger);">Error carregant reserves: ${err.message}</p>`;
+  }
+}
+
+async function setupStudentPurchaseSection(a) {
+  try {
+    const cfg = await Store.getConfig();
+    const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
+    const selectCat = document.getElementById('portal-select-categoria');
+    const titleEl = document.getElementById('portal-edat-title');
+    const descEl = document.getElementById('portal-edat-desc');
+    const iconEl = document.getElementById('portal-edat-icon');
+    const idEl = document.getElementById('portal-buy-student-id');
+    const bizumConceptEl = document.getElementById('portal-bizum-concept');
+    const bizumPhoneEl = document.getElementById('portal-bizum-phone');
+
+    if (idEl) idEl.textContent = a.id;
+    if (bizumConceptEl) bizumConceptEl.textContent = `${a.id} ${a.nom}`;
+    if (bizumPhoneEl) bizumPhoneEl.textContent = cfg.taller_telefon || '+34 600 000 000';
+
+    // Determinar categoria per defecte segons l'edat registrada a la base de dades (<= 12 infantil, > 12 adults)
+    let categoria = 'adults';
+    const hasEdat = a.edat !== null && a.edat !== undefined && String(a.edat).trim() !== '';
+    if (hasEdat) {
+      const edatNum = parseInt(a.edat, 10);
+      if (!isNaN(edatNum)) {
+        categoria = edatNum <= edatTall ? 'infantil' : 'adults';
+      }
+    }
+
+    function updateCategoryUI(cat) {
+      if (!titleEl || !descEl || !iconEl) return;
+      if (cat === 'infantil') {
+        iconEl.textContent = '🧒';
+        titleEl.textContent = `Tarifa Infantil (fins a ${edatTall} anys)`;
+        descEl.textContent = hasEdat
+          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article infantil de Stripe.`
+          : `S'aplicarà la passarel·la per a alumnes de fins a ${edatTall} anys.`;
+      } else {
+        iconEl.textContent = '👤';
+        titleEl.textContent = `Tarifa Adults (més de ${edatTall} anys)`;
+        descEl.textContent = hasEdat
+          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article d'adults de Stripe.`
+          : `S'aplicarà la passarel·la d'adults (més de ${edatTall} anys).`;
+      }
+      if (selectCat) selectCat.value = cat;
+    }
+
+    updateCategoryUI(categoria);
+
+    if (selectCat) {
+      selectCat.onchange = (e) => {
+        updateCategoryUI(e.target.value);
+      };
+    }
+  } catch (err) {
+    console.warn('Error configurant secció de compra:', err);
   }
 }
 
@@ -488,91 +547,89 @@ function setupEventListeners() {
     });
   }
 
-  // Botons de compra de paquets d'hores
-  document.querySelectorAll('.btn-buy-pack').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hours = parseFloat(btn.dataset.hours);
-      const price = parseFloat(btn.dataset.price);
-      const name = btn.dataset.name;
-      openCheckoutModal({ hours, price, name });
-    });
-  });
+  // Botó Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
+  const btnPortalBuyStripe = document.getElementById('btn-portal-buy-stripe');
+  if (btnPortalBuyStripe) {
+    btnPortalBuyStripe.addEventListener('click', async () => {
+      if (!currentStudent) return;
+      const cfg = await Store.getConfig();
+      const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
+      const selectCat = document.getElementById('portal-select-categoria');
+      const categoria = selectCat ? selectCat.value : 'adults';
 
-  // Hores personalitzades
-  document.getElementById('btn-custom-hours').addEventListener('click', () => {
-    const customH = prompt('Quantes hores vols adquirir?', '8');
-    if (customH) {
-      const h = parseFloat(customH);
-      if (!isNaN(h) && h > 0) {
-        const estPrice = Math.round(h * 12);
-        openCheckoutModal({ hours: h, price: estPrice, name: `Pack Personalitzat ${h} Hores` });
+      let stripeUrl = '';
+      let catNom = '';
+      if (categoria === 'infantil') {
+        stripeUrl = (cfg.stripe_url_infantil || '').trim();
+        catNom = `Infantil (fins a ${edatTall} anys)`;
+      } else {
+        stripeUrl = (cfg.stripe_url_adults || '').trim();
+        catNom = `Adults (més de ${edatTall} anys)`;
       }
-    }
-  });
 
-  // Obrir modal de Checkout
-  function openCheckoutModal(pack) {
-    currentSelectedPack = pack;
-    document.getElementById('checkout-pack-name').textContent = pack.name;
-    document.getElementById('checkout-pack-price').textContent = `${pack.price}€`;
-    document.getElementById('checkout-pack-hours').textContent = `+${pack.hours} Hores al teu compte`;
-
-    // Concepte per a Bizum
-    const a = currentStudent.alumne;
-    const bizConcept = `${a.id} ${a.nom} ${pack.hours}h`;
-    document.getElementById('bizum-concept').textContent = bizConcept;
-    document.getElementById('bizum-instructions').style.display = 'none';
-
-    document.getElementById('modal-checkout-backdrop').classList.add('active');
+      if (stripeUrl && stripeUrl.startsWith('http')) {
+        const separator = stripeUrl.includes('?') ? '&' : '?';
+        const finalUrl = `${stripeUrl}${separator}client_reference_id=${encodeURIComponent(currentStudent.alumne.id)}`;
+        window.open(finalUrl, '_blank');
+        showToast(`S'ha obert la passarel·la segura de Stripe per a ${catNom}.`, 'info');
+      } else {
+        const confirmSim = confirm(
+          `L'enllaç de Stripe per a la categoria "${catNom}" no està configurat a l'Administració.\n\n` +
+          `Vols simular el pagament d'hores de prova per a ${currentStudent.alumne.nom}?`
+        );
+        if (confirmSim) {
+          const hStr = prompt('Quantes hores vols carregar de prova?', '5');
+          const h = parseFloat(hStr);
+          if (!isNaN(h) && h > 0) {
+            await processSuccessfulPayment(h, `Adquisició Hores (${catNom})`, 0, 'Stripe (Simulació)');
+          }
+        }
+      }
+    });
   }
 
-  // Tancar Checkout
-  document.getElementById('btn-close-checkout').addEventListener('click', () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-  });
-
-  // Botó Pagar amb Stripe
-  document.getElementById('btn-pay-stripe').addEventListener('click', async () => {
-    if (!currentSelectedPack || !currentStudent) return;
-    const cfg = await Store.getConfig();
-    let stripeUrl = '';
-
-    if (currentSelectedPack.hours === 5) stripeUrl = cfg.stripe_pack5_url;
-    else if (currentSelectedPack.hours === 10) stripeUrl = cfg.stripe_pack10_url;
-    else if (currentSelectedPack.hours === 20) stripeUrl = cfg.stripe_pack20_url;
-
-    if (stripeUrl && stripeUrl.startsWith('http')) {
-      const separator = stripeUrl.includes('?') ? '&' : '?';
-      window.open(`${stripeUrl}${separator}client_reference_id=${currentStudent.alumne.id}`, '_blank');
-      document.getElementById('modal-checkout-backdrop').classList.remove('active');
-      showToast('S\'ha obert la passarel·la segura de Stripe. Quan completis el pagament les hores se sumaran automàticament.', 'info');
-    } else {
-      const confirmDirect = confirm(`L'enllaç de Stripe per a aquest pack no està configurat a l'Admin. Vols simular el pagament i sumar directament les ${currentSelectedPack.hours} hores al compte de ${currentStudent.alumne.nom}?`);
-      if (confirmDirect) {
-        document.getElementById('modal-checkout-backdrop').classList.remove('active');
-        await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Stripe');
+  // Desplegable i confirmació Bizum
+  const btnPortalShowBizum = document.getElementById('btn-portal-show-bizum');
+  if (btnPortalShowBizum) {
+    btnPortalShowBizum.addEventListener('click', () => {
+      const box = document.getElementById('portal-bizum-box');
+      if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
       }
-    }
-  });
+    });
+  }
 
-  // Botó Bizum
-  document.getElementById('btn-pay-bizum').addEventListener('click', () => {
-    document.getElementById('bizum-instructions').style.display = 'block';
-  });
+  const btnPortalConfirmBizum = document.getElementById('btn-portal-confirm-bizum');
+  if (btnPortalConfirmBizum) {
+    btnPortalConfirmBizum.addEventListener('click', async () => {
+      if (!currentStudent) return;
+      const hStr = prompt('Quantes hores has pagat per Bizum?', '5');
+      const h = parseFloat(hStr);
+      if (isNaN(h) || h <= 0) {
+        alert('Si us plau, indica un nombre d\'hores vàlid.');
+        return;
+      }
+      const selectCat = document.getElementById('portal-select-categoria');
+      const cat = selectCat ? selectCat.value : 'adults';
+      await processSuccessfulPayment(h, `Pagament Bizum (${cat})`, 0, 'Bizum');
+      const box = document.getElementById('portal-bizum-box');
+      if (box) box.style.display = 'none';
+    });
+  }
 
-  document.getElementById('btn-confirm-bizum').addEventListener('click', async () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-    await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Bizum');
-  });
-
-  // Botó simulació / suma immediata
-  document.getElementById('btn-simulate-pay').addEventListener('click', async () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-    await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Pagament Immediat');
-  });
+  // Tancar Checkout modal (si fos obert)
+  const btnCloseCheckout = document.getElementById('btn-close-checkout');
+  if (btnCloseCheckout) {
+    btnCloseCheckout.addEventListener('click', () => {
+      document.getElementById('modal-checkout-backdrop').classList.remove('active');
+    });
+  }
 
   // Imprimir carnet
-  document.getElementById('btn-portal-print-badge').addEventListener('click', () => {
-    window.print();
-  });
+  const btnPrintBadge = document.getElementById('btn-portal-print-badge');
+  if (btnPrintBadge) {
+    btnPrintBadge.addEventListener('click', () => {
+      window.print();
+    });
+  }
 }

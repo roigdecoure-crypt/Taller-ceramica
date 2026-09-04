@@ -31,9 +31,9 @@ const Store = {
       const nowIso = new Date().toISOString();
       const initial = {
         alumnes: [
-          { id: 'TC-101', nom: 'Maria', cognoms: 'Garcia Font', telefon: '612345678', email: 'maria.garcia@email.com', pin: '1001', data_alta: nowIso, notes: 'Curs de torn nivell mig', actiu: 1 },
-          { id: 'TC-102', nom: 'Jordi', cognoms: 'Rovira Pons', telefon: '623456789', email: 'jordi.rovira@email.com', pin: '1002', data_alta: nowIso, notes: 'Modelatge i escultura', actiu: 1 },
-          { id: 'TC-103', nom: 'Clara', cognoms: 'Vidal Soler', telefon: '634567890', email: 'clara.vidal@email.com', pin: '1003', data_alta: nowIso, notes: 'Esmalts i pintura', actiu: 1 }
+          { id: 'TC-101', nom: 'Maria', cognoms: 'Garcia Font', telefon: '612345678', email: 'maria.garcia@email.com', pin: '1001', data_alta: nowIso, notes: 'Curs de torn nivell mig', actiu: 1, edat: 32 },
+          { id: 'TC-102', nom: 'Jordi', cognoms: 'Rovira Pons', telefon: '623456789', email: 'jordi.rovira@email.com', pin: '1002', data_alta: nowIso, notes: 'Modelatge i escultura', actiu: 1, edat: 28 },
+          { id: 'TC-103', nom: 'Clara', cognoms: 'Vidal Soler', telefon: '634567890', email: 'clara.vidal@email.com', pin: '1003', data_alta: nowIso, notes: 'Esmalts i pintura', actiu: 1, edat: 10 }
         ],
         paquets: [
           { id: 'PK-101-1', student_id: 'TC-101', data: nowIso, hores: 10, segons: 36000, concepte: 'Pack 10 Hores Torn', preu: 120, metode_pagament: 'Stripe', notes: 'Pagat amb Stripe' },
@@ -48,6 +48,9 @@ const Store = {
           taller_telefon: '+34 600 000 000',
           taller_email: 'info@tallerdecoramica.cat',
           hores_per_defecte_oblit: '01:30:00',
+          stripe_url_adults: 'https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n',
+          stripe_url_infantil: 'https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j',
+          edat_tall_infantil: '12',
           stripe_pack5_url: '',
           stripe_pack10_url: '',
           stripe_pack20_url: '',
@@ -176,7 +179,8 @@ const Store = {
       pin: studentData.pin || id.replace('TC-', ''),
       data_alta: studentData.data_alta || new Date().toISOString(),
       notes: studentData.notes || '',
-      actiu: 1
+      actiu: 1,
+      edat: studentData.edat !== undefined && studentData.edat !== null && String(studentData.edat).trim() !== '' ? parseInt(studentData.edat, 10) : null
     };
 
     if (existingIdx >= 0) {
@@ -186,6 +190,14 @@ const Store = {
     }
     this._saveLocalData(data);
     return { ok: true, id: id, message: 'Alumne desat correctament' };
+  },
+
+  getCategoriaEdat(edat, edatTall = 12) {
+    const tall = parseInt(edatTall, 10) || 12;
+    if (edat === undefined || edat === null || edat === '') return 'indefinida';
+    const num = parseInt(edat, 10);
+    if (isNaN(num)) return 'indefinida';
+    return num <= tall ? 'infantil' : 'adults';
   },
 
   async deleteAlumne(id) {

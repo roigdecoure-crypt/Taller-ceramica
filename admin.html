@@ -247,6 +247,10 @@
           <input type="email" id="alumne-form-email" class="form-control" placeholder="ex: maria.garcia@email.com">
         </div>
         <div class="form-group">
+          <label>Edat (anys)</label>
+          <input type="number" id="alumne-form-edat" class="form-control" min="1" max="120" placeholder="ex: 32 (aplica tarifa Adult >=12 o Infantil <12)">
+        </div>
+        <div class="form-group">
           <label>Número d'Identificació / PIN (opcional, es genera automàtic)</label>
           <input type="text" id="alumne-form-pin" class="form-control" placeholder="ex: 101">
         </div>
@@ -473,21 +477,22 @@
           <input type="text" id="cfg-durada-oblit" class="form-control" placeholder="01:30:00">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe</h4>
+        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe (segons Edat)</h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
-          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats:
+          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats. El sistema redirigirà l'alumne a la passarel·la corresponent automàticament segons la seva edat:
         </p>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 5 Hores</label>
-          <input type="url" id="cfg-stripe-pack5" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>🎂 Edat de tall per a tarifa Infantil (anys)</label>
+          <input type="number" id="cfg-edat-tall" class="form-control" min="1" max="99" value="12" style="max-width: 140px;">
+          <small style="color: var(--color-muted); font-size: 11px;">Alumnes de 12 anys o menys (&le; 12) aniran a Infantil; de més de 12 anys aniran a Adults.</small>
         </div>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 10 Hores</label>
-          <input type="url" id="cfg-stripe-pack10" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>🔗 Enllaç Stripe: Adults (més de 12 anys)</label>
+          <input type="url" id="cfg-stripe-adults" class="form-control" placeholder="https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n">
         </div>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 20 Hores</label>
-          <input type="url" id="cfg-stripe-pack20" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>🔗 Enllaç Stripe: Infantil / Menors (fins a 12 anys)</label>
+          <input type="url" id="cfg-stripe-infantil" class="form-control" placeholder="https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j">
         </div>
 
         <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">📊 Sincronització amb Google Sheets</h4>
@@ -875,11 +880,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.5"></script>
-  <script src="js/sound.js?v=3.5"></script>
-  <script src="js/qr-engine.js?v=3.5"></script>
-  <script src="js/store.js?v=3.5"></script>
-  <script src="js/reserves-calendar.js?v=3.5"></script>
-  <script src="js/admin.js?v=3.5"></script>
+  <script src="js/time-utils.js?v=3.6"></script>
+  <script src="js/sound.js?v=3.6"></script>
+  <script src="js/qr-engine.js?v=3.6"></script>
+  <script src="js/store.js?v=3.6"></script>
+  <script src="js/reserves-calendar.js?v=3.6"></script>
+  <script src="js/admin.js?v=3.6"></script>
 </body>
 </html>

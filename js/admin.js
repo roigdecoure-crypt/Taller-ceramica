@@ -187,10 +187,12 @@ function renderStudentsTable(students) {
     else saldoBadgeClass = 'badge-success';
 
     const tr = document.createElement('tr');
+    const edatLabel = s.edat !== null && s.edat !== undefined ? `<div style="font-size:11px; color:var(--color-muted);">${s.edat} anys (${s.edat >= 12 ? 'Adult' : 'Infantil'})</div>` : '';
     tr.innerHTML = `
       <td><strong>${s.id}</strong></td>
       <td>
         <div style="font-weight:600;">${s.nom} ${s.cognoms || ''}</div>
+        ${edatLabel}
       </td>
       <td>${s.telefon || '-'}</td>
       <td>${s.email || '-'}</td>
@@ -239,7 +241,8 @@ async function openStudentDrawer(studentId) {
     document.getElementById('drawer-total-spent').textContent = bal.formatSpent;
 
     const contactEl = document.getElementById('drawer-student-contact');
-    contactEl.textContent = `Tel: ${a.telefon || '-'} | Email: ${a.email || '-'}`;
+    const edatText = a.edat !== null && a.edat !== undefined ? ` | Edat: ${a.edat} anys (${a.edat >= 12 ? 'Adult' : 'Infantil'})` : '';
+    contactEl.textContent = `Tel: ${a.telefon || '-'} | Email: ${a.email || '-'}${edatText}`;
 
     const waBtn = document.getElementById('drawer-btn-whatsapp');
     if (a.telefon) {
@@ -583,6 +586,7 @@ function setupEventListeners() {
     document.getElementById('alumne-form-email').value = a.email || '';
     document.getElementById('alumne-form-pin').value = a.pin || '';
     document.getElementById('alumne-form-notes').value = a.notes || '';
+    document.getElementById('alumne-form-edat').value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
@@ -602,6 +606,7 @@ function setupEventListeners() {
     document.getElementById('modal-alumne-title').textContent = 'Donar d\'Alta Nou Alumne';
     document.getElementById('form-alumne').reset();
     document.getElementById('alumne-form-id').value = '';
+    document.getElementById('alumne-form-edat').value = '';
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
@@ -671,7 +676,8 @@ function setupEventListeners() {
       telefon: document.getElementById('alumne-form-telefon').value,
       email: document.getElementById('alumne-form-email').value,
       pin: document.getElementById('alumne-form-pin').value,
-      notes: document.getElementById('alumne-form-notes').value
+      notes: document.getElementById('alumne-form-notes').value,
+      edat: document.getElementById('alumne-form-edat').value ? parseInt(document.getElementById('alumne-form-edat').value, 10) : null
     };
     try {
       const res = await Store.saveAlumne(data);
@@ -782,9 +788,15 @@ function setupEventListeners() {
     document.getElementById('cfg-taller-nom').value = cfg.taller_nom || '';
     document.getElementById('cfg-taller-telefon').value = cfg.taller_telefon || '';
     document.getElementById('cfg-durada-oblit').value = cfg.hores_per_defecte_oblit || '01:30:00';
-    document.getElementById('cfg-stripe-pack5').value = cfg.stripe_pack5_url || '';
-    document.getElementById('cfg-stripe-pack10').value = cfg.stripe_pack10_url || '';
-    document.getElementById('cfg-stripe-pack20').value = cfg.stripe_pack20_url || '';
+    if (document.getElementById('cfg-edat-tall')) {
+      document.getElementById('cfg-edat-tall').value = cfg.edat_tall_infantil || '12';
+    }
+    if (document.getElementById('cfg-stripe-adults')) {
+      document.getElementById('cfg-stripe-adults').value = cfg.stripe_url_adults || '';
+    }
+    if (document.getElementById('cfg-stripe-infantil')) {
+      document.getElementById('cfg-stripe-infantil').value = cfg.stripe_url_infantil || '';
+    }
     document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
     document.getElementById('modal-config-backdrop').classList.add('active');
   });
@@ -795,9 +807,9 @@ function setupEventListeners() {
       taller_nom: document.getElementById('cfg-taller-nom').value,
       taller_telefon: document.getElementById('cfg-taller-telefon').value,
       hores_per_defecte_oblit: document.getElementById('cfg-durada-oblit').value,
-      stripe_pack5_url: document.getElementById('cfg-stripe-pack5').value,
-      stripe_pack10_url: document.getElementById('cfg-stripe-pack10').value,
-      stripe_pack20_url: document.getElementById('cfg-stripe-pack20').value,
+      edat_tall_infantil: document.getElementById('cfg-edat-tall') ? document.getElementById('cfg-edat-tall').value : '12',
+      stripe_url_adults: document.getElementById('cfg-stripe-adults') ? document.getElementById('cfg-stripe-adults').value : '',
+      stripe_url_infantil: document.getElementById('cfg-stripe-infantil') ? document.getElementById('cfg-stripe-infantil').value : '',
       google_sheets_url: document.getElementById('cfg-sheets-url').value
     };
     try {
