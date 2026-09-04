@@ -397,7 +397,7 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
         row = c.fetchone()
         self.assertIsNotNone(row)
-        self.assertEqual(row['valor'], 'Roig de Coure')
+        self.assertEqual(row['valor'], 'roigdecoure')
 
         # Comprovar inserció i lectura de calendar_event_id a reserves
         test_res_id = "RES-TEST-CAL"

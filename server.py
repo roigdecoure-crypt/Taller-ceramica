@@ -154,7 +154,7 @@ def init_db():
             'stripe_pack10_url': "",
             'stripe_pack20_url': "",
             'google_sheets_url': "",
-            'google_calendar_name': "Roig de Coure",
+            'google_calendar_name': "roigdecoure",
             'aforament_maxim_per_franja': "12",
             'franges_horaries': default_franges_json
         }
@@ -167,7 +167,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
-        cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL)')
+        cursor.execute('UPDATE configuracio SET valor = "roigdecoure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "Roig de Coure")')
 
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
@@ -1464,7 +1464,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     conn.commit()
 
                 # Obtenir nom del calendari configurat
-                cal_name = 'Roig de Coure'
+                cal_name = 'roigdecoure'
                 with get_db() as conn:
                     c_cursor = conn.cursor()
                     c_cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")

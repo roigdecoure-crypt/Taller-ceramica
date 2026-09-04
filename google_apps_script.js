@@ -514,23 +514,30 @@ function readReserves(ss) {
   return result;
 }
 
-// Cerca el calendari "Roig de Coure" amb tolerància a majúscules/minúscules
+// Cerca el calendari "roigdecoure" (o el configurat) amb tolerància a espais i majúscules/minúscules
 function getRoigDeCoureCalendar(preferredName) {
   if (typeof CalendarApp === "undefined") return null;
   try {
-    var target = (preferredName || "Roig de Coure").trim().toLowerCase();
+    var rawPreferred = (preferredName || "roigdecoure").trim();
+    var targetClean = rawPreferred.toLowerCase().replace(/[\s_\-]+/g, ""); // "roigdecoure"
     var cals = CalendarApp.getAllCalendars();
     for (var i = 0; i < cals.length; i++) {
       var cName = (cals[i].getName() || "").toLowerCase();
-      if (cName === target || cName.indexOf(target) !== -1 || target.indexOf(cName) !== -1) {
+      var cNameClean = cName.replace(/[\s_\-]+/g, "");
+      // Coincidència exacta o neta (sense espais, tolerant a majúscules)
+      if (cNameClean === targetClean || cNameClean.indexOf(targetClean) !== -1 || targetClean.indexOf(cNameClean) !== -1) {
         return cals[i];
       }
     }
-    // Provar cerca directa
-    var named = CalendarApp.getCalendarsByName(preferredName || "Roig de Coure");
+    // Provar cerca directa per nom
+    var named = CalendarApp.getCalendarsByName(rawPreferred);
     if (named && named.length > 0) return named[0];
+    var namedAlt = CalendarApp.getCalendarsByName("roigdecoure");
+    if (namedAlt && namedAlt.length > 0) return namedAlt[0];
+    var namedAlt2 = CalendarApp.getCalendarsByName("Roig de Coure");
+    if (namedAlt2 && namedAlt2.length > 0) return namedAlt2[0];
 
-    // Fallback al calendari per defecte de l'usuari si no troba "Roig de Coure"
+    // Fallback al calendari per defecte de l'usuari si no es troba
     return CalendarApp.getDefaultCalendar();
   } catch (err) {
     Logger.log("Avís obtenint calendari: " + err.toString());
@@ -590,7 +597,7 @@ function upsertReservaRow(ss, r) {
 function syncCalendarEvent(r) {
   try {
     if (!r || !r.data || !r.hora_inici || !r.hora_fi) return null;
-    var cal = getRoigDeCoureCalendar(r.calendar_name || "Roig de Coure");
+    var cal = getRoigDeCoureCalendar(r.calendar_name || "roigdecoure");
     if (!cal) return null;
 
     var nom = r.student_nom || r.student_id || "Alumne";
@@ -656,7 +663,7 @@ function syncCalendarEvent(r) {
 function deleteCalendarEvent(r) {
   try {
     if (!r) return;
-    var cal = getRoigDeCoureCalendar(r.calendar_name || "Roig de Coure");
+    var cal = getRoigDeCoureCalendar(r.calendar_name || "roigdecoure");
     if (!cal) return;
 
     var event = null;
