@@ -365,6 +365,8 @@ def hydrate_from_google_sheets(target_url=None):
             # 5. Bolcar configuració
             for k, v in config.items():
                 if k:
+                    if k == 'aforament_maxim_per_franja' and str(v) in ('8', ''):
+                        v = '12'
                     cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
 
             conn.commit()
@@ -460,9 +462,9 @@ def get_student_balance(student_id):
         }
 
 ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "🏺", "color": "#3B82F6"},
-    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "🗿", "color": "#10B981"},
-    {"id": "vidre", "nom": "Vidre", "descripcio": "Treball i decoració en vidre", "capacitatMax": 8, "icon": "🔮", "color": "#8B5CF6"},
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 12, "icon": "🏺", "color": "#3B82F6"},
+    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 12, "icon": "🗿", "color": "#10B981"},
+    {"id": "vidre", "nom": "Vidre", "descripcio": "Treball i decoració en vidre", "capacitatMax": 12, "icon": "🔮", "color": "#8B5CF6"},
     {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "🎨", "color": "#F59E0B"}
 ]
 
@@ -1414,15 +1416,6 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         else:
                             if not student_nom:
                                 student_nom = student_id
-
-                    # Comprovar si l'alumne ja té reserva confirmada per a aquesta franja del mateix dia
-                    cursor.execute('''
-                        SELECT id FROM reserves 
-                        WHERE student_id = ? AND data = ? AND franja = ? AND estat = 'confirmada'
-                    ''', (student_id, data_res, franja_obj['id']))
-                    if cursor.fetchone():
-                        self.send_json({'ok': False, 'error': 'Ja tens una reserva confirmada per a aquesta franja.'}, 400)
-                        return
 
                     # Comprovar aforament global de la franja (màxim 12 places en total)
                     max_cap = get_aforament_maxim()

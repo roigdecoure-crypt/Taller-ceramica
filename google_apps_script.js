@@ -594,11 +594,53 @@ function upsertReservaRow(ss, r) {
   }
 }
 
+function parseDateTimeRobust(dateVal, timeVal) {
+  var year = 2026, month = 8, day = 5, hours = 10, minutes = 0;
+
+  if (dateVal instanceof Date) {
+    year = dateVal.getFullYear();
+    month = dateVal.getMonth();
+    day = dateVal.getDate();
+  } else if (dateVal) {
+    var str = String(dateVal).trim();
+    var isoMatch = str.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (isoMatch) {
+      year = parseInt(isoMatch[1], 10);
+      month = parseInt(isoMatch[2], 10) - 1;
+      day = parseInt(isoMatch[3], 10);
+    } else {
+      var dObj = new Date(str);
+      if (!isNaN(dObj.getTime())) {
+        year = dObj.getFullYear();
+        month = dObj.getMonth();
+        day = dObj.getDate();
+      }
+    }
+  }
+
+  if (timeVal instanceof Date) {
+    hours = timeVal.getHours();
+    minutes = timeVal.getMinutes();
+  } else if (timeVal) {
+    var timeStr = String(timeVal).trim();
+    var timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      hours = parseInt(timeMatch[1], 10);
+      minutes = parseInt(timeMatch[2], 10);
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0);
+}
+
 function syncCalendarEvent(r) {
   try {
     if (!r || !r.data || !r.hora_inici || !r.hora_fi) return null;
-    var cal = getRoigDeCoureCalendar(r.calendar_name || "roigdecoure");
-    if (!cal) return null;
+    var cal = getRoigDeCoureCalendar(r.calendar_name || "Roigdecoure");
+    if (!cal) {
+      Logger.log("❌ No s'ha pogut obtenir cap calendari.");
+      return "ERR: No s'ha trobat el calendari Roigdecoure";
+    }
 
     var nom = r.student_nom || r.student_id || "Alumne";
     var act = r.activitat || "Torn";
@@ -606,12 +648,8 @@ function syncCalendarEvent(r) {
     var places = parseInt(r.places || 1, 10);
     var title = "🏺 " + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
-    var startParts = r.hora_inici.split(":");
-    var endParts = r.hora_fi.split(":");
-    var dateParts = r.data.split("-");
-
-    var startTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(startParts[0], 10), parseInt(startParts[1], 10));
-    var endTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(endParts[0], 10), parseInt(endParts[1], 10));
+    var startTime = parseDateTimeRobust(r.data, r.hora_inici);
+    var endTime = parseDateTimeRobust(r.data, r.hora_fi);
 
     var desc = "Reserva Taller Roig de Coure\n" +
                "Alumne: " + nom + "\n" +
@@ -674,11 +712,8 @@ function deleteCalendarEvent(r) {
     }
 
     if (!event && r.data && r.hora_inici && r.hora_fi) {
-      var startParts = r.hora_inici.split(":");
-      var endParts = r.hora_fi.split(":");
-      var dateParts = r.data.split("-");
-      var startTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(startParts[0], 10), parseInt(startParts[1], 10));
-      var endTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(endParts[0], 10), parseInt(endParts[1], 10));
+      var startTime = parseDateTimeRobust(r.data, r.hora_inici);
+      var endTime = parseDateTimeRobust(r.data, r.hora_fi);
       var existingEvents = cal.getEvents(startTime, endTime);
       for (var j = 0; j < existingEvents.length; j++) {
         var d = existingEvents[j].getDescription() || "";
@@ -730,6 +765,41 @@ function deleteReservaRow(ss, resId) {
       return;
     }
   }
+}
+
+/**
+ * Funció de prova directa des de l'editor d'Apps Script.
+ * Executa aquesta funció a l'editor fent clic a "Executa":
+ * 1. Google et demanarà "Revisa els permisos" per donar accés al calendari.
+ * 2. Trobarà automàticament el teu calendari "Roigdecoure".
+ * 3. Crearà un esdeveniment de prova a la teva agenda per confirmar que funciona al 100%.
+ */
+function provarSincronitzacioCalendari() {
+  Logger.log("Iniciant prova de connexió amb Google Calendar...");
+  var cals = CalendarApp.getAllCalendars();
+  Logger.log("Calendaris detectats al teu compte (" + cals.length + "):");
+  for (var i = 0; i < cals.length; i++) {
+    Logger.log(" - " + cals[i].getName() + " (ID: " + cals[i].getId() + ")");
+  }
+
+  var cal = getRoigDeCoureCalendar("Roigdecoure");
+  if (!cal) {
+    Logger.log("❌ No s'ha trobat el calendari 'Roigdecoure'. Revisa la llista anterior.");
+    return;
+  }
+
+  Logger.log("✅ CALENDARI SELECCIONAT AMB ÈXIT: " + cal.getName());
+
+  var ara = new Date();
+  var fi = new Date(ara.getTime() + 60 * 60 * 1000);
+  var ev = cal.createEvent("🏺 Prova Taller Roig de Coure", ara, fi, {
+    description: "Esdeveniment de prova per confirmar que la sincronització funciona correctament.",
+    location: "Taller de Ceràmica"
+  });
+
+  Logger.log("🎉 ESDEVENIMENT CREAT CORRECTAMENT AL TEU CALENDARI!");
+  Logger.log("ID esdeveniment: " + ev.getId());
+  Logger.log("Obre el teu Google Calendar per veure'l.");
 }
 
 

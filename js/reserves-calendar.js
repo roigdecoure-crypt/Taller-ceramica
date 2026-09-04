@@ -47,9 +47,9 @@ class ReservesCalendar {
     ];
 
     this.ACTIVITATS = [
-      { id: 'torn', nom: 'Torn de terrissaire', icon: '🏺', color: '#C25E3A', capacitatMax: 4, desc: 'Màx. 4 torns' },
-      { id: 'modelatge', nom: 'Modelatge i escultura', icon: '🗿', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'vidre', nom: 'Taller de vidre (fusing)', icon: '🔮', color: '#1976D2', capacitatMax: 8, desc: 'Fins a 8 places' },
+      { id: 'torn', nom: 'Torn de terrissaire', icon: '🏺', color: '#C25E3A', capacitatMax: 12, desc: 'Fins a 12 places' },
+      { id: 'modelatge', nom: 'Modelatge i escultura', icon: '🗿', color: '#5E7E6F', capacitatMax: 12, desc: 'Fins a 12 places' },
+      { id: 'vidre', nom: 'Taller de vidre (fusing)', icon: '🔮', color: '#1976D2', capacitatMax: 12, desc: 'Fins a 12 places' },
       { id: 'pintar', nom: 'Pintar ceràmica', icon: '🎨', color: '#7B1FA2', capacitatMax: 12, desc: 'Fins a 12 places' }
     ];
 

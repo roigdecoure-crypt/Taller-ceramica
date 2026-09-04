@@ -303,6 +303,8 @@ class TestCeramicsBackend(unittest.TestCase):
 
         test_data = '2026-09-10' # Dijous (obert)
         slot_id = 'F1'
+        c.execute("DELETE FROM reserves WHERE data = ?", (test_data,))
+        self.conn.commit()
 
         # Comprovar disponibilitat inicial
         disp = server.get_disponibilitat(test_data)
@@ -361,6 +363,14 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_student,))
         c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '12'))
         self.conn.commit()
+
+        # Comprovar que amb aforament 12 totes les activitats admeten fins a 12 places
+        disp_12 = server.get_disponibilitat('2026-09-12')
+        franja_12 = next(f for f in disp_12['franges'] if f['id'] == 'F1')
+        self.assertEqual(franja_12['totalPlaces'], 12)
+        for act in franja_12['activitats']:
+            self.assertEqual(act['capacitatMax'], 12)
+            self.assertEqual(act['placesDisponibles'], 12)
 
     def test_09_edat_and_stripe_config(self):
         c = self.conn.cursor()

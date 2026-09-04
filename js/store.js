@@ -842,10 +842,6 @@ const Store = {
     if (ocupades + demanades > maxCap) {
       return { ok: false, error: `Aforament complet per a aquesta franja (Màx. ${maxCap} places).` };
     }
-    const alreadyStudent = data.reserves.find(r => r.student_id === reservaData.student_id && r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
-    if (alreadyStudent) {
-      return { ok: false, error: 'Ja tens una reserva confirmada per a aquesta franja.' };
-    }
 
     const resId = `RES-${Date.now()}-${reservaData.student_id}`;
     const newRes = {
