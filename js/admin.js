@@ -798,6 +798,9 @@ function setupEventListeners() {
       document.getElementById('cfg-stripe-infantil').value = cfg.stripe_url_infantil || '';
     }
     document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
+    if (document.getElementById('cfg-calendar-name')) {
+      document.getElementById('cfg-calendar-name').value = cfg.google_calendar_name || 'Roig de Coure';
+    }
     document.getElementById('modal-config-backdrop').classList.add('active');
   });
 
@@ -810,7 +813,8 @@ function setupEventListeners() {
       edat_tall_infantil: document.getElementById('cfg-edat-tall') ? document.getElementById('cfg-edat-tall').value : '12',
       stripe_url_adults: document.getElementById('cfg-stripe-adults') ? document.getElementById('cfg-stripe-adults').value : '',
       stripe_url_infantil: document.getElementById('cfg-stripe-infantil') ? document.getElementById('cfg-stripe-infantil').value : '',
-      google_sheets_url: document.getElementById('cfg-sheets-url').value
+      google_sheets_url: document.getElementById('cfg-sheets-url').value,
+      google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'Roig de Coure'
     };
     try {
       await Store.saveConfig(newCfg);

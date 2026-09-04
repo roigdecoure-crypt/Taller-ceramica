@@ -392,5 +392,32 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id IN (?, ?)", (test_id_adult, test_id_nen))
         self.conn.commit()
 
+    def test_10_google_calendar_config_and_event_id(self):
+        c = self.conn.cursor()
+        c.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['valor'], 'Roig de Coure')
+
+        # Comprovar inserció i lectura de calendar_event_id a reserves
+        test_res_id = "RES-TEST-CAL"
+        test_student = "TC-101"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
+            VALUES (?, ?, 'Test Cal', '2026-09-15', '10:00', '11:30', 'F1', 'Torn', 'torn', 1, '600000000', 'confirmada', 1.5, '', ?, 'cal_event_12345')
+        ''', (test_res_id, test_student, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT calendar_event_id FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['calendar_event_id'], 'cal_event_12345')
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
+

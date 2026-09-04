@@ -911,6 +911,13 @@ class ReservesCalendar {
 
       const notes = modalBackdrop.querySelector('#input-booking-notes')?.value?.trim() || '';
 
+      // Demanar permís de notificació si està en 'default' durant el gest de fer clic a Confirmar
+      if ('Notification' in window && Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission();
+        } catch (e) {}
+      }
+
       try {
         const res = await Store.crearReserva({
           student_id: studentId,
@@ -930,17 +937,24 @@ class ReservesCalendar {
 
         if (res.ok) {
           closeModal();
-          if (typeof showToast === 'function') {
-            showToast(`🎉 Reserva confirmada per a ${act.nom} (${currentPax}p)!`, 'success');
-          }
+          const reservaObj = res.reserva || res;
+
+          // 1. Enviar Notificació Push al dispositiu
+          ReservesCalendar.sendBookingPush(reservaObj);
+
+          // 2. So de confirmació
           if (typeof SoundEngine !== 'undefined' && SoundEngine.playSuccess) {
             SoundEngine.playSuccess();
           } else if (typeof Sound !== 'undefined' && Sound.playSuccess) {
             Sound.playSuccess();
           }
+
+          // 3. Mostrar modal d'èxit amb coordinació de calendaris (Google Calendar / .ics)
+          this._showBookingSuccessModal(reservaObj);
+
           await this.refresh();
           if (typeof this.onBookingSuccess === 'function') {
-            this.onBookingSuccess(res.reserva || res);
+            this.onBookingSuccess(reservaObj);
           }
         } else {
           alert(res.error || 'No s\'ha pogut completar la reserva');
@@ -954,9 +968,200 @@ class ReservesCalendar {
       }
     });
   }
+
+  _showBookingSuccessModal(r) {
+    if (!r) return;
+    const oldModal = document.getElementById('modal-reserva-success-backdrop');
+    if (oldModal) oldModal.remove();
+
+    let dataFormatada = r.data || '';
+    try {
+      const p = r.data.split('-');
+      const dObj = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+      dataFormatada = dObj.toLocaleDateString('ca-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      dataFormatada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+    } catch (e) {}
+
+    const startIso = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_inici || '10:00').replace(/:/g, '') + '00';
+    const endIso = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_fi || '11:30').replace(/:/g, '') + '00';
+    const calTitle = encodeURIComponent(`🏺 ${r.activitat || 'Ceràmica'} - Taller Roig de Coure`);
+    const calDesc = encodeURIComponent(`Reserva al Taller de Ceràmica Roig de Coure\nAlumne: ${r.student_nom}\nActivitat: ${r.activitat}\nPlaces: ${r.places || 1}\nHorari: ${r.hora_inici} - ${r.hora_fi}\nID: ${r.id}`);
+    const calLoc = encodeURIComponent('Taller de Ceràmica Roig de Coure');
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calTitle}&dates=${startIso}/${endIso}&details=${calDesc}&location=${calLoc}`;
+
+    const hasPush = ('Notification' in window && Notification.permission === 'granted');
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'modal-reserva-success-backdrop';
+    backdrop.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.65); z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; backdrop-filter: blur(4px);
+    `;
+
+    backdrop.innerHTML = `
+      <div style="background: var(--color-surface, #FFFFFF); border-radius: 20px; max-width: 480px; width: 100%; padding: 26px 22px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); text-align: center; border: 1px solid var(--color-border, #E0D6CE); position: relative;">
+        <div style="font-size: 48px; line-height: 1; margin-bottom: 10px;">🎉</div>
+        <h3 style="font-size: 21px; font-weight: 800; color: var(--color-dark, #2C2523); margin: 0 0 6px;">Reserva Confirmada!</h3>
+        <p style="font-size: 13px; color: var(--color-muted, #766B65); margin: 0 0 16px;">La teva plaça ha quedat degudament reservada al taller.</p>
+
+        <!-- Targeta resum -->
+        <div style="background: var(--color-bg, #F9F6F0); border-radius: 14px; padding: 14px 16px; text-align: left; margin-bottom: 16px; border: 1px solid #E8DFD8;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed #DDD2C8; padding-bottom: 8px;">
+            <span style="font-size: 14px; font-weight: 700; color: var(--color-primary, #C25E3A);">🏺 ${r.activitat || 'Taller'}</span>
+            <span style="background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px;">${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'}</span>
+          </div>
+          <div style="font-size: 13px; color: #443B38; line-height: 1.6;">
+            <div>📅 <strong>${dataFormatada}</strong></div>
+            <div>⏰ <strong>${r.hora_inici} - ${r.hora_fi}</strong> (${r.hores || 1.5}h)</div>
+            <div>👤 Alumne: <strong>${r.student_nom}</strong></div>
+            <div style="font-size: 11px; color: #8C7F78; margin-top: 4px;">Codi reserva: <code>${r.id}</code></div>
+          </div>
+        </div>
+
+        <!-- Estat Notificació Push -->
+        <div id="push-status-box" style="margin-bottom: 18px; font-size: 12px; padding: 9px 12px; border-radius: 10px; background: ${hasPush ? '#E8F5E9' : '#FFF3E0'}; color: ${hasPush ? '#2E7D32' : '#E65100'}; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          ${hasPush 
+            ? '<span>🔔 Notificació Push enviada al teu telèfon/navegador!</span>' 
+            : '<span id="btn-request-push-cta" style="cursor: pointer; text-decoration: underline;">🔔 Clica aquí per activar notificacions push de confirmació</span>'}
+        </div>
+
+        <!-- Coordinació amb Calendaris -->
+        <div style="margin-bottom: 20px;">
+          <p style="font-size: 12px; font-weight: 700; color: var(--color-dark, #2C2523); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px;">Coordinar amb el teu Calendari:</p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background: #4285F4; color: #FFFFFF; font-weight: 700; padding: 11px 14px; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 6px rgba(66,133,244,0.3);">
+              <span>📅</span> Afegir al meu Google Calendar
+            </a>
+            <button type="button" id="btn-download-ics" class="btn" style="background: #FFFFFF; color: #2C2523; border: 1.5px solid #D1C7BD; font-weight: 700; padding: 11px 14px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
+              <span>🍏</span> Afegir a Apple Calendar / Outlook (.ics)
+            </button>
+          </div>
+        </div>
+
+        <!-- Tancar -->
+        <button type="button" id="btn-close-success-modal" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 12px;">
+          D'acord, Moltes Gràcies
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const closeSuccess = () => {
+      backdrop.remove();
+    };
+
+    backdrop.querySelector('#btn-close-success-modal')?.addEventListener('click', closeSuccess);
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeSuccess();
+    });
+
+    backdrop.querySelector('#btn-download-ics')?.addEventListener('click', () => {
+      ReservesCalendar.downloadICS(r);
+    });
+
+    backdrop.querySelector('#btn-request-push-cta')?.addEventListener('click', async () => {
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          ReservesCalendar.sendBookingPush(r);
+          const box = backdrop.querySelector('#push-status-box');
+          if (box) {
+            box.style.background = '#E8F5E9';
+            box.style.color = '#2E7D32';
+            box.innerHTML = '<span>🔔 Notificació Push activada i enviada!</span>';
+          }
+        }
+      }
+    });
+  }
+
+  static async sendBookingPush(r) {
+    if (!r || !('Notification' in window)) return false;
+    if (Notification.permission !== 'granted') return false;
+
+    const title = `🏺 Reserva Confirmada - Roig de Coure`;
+    const body = `${r.activitat || 'Taller'} el ${r.data} (${r.hora_inici} - ${r.hora_fi})\nAlumne: ${r.student_nom} (${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'})`;
+    const options = {
+      body: body,
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: `reserva-${r.id}`,
+      renotify: true,
+      data: {
+        url: './alumne.html',
+        reservaId: r.id
+      }
+    };
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && reg.showNotification) {
+          await reg.showNotification(title, options);
+          return true;
+        }
+      }
+      new Notification(title, options);
+      return true;
+    } catch (e) {
+      console.warn('Avís llançant notificació push:', e);
+      return false;
+    }
+  }
+
+  static downloadICS(r) {
+    if (!r) return;
+    const startClean = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_inici || '10:00').replace(/:/g, '') + '00';
+    const endClean = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_fi || '11:30').replace(/:/g, '') + '00';
+    const uid = (r.id || `res-${Date.now()}`) + '@roigdecoure.cat';
+    const nowClean = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const act = r.activitat || 'Taller de Ceràmica';
+    const nom = r.student_nom || 'Alumne';
+    const places = r.places || 1;
+
+    const icsLines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Taller de Ceramica Roig de Coure//Reserves//CA',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${nowClean}`,
+      `DTSTART:${startClean}`,
+      `DTEND:${endClean}`,
+      `SUMMARY:🏺 ${act} - Taller Roig de Coure`,
+      `DESCRIPTION:Reserva al Taller de Ceràmica Roig de Coure\\nAlumne: ${nom}\\nActivitat: ${act}\\nPlaces: ${places}\\nID: ${r.id}`,
+      'LOCATION:Taller de Ceràmica Roig de Coure',
+      'STATUS:CONFIRMED',
+      'BEGIN:VALARM',
+      'TRIGGER:-PT2H',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Recordatori: tens classe de ceramica en 2 hores!',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ];
+
+    const icsBlob = new Blob([icsLines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(icsBlob);
+    link.download = `reserva-roigdecoure-${r.id || 'taller'}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }, 500);
+  }
 }
 
 // Exportar globalment
 if (typeof window !== 'undefined') {
   window.ReservesCalendar = ReservesCalendar;
 }
+

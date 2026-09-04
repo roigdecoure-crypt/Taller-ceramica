@@ -54,7 +54,8 @@ const Store = {
           stripe_pack5_url: '',
           stripe_pack10_url: '',
           stripe_pack20_url: '',
-          google_sheets_url: ''
+          google_sheets_url: '',
+          google_calendar_name: 'Roig de Coure'
         }
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initial));

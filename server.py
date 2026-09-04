@@ -96,6 +96,7 @@ def init_db():
                 hores REAL DEFAULT 1.5,
                 notes TEXT,
                 created_at TEXT NOT NULL,
+                calendar_event_id TEXT DEFAULT NULL,
                 FOREIGN KEY (student_id) REFERENCES alumnes (id)
             )
         ''')
@@ -104,7 +105,8 @@ def init_db():
             ('activitat', "TEXT DEFAULT 'Torn'"),
             ('activitat_id', "TEXT DEFAULT 'torn'"),
             ('places', "INTEGER DEFAULT 1"),
-            ('telefon', "TEXT DEFAULT ''")
+            ('telefon', "TEXT DEFAULT ''"),
+            ('calendar_event_id', "TEXT DEFAULT NULL")
         ]:
             try:
                 cursor.execute(f"ALTER TABLE reserves ADD COLUMN {col} {col_type}")
@@ -152,6 +154,7 @@ def init_db():
             'stripe_pack10_url': "",
             'stripe_pack20_url': "",
             'google_sheets_url': "",
+            'google_calendar_name': "Roig de Coure",
             'aforament_maxim_per_franja': "12",
             'franges_horaries': default_franges_json
         }
@@ -164,6 +167,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
+        cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL)')
 
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
@@ -1447,16 +1451,26 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     res_id = f"RES-{int(datetime.now().timestamp())}-{student_id}"
                     now_iso = datetime.now().isoformat()
+                    cal_event_id = (data.get('calendar_event_id') or '').strip() or None
                     cursor.execute('''
-                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?)
+                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
                     ''', (
                         res_id, student_id, student_nom, data_res,
                         franja_obj.get('inici', '10:00'), franja_obj.get('fi', '11:30'),
                         franja_obj['id'], activitat_nom, activitat_id, places_demanades, telefon,
-                        float(franja_obj.get('hores', 1.5)), notes, now_iso
+                        float(franja_obj.get('hores', 1.5)), notes, now_iso, cal_event_id
                     ))
                     conn.commit()
+
+                # Obtenir nom del calendari configurat
+                cal_name = 'Roig de Coure'
+                with get_db() as conn:
+                    c_cursor = conn.cursor()
+                    c_cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
+                    c_row = c_cursor.fetchone()
+                    if c_row and c_row['valor']:
+                        cal_name = c_row['valor']
 
                 reserva_dict = {
                     'id': res_id,
@@ -1474,7 +1488,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'estat': 'confirmada',
                     'hores': float(franja_obj.get('hores', 1.5)),
                     'notes': notes,
-                    'created_at': now_iso
+                    'created_at': now_iso,
+                    'calendar_event_id': cal_event_id,
+                    'calendar_name': cal_name
                 }
 
                 # Sincronitzar reserva a Google Sheets i Google Calendar

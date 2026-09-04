@@ -449,7 +449,7 @@ function upsertConfigKey(ss, key, val) {
 
 /* ==================== RESERVES & AFORAMENT ==================== */
 
-var HEADERS_RESERVES = ["ID Reserva", "ID Alumne", "Nom Alumne", "Telèfon", "Data", "Hora Inici", "Hora Fi", "Franja", "Activitat", "Places", "Estat", "Hores", "Notes", "Creat El"];
+var HEADERS_RESERVES = ["ID Reserva", "ID Alumne", "Nom Alumne", "Telèfon", "Data", "Hora Inici", "Hora Fi", "Franja", "Activitat", "Places", "Estat", "Hores", "Notes", "Creat El", "Calendar Event ID"];
 
 function syncReserves(ss, reserves) {
   var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
@@ -474,7 +474,8 @@ function syncReserves(ss, reserves) {
         r.estat || "confirmada",
         (r.hores !== undefined && r.hores !== null ? r.hores : 1.5),
         r.notes || "",
-        r.created_at || ""
+        r.created_at || "",
+        r.calendar_event_id || ""
       ];
     });
     sheet.getRange(2, 1, rows.length, HEADERS_RESERVES.length).setValues(rows);
@@ -506,16 +507,55 @@ function readReserves(ss) {
       estat: String(row[10] || "confirmada").trim(),
       hores: Number(row[11]) || 1.5,
       notes: String(row[12] || "").trim(),
-      created_at: String(row[13] || "").trim()
+      created_at: String(row[13] || "").trim(),
+      calendar_event_id: String(row[14] || "").trim()
     });
   }
   return result;
+}
+
+// Cerca el calendari "Roig de Coure" amb tolerància a majúscules/minúscules
+function getRoigDeCoureCalendar(preferredName) {
+  if (typeof CalendarApp === "undefined") return null;
+  try {
+    var target = (preferredName || "Roig de Coure").trim().toLowerCase();
+    var cals = CalendarApp.getAllCalendars();
+    for (var i = 0; i < cals.length; i++) {
+      var cName = (cals[i].getName() || "").toLowerCase();
+      if (cName === target || cName.indexOf(target) !== -1 || target.indexOf(cName) !== -1) {
+        return cals[i];
+      }
+    }
+    // Provar cerca directa
+    var named = CalendarApp.getCalendarsByName(preferredName || "Roig de Coure");
+    if (named && named.length > 0) return named[0];
+
+    // Fallback al calendari per defecte de l'usuari si no troba "Roig de Coure"
+    return CalendarApp.getDefaultCalendar();
+  } catch (err) {
+    Logger.log("Avís obtenint calendari: " + err.toString());
+    try {
+      return CalendarApp.getDefaultCalendar();
+    } catch (e2) {
+      return null;
+    }
+  }
 }
 
 function upsertReservaRow(ss, r) {
   if (!r || !r.id) return;
   var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
   var values = sheet.getDataRange().getValues();
+
+  var calEventId = r.calendar_event_id || "";
+  // Sincronització amb Google Calendar si la reserva és confirmada
+  if (r.estat !== "cancel·lada") {
+    var createdId = syncCalendarEvent(r);
+    if (createdId) calEventId = createdId;
+  } else {
+    deleteCalendarEvent(r);
+  }
+
   var rowData = [
     r.id,
     r.student_id || "",
@@ -530,7 +570,8 @@ function upsertReservaRow(ss, r) {
     r.estat || "confirmada",
     (r.hores !== undefined && r.hores !== null ? r.hores : 1.5),
     r.notes || "",
-    r.created_at || new Date().toISOString()
+    r.created_at || new Date().toISOString(),
+    calEventId
   ];
 
   var updated = false;
@@ -544,24 +585,19 @@ function upsertReservaRow(ss, r) {
   if (!updated) {
     sheet.appendRow(rowData);
   }
-
-  // Sincronització amb Google Calendar (Títol: Nom - Activitat - Telèfon)
-  if (r.estat !== "cancel·lada") {
-    syncCalendarEvent(r);
-  }
 }
 
 function syncCalendarEvent(r) {
   try {
-    if (!r || !r.data || !r.hora_inici || !r.hora_fi) return;
-    if (typeof CalendarApp === "undefined") return;
-    var cal = CalendarApp.getDefaultCalendar();
-    if (!cal) return;
+    if (!r || !r.data || !r.hora_inici || !r.hora_fi) return null;
+    var cal = getRoigDeCoureCalendar(r.calendar_name || "Roig de Coure");
+    if (!cal) return null;
 
     var nom = r.student_nom || r.student_id || "Alumne";
     var act = r.activitat || "Torn";
     var tel = r.telefon || "";
-    var title = nom + " - " + act + (tel ? " - " + tel : "");
+    var places = parseInt(r.places || 1, 10);
+    var title = "🏺 " + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
     var startParts = r.hora_inici.split(":");
     var endParts = r.hora_fi.split(":");
@@ -570,13 +606,87 @@ function syncCalendarEvent(r) {
     var startTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(startParts[0], 10), parseInt(startParts[1], 10));
     var endTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(endParts[0], 10), parseInt(endParts[1], 10));
 
-    var desc = "Reserva Taller Roig de Coure\nAlumne: " + nom + "\nActivitat: " + act + "\nPlaces: " + (r.places || 1) + "\nNotes: " + (r.notes || "") + "\nID Reserva: " + r.id;
+    var desc = "Reserva Taller Roig de Coure\n" +
+               "Alumne: " + nom + "\n" +
+               "Activitat: " + act + "\n" +
+               "Places: " + places + "\n" +
+               (tel ? "Telèfon: " + tel + "\n" : "") +
+               (r.notes ? "Notes: " + r.notes + "\n" : "") +
+               "ID Reserva: " + r.id;
 
-    cal.createEvent(title, startTime, endTime, {
-      description: desc
-    });
+    var location = "Taller de Ceràmica Roig de Coure";
+
+    var event = null;
+    if (r.calendar_event_id) {
+      try {
+        event = cal.getEventById(r.calendar_event_id);
+      } catch (e) {}
+    }
+
+    if (!event) {
+      var existingEvents = cal.getEvents(startTime, endTime);
+      for (var j = 0; j < existingEvents.length; j++) {
+        var d = existingEvents[j].getDescription() || "";
+        if (d.indexOf("ID Reserva: " + r.id) !== -1) {
+          event = existingEvents[j];
+          break;
+        }
+      }
+    }
+
+    if (event) {
+      event.setTitle(title);
+      event.setTime(startTime, endTime);
+      event.setDescription(desc);
+      event.setLocation(location);
+      return event.getId();
+    } else {
+      var newEvent = cal.createEvent(title, startTime, endTime, {
+        description: desc,
+        location: location
+      });
+      return newEvent.getId();
+    }
   } catch (err) {
     Logger.log("Avís Google Calendar: " + err.toString());
+    return null;
+  }
+}
+
+function deleteCalendarEvent(r) {
+  try {
+    if (!r) return;
+    var cal = getRoigDeCoureCalendar(r.calendar_name || "Roig de Coure");
+    if (!cal) return;
+
+    var event = null;
+    if (r.calendar_event_id) {
+      try {
+        event = cal.getEventById(r.calendar_event_id);
+      } catch (e) {}
+    }
+
+    if (!event && r.data && r.hora_inici && r.hora_fi) {
+      var startParts = r.hora_inici.split(":");
+      var endParts = r.hora_fi.split(":");
+      var dateParts = r.data.split("-");
+      var startTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(startParts[0], 10), parseInt(startParts[1], 10));
+      var endTime = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), parseInt(endParts[0], 10), parseInt(endParts[1], 10));
+      var existingEvents = cal.getEvents(startTime, endTime);
+      for (var j = 0; j < existingEvents.length; j++) {
+        var d = existingEvents[j].getDescription() || "";
+        if (d.indexOf("ID Reserva: " + r.id) !== -1) {
+          event = existingEvents[j];
+          break;
+        }
+      }
+    }
+
+    if (event) {
+      event.deleteEvent();
+    }
+  } catch (err) {
+    Logger.log("Avís cancel·lant esdeveniment a Google Calendar: " + err.toString());
   }
 }
 
@@ -588,9 +698,10 @@ function cancelReservaRow(ss, r) {
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(r.id).trim()) {
       sheet.getRange(i + 1, 11).setValue("cancel·lada");
-      return;
+      break;
     }
   }
+  deleteCalendarEvent(r);
 }
 
 function deleteReservaRow(ss, resId) {
@@ -600,7 +711,15 @@ function deleteReservaRow(ss, resId) {
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(resId).trim()) {
+      var rObj = {
+        id: resId,
+        data: values[i][4],
+        hora_inici: values[i][5],
+        hora_fi: values[i][6],
+        calendar_event_id: values[i][14] || ""
+      };
       sheet.deleteRow(i + 1);
+      deleteCalendarEvent(rObj);
       return;
     }
   }
