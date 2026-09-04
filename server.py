@@ -153,7 +153,7 @@ def init_db():
             'stripe_pack5_url': "",
             'stripe_pack10_url': "",
             'stripe_pack20_url': "",
-            'google_sheets_url': "",
+            'google_sheets_url': "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec",
             'google_calendar_name': "roigdecoure",
             'aforament_maxim_per_franja': "12",
             'franges_horaries': default_franges_json
@@ -168,6 +168,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "roigdecoure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "Roig de Coure")')
+        cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
 
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')

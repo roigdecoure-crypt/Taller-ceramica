@@ -520,25 +520,48 @@ function getRoigDeCoureCalendar(preferredName) {
   try {
     var rawPreferred = (preferredName || "roigdecoure").trim();
     var targetClean = rawPreferred.toLowerCase().replace(/[\s_\-]+/g, ""); // "roigdecoure"
+
+    // 1. Provar directament per ID / compte de correu roigdecoure@gmail.com
+    try {
+      var calByEmail = CalendarApp.getCalendarById("roigdecoure@gmail.com");
+      if (calByEmail) {
+        Logger.log("✅ Calendari trobat directament per ID roigdecoure@gmail.com: " + calByEmail.getName());
+        return calByEmail;
+      }
+    } catch (eEmail) {}
+
+    // 2. Si preferredName és un correu o ID de calendari
+    if (rawPreferred.indexOf("@") !== -1) {
+      try {
+        var calById = CalendarApp.getCalendarById(rawPreferred);
+        if (calById) return calById;
+      } catch (eId) {}
+    }
+
+    // 3. Cerca per nom i per ID a tots els calendaris de l'usuari
     var cals = CalendarApp.getAllCalendars();
     for (var i = 0; i < cals.length; i++) {
       var cName = (cals[i].getName() || "").toLowerCase();
+      var cId = (cals[i].getId() || "").toLowerCase();
       var cNameClean = cName.replace(/[\s_\-]+/g, "");
-      // Coincidència exacta o neta (sense espais, tolerant a majúscules)
-      if (cNameClean === targetClean || cNameClean.indexOf(targetClean) !== -1 || targetClean.indexOf(cNameClean) !== -1) {
+
+      if (cId === "roigdecoure@gmail.com" || cNameClean === "roigdecoure" || cNameClean === targetClean || cNameClean.indexOf(targetClean) !== -1 || targetClean.indexOf(cNameClean) !== -1) {
+        Logger.log("✅ Calendari trobat a la llista: " + cals[i].getName() + " (ID: " + cals[i].getId() + ")");
         return cals[i];
       }
     }
-    // Provar cerca directa per nom
-    var named = CalendarApp.getCalendarsByName(rawPreferred);
-    if (named && named.length > 0) return named[0];
-    var namedAlt = CalendarApp.getCalendarsByName("roigdecoure");
-    if (namedAlt && namedAlt.length > 0) return namedAlt[0];
-    var namedAlt2 = CalendarApp.getCalendarsByName("Roig de Coure");
-    if (namedAlt2 && namedAlt2.length > 0) return namedAlt2[0];
 
-    // Fallback al calendari per defecte de l'usuari si no es troba
-    return CalendarApp.getDefaultCalendar();
+    // 4. Provar cerca directa de CalendarApp per noms comuns
+    var directNames = [rawPreferred, "Roigdecoure", "roigdecoure", "Roig de Coure", "roig de coure"];
+    for (var k = 0; k < directNames.length; k++) {
+      var named = CalendarApp.getCalendarsByName(directNames[k]);
+      if (named && named.length > 0) return named[0];
+    }
+
+    // 5. Fallback al calendari per defecte de l'usuari
+    var defCal = CalendarApp.getDefaultCalendar();
+    Logger.log("ℹ️ Utilitzant calendari principal de l'usuari: " + (defCal ? defCal.getName() : "cap"));
+    return defCal;
   } catch (err) {
     Logger.log("Avís obtenint calendari: " + err.toString());
     try {
@@ -775,31 +798,34 @@ function deleteReservaRow(ss, resId) {
  * 3. Crearà un esdeveniment de prova a la teva agenda per confirmar que funciona al 100%.
  */
 function provarSincronitzacioCalendari() {
-  Logger.log("Iniciant prova de connexió amb Google Calendar...");
+  var usuariActiu = Session.getEffectiveUser().getEmail();
+  Logger.log("👤 Compte de Google que executa aquest script: " + usuariActiu);
+
   var cals = CalendarApp.getAllCalendars();
-  Logger.log("Calendaris detectats al teu compte (" + cals.length + "):");
+  Logger.log("📅 Calendaris que té aquest compte (" + cals.length + "):");
   for (var i = 0; i < cals.length; i++) {
-    Logger.log(" - " + cals[i].getName() + " (ID: " + cals[i].getId() + ")");
+    Logger.log("   - " + cals[i].getName() + " | ID: " + cals[i].getId());
   }
 
-  var cal = getRoigDeCoureCalendar("Roigdecoure");
+  var cal = getRoigDeCoureCalendar("roigdecoure");
   if (!cal) {
-    Logger.log("❌ No s'ha trobat el calendari 'Roigdecoure'. Revisa la llista anterior.");
+    Logger.log("❌ No s'ha trobat cap calendari.");
     return;
   }
 
-  Logger.log("✅ CALENDARI SELECCIONAT AMB ÈXIT: " + cal.getName());
+  Logger.log("🎯 CALENDARI TRIAT PER A LES RESERVES: " + cal.getName() + " (ID: " + cal.getId() + ")");
 
   var ara = new Date();
   var fi = new Date(ara.getTime() + 60 * 60 * 1000);
-  var ev = cal.createEvent("🏺 Prova Taller Roig de Coure", ara, fi, {
-    description: "Esdeveniment de prova per confirmar que la sincronització funciona correctament.",
+  var ev = cal.createEvent("🏺 Prova Sincronització Roig de Coure", ara, fi, {
+    description: "Esdeveniment de prova per comprovar que Google Calendar rep les reserves.",
     location: "Taller de Ceràmica"
   });
 
-  Logger.log("🎉 ESDEVENIMENT CREAT CORRECTAMENT AL TEU CALENDARI!");
-  Logger.log("ID esdeveniment: " + ev.getId());
-  Logger.log("Obre el teu Google Calendar per veure'l.");
+  Logger.log("🎉 ESDEVENIMENT CREAT CORRECTAMENT AL CALENDARI!");
+  Logger.log("Títol: " + ev.getTitle());
+  Logger.log("ID de l'esdeveniment: " + ev.getId());
+  Logger.log("Comprova ara el Google Calendar del compte: " + usuariActiu);
 }
 
 
