@@ -41,6 +41,7 @@ function doPost(e) {
       syncAlumnes(ss, data.alumnes || []);
       syncPaquets(ss, data.paquets || []);
       syncSessions(ss, data.sessions || []);
+      if (data.reserves) syncReserves(ss, data.reserves || []);
       if (data.config) syncConfig(ss, data.config);
       return jsonResponse({ status: "success", message: "Sincronitzacio completa realitzada amb exit!" });
     } else if (action === "sync_alumne") {
@@ -61,6 +62,18 @@ function doPost(e) {
     } else if (action === "delete_paquet") {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
+    } else if (action === "add_reserva" || action === "update_reserva") {
+      upsertReservaRow(ss, data.payload || data.reserva);
+      return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets" });
+    } else if (action === "cancel_reserva") {
+      cancelReservaRow(ss, data.payload || data.reserva);
+      return jsonResponse({ status: "success", message: "Reserva cancel·lada a Google Sheets" });
+    } else if (action === "delete_reserva") {
+      deleteReservaRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
+      return jsonResponse({ status: "success", message: "Reserva eliminada de Google Sheets" });
+    } else if (action === "sync_reserves") {
+      syncReserves(ss, data.reserves || []);
+      return jsonResponse({ status: "success", message: "Reserves sincronitzades a Google Sheets" });
     } else if (action === "save_config") {
       var cfgPayload = data.payload || {};
       for (var cfgKey in cfgPayload) {
@@ -89,6 +102,7 @@ function handleGetAll() {
   var alumnes = readAlumnes(ss);
   var paquets = readPaquets(ss);
   var sessions = readSessions(ss);
+  var reserves = readReserves(ss);
   var config = readConfig(ss);
 
   return jsonResponse({
@@ -97,6 +111,7 @@ function handleGetAll() {
       alumnes: alumnes,
       paquets: paquets,
       sessions: sessions,
+      reserves: reserves,
       config: config
     }
   });
@@ -431,4 +446,116 @@ function upsertConfigKey(ss, key, val) {
   }
   sheet.appendRow([String(key), String(val || "")]);
 }
+
+/* ==================== RESERVES & AFORAMENT ==================== */
+
+var HEADERS_RESERVES = ["ID Reserva", "ID Alumne", "Nom Alumne", "Data", "Hora Inici", "Hora Fi", "Franja", "Estat", "Hores", "Notes", "Creat El"];
+
+function syncReserves(ss, reserves) {
+  var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
+  sheet.clearContents();
+  sheet.appendRow(HEADERS_RESERVES);
+  sheet.getRange(1, 1, 1, HEADERS_RESERVES.length).setBackground("#2E7D32").setFontColor("#FFFFFF").setFontWeight("bold");
+  sheet.setFrozenRows(1);
+
+  if (reserves && reserves.length > 0) {
+    var rows = reserves.map(function(r) {
+      return [
+        r.id || "",
+        r.student_id || "",
+        r.student_nom || "",
+        r.data || "",
+        r.hora_inici || "",
+        r.hora_fi || "",
+        r.franja || "",
+        r.estat || "confirmada",
+        (r.hores !== undefined && r.hores !== null ? r.hores : 2.0),
+        r.notes || "",
+        r.created_at || ""
+      ];
+    });
+    sheet.getRange(2, 1, rows.length, HEADERS_RESERVES.length).setValues(rows);
+  }
+}
+
+function readReserves(ss) {
+  var sheet = ss.getSheetByName("Reserves");
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  var result = [];
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    if (!row[0]) continue;
+    result.push({
+      id: String(row[0]).trim(),
+      student_id: String(row[1] || "").trim(),
+      student_nom: String(row[2] || "").trim(),
+      data: String(row[3] || "").trim(),
+      hora_inici: String(row[4] || "10:00").trim(),
+      hora_fi: String(row[5] || "12:00").trim(),
+      franja: String(row[6] || "mati_1").trim(),
+      estat: String(row[7] || "confirmada").trim(),
+      hores: Number(row[8]) || 2.0,
+      notes: String(row[9] || "").trim(),
+      created_at: String(row[10] || "").trim()
+    });
+  }
+  return result;
+}
+
+function upsertReservaRow(ss, r) {
+  if (!r || !r.id) return;
+  var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
+  var values = sheet.getDataRange().getValues();
+  var rowData = [
+    r.id,
+    r.student_id || "",
+    r.student_nom || "",
+    r.data || "",
+    r.hora_inici || "",
+    r.hora_fi || "",
+    r.franja || "",
+    r.estat || "confirmada",
+    (r.hores !== undefined && r.hores !== null ? r.hores : 2.0),
+    r.notes || "",
+    r.created_at || new Date().toISOString()
+  ];
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(r.id).trim()) {
+      sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
+      return;
+    }
+  }
+  sheet.appendRow(rowData);
+}
+
+function cancelReservaRow(ss, r) {
+  if (!r || !r.id) return;
+  var sheet = ss.getSheetByName("Reserves");
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(r.id).trim()) {
+      sheet.getRange(i + 1, 8).setValue("cancel·lada");
+      return;
+    }
+  }
+}
+
+function deleteReservaRow(ss, resId) {
+  if (!resId) return;
+  var sheet = ss.getSheetByName("Reserves");
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).trim() === String(resId).trim()) {
+      sheet.deleteRow(i + 1);
+      return;
+    }
+  }
+}
+
 

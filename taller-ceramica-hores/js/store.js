@@ -646,6 +646,169 @@ const Store = {
     return { ok: true, message: 'Dades enviades a Google Sheets correctament!' };
   },
 
+  /* ====================== RESERVES & AFORAMENT ====================== */
+
+  async getReserves(filters = {}) {
+    if (this.mode === 'api') {
+      try {
+        const q = new URLSearchParams(filters);
+        const res = await fetch(`${this.apiBase}/api/reserves?${q.toString()}&t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok && Array.isArray(json.data)) {
+          return json.data;
+        }
+      } catch (e) {
+        console.warn('Error obtenint reserves de l\'API:', e);
+      }
+    }
+    const data = this._getLocalData();
+    let resList = data.reserves || [];
+    if (filters.data) resList = resList.filter(r => r.data === filters.data);
+    if (filters.student_id) resList = resList.filter(r => r.student_id === filters.student_id);
+    if (filters.estat) resList = resList.filter(r => r.estat === filters.estat);
+    return resList;
+  },
+
+  async getDisponibilitat(dataStr) {
+    if (!dataStr) {
+      dataStr = new Date().toISOString().slice(0, 10);
+    }
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/disponibilitat?data=${encodeURIComponent(dataStr)}&t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        console.warn('Error obtenint disponibilitat de l\'API:', e);
+      }
+    }
+
+    // Fallback local
+    const data = this._getLocalData();
+    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 8, 10);
+    const defFranges = [
+      { id: "mati_1", nom: "Matí 1 (10:00 - 12:00)", inici: "10:00", fi: "12:00", hores: 2.0 },
+      { id: "mati_2", nom: "Matí 2 (12:00 - 14:00)", inici: "12:00", fi: "14:00", hores: 2.0 },
+      { id: "tarda_1", nom: "Tarda 1 (16:00 - 18:00)", inici: "16:00", fi: "18:00", hores: 2.0 },
+      { id: "tarda_2", nom: "Tarda 2 (18:00 - 20:00)", inici: "18:00", fi: "20:00", hores: 2.0 }
+    ];
+    const reservesDia = (data.reserves || []).filter(r => r.data === dataStr && r.estat === 'confirmada');
+    const franges = defFranges.map(f => {
+      const fRes = reservesDia.filter(r => r.franja === f.id || r.franja === f.nom);
+      const ocupades = fRes.length;
+      const lliures = Math.max(0, maxCap - ocupades);
+      return {
+        id: f.id,
+        nom: f.nom,
+        inici: f.inici,
+        fi: f.fi,
+        hores: f.hores,
+        totalPlaces: maxCap,
+        placesOcupades: ocupades,
+        placesLliures: lliures,
+        estat: lliures === 0 ? 'complet' : (lliures <= 2 && ocupades > 0 ? 'ultimes_places' : 'lliure'),
+        reserves: fRes
+      };
+    });
+
+    return {
+      data: dataStr,
+      aforamentMaxim: maxCap,
+      totalPlacesDia: maxCap * franges.length,
+      totalOcupadesDia: reservesDia.length,
+      franges: franges
+    };
+  },
+
+  async crearReserva(reservaData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reservaData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error creant reserva a l\'API, intentant localment:', e);
+      }
+    }
+
+    const data = this._getLocalData();
+    if (!data.reserves) data.reserves = [];
+    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 8, 10);
+    const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
+    if (existing.length >= maxCap) {
+      return { ok: false, error: 'Aforament complet per a aquesta franja.' };
+    }
+    const alreadyStudent = data.reserves.find(r => r.student_id === reservaData.student_id && r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
+    if (alreadyStudent) {
+      return { ok: false, error: 'Ja tens una reserva confirmada per a aquesta franja.' };
+    }
+
+    const resId = `RES-${Date.now()}-${reservaData.student_id}`;
+    const newRes = {
+      id: resId,
+      student_id: reservaData.student_id,
+      student_nom: reservaData.student_nom || reservaData.student_id,
+      data: reservaData.data,
+      hora_inici: reservaData.hora_inici || '10:00',
+      hora_fi: reservaData.hora_fi || '12:00',
+      franja: reservaData.franja || reservaData.franja_id || 'mati_1',
+      estat: 'confirmada',
+      hores: Number(reservaData.hores) || 2.0,
+      notes: reservaData.notes || '',
+      created_at: new Date().toISOString()
+    };
+    data.reserves.push(newRes);
+    this._saveLocalData(data);
+    return { ok: true, message: 'Reserva confirmada correctament!', reserva: newRes };
+  },
+
+  async cancelarReserva(reservaId) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: reservaId })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error cancel·lant reserva a l\'API:', e);
+      }
+    }
+
+    const data = this._getLocalData();
+    if (data.reserves) {
+      const r = data.reserves.find(x => x.id === reservaId);
+      if (r) {
+        r.estat = 'cancel·lada';
+        this._saveLocalData(data);
+        return { ok: true, message: 'Reserva cancel·lada correctament i plaça alliberada.' };
+      }
+    }
+    return { ok: false, error: 'Reserva no trobada' };
+  },
+
+  async guardarAforamentMaxim(num) {
+    const val = parseInt(num, 10) || 8;
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/config-aforament`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ aforamentMaxim: val })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error guardant aforament:', e);
+      }
+    }
+    await this.saveConfig({ aforament_maxim_per_franja: String(val) });
+    return { ok: true, aforamentMaxim: val };
+  },
+
   /* ====================== CÒPIA DE SEGURETAT JSON / CSV ====================== */
 
   async exportBackupJson() {

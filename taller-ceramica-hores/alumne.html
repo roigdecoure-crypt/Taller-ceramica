@@ -153,6 +153,66 @@
       font-weight: 700;
       color: var(--color-primary);
     }
+
+    /* Targetes de Reserva i Aforament */
+    .slot-card {
+      background: #FFF;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: var(--transition);
+    }
+    .slot-card.available:hover {
+      border-color: #2E7D32;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .slot-card.booked {
+      border-color: var(--color-primary);
+      background: #FFFBF9;
+    }
+    .slot-card.full {
+      opacity: 0.7;
+      background: #F8F9FA;
+      border-color: #E2E8F0;
+    }
+    .capacity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      width: fit-content;
+    }
+    .capacity-badge.green {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .capacity-badge.orange {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+    .capacity-badge.red {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .booking-item-card {
+      background: #FAFAFA;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -308,6 +368,43 @@
           <button class="btn btn-outline btn-sm" id="btn-custom-hours">
             ➕ Triar Hores Personalitzades
           </button>
+        </div>
+      </section>
+
+      <!-- SECCIÓ RESERVA DE PLAÇA AL TALLER (AFORAMENT EN DIRECTE) -->
+      <section class="card" style="margin-bottom: 24px; border-left: 4px solid #2E7D32;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h2 style="font-size: 18px; font-weight: 800; color: var(--color-dark); display: flex; align-items: center; gap: 6px;">
+              <span>📅</span> <span>Reserva de Plaça al Taller</span>
+            </h2>
+            <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
+              Tria el dia i la franja per assegurar el teu torn o taula (aforament en directe):
+            </p>
+          </div>
+          <!-- Selector de data ràpid -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reserva-avui" style="font-weight: 700; padding: 4px 10px;">Avui</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-reserva-dema" style="font-weight: 700; padding: 4px 10px;">Demà</button>
+            <input type="date" id="portal-reserva-date-picker" class="form-control" style="width: auto; padding: 4px 8px; font-size: 13px;">
+          </div>
+        </div>
+
+        <!-- Estat de places disponibles -->
+        <div id="portal-slots-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 14px;">
+          <div style="grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 18px;">
+            ⏳ Carregant disponibilitat i aforament...
+          </div>
+        </div>
+
+        <!-- Les meves reserves confirmades -->
+        <div id="portal-my-bookings-container" style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--color-border);">
+          <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark); display: flex; align-items: center; gap: 6px;">
+            <span>🎟️</span> <span>Les Teves Reserves Properes</span>
+          </h3>
+          <div id="portal-my-bookings-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <p style="font-size: 13px; color: var(--color-muted);">Carregant les teves reserves...</p>
+          </div>
         </div>
       </section>
 
@@ -478,10 +575,10 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.2"></script>
-  <script src="js/sound.js?v=3.2"></script>
-  <script src="js/qr-engine.js?v=3.2"></script>
-  <script src="js/store.js?v=3.2"></script>
-  <script src="js/alumne.js?v=3.2"></script>
+  <script src="js/time-utils.js?v=3.3"></script>
+  <script src="js/sound.js?v=3.3"></script>
+  <script src="js/qr-engine.js?v=3.3"></script>
+  <script src="js/store.js?v=3.3"></script>
+  <script src="js/alumne.js?v=3.3"></script>
 </body>
 </html>

@@ -287,5 +287,72 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertEqual(cfg.get('brand_font'), 'serif')
         self.assertEqual(cfg.get('taller_logo_url'), 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')
 
+    def test_08_reserves_and_capacity(self):
+        c = self.conn.cursor()
+        test_student = 'TC-RES-TEST'
+        c.execute("DELETE FROM reserves WHERE student_id = ?", (test_student,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, actiu)
+            VALUES (?, 'Alumne', 'Reserves', '611223344', 'reserves@test.com', '1234', ?, 1)
+        ''', (test_student, datetime.now().isoformat()))
+
+        # Configurar aforament màxim a 2 per provar el límit
+        c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '2'))
+        self.conn.commit()
+
+        test_data = '2026-09-10'
+        slot_id = 'mati_1'
+
+        # Comprovar disponibilitat inicial
+        disp = server.get_disponibilitat(test_data)
+        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertEqual(franja['totalPlaces'], 2)
+        self.assertEqual(franja['placesLliures'], 2)
+        self.assertEqual(franja['estat'], 'lliure')
+
+        # Crear 1a reserva
+        res_id_1 = "RES-T1"
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, estat, hores, notes, created_at)
+            VALUES (?, ?, 'Alumne 1', ?, '10:00', '12:00', ?, 'confirmada', 2.0, '', ?)
+        ''', (res_id_1, test_student, test_data, slot_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        disp = server.get_disponibilitat(test_data)
+        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertEqual(franja['placesOcupades'], 1)
+        self.assertEqual(franja['placesLliures'], 1)
+        self.assertEqual(franja['estat'], 'ultimes_places')
+
+        # Crear 2a reserva (assolir límit d'aforament)
+        res_id_2 = "RES-T2"
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, estat, hores, notes, created_at)
+            VALUES (?, 'TC-102', 'Alumne 2', ?, '10:00', '12:00', ?, 'confirmada', 2.0, '', ?)
+        ''', (res_id_2, test_data, slot_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        disp = server.get_disponibilitat(test_data)
+        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertEqual(franja['placesOcupades'], 2)
+        self.assertEqual(franja['placesLliures'], 0)
+        self.assertEqual(franja['estat'], 'complet')
+
+        # Cancel·lar 1a reserva i comprovar alliberament de plaça
+        c.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE id = ?", (res_id_1,))
+        self.conn.commit()
+
+        disp = server.get_disponibilitat(test_data)
+        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertEqual(franja['placesOcupades'], 1)
+        self.assertEqual(franja['placesLliures'], 1)
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id IN (?, ?)", (res_id_1, res_id_2))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student,))
+        c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '8'))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()

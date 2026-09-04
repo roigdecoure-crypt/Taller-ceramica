@@ -412,6 +412,7 @@ if (typeof window !== 'undefined') {
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {
   initBrandStudio();
+  initReservesAdmin();
 
   // Cerca d'alumnes en temps real
   document.getElementById('search-students-input').addEventListener('input', () => {
@@ -1205,4 +1206,274 @@ function updateBrandPreview() {
     }
   }
 }
+
+/* ==================== RESERVES & CONTROL D'AFORAMENT (ADMIN) ==================== */
+
+let adminSelectedDate = new Date().toISOString().slice(0, 10);
+
+function initReservesAdmin() {
+  const btnOpen = document.getElementById('btn-reserves-admin');
+  const modal = document.getElementById('modal-reserves-backdrop');
+  if (!btnOpen || !modal) return;
+
+  btnOpen.addEventListener('click', () => {
+    openReservesModal();
+  });
+
+  document.getElementById('btn-close-modal-reserves')?.addEventListener('click', () => {
+    modal.classList.remove('active');
+  });
+  document.getElementById('btn-close-modal-reserves-footer')?.addEventListener('click', () => {
+    modal.classList.remove('active');
+  });
+
+  const dateInput = document.getElementById('admin-res-date-input');
+  if (dateInput) {
+    dateInput.value = adminSelectedDate;
+    dateInput.addEventListener('change', () => {
+      adminSelectedDate = dateInput.value || new Date().toISOString().slice(0, 10);
+      loadAdminDisponibilitat(adminSelectedDate);
+    });
+  }
+
+  document.getElementById('btn-admin-res-avui')?.addEventListener('click', () => {
+    adminSelectedDate = new Date().toISOString().slice(0, 10);
+    if (dateInput) dateInput.value = adminSelectedDate;
+    loadAdminDisponibilitat(adminSelectedDate);
+  });
+
+  document.getElementById('btn-admin-res-dema')?.addEventListener('click', () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    adminSelectedDate = d.toISOString().slice(0, 10);
+    if (dateInput) dateInput.value = adminSelectedDate;
+    loadAdminDisponibilitat(adminSelectedDate);
+  });
+
+  // Desar aforament màxim
+  document.getElementById('btn-admin-save-aforament')?.addEventListener('click', async () => {
+    const input = document.getElementById('admin-input-aforament');
+    if (!input) return;
+    const val = parseInt(input.value, 10) || 8;
+    try {
+      await Store.guardarAforamentMaxim(val);
+      showToast(`Aforament màxim actualitzat a ${val} places/franja.`, 'success');
+      loadAdminDisponibilitat(adminSelectedDate);
+    } catch (err) {
+      showToast('Error desant aforament: ' + err.message, 'error');
+    }
+  });
+
+  // Toggle formulari afegir reserva
+  const formContainer = document.getElementById('admin-add-reserva-form-container');
+  document.getElementById('btn-toggle-add-reserva-form')?.addEventListener('click', () => {
+    if (!formContainer) return;
+    const isHidden = formContainer.style.display === 'none';
+    formContainer.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+      populateAdminStudentSelect();
+    }
+  });
+
+  document.getElementById('btn-cancel-add-reserva-form')?.addEventListener('click', () => {
+    if (formContainer) formContainer.style.display = 'none';
+  });
+
+  // Submit formulari afegir reserva manual
+  document.getElementById('form-admin-add-reserva')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const studentSelect = document.getElementById('admin-res-student-select');
+    const slotSelect = document.getElementById('admin-res-slot-select');
+    const notesInput = document.getElementById('admin-res-notes');
+
+    const studentId = studentSelect?.value;
+    const slotId = slotSelect?.value;
+    const notes = notesInput?.value || '';
+
+    if (!studentId || !slotId) {
+      showToast('Cal seleccionar un alumne i una franja.', 'error');
+      return;
+    }
+
+    const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+    const studentNom = selectedOption ? selectedOption.text : studentId;
+
+    try {
+      const res = await Store.crearReserva({
+        student_id: studentId,
+        student_nom: studentNom,
+        data: adminSelectedDate,
+        franja_id: slotId,
+        franja: slotId,
+        notes: notes
+      });
+
+      if (res.ok) {
+        showToast('Reserva manual creada correctament!', 'success');
+        if (typeof SoundEngine !== 'undefined' && SoundEngine.playSuccess) SoundEngine.playSuccess();
+        if (notesInput) notesInput.value = '';
+        if (formContainer) formContainer.style.display = 'none';
+        await loadAdminDisponibilitat(adminSelectedDate);
+      } else {
+        showToast(res.error || 'No s\'ha pogut crear la reserva', 'error');
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    }
+  });
+}
+
+async function openReservesModal() {
+  const modal = document.getElementById('modal-reserves-backdrop');
+  if (!modal) return;
+  modal.classList.add('active');
+
+  try {
+    const cfg = await Store.getConfig();
+    const maxCap = parseInt(cfg.aforament_maxim_per_franja || 8, 10);
+    const inputCap = document.getElementById('admin-input-aforament');
+    if (inputCap) inputCap.value = maxCap;
+  } catch (e) {}
+
+  const dateInput = document.getElementById('admin-res-date-input');
+  if (dateInput) {
+    if (!adminSelectedDate) adminSelectedDate = new Date().toISOString().slice(0, 10);
+    dateInput.value = adminSelectedDate;
+  }
+
+  await loadAdminDisponibilitat(adminSelectedDate);
+}
+
+function populateAdminStudentSelect() {
+  const select = document.getElementById('admin-res-student-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Tria un alumne --</option>';
+
+  allStudents.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.id} - ${a.nom} ${a.cognoms || ''}`;
+    select.appendChild(opt);
+  });
+}
+
+async function loadAdminDisponibilitat(dateStr) {
+  const grid = document.getElementById('admin-res-slots-grid');
+  const summaryEl = document.getElementById('admin-res-occupancy-summary');
+  if (!grid) return;
+
+  grid.innerHTML = `<p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 24px;">⏳ Carregant disponibilitat per al ${TimeUtils.formatDate(dateStr)}...</p>`;
+
+  try {
+    const disp = await Store.getDisponibilitat(dateStr);
+    const franges = disp.franges || [];
+    const maxCap = disp.aforamentMaxim || 8;
+
+    if (summaryEl) {
+      const perc = disp.totalPlacesDia > 0 ? Math.round((disp.totalOcupadesDia / disp.totalPlacesDia) * 100) : 0;
+      summaryEl.innerHTML = `
+        <span>Data: <strong>${TimeUtils.formatDate(dateStr)}</strong></span> &bull; 
+        <span>Ocupació global: <strong>${disp.totalOcupadesDia} / ${disp.totalPlacesDia} places (${perc}%)</strong></span>
+      `;
+    }
+
+    grid.innerHTML = '';
+    franges.forEach(f => {
+      const isFull = f.placesLliures <= 0;
+      const card = document.createElement('div');
+      card.style.cssText = `
+        background: #FFF;
+        border: 2px solid ${isFull ? '#FFCDD2' : '#E2E8F0'};
+        border-radius: var(--radius-md);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+      `;
+
+      let badgeBg = '#E8F5E9';
+      let badgeCol = '#2E7D32';
+      let badgeText = `🟢 ${f.placesLliures} places lliures`;
+      if (isFull) {
+        badgeBg = '#FFEBEE';
+        badgeCol = '#C62828';
+        badgeText = `🔴 COMPLET (${f.placesOcupades}/${maxCap})`;
+      } else if (f.placesLliures <= 2) {
+        badgeBg = '#FFF3E0';
+        badgeCol = '#E65100';
+        badgeText = `🟠 ÚLTIMES ${f.placesLliures} PLACES (${f.placesOcupades}/${maxCap})`;
+      }
+
+      const resList = f.reserves || [];
+      let studentsHtml = '';
+      if (resList.length === 0) {
+        studentsHtml = `<p style="font-size: 13px; color: var(--color-muted); margin: 8px 0;">Sense reserves en aquest torn.</p>`;
+      } else {
+        studentsHtml = `
+          <div style="display: flex; flex-direction: column; gap: 6px; margin: 8px 0; max-height: 220px; overflow-y: auto;">
+            ${resList.map(r => `
+              <div style="background: #F8F9FA; border: 1px solid var(--color-border); border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                <div>
+                  <strong style="color: var(--color-primary);">${r.student_id}</strong>
+                  <span>${r.student_nom || r.nom || ''}</span>
+                  ${r.telefon ? `<a href="https://wa.me/34${r.telefon.replace(/[^0-9]/g,'')}" target="_blank" title="WhatsApp" style="text-decoration:none; margin-left:4px;">💬</a>` : ''}
+                </div>
+                <button type="button" class="btn btn-outline btn-sm btn-admin-cancel-res" data-res-id="${r.id}" style="padding: 2px 6px; font-size: 11px; color: #C62828; border-color: #FFCDD2;" title="Cancel·lar i alliberar plaça">
+                  ✕ Cancel·lar
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+            <div>
+              <div style="font-weight: 800; font-size: 15px; color: var(--color-dark);">${f.nom}</div>
+              <div style="font-size: 12px; color: var(--color-muted);">⏰ ${f.inici} - ${f.fi} (${f.hores}h)</div>
+            </div>
+            <span style="background: ${badgeBg}; color: ${badgeCol}; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px;">
+              ${badgeText}
+            </span>
+          </div>
+          ${studentsHtml}
+        </div>
+        <div style="border-top: 1px dashed var(--color-border); padding-top: 8px; display: flex; justify-content: space-between; font-size: 12px; color: var(--color-muted);">
+          <span>Ocupades: <strong>${f.placesOcupades}</strong> / ${maxCap}</span>
+          <span>Lliures: <strong style="color:${isFull ? '#C62828' : '#2E7D32'};">${f.placesLliures}</strong></span>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    // Wire up cancel buttons
+    grid.querySelectorAll('.btn-admin-cancel-res').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const resId = btn.dataset.resId;
+        const confirmCancel = confirm('Vols cancel·lar aquesta reserva i alliberar la plaça al taller?');
+        if (!confirmCancel) return;
+
+        btn.disabled = true;
+        btn.textContent = '...';
+        const res = await Store.cancelarReserva(resId);
+        if (res.ok) {
+          showToast('Reserva cancel·lada i plaça alliberada.', 'info');
+          await loadAdminDisponibilitat(dateStr);
+        } else {
+          showToast(res.error || 'Error cancel·lant reserva', 'error');
+          btn.disabled = false;
+          btn.textContent = '✕ Cancel·lar';
+        }
+      });
+    });
+
+  } catch (err) {
+    grid.innerHTML = `<p style="color: var(--color-danger); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 24px;">Error carregant disponibilitat: ${err.message}</p>`;
+  }
+}
+
 

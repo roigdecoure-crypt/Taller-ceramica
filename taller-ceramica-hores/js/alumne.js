@@ -271,6 +271,214 @@ function renderDashboard(details) {
 
   // Historial de paquets
   renderPaquetsTable(details.paquets);
+
+  // Secció de Reserves i Aforament
+  renderReservationsSection(a.id);
+}
+
+let currentBookingDate = new Date().toISOString().slice(0, 10);
+let bookingEventsInitialized = false;
+
+async function renderReservationsSection(studentId) {
+  const datePicker = document.getElementById('portal-reserva-date-picker');
+  if (!datePicker) return;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  datePicker.min = todayStr;
+  if (!datePicker.value) {
+    datePicker.value = currentBookingDate || todayStr;
+  }
+  currentBookingDate = datePicker.value;
+
+  await loadStudentAvailability(studentId, currentBookingDate);
+  await loadStudentBookings(studentId);
+
+  if (!bookingEventsInitialized) {
+    bookingEventsInitialized = true;
+
+    document.getElementById('btn-reserva-avui')?.addEventListener('click', () => {
+      const today = new Date().toISOString().slice(0, 10);
+      datePicker.value = today;
+      currentBookingDate = today;
+      loadStudentAvailability(currentStudent.alumne.id, today);
+    });
+
+    document.getElementById('btn-reserva-dema')?.addEventListener('click', () => {
+      const dema = new Date();
+      dema.setDate(dema.getDate() + 1);
+      const demaStr = dema.toISOString().slice(0, 10);
+      datePicker.value = demaStr;
+      currentBookingDate = demaStr;
+      loadStudentAvailability(currentStudent.alumne.id, demaStr);
+    });
+
+    datePicker.addEventListener('change', () => {
+      currentBookingDate = datePicker.value || todayStr;
+      loadStudentAvailability(currentStudent.alumne.id, currentBookingDate);
+    });
+  }
+}
+
+async function loadStudentAvailability(studentId, dateStr) {
+  const container = document.getElementById('portal-slots-container');
+  if (!container) return;
+
+  container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 18px;">⏳ Carregant disponibilitat per al ${TimeUtils.formatDate(dateStr)}...</div>`;
+
+  try {
+    const disp = await Store.getDisponibilitat(dateStr);
+    const franges = disp.franges || [];
+    const studentReserves = await Store.getReserves({ student_id: studentId, data: dateStr, estat: 'confirmada' });
+
+    if (franges.length === 0) {
+      container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--color-muted); padding: 18px;">No hi ha franges horàries configurades per a aquesta data.</div>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    franges.forEach(f => {
+      const isBookedByMe = studentReserves.some(r => r.franja === f.id || r.franja === f.nom);
+      const isFull = f.placesLliures <= 0;
+
+      const card = document.createElement('div');
+      card.className = `slot-card ${isBookedByMe ? 'booked' : isFull ? 'full' : 'available'}`;
+
+      let badgeHtml = '';
+      if (isBookedByMe) {
+        badgeHtml = `<span class="capacity-badge green" style="background:#E8F5E9; color:#2E7D32;">✅ La teva plaça està reservada</span>`;
+      } else if (isFull) {
+        badgeHtml = `<span class="capacity-badge red">🔴 Complet (${f.placesOcupades}/${f.totalPlaces})</span>`;
+      } else if (f.placesLliures <= 2) {
+        badgeHtml = `<span class="capacity-badge orange">🟠 Últimes ${f.placesLliures} places! (${f.placesOcupades}/${f.totalPlaces})</span>`;
+      } else {
+        badgeHtml = `<span class="capacity-badge green">🟢 ${f.placesLliures} places lliures (${f.placesOcupades}/${f.totalPlaces})</span>`;
+      }
+
+      let actionBtn = '';
+      if (isBookedByMe) {
+        actionBtn = `<button class="btn btn-outline btn-sm btn-block" disabled style="color:#2E7D32; border-color:#2E7D32; font-weight:700;">Reservat ✓</button>`;
+      } else if (isFull) {
+        actionBtn = `<button class="btn btn-outline btn-sm btn-block" disabled style="opacity:0.5;">Complet</button>`;
+      } else {
+        actionBtn = `<button class="btn btn-primary btn-sm btn-block btn-reserve-slot" data-slot-id="${f.id}" data-slot-name="${f.nom}" data-start="${f.inici}" data-end="${f.fi}" data-hours="${f.hores}" style="background:#2E7D32; border-color:#2E7D32; font-weight:700;">Reservar Plaça</button>`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div style="font-weight: 700; font-size: 15px; color: var(--color-dark);">${f.nom}</div>
+          <div style="font-size: 13px; color: var(--color-muted); margin: 3px 0 8px 0;">⏰ ${f.inici} - ${f.fi} (${f.hores}h)</div>
+          ${badgeHtml}
+        </div>
+        <div style="margin-top: 10px;">
+          ${actionBtn}
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Wire up booking buttons
+    container.querySelectorAll('.btn-reserve-slot').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const slotId = btn.dataset.slotId;
+        const slotName = btn.dataset.slotName;
+        const start = btn.dataset.start;
+        const end = btn.dataset.end;
+        const hours = btn.dataset.hours;
+
+        const a = currentStudent.alumne;
+        btn.disabled = true;
+        btn.textContent = 'Reservant...';
+
+        const res = await Store.crearReserva({
+          student_id: a.id,
+          student_nom: `${a.nom} ${a.cognoms || ''}`.trim(),
+          data: dateStr,
+          franja_id: slotId,
+          franja: slotId,
+          hora_inici: start,
+          hora_fi: end,
+          hores: parseFloat(hours)
+        });
+
+        if (res.ok) {
+          showToast(`🎉 Plaça confirmada per a ${slotName} (${TimeUtils.formatDate(dateStr)})!`, 'success');
+          if (typeof Sound !== 'undefined' && Sound.playSuccess) Sound.playSuccess();
+          await loadStudentAvailability(a.id, dateStr);
+          await loadStudentBookings(a.id);
+        } else {
+          showToast(res.error || 'No s\'ha pogut realitzar la reserva', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Reservar Plaça';
+        }
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--color-danger); padding: 18px;">Error carregant la disponibilitat: ${err.message}</div>`;
+  }
+}
+
+async function loadStudentBookings(studentId) {
+  const container = document.getElementById('portal-my-bookings-list');
+  if (!container) return;
+
+  try {
+    const reserves = await Store.getReserves({ student_id: studentId, estat: 'confirmada' });
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const upcoming = reserves.filter(r => r.data >= todayStr).sort((a, b) => a.data.localeCompare(b.data) || a.hora_inici.localeCompare(b.hora_inici));
+
+    if (upcoming.length === 0) {
+      container.innerHTML = `<p style="font-size: 13px; color: var(--color-muted);">No tens cap reserva activa per als propers dies.</p>`;
+      return;
+    }
+
+    container.innerHTML = '';
+    upcoming.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'booking-item-card';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--color-dark);">
+            📅 ${TimeUtils.formatDate(r.data)} &bull; ⏰ ${r.hora_inici} - ${r.hora_fi}
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-top: 2px;">
+            ${r.franja_nom || r.franja} &bull; Plaça assignada: <strong style="color:var(--color-primary);">${r.student_id}</strong>
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: #C62828; border-color: #FFCDD2; font-size: 12px; font-weight: 600;">
+            Cancel·lar
+          </button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+
+    container.querySelectorAll('.btn-cancel-student-res').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const resId = btn.dataset.resId;
+        const confirmCancel = confirm('Estàs segur que vols cancel·lar aquesta reserva? La teva plaça al taller quedarà lliure per a altres companys.');
+        if (!confirmCancel) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Cancel·lant...';
+        const res = await Store.cancelarReserva(resId);
+        if (res.ok) {
+          showToast('Reserva cancel·lada correctament i plaça alliberada.', 'info');
+          await loadStudentBookings(studentId);
+          await loadStudentAvailability(studentId, currentBookingDate);
+        } else {
+          showToast(res.error || 'Error cancel·lant la reserva', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Cancel·lar';
+        }
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `<p style="font-size: 13px; color: var(--color-danger);">Error carregant reserves: ${err.message}</p>`;
+  }
 }
 
 function renderSessionsTable(sessions) {
