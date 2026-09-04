@@ -169,6 +169,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "roigdecoure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "Roig de Coure")')
         cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
+        cursor.execute("DELETE FROM reserves WHERE data LIKE '%GMT%' OR data LIKE '%Central European%' OR data LIKE '%hora de verano%' OR id = 'TEST-DEBUG-1'")
 
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
@@ -203,20 +204,53 @@ def init_db():
 init_db()
 
 def get_google_sheets_url():
-    """Obté l'URL de Google Sheets des de variable d'entorn (Render) o de la base de dades"""
-    env_url = os.environ.get('GOOGLE_SHEETS_URL', '').strip()
-    if env_url:
-        return env_url
+    """Obté l'URL de Google Sheets des de la base de dades (prioritari) o variable d'entorn (Render)"""
+    NEW_DEFAULT_URL = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec"
+
+    # 1. Comprovar base de dades (prioritari per si es canvia des d'admin.html)
     try:
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_sheets_url'")
             row = cursor.fetchone()
-            if row and row['valor']:
-                return row['valor'].strip()
+            if row and row['valor'] and row['valor'].strip():
+                db_url = row['valor'].strip()
+                if 'AKfycbzfXuSg' not in db_url:
+                    return db_url
     except Exception:
         pass
-    return ''
+
+    # 2. Variable d'entorn (Render), ignorant l'antiga URL obsoleta congelada
+    env_url = os.environ.get('GOOGLE_SHEETS_URL', '').strip()
+    if env_url and 'AKfycbzfXuSg' not in env_url:
+        return env_url
+
+    # 3. Fallback a la nova URL activa amb sincronització de Google Calendar
+    return NEW_DEFAULT_URL
+
+def sanitize_date_str(val):
+    if not val:
+        return ''
+    s = str(val).strip()
+    m = re.search(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})', s)
+    if m:
+        return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+    months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+              'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+    m2 = re.search(r'([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})', s)
+    if m2 and m2.group(1) in months:
+        return f"{int(m2.group(3)):04d}-{months[m2.group(1)]:02d}-{int(m2.group(2)):02d}"
+    return s[:10]
+
+def sanitize_time_str(val, default='10:00'):
+    if not val:
+        return default
+    s = str(val).strip()
+    m = re.search(r'(\d{1,2}):(\d{2})', s)
+    if m:
+        return f"{int(m.group(1)):02d}:{m.group(2)}"
+    return default
+
 
 def hydrate_from_google_sheets(target_url=None):
     """
@@ -335,9 +369,49 @@ def hydrate_from_google_sheets(target_url=None):
             for r in reserves:
                 if not r.get('id') or not r.get('student_id'):
                     continue
+
+                # Detectar columnes desplaçades del full antic
+                raw_tel = str(r.get('telefon') or '').strip()
+                raw_data = str(r.get('data') or '').strip()
+
+                if ('2026' in raw_tel or 'GMT' in raw_tel) and ('1899' in raw_data or ':' in raw_data):
+                    clean_data = sanitize_date_str(raw_tel)
+                    clean_inici = sanitize_time_str(raw_data, '10:00')
+                    clean_fi = sanitize_time_str(r.get('hora_inici'), '11:30')
+                    clean_franja = str(r.get('hora_fi') or 'F1').strip()
+                    clean_estat = str(r.get('franja') or 'confirmada').strip()
+                    clean_act = 'Torn'
+                    clean_act_id = 'torn'
+                    clean_places = 1
+                    clean_tel = ''
+                    clean_notes = str(r.get('activitat_id') or '').strip()
+                else:
+                    clean_data = sanitize_date_str(raw_data)
+                    clean_inici = sanitize_time_str(r.get('hora_inici'), '10:00')
+                    clean_fi = sanitize_time_str(r.get('hora_fi'), '11:30')
+                    clean_franja = str(r.get('franja') or 'F1').strip()
+                    clean_estat = str(r.get('estat') or 'confirmada').strip()
+                    clean_act = str(r.get('activitat') or 'Torn').strip()
+                    if clean_act in ('1.5', '2.0', '1', '2', ''):
+                        clean_act = 'Torn'
+                    clean_act_id = str(r.get('activitat_id') or 'torn').strip()
+                    if clean_act_id in ('1.5', '2.0', ''):
+                        clean_act_id = 'torn'
+                    try:
+                        clean_places = int(r.get('places', 1))
+                        if clean_places < 1 or clean_places > 12:
+                            clean_places = 1
+                    except Exception:
+                        clean_places = 1
+                    clean_tel = str(r.get('telefon') or '').strip()
+                    clean_notes = str(r.get('notes') or '').strip()
+
+                clean_hores = float(r.get('hores', 1.5))
+                cal_id = str(r.get('calendar_event_id') or '').strip() or None
+
                 cursor.execute('''
-                    INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
                         student_id = excluded.student_id,
                         student_nom = excluded.student_nom,
@@ -352,15 +426,15 @@ def hydrate_from_google_sheets(target_url=None):
                         estat = excluded.estat,
                         hores = excluded.hores,
                         notes = excluded.notes,
-                        created_at = excluded.created_at
+                        created_at = excluded.created_at,
+                        calendar_event_id = COALESCE(excluded.calendar_event_id, reserves.calendar_event_id)
                 ''', (
                     r['id'], r['student_id'], r.get('student_nom', ''),
-                    r.get('data', ''), r.get('hora_inici', '10:00'), r.get('hora_fi', '11:30'),
-                    r.get('franja', 'F1'), r.get('activitat', 'Torn'),
-                    r.get('activitat_id', 'torn'), int(r.get('places', 1)),
-                    r.get('telefon', ''), r.get('estat', 'confirmada'),
-                    float(r.get('hores', 1.5)), r.get('notes', ''),
-                    r.get('created_at', datetime.now().isoformat())
+                    clean_data, clean_inici, clean_fi,
+                    clean_franja, clean_act, clean_act_id, clean_places,
+                    clean_tel, clean_estat, clean_hores, clean_notes,
+                    r.get('created_at', datetime.now().isoformat()),
+                    cal_id
                 ))
 
             # 5. Bolcar configuració
@@ -412,7 +486,18 @@ def sync_to_google_sheets_async(action, payload):
             )
             opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
             with opener.open(req, timeout=20) as resp:
-                resp.read()
+                raw_resp = resp.read()
+                try:
+                    res_data = json.loads(raw_resp.decode('utf-8'))
+                    if action == 'add_reserva' and res_data.get('status') == 'success':
+                        created_cal_id = res_data.get('calendar_event_id')
+                        if created_cal_id and payload.get('id'):
+                            with get_db() as c_conn:
+                                c_cur = c_conn.cursor()
+                                c_cur.execute('UPDATE reserves SET calendar_event_id = ? WHERE id = ?', (created_cal_id, payload['id']))
+                                c_conn.commit()
+                except Exception:
+                    pass
         except Exception as e:
             print(f"[Google Sheets Sync] Avís enviant '{action}': {e}")
 

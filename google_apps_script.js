@@ -63,8 +63,8 @@ function doPost(e) {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
     } else if (action === "add_reserva" || action === "update_reserva") {
-      upsertReservaRow(ss, data.payload || data.reserva);
-      return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets" });
+      var resCalId = upsertReservaRow(ss, data.payload || data.reserva);
+      return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets", calendar_event_id: resCalId });
     } else if (action === "cancel_reserva") {
       cancelReservaRow(ss, data.payload || data.reserva);
       return jsonResponse({ status: "success", message: "Reserva cancel·lada a Google Sheets" });
@@ -127,6 +127,16 @@ function getOrCreateSheet(ss, name, headers, color) {
       headerRange.setBackground(color || "#C25E3A");
       headerRange.setFontColor("#FFFFFF");
       headerRange.setFontWeight("bold");
+      sheet.setFrozenRows(1);
+    }
+  } else if (headers && headers.length > 0) {
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < headers.length) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      var hr = sheet.getRange(1, 1, 1, headers.length);
+      hr.setBackground(color || "#C25E3A");
+      hr.setFontColor("#FFFFFF");
+      hr.setFontWeight("bold");
       sheet.setFrozenRows(1);
     }
   }
@@ -615,6 +625,46 @@ function upsertReservaRow(ss, r) {
   if (!updated) {
     sheet.appendRow(rowData);
   }
+  return calEventId;
+}
+
+function parseDateTimeRobust(dateVal, timeVal) {
+  var year = 2026, month = 8, day = 5, hours = 10, minutes = 0;
+
+  if (dateVal instanceof Date) {
+    year = dateVal.getFullYear();
+    month = dateVal.getMonth();
+    day = dateVal.getDate();
+  } else if (dateVal) {
+    var str = String(dateVal).trim();
+    var isoMatch = str.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (isoMatch) {
+      year = parseInt(isoMatch[1], 10);
+      month = parseInt(isoMatch[2], 10) - 1;
+      day = parseInt(isoMatch[3], 10);
+    } else {
+      var dObj = new Date(str);
+      if (!isNaN(dObj.getTime())) {
+        year = dObj.getFullYear();
+        month = dObj.getMonth();
+        day = dObj.getDate();
+      }
+    }
+  }
+
+  if (timeVal instanceof Date) {
+    hours = timeVal.getHours();
+    minutes = timeVal.getMinutes();
+  } else if (timeVal) {
+    var timeStr = String(timeVal).trim();
+    var timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      hours = parseInt(timeMatch[1], 10);
+      minutes = parseInt(timeMatch[2], 10);
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0);
 }
 
 function parseDateTimeRobust(dateVal, timeVal) {
