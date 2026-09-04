@@ -1,5 +1,5 @@
 // sw.js - Service Worker per al Taller de Ceramica (Suport Offline i PWA)
-const CACHE_NAME = "taller-ceramica-v3.3";
+const CACHE_NAME = "taller-ceramica-v3.4";
 const ASSETS_TO_CACHE = [
   "./",
   "./alumne.html",

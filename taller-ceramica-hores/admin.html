@@ -34,7 +34,7 @@
       <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
         ➕ Nou Alumne
       </button>
-      <button class="btn btn-outline btn-sm" id="btn-reserves-admin" style="border-color: #2E7D32; color: #2E7D32; font-weight: 600;" title="Gestió de Reserves i Control d'Aforament">
+      <button class="btn btn-outline btn-sm" id="btn-reserves-admin" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{document.getElementById('modal-reserves-backdrop').classList.add('active');}" style="border-color: #2E7D32; color: #2E7D32; font-weight: 600;" title="Gestió de Reserves i Control d'Aforament">
         📅 Reserves & Aforament
       </button>
       <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
@@ -732,8 +732,10 @@
 
       </div>
     </div>
+  </div>
+
   <!-- MODAL: GESTIÓ DE RESERVES & CONTROL D'AFORAMENT -->
-  <div class="modal-backdrop" id="modal-reserves-backdrop">
+  <div class="modal-backdrop" id="modal-reserves-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog modal-lg" style="max-width: 920px;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -743,7 +745,7 @@
             <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
           </div>
         </div>
-        <button type="button" class="modal-close" id="btn-close-modal-reserves">&times;</button>
+        <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
       </div>
 
       <div class="modal-body" style="padding: 20px;">
@@ -819,7 +821,7 @@
         <span style="font-size: 12px; color: var(--color-muted);">
           ⚡ Les reserves s'emmagatzemen a SQLite i s'envien automàticament al teu Google Sheets.
         </span>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer">Tancar</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
       </div>
     </div>
   </div>
@@ -915,10 +917,10 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.3"></script>
-  <script src="js/sound.js?v=3.3"></script>
-  <script src="js/qr-engine.js?v=3.3"></script>
-  <script src="js/store.js?v=3.3"></script>
-  <script src="js/admin.js?v=3.3"></script>
+  <script src="js/time-utils.js?v=3.4"></script>
+  <script src="js/sound.js?v=3.4"></script>
+  <script src="js/qr-engine.js?v=3.4"></script>
+  <script src="js/store.js?v=3.4"></script>
+  <script src="js/admin.js?v=3.4"></script>
 </body>
 </html>

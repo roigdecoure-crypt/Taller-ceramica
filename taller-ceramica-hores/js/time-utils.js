@@ -115,6 +115,10 @@ const TimeUtils = {
    */
   formatDate(iso) {
     if (!iso) return '-';
+    if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso.trim())) {
+      const parts = iso.trim().split('-');
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleDateString('ca-ES', {

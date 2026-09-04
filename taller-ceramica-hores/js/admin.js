@@ -1209,7 +1209,13 @@ function updateBrandPreview() {
 
 /* ==================== RESERVES & CONTROL D'AFORAMENT (ADMIN) ==================== */
 
-let adminSelectedDate = new Date().toISOString().slice(0, 10);
+function getAdminLocalDate(daysOffset = 0) {
+  const d = new Date();
+  if (daysOffset !== 0) d.setDate(d.getDate() + daysOffset);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+let adminSelectedDate = getAdminLocalDate();
 
 function initReservesAdmin() {
   const btnOpen = document.getElementById('btn-reserves-admin');
@@ -1231,21 +1237,19 @@ function initReservesAdmin() {
   if (dateInput) {
     dateInput.value = adminSelectedDate;
     dateInput.addEventListener('change', () => {
-      adminSelectedDate = dateInput.value || new Date().toISOString().slice(0, 10);
+      adminSelectedDate = dateInput.value || getAdminLocalDate();
       loadAdminDisponibilitat(adminSelectedDate);
     });
   }
 
   document.getElementById('btn-admin-res-avui')?.addEventListener('click', () => {
-    adminSelectedDate = new Date().toISOString().slice(0, 10);
+    adminSelectedDate = getAdminLocalDate(0);
     if (dateInput) dateInput.value = adminSelectedDate;
     loadAdminDisponibilitat(adminSelectedDate);
   });
 
   document.getElementById('btn-admin-res-dema')?.addEventListener('click', () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    adminSelectedDate = d.toISOString().slice(0, 10);
+    adminSelectedDate = getAdminLocalDate(1);
     if (dateInput) dateInput.value = adminSelectedDate;
     loadAdminDisponibilitat(adminSelectedDate);
   });
@@ -1417,7 +1421,7 @@ async function loadAdminDisponibilitat(dateStr) {
                 <div>
                   <strong style="color: var(--color-primary);">${r.student_id}</strong>
                   <span>${r.student_nom || r.nom || ''}</span>
-                  ${r.telefon ? `<a href="https://wa.me/34${r.telefon.replace(/[^0-9]/g,'')}" target="_blank" title="WhatsApp" style="text-decoration:none; margin-left:4px;">💬</a>` : ''}
+                  ${r.telefon ? `<a href="https://wa.me/34${String(r.telefon).replace(/[^0-9]/g,'')}" target="_blank" title="WhatsApp" style="text-decoration:none; margin-left:4px;">💬</a>` : ''}
                 </div>
                 <button type="button" class="btn btn-outline btn-sm btn-admin-cancel-res" data-res-id="${r.id}" style="padding: 2px 6px; font-size: 11px; color: #C62828; border-color: #FFCDD2;" title="Cancel·lar i alliberar plaça">
                   ✕ Cancel·lar
@@ -1475,5 +1479,11 @@ async function loadAdminDisponibilitat(dateStr) {
     grid.innerHTML = `<p style="color: var(--color-danger); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 24px;">Error carregant disponibilitat: ${err.message}</p>`;
   }
 }
+
+if (typeof window !== 'undefined') {
+  window.openReservesModal = openReservesModal;
+  window.loadAdminDisponibilitat = loadAdminDisponibilitat;
+}
+
 
 
