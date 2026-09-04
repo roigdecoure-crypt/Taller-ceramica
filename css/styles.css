@@ -1,0 +1,961 @@
+/**
+ * styles.css - Estètica general i paleta artesanal per al Taller de Ceràmica
+ */
+
+:root {
+  --color-primary: #C25E3A;       /* Terracota */
+  --color-primary-dark: #9E4626;
+  --color-primary-light: #F7EAE5;
+  --color-secondary: #5E7E6F;     /* Sàlvia / Esmalt verd */
+  --color-secondary-light: #EBF1EE;
+  --color-dark: #2E2825;          /* Argila fosca */
+  --color-muted: #736B66;
+  --color-bg: #FAF6F0;            /* Fons crema artesanal */
+  --color-card: #FFFFFF;
+  --color-border: #E8DFD5;
+  
+  --color-success: #2E7D32;
+  --color-success-bg: #E8F5E9;
+  --color-warning: #EF6C00;
+  --color-warning-bg: #FFF3E0;
+  --color-danger: #C62828;
+  --color-danger-bg: #FFEBEE;
+  --color-info: #1976D2;
+  --color-info-bg: #E3F2FD;
+
+  --shadow-sm: 0 2px 4px rgba(46, 40, 37, 0.05);
+  --shadow-md: 0 4px 12px rgba(46, 40, 37, 0.08);
+  --shadow-lg: 0 10px 25px rgba(46, 40, 37, 0.12);
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+  --transition: all 0.2s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-dark);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Enllaços i botons */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: var(--transition);
+}
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: var(--transition);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: #fff;
+}
+.btn-secondary:hover {
+  background-color: #4B675A;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--color-border);
+  color: var(--color-dark);
+}
+.btn-outline:hover {
+  background-color: var(--color-card);
+  border-color: var(--color-muted);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background-color: #A01B1B;
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: #fff;
+}
+.btn-success:hover {
+  background-color: #236327;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+  padding: 14px 24px;
+  font-size: 16px;
+  border-radius: var(--radius-lg);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* Targetes i contenidors */
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Badges / Etiquetes */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-danger { background: var(--color-danger-bg); color: var(--color-danger); }
+.badge-info { background: var(--color-info-bg); color: var(--color-info); }
+.badge-neutral { background: #ECE8E1; color: var(--color-dark); }
+
+/* Cronòmetre en viu */
+.live-pulse {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-success);
+  box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7);
+  animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(46, 125, 50, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+  }
+}
+
+/* Modals */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 26, 24, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.modal-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-dialog {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  max-width: 550px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(20px);
+  transition: transform 0.25s ease;
+  padding: 24px;
+}
+.modal-backdrop.active .modal-dialog {
+  transform: translateY(0);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.modal-close:hover {
+  color: var(--color-dark);
+}
+
+/* Formularis */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-dark);
+}
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #FFF;
+  color: var(--color-dark);
+  font-family: inherit;
+  transition: var(--transition);
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
+}
+
+/* Taules */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+table.data-table th {
+  background-color: var(--color-bg);
+  color: var(--color-muted);
+  font-weight: 600;
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--color-border);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+table.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-dark);
+  vertical-align: middle;
+}
+table.data-table tr:hover td {
+  background-color: rgba(194, 94, 58, 0.02);
+}
+
+/* Notificacions Toast */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2000;
+}
+.toast {
+  padding: 12px 18px;
+  background: var(--color-dark);
+  color: #FFF;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.3s ease;
+}
+.toast.success { background: #2E7D32; }
+.toast.error { background: #C62828; }
+.toast.info { background: #1976D2; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   SISTEMA DE RESERVES VISUAL & ELS 2 CAMINS (ROIG DE COURE)
+   ========================================================================== */
+
+/* Toggle dels 2 Camins */
+.res-paths-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .res-paths-nav {
+    grid-template-columns: 1fr;
+  }
+}
+.res-path-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #FFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+.res-path-btn:hover {
+  border-color: var(--color-primary);
+  background: rgba(194, 94, 58, 0.03);
+}
+.res-path-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 4px 12px rgba(194, 94, 58, 0.15);
+}
+.res-path-btn .path-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.res-path-btn .path-text strong {
+  display: block;
+  font-size: 14px;
+  color: var(--color-dark);
+}
+.res-path-btn.active .path-text strong {
+  color: var(--color-primary-dark);
+}
+.res-path-btn .path-text small {
+  display: block;
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+/* Selector d'Activitats (Camí 2) */
+.res-activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.res-activity-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+  position: relative;
+}
+.res-activity-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+.res-activity-card.active {
+  border-color: var(--color-primary);
+  background: #FFF9F6;
+  box-shadow: 0 4px 10px rgba(194, 94, 58, 0.12);
+}
+.res-activity-card .act-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.res-activity-card .act-info {
+  flex: 1;
+  min-width: 0;
+}
+.res-activity-card .act-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.res-activity-card .act-cap {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 1px;
+}
+.res-activity-card .act-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: #EFEBE9;
+  color: var(--color-dark);
+}
+.res-activity-card.active .act-badge {
+  background: var(--color-primary);
+  color: #FFF;
+}
+
+/* Contenidor del Calendari Mensual */
+.res-calendar-card {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.res-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.res-calendar-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-dark);
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.res-calendar-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-calendar-nav-btn {
+  background: #F4EBE2;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.res-calendar-nav-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* Capçalera de Dies de la Setmana */
+.res-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.res-calendar-weekday {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-muted);
+  padding: 6px 2px;
+}
+.res-calendar-weekday.closed {
+  color: #B0BEC5;
+}
+
+/* Graella de Cel·les del Calendari */
+.res-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+@media (max-width: 500px) {
+  .res-calendar-grid {
+    gap: 3px;
+  }
+}
+.res-cal-day {
+  min-height: 72px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ECE7E1;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  text-align: left;
+}
+@media (max-width: 500px) {
+  .res-cal-day {
+    min-height: 60px;
+    padding: 4px;
+  }
+}
+.res-cal-day.empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+.res-cal-day.closed-rest {
+  background: #F5F5F5;
+  border-color: #EEEEEE;
+  color: #9E9E9E;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.res-cal-day.closed-holiday {
+  background: #FFF8E1;
+  border-color: #FFE082;
+  color: #F57F17;
+  cursor: not-allowed;
+}
+.res-cal-day.open-day {
+  background: #FFF;
+  border-color: #E2DDD6;
+  cursor: pointer;
+}
+.res-cal-day.open-day:hover {
+  border-color: var(--color-primary);
+  background: #FFFDF9;
+  transform: translateY(-1px);
+}
+.res-cal-day.selected {
+  border: 2px solid var(--color-primary) !important;
+  background: #FFF6F2 !important;
+  box-shadow: 0 0 0 2px rgba(194, 94, 58, 0.2);
+}
+.res-cal-day.is-today .day-num {
+  background: var(--color-dark);
+  color: #FFF;
+  border-radius: 99px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.res-cal-day.selected.is-today .day-num {
+  background: var(--color-primary);
+}
+
+.res-cal-day .day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.res-cal-day .day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+.res-cal-day.closed-rest .day-num {
+  color: #9E9E9E;
+}
+.res-cal-day .day-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+.res-cal-day .badge-lliure {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+.res-cal-day .badge-ultimes {
+  background: #FFF3E0;
+  color: #E65100;
+}
+.res-cal-day .badge-complet {
+  background: #FFEBEE;
+  color: #C62828;
+}
+.res-cal-day .badge-tancat {
+  background: #ECEFF1;
+  color: #78909C;
+}
+
+/* Detall de Franges del Dia Seleccionat */
+.res-day-detail-card {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.res-day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 18px;
+}
+.res-day-detail-date {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.res-day-global-rule {
+  font-size: 12px;
+  color: #555;
+  background: #F4F1EA;
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+/* Graella de Franges Horàries */
+.res-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.res-slot-box {
+  background: #FAFAFA;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: var(--transition);
+}
+.res-slot-box.is-full {
+  background: #FFFDFD;
+  border-color: #FFCDD2;
+}
+.res-slot-box.is-open {
+  border-color: #C8E6C9;
+}
+.res-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.res-slot-time {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+.res-slot-hours {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.res-slot-cap-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+}
+.res-slot-cap-badge.open {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+.res-slot-cap-badge.warning {
+  background: #FFF3E0;
+  color: #E65100;
+}
+.res-slot-cap-badge.full {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+/* Barra de Progrés d'Aforament Franja (Màx 12) */
+.res-slot-progress-wrap {
+  margin: 6px 0;
+}
+.res-slot-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #ECE7E1;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.res-slot-progress-fill {
+  height: 100%;
+  background: #2E7D32;
+  transition: width 0.3s ease;
+}
+.res-slot-progress-fill.warning { background: #EF6C00; }
+.res-slot-progress-fill.full { background: #C62828; }
+.res-slot-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 3px;
+}
+
+/* Llistat d'Activitats dins la Franja */
+.res-slot-acts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.res-slot-act-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: #FFF;
+  border: 1px solid #ECE7E1;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  transition: var(--transition);
+}
+.res-slot-act-row.is-highlighted {
+  border-color: var(--color-primary);
+  background: #FFF7F3;
+}
+.res-slot-act-row.is-full {
+  opacity: 0.55;
+  background: #FAFAFA;
+}
+.res-slot-act-name {
+  font-weight: 700;
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-slot-act-spots {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2E7D32;
+}
+.res-slot-act-row.is-full .res-slot-act-spots {
+  color: #C62828;
+}
+.btn-book-act {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #FFF;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+.btn-book-act:hover {
+  background: var(--color-primary-dark);
+}
+.btn-book-act:disabled {
+  background: #E0E0E0;
+  color: #9E9E9E;
+  cursor: not-allowed;
+}
+
+/* Llistat de Reserves d'Alumnes dins Franja (Mode Admin) */
+.res-slot-students-list {
+  border-top: 1px dashed var(--color-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.res-student-item {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.res-student-info strong {
+  color: var(--color-primary-dark);
+}
+.res-student-info span {
+  margin-left: 4px;
+}
+.res-student-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-student-whatsapp {
+  text-decoration: none;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+.btn-admin-cancel-res {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+  border-radius: 4px;
+  background: #FFF;
+  cursor: pointer;
+}
+.btn-admin-cancel-res:hover {
+  background: #FFEBEE;
+}
+
+/* Modal de Confirmació de Reserva Net */
+.res-booking-dialog {
+  max-width: 480px;
+  width: 92%;
+  background: #FFF;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  margin: auto;
+  border: 1px solid var(--color-border);
+}
+.res-pax-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.res-pax-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: #F5EFEB;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.res-pax-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+.res-pax-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.res-pax-input {
+  width: 60px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+
+/* Llistat de properes sessions (Camí 2) */
+.res-upcoming-sessions-box {
+  background: #FFF9F6;
+  border: 1.5px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.res-upcoming-sessions-box h4 {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-upcoming-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.res-upcoming-chip {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-upcoming-chip:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}

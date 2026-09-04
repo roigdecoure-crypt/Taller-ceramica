@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taller de Ceràmica - Control d'Hores i Assistència</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#C25E3A">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .hero-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .hero-header {
+      margin-bottom: 36px;
+      max-width: 600px;
+    }
+    .hero-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+    .hero-header h1 {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--color-dark);
+      margin-bottom: 8px;
+    }
+    .hero-header p {
+      font-size: 16px;
+      color: var(--color-muted);
+    }
+    .portals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 960px;
+      width: 100%;
+      margin-bottom: 36px;
+    }
+    .portal-card {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      text-align: left;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .portal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-primary);
+    }
+    .portal-card-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .portal-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+    .icon-admin { background: #FBECE7; color: var(--color-primary); }
+    .icon-scanner { background: #EBF1EE; color: var(--color-secondary); }
+    .icon-student { background: #EAEFF5; color: #2B5B84; }
+    
+    .portal-card h3 {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--color-dark);
+      margin-bottom: 4px;
+    }
+    .portal-card p {
+      font-size: 14px;
+      color: var(--color-muted);
+      line-height: 1.5;
+    }
+    .hero-footer {
+      font-size: 13px;
+      color: var(--color-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="hero-container">
+    <div class="hero-header">
+      <div class="hero-icon">🏺</div>
+      <h1>Taller de Ceràmica</h1>
+      <p>Sistema integral de control d'assistència, còmput d'hores gastades (H:m:s), carnets QR i paquets d'hores</p>
+    </div>
+
+    <div class="portals-grid">
+      <!-- Panell Administració -->
+      <div class="portal-card">
+        <div>
+          <div class="portal-card-header">
+            <div class="portal-icon-box icon-admin">🛠️</div>
+            <div>
+              <h3>Panell de Gestió</h3>
+              <span class="badge badge-neutral">Professor / Admin</span>
+            </div>
+          </div>
+          <p style="margin-top: 14px;">
+            Accedeix a la fitxa 360° dels alumnes, consulta els que estan al taller ara mateix en directe, gestiona les compres d'hores, afegeix sessions manuals i tanca cicles oblidats.
+          </p>
+        </div>
+        <a href="admin.html" class="btn btn-primary btn-block">Obrir Panell Admin &rarr;</a>
+      </div>
+
+      <!-- Escàner Codi QR per a Mòbil Android / Tauleta -->
+      <div class="portal-card" style="border-top: 4px solid var(--color-secondary);">
+        <div>
+          <div class="portal-card-header">
+            <div class="portal-icon-box icon-scanner">📷</div>
+            <div>
+              <h3>Escàner Mòbil Android</h3>
+              <span class="badge badge-success">Recepció / Tauleta</span>
+            </div>
+          </div>
+          <p style="margin-top: 14px;">
+            Optimitzat per a mòbils Android o tauletes a la porta del taller. Lectura instantània del carnet QR amb sons i còmput automàtic d'entrada i sortida.
+          </p>
+        </div>
+        <a href="scanner.html" class="btn btn-secondary btn-block">Obrir Escàner QR &rarr;</a>
+      </div>
+
+      <!-- Portal Alumne -->
+      <div class="portal-card">
+        <div>
+          <div class="portal-card-header">
+            <div class="portal-icon-box icon-student">👤</div>
+            <div>
+              <h3>Portal de l'Alumne</h3>
+              <span class="badge badge-info">Públic / Alumnes</span>
+            </div>
+          </div>
+          <p style="margin-top: 14px;">
+            Consulta el teu saldo d'hores restant en temps real (H:m:s), el teu carnet digital amb QR, l'historial complet de sessions i <strong>adquireix nous paquets d'hores amb Stripe</strong>.
+          </p>
+        </div>
+        <a href="alumne.html" class="btn btn-outline btn-block">Accedir com a Alumne &rarr;</a>
+      </div>
+    </div>
+
+    <div class="hero-footer">
+      <p>🏺 Taller de Ceràmica &bull; Sòlid, ràpid i sincronitzat amb SQLite i Google Sheets</p>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration error:', err));
+      });
+    }
+  </script>
+</body>
+</html>

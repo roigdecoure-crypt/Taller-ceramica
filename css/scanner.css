@@ -1,0 +1,212 @@
+/**
+ * scanner.css - Estils per a l'escàner mòbil Android i tauleta de recepció
+ */
+
+.scanner-body {
+  background-color: #1A1817;
+  color: #FFFFFF;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.scanner-header {
+  padding: 14px 20px;
+  background: rgba(26, 24, 23, 0.95);
+  border-bottom: 1px solid #332F2C;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+.scanner-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.scanner-title h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFF;
+}
+.scanner-title p {
+  font-size: 11px;
+  color: #A89F98;
+}
+
+.scanner-viewport {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+}
+
+#qr-video-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  object-fit: cover;
+}
+#qr-video-container video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+#qr-video-container.mirror-camera video {
+  transform: scaleX(-1);
+}
+
+/* Guia d'enfocament / marc d'escaneig */
+.scanner-overlay-guide {
+  position: absolute;
+  width: 250px;
+  height: 250px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  pointer-events: none;
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.55);
+}
+.scanner-overlay-guide::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 4px solid var(--color-primary);
+  border-radius: 24px;
+  border-color: #C25E3A transparent transparent #C25E3A;
+  animation: rotateCorners 4s linear infinite;
+}
+.scanner-laser {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: #C25E3A;
+  box-shadow: 0 0 10px #C25E3A, 0 0 20px #C25E3A;
+  animation: laserScan 2s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+  0% { top: 15px; opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { top: 235px; opacity: 0.2; }
+}
+
+/* Barra d'accions inferiors */
+.scanner-bottom-bar {
+  padding: 16px 20px;
+  background: rgba(26, 24, 23, 0.95);
+  border-top: 1px solid #332F2C;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* Modal gran de Feedback (Entrada / Sortida) */
+.scan-result-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.scan-result-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scan-result-box {
+  width: 100%;
+  max-width: 440px;
+  background: #2E2825;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.scan-result-overlay.active .scan-result-box {
+  transform: scale(1);
+}
+
+.scan-result-box.is-entrada {
+  border-top: 8px solid #2E7D32;
+}
+.scan-result-box.is-sortida {
+  border-top: 8px solid #1976D2;
+}
+
+.result-icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.result-action-badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 14px;
+  border-radius: 99px;
+  margin-bottom: 12px;
+}
+.is-entrada .result-action-badge {
+  background: #2E7D32;
+  color: #FFF;
+}
+.is-sortida .result-action-badge {
+  background: #1976D2;
+  color: #FFF;
+}
+
+.result-student-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #FFF;
+  margin-bottom: 16px;
+}
+
+.result-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.result-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+.result-detail-row .lbl {
+  color: #A89F98;
+}
+.result-detail-row .val {
+  font-weight: 700;
+  color: #FFF;
+  font-family: monospace;
+}
+.result-detail-row.highlight .val {
+  font-size: 18px;
+  color: #F7A889;
+}

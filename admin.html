@@ -34,6 +34,9 @@
       <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
         ➕ Nou Alumne
       </button>
+      <button class="btn btn-outline btn-sm" id="btn-reserves-admin" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{document.getElementById('modal-reserves-backdrop').classList.add('active');}" style="border-color: #2E7D32; color: #2E7D32; font-weight: 600;" title="Gestió de Reserves i Control d'Aforament">
+        📅 Reserves & Aforament
+      </button>
       <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
         🎨 Disseny & Marca
       </button>
@@ -731,6 +734,56 @@
     </div>
   </div>
 
+  <!-- MODAL: GESTIÓ DE RESERVES & CONTROL D'AFORAMENT -->
+  <div class="modal-backdrop" id="modal-reserves-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+    <div class="modal-dialog modal-lg" style="max-width: 920px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 24px;">📅</span>
+          <div>
+            <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
+            <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Barra superior: Aforament màxim del taller -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; background: #F8F9FA; padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">👥</span>
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: var(--color-dark);">Aforament màxim del taller per franja:</span>
+              <span style="font-size: 13px; font-weight: 800; color: var(--color-primary); margin-left: 4px;" id="admin-display-aforament-val">12 places simultànies</span>
+            </div>
+          </div>
+
+          <!-- Configuració de capacitat màxima -->
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 12px; font-weight: 600; color: var(--color-dark); margin: 0;">Aforament màx.:</label>
+            <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 65px; text-align: center; padding: 4px 6px; font-size: 13px;" class="form-control" value="12">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" title="Desar límit d'aforament">Desar</button>
+          </div>
+        </div>
+
+        <!-- Contenidor dinàmic per al Calendari Visual & 2 Camins -->
+        <div id="admin-reserves-calendar-mount">
+          <div style="text-align: center; color: var(--color-muted); padding: 36px;">
+            ⏳ Carregant calendari de reserves i aforament...
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: var(--color-muted);">
+          ⚡ Les reserves s'emmagatzemen a SQLite i es sincronitzen amb Google Sheets i Google Calendar.
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
   <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog" style="max-width: 440px;">
@@ -822,10 +875,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.2"></script>
-  <script src="js/sound.js?v=3.2"></script>
-  <script src="js/qr-engine.js?v=3.2"></script>
-  <script src="js/store.js?v=3.2"></script>
-  <script src="js/admin.js?v=3.2"></script>
+  <script src="js/time-utils.js?v=3.5"></script>
+  <script src="js/sound.js?v=3.5"></script>
+  <script src="js/qr-engine.js?v=3.5"></script>
+  <script src="js/store.js?v=3.5"></script>
+  <script src="js/reserves-calendar.js?v=3.5"></script>
+  <script src="js/admin.js?v=3.5"></script>
 </body>
 </html>

@@ -153,6 +153,66 @@
       font-weight: 700;
       color: var(--color-primary);
     }
+
+    /* Targetes de Reserva i Aforament */
+    .slot-card {
+      background: #FFF;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: var(--transition);
+    }
+    .slot-card.available:hover {
+      border-color: #2E7D32;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .slot-card.booked {
+      border-color: var(--color-primary);
+      background: #FFFBF9;
+    }
+    .slot-card.full {
+      opacity: 0.7;
+      background: #F8F9FA;
+      border-color: #E2E8F0;
+    }
+    .capacity-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      width: fit-content;
+    }
+    .capacity-badge.green {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .capacity-badge.orange {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+    .capacity-badge.red {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .booking-item-card {
+      background: #FAFAFA;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -308,6 +368,35 @@
           <button class="btn btn-outline btn-sm" id="btn-custom-hours">
             ➕ Triar Hores Personalitzades
           </button>
+        </div>
+      </section>
+
+      <!-- SECCIÓ RESERVA DE SESSIONS (CALENDARI VISUAL & ELS 2 CAMINS) -->
+      <section class="card" style="margin-bottom: 24px; border-left: 4px solid var(--color-primary);" id="portal-reserva-section">
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 20px; font-weight: 800; color: var(--color-dark); display: flex; align-items: center; gap: 8px;">
+            <span>📅</span> <span>Reserva de Sessions al Taller</span>
+          </h2>
+          <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
+            Horaris de 90 min (Dimecres a Diumenge). Aforament màxim del taller: 12 persones simultànies en total.
+          </p>
+        </div>
+
+        <!-- Contenidor dinàmic per al Calendari Visual & 2 Camins -->
+        <div id="student-reserves-calendar-mount">
+          <div style="text-align: center; color: var(--color-muted); padding: 30px;">
+            ⏳ Carregant calendari interactiu i aforament en directe...
+          </div>
+        </div>
+
+        <!-- Les meves reserves confirmades -->
+        <div id="portal-my-bookings-container" style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--color-border);">
+          <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 12px; color: var(--color-dark); display: flex; align-items: center; gap: 6px;">
+            <span>🎟️</span> <span>Les Teves Reserves Actives</span>
+          </h3>
+          <div id="portal-my-bookings-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <p style="font-size: 13px; color: var(--color-muted);">Carregant les teves reserves...</p>
+          </div>
         </div>
       </section>
 
@@ -478,10 +567,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.2"></script>
-  <script src="js/sound.js?v=3.2"></script>
-  <script src="js/qr-engine.js?v=3.2"></script>
-  <script src="js/store.js?v=3.2"></script>
-  <script src="js/alumne.js?v=3.2"></script>
+  <script src="js/time-utils.js?v=3.5"></script>
+  <script src="js/sound.js?v=3.5"></script>
+  <script src="js/qr-engine.js?v=3.5"></script>
+  <script src="js/store.js?v=3.5"></script>
+  <script src="js/reserves-calendar.js?v=3.5"></script>
+  <script src="js/alumne.js?v=3.5"></script>
 </body>
 </html>
