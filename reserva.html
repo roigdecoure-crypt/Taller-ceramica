@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reserva la teva Plaça - Roig de Coure | Taller de Ceràmica</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#C25E3A">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    :root {
+      --primary: #C25E3A;
+      --primary-dark: #9E4626;
+      --primary-light: #F7EAE5;
+      --secondary: #5E7E6F;
+      --secondary-light: #EBF1EE;
+      --dark: #2E2825;
+      --muted: #736B66;
+      --bg: #FAF6F0;
+      --card-bg: #FFFFFF;
+      --border: #E8DFD5;
+      --radius: 12px;
+      --shadow: 0 4px 14px rgba(46, 40, 37, 0.08);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--dark);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Adaptació transparent si s'incrusta amb <iframe> a WordPress / Elementor */
+    body.in-iframe {
+      background-color: transparent !important;
+      padding: 0 !important;
+    }
+    body.in-iframe .public-header {
+      padding: 12px 16px 8px;
+    }
+    body.in-iframe .public-header h1 {
+      font-size: 22px;
+    }
+    body.in-iframe .public-container {
+      max-width: 100%;
+      padding: 8px 12px;
+    }
+    body.in-iframe .booking-card {
+      box-shadow: none;
+      border: 1px solid var(--border);
+    }
+
+    .public-header {
+      text-align: center;
+      padding: 28px 20px 16px;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+    }
+    .public-logo {
+      font-size: 40px;
+      line-height: 1;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    .public-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--dark);
+      margin: 0 0 6px;
+    }
+    .public-header p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    .public-container {
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+      flex: 1;
+    }
+
+    .booking-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px 22px;
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Selector d'Activitats */
+    .activities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .act-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #FFFFFF;
+      position: relative;
+    }
+    .act-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .act-card.active {
+      border-color: var(--primary);
+      background: #FDF7F4;
+      box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
+    }
+    .act-card .act-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .act-card .act-icon {
+      font-size: 26px;
+    }
+    .act-card .act-cap-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: #F3F4F6;
+      color: #4B5563;
+    }
+    .act-card.active .act-cap-badge {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+    }
+    .act-card .act-title {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 3px;
+      color: var(--dark);
+    }
+    .act-card .act-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* Calendari i Data */
+    .date-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .date-control {
+      flex: 1;
+      min-width: 220px;
+    }
+    .date-control label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      display: block;
+      color: var(--dark);
+    }
+    .date-control input[type="date"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--dark);
+      background: #FFFFFF;
+      outline: none;
+    }
+    .date-control input[type="date"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
+    }
+    .schedule-info {
+      font-size: 12px;
+      color: var(--secondary);
+      background: var(--secondary-light);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Selector de Franges */
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .slot-item {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      background: white;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .slot-item:hover:not(.disabled) {
+      border-color: var(--primary);
+    }
+    .slot-item.active {
+      border-color: var(--primary);
+      background: #FDF7F4;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .slot-item.disabled {
+      background: #F3F4F6;
+      border-color: #E5E7EB;
+      color: #9CA3AF;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .slot-item .slot-time {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .slot-item .slot-avail {
+      font-size: 11px;
+      color: var(--secondary);
+    }
+    .slot-item.disabled .slot-avail {
+      color: #9CA3AF;
+    }
+
+    /* Selector de Places */
+    .pax-selector {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .pax-btn {
+      width: 42px;
+      height: 42px;
+      border: 1.5px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pax-btn:hover {
+      border-color: var(--primary);
+    }
+    .pax-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Formulari de Contacte */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 600px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 5px;
+    }
+    .form-field input, .form-field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .form-field input:focus, .form-field textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
+    }
+
+    .wa-banner {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      color: #166534;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-submit-booking {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-submit-booking:hover {
+      background: var(--primary-dark);
+    }
+    .btn-submit-booking:disabled {
+      background: #D1D5DB;
+      cursor: not-allowed;
+    }
+
+    /* Pantalla d'èxit */
+    .success-view {
+      display: none;
+      text-align: center;
+      padding: 20px 10px;
+    }
+    .success-icon {
+      font-size: 64px;
+      margin-bottom: 12px;
+    }
+    .success-view h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      color: var(--dark);
+      margin: 0 0 8px;
+    }
+    .success-summary {
+      background: #F9FAFB;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      max-width: 480px;
+      margin: 20px auto;
+      text-align: left;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed #E5E7EB;
+      font-size: 14px;
+    }
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+    .summary-row .label {
+      color: var(--muted);
+    }
+    .summary-row .val {
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .calendar-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Capçalera pública -->
+  <header class="public-header">
+    <div class="public-logo">🏺</div>
+    <h1>Roig de Coure</h1>
+    <p>Reserva la teva plaça al taller artesanal de ceràmica</p>
+  </header>
+
+  <!-- Contingut principal -->
+  <main class="public-container">
+    <div class="booking-card" id="booking-card">
+
+      <!-- VISTA FORMULARI -->
+      <div id="booking-form-view">
+        <form id="reserva-public-form">
+
+          <!-- 1. ACTIVITAT -->
+          <div class="section-title">
+            <span class="step-badge">1</span> Tria l'activitat
+          </div>
+          <div class="activities-grid" id="activities-container">
+            <div class="act-card active" data-id="torn" data-cap="4">
+              <div class="act-top">
+                <span class="act-icon">🏺</span>
+                <span class="act-cap-badge" id="badge-cap-torn">Màx. 4 torns</span>
+              </div>
+              <div class="act-title">Torn</div>
+              <div class="act-desc">Sessió al torn de terrissaire</div>
+            </div>
+
+            <div class="act-card" data-id="modelatge" data-cap="8">
+              <div class="act-top">
+                <span class="act-icon">🗿</span>
+                <span class="act-cap-badge" id="badge-cap-modelatge">Fins a 8 places</span>
+              </div>
+              <div class="act-title">Modelatge</div>
+              <div class="act-desc">Modelat a mà i escultura de fang</div>
+            </div>
+
+            <div class="act-card" data-id="pintar" data-cap="12">
+              <div class="act-top">
+                <span class="act-icon">🎨</span>
+                <span class="act-cap-badge" id="badge-cap-pintar">Fins a 12 places</span>
+              </div>
+              <div class="act-title">Pintar ceràmica</div>
+              <div class="act-desc">Pintura i esmaltat de peces</div>
+            </div>
+          </div>
+
+          <!-- 2. DATA I FRANJA -->
+          <div class="section-title">
+            <span class="step-badge">2</span> Data i Franja Horària
+          </div>
+          <div class="date-row">
+            <div class="date-control">
+              <label for="booking-date">Data de la sessió</label>
+              <input type="date" id="booking-date" required>
+              <div class="schedule-info">
+                <span>🕒</span> Obrim de <strong>Dimecres a Diumenge</strong> (Dilluns i Dimarts descans)
+              </div>
+            </div>
+          </div>
+
+          <!-- Franges de la data -->
+          <div id="slots-wrapper">
+            <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; color: var(--dark);">
+              Franja horària disponible:
+            </label>
+            <div class="slots-grid" id="slots-container">
+              <div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">
+                ⏳ Comprovant disponibilitat...
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. QUANTES PERSONES -->
+          <div class="section-title" style="margin-top: 20px;">
+            <span class="step-badge">3</span> Quantes persones veniu?
+          </div>
+          <div class="pax-selector" id="pax-container">
+            <button type="button" class="pax-btn active" data-pax="1">1</button>
+            <button type="button" class="pax-btn" data-pax="2">2</button>
+            <button type="button" class="pax-btn" data-pax="3">3</button>
+            <button type="button" class="pax-btn" data-pax="4">4</button>
+          </div>
+
+          <!-- 4. DADES DE CONTACTE -->
+          <div class="section-title" style="margin-top: 20px;">
+            <span class="step-badge">4</span> Les teves dades de contacte
+          </div>
+
+          <div class="contact-grid">
+            <div class="form-field">
+              <label for="client-name">Nom i Cognoms *</label>
+              <input type="text" id="client-name" placeholder="Ex: Marta Soler" required>
+            </div>
+            <div class="form-field">
+              <label for="client-tel">Telèfon Mòbil (amb WhatsApp) *</label>
+              <input type="tel" id="client-tel" placeholder="Ex: 611 22 33 44" required>
+            </div>
+          </div>
+
+          <div class="contact-grid">
+            <div class="form-field">
+              <label for="client-email">Correu electrònic</label>
+              <input type="email" id="client-email" placeholder="per rebre confirmació i cita de calendari">
+            </div>
+            <div class="form-field">
+              <label for="client-notes">Comentaris o necessitats especials</label>
+              <input type="text" id="client-notes" placeholder="Ex: És la primera vegada que vinc...">
+            </div>
+          </div>
+
+          <!-- Avís WhatsApp -->
+          <div class="wa-banner">
+            <span style="font-size: 20px;">💬</span>
+            <div>
+              <strong>Confirmació i recordatoris per WhatsApp:</strong>
+              T'enviarem la confirmació al moment, un recordatori 48h abans i un altre a les 8:00 AM del mateix dia de l'esdeveniment.
+            </div>
+          </div>
+
+          <div id="booking-error-msg" style="display:none; color: #DC2626; background: #FEF2F2; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+
+          <button type="submit" class="btn-submit-booking" id="btn-submit">
+            <span>✨</span> Confirmar Reserva ara
+          </button>
+        </form>
+      </div>
+
+      <!-- VISTA CONFIRMACIÓ ÈXIT -->
+      <div class="success-view" id="booking-success-view">
+        <div class="success-icon">🎉</div>
+        <h2>Reserva Confirmada!</h2>
+        <p style="color: var(--muted); font-size: 15px;" id="success-client-msg">
+          Moltíssimes gràcies, t'esperem al taller!
+        </p>
+
+        <div class="success-summary">
+          <div class="summary-row">
+            <span class="label">Activitat:</span>
+            <span class="val" id="sum-act">Torn</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Data:</span>
+            <span class="val" id="sum-data">Dimecres, 10 de setembre</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Horari:</span>
+            <span class="val" id="sum-horari">10:00 - 11:30</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Places:</span>
+            <span class="val" id="sum-places">1 persona</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Referència:</span>
+            <span class="val" id="sum-ref" style="font-family: monospace; font-size: 13px;">RES-...</span>
+          </div>
+        </div>
+
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; padding: 12px; border-radius: 8px; max-width: 480px; margin: 0 auto 16px; font-size: 13px;">
+          💬 <strong>T'hem enviat un missatge per WhatsApp</strong> amb tots els detalls de la teva reserva.
+        </div>
+
+        <div class="calendar-actions">
+          <a href="#" target="_blank" class="btn btn-primary" id="btn-gcal">
+            📅 Afegir a Google Calendar
+          </a>
+          <button type="button" class="btn btn-outline" id="btn-ics">
+            📥 Descarregar cita (.ics)
+          </button>
+          <a href="https://wa.me/34600000000" target="_blank" class="btn btn-secondary" id="btn-wa-direct">
+            💬 Contactar Taller WhatsApp
+          </a>
+        </div>
+
+        <div style="margin-top: 26px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva">
+            Fes una altra reserva
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Detecció d'integració <iframe> (Elementor / WordPress)
+    if (window.self !== window.top) {
+      document.body.classList.add('in-iframe');
+    }
+
+    // Estat del formulari
+    const state = {
+      activitatId: 'torn',
+      activitatNom: 'Torn',
+      activitatCapMax: 4,
+      data: '',
+      franja: 'F1',
+      franjaNom: 'Matí 1 (10:00 - 11:30)',
+      horaInici: '10:00',
+      horaFi: '11:30',
+      places: 1,
+      maxPlacesDisponibles: 4,
+      lastConfirmed: null
+    };
+
+    // Inicialització de la data vàlida (Dimecres a Diumenge)
+    function getNextOpenDate() {
+      const d = new Date();
+      // Si avui és dilluns (+2) o dimarts (+1)
+      const day = d.getDay(); // 0 Dg, 1 Dl, 2 Dt...
+      if (day === 1) d.setDate(d.getDate() + 2);
+      else if (day === 2) d.setDate(d.getDate() + 1);
+      
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    }
+
+    // Carregar activitats i capacitats des de l'API
+    async function loadActivitatsConfig() {
+      try {
+        const res = await fetch('/api/reserves/activitats?t=' + Date.now());
+        const data = await res.json();
+        if (data.ok && data.activitats) {
+          data.activitats.forEach(act => {
+            if (act.id === 'torn') {
+              state.activitatCapMax = act.capacitatMax;
+              document.getElementById('badge-cap-torn').textContent = `Màx. ${act.capacitatMax} torns`;
+            } else if (act.id === 'modelatge') {
+              document.getElementById('badge-cap-modelatge').textContent = `Fins a ${act.capacitatMax} places`;
+            } else if (act.id === 'pintar') {
+              document.getElementById('badge-cap-pintar').textContent = `Fins a ${act.capacitatMax} places`;
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Fallback activitats:', e);
+      }
+    }
+
+    // Carregar disponibilitat del dia seleccionat
+    async function checkAvailability() {
+      const dateVal = state.data;
+      const slotsContainer = document.getElementById('slots-container');
+      if (!dateVal) return;
+
+      slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">⏳ Comprovant disponibilitat...</div>`;
+
+      try {
+        const res = await fetch(`/api/reserves/disponibilitat?data=${encodeURIComponent(dateVal)}&t=${Date.now()}`);
+        const data = await res.json();
+
+        if (data.tancat) {
+          slotsContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
+              🔒 ${data.motiu || 'Aquest dia el taller està tancat. Obrim de Dimecres a Diumenge.'}
+            </div>
+          `;
+          document.getElementById('btn-submit').disabled = true;
+          return;
+        }
+
+        renderSlots(data.franges || []);
+      } catch (e) {
+        slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #DC2626; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
+      }
+    }
+
+    function renderSlots(franges) {
+      const slotsContainer = document.getElementById('slots-container');
+      slotsContainer.innerHTML = '';
+
+      let firstValidSlot = null;
+
+      franges.forEach(f => {
+        const actObj = (f.activitats || []).find(a => a.id === state.activitatId);
+        const lliuresAct = actObj ? actObj.placesDisponibles : f.placesLliures;
+        const isComplet = lliuresAct <= 0 || f.placesLliures <= 0;
+
+        const div = document.createElement('div');
+        div.className = `slot-item ${isComplet ? 'disabled' : ''}`;
+        div.dataset.id = f.id;
+        div.dataset.nom = f.nom;
+        div.dataset.inici = f.inici;
+        div.dataset.fi = f.fi;
+        div.dataset.places = lliuresAct;
+
+        div.innerHTML = `
+          <div class="slot-time">${f.inici} - ${f.fi}</div>
+          <div class="slot-avail">${isComplet ? 'Complet' : `${lliuresAct} lliures`}</div>
+        `;
+
+        if (!isComplet && !firstValidSlot) {
+          firstValidSlot = { id: f.id, nom: f.nom, inici: f.inici, fi: f.fi, places: lliuresAct };
+        }
+
+        if (!isComplet) {
+          div.addEventListener('click', () => {
+            document.querySelectorAll('.slot-item').forEach(s => s.classList.remove('active'));
+            div.classList.add('active');
+            state.franja = f.id;
+            state.franjaNom = f.nom;
+            state.horaInici = f.inici;
+            state.horaFi = f.fi;
+            state.maxPlacesDisponibles = lliuresAct;
+            updatePaxButtons(lliuresAct);
+            document.getElementById('btn-submit').disabled = false;
+          });
+        }
+
+        slotsContainer.appendChild(div);
+      });
+
+      if (firstValidSlot) {
+        const activeItem = slotsContainer.querySelector(`[data-id="${firstValidSlot.id}"]`);
+        if (activeItem) activeItem.click();
+      } else {
+        document.getElementById('btn-submit').disabled = true;
+      }
+    }
+
+    function updatePaxButtons(maxAvail) {
+      const paxContainer = document.getElementById('pax-container');
+      paxContainer.innerHTML = '';
+      const limit = Math.min(maxAvail, 6); // Màxim 6 per reserva pública
+      if (limit <= 0) {
+        paxContainer.innerHTML = '<span style="font-size: 13px; color: #DC2626;">Sense places lliures</span>';
+        return;
+      }
+
+      for (let i = 1; i <= limit; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `pax-btn ${i === state.places ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.dataset.pax = i;
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.pax-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.places = i;
+        });
+        paxContainer.appendChild(btn);
+      }
+
+      if (state.places > limit) {
+        state.places = 1;
+        paxContainer.firstChild?.classList.add('active');
+      }
+    }
+
+    // Format Data en Català
+    function formatCatalanDate(isoStr) {
+      if (!isoStr) return '';
+      const parts = isoStr.split('-').map(Number);
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      const dies = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+      const mesos = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+      return `${dies[d.getDay()]}, ${d.getDate()} de ${mesos[d.getMonth()]} de ${d.getFullYear()}`;
+    }
+
+    // Gestió d'esdeveniments
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadActivitatsConfig();
+
+      const dateInput = document.getElementById('booking-date');
+      const todayISO = getNextOpenDate();
+      dateInput.min = new Date().toISOString().slice(0, 10);
+      dateInput.value = todayISO;
+      state.data = todayISO;
+
+      // Selecció d'activitats
+      document.querySelectorAll('.act-card').forEach(card => {
+        card.addEventListener('click', () => {
+          document.querySelectorAll('.act-card').forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          state.activitatId = card.dataset.id;
+          state.activitatNom = card.querySelector('.act-title').textContent.trim();
+          checkAvailability();
+        });
+      });
+
+      dateInput.addEventListener('change', () => {
+        state.data = dateInput.value;
+        checkAvailability();
+      });
+
+      // Comprovar disponibilitat inicial
+      checkAvailability();
+
+      // Submit del formulari de reserva
+      document.getElementById('reserva-public-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('btn-submit');
+        const errBox = document.getElementById('booking-error-msg');
+        errBox.style.display = 'none';
+
+        const nom = document.getElementById('client-name').value.trim();
+        const tel = document.getElementById('client-tel').value.trim();
+        const email = document.getElementById('client-email').value.trim();
+        const notes = document.getElementById('client-notes').value.trim();
+
+        if (!nom || !tel) {
+          errBox.textContent = 'Si us plau, omple el teu nom i el telèfon mòbil per rebre la confirmació.';
+          errBox.style.display = 'block';
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳</span> Confirmant reserva...';
+
+        const payload = {
+          student_nom: nom,
+          telefon: tel,
+          email: email,
+          data: state.data,
+          franja: state.franja,
+          activitat_id: state.activitatId,
+          activitat: state.activitatNom,
+          places: state.places,
+          notes: notes
+        };
+
+        try {
+          const res = await fetch('/api/reserves', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || 'No s\'ha pogut confirmar la reserva.');
+          }
+
+          state.lastConfirmed = data.reserva || payload;
+          showSuccessScreen(data.reserva || payload, nom);
+        } catch (err) {
+          errBox.textContent = err.message;
+          errBox.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<span>✨</span> Confirmar Reserva ara';
+        }
+      });
+
+      // Botó nova reserva
+      document.getElementById('btn-nova-reserva').addEventListener('click', () => {
+        document.getElementById('booking-success-view').style.display = 'none';
+        document.getElementById('booking-form-view').style.display = 'block';
+        document.getElementById('btn-submit').disabled = false;
+        document.getElementById('btn-submit').innerHTML = '<span>✨</span> Confirmar Reserva ara';
+        checkAvailability();
+      });
+    });
+
+    function showSuccessScreen(reserva, clientName) {
+      document.getElementById('booking-form-view').style.display = 'none';
+      const successView = document.getElementById('booking-success-view');
+      successView.style.display = 'block';
+
+      document.getElementById('success-client-msg').textContent = `Moltíssimes gràcies, ${clientName}! T'esperem al taller.`;
+      document.getElementById('sum-act').textContent = reserva.activitat || state.activitatNom;
+      document.getElementById('sum-data').textContent = formatCatalanDate(reserva.data);
+      document.getElementById('sum-horari').textContent = `${reserva.hora_inici || state.horaInici} - ${reserva.hora_fi || state.horaFi}`;
+      document.getElementById('sum-places').textContent = `${reserva.places} persona${reserva.places > 1 ? 'es' : ''}`;
+      document.getElementById('sum-ref').textContent = reserva.id || 'CONFIRMADA';
+
+      // Enllaç Google Calendar
+      const dClean = reserva.data.replace(/-/g, '');
+      const tInici = (reserva.hora_inici || '10:00').replace(':', '') + '00';
+      const tFi = (reserva.hora_fi || '11:30').replace(':', '') + '00';
+      const datesParam = `${dClean}T${tInici}/${dClean}T${tFi}`;
+      const titleParam = encodeURIComponent(`Sessió de Ceràmica (${reserva.activitat || state.activitatNom}) - Roig de Coure`);
+      const detailsParam = encodeURIComponent(`Reserva de ${reserva.places} plaça/es per a ${reserva.student_nom}.\nTaller Roig de Coure.\nReferència: ${reserva.id || ''}`);
+      const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleParam}&dates=${datesParam}&details=${detailsParam}`;
+      document.getElementById('btn-gcal').href = gcalUrl;
+
+      // Descàrrega .ICS
+      document.getElementById('btn-ics').onclick = () => {
+        const icsContent = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//Roig de Coure//Reserves//CA',
+          'BEGIN:VEVENT',
+          `SUMMARY:Ceràmica: ${reserva.activitat || state.activitatNom} - Roig de Coure`,
+          `DESCRIPTION:Reserva per a ${reserva.student_nom} (${reserva.places} places). Ref: ${reserva.id || ''}`,
+          `DTSTART:${dClean}T${tInici}`,
+          `DTEND:${dClean}T${tFi}`,
+          'END:VEVENT',
+          'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `reserva-ceramica-${reserva.data}.ics`;
+        link.click();
+      };
+    }
+  </script>
+</body>
+</html>

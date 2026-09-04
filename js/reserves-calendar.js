@@ -8,7 +8,6 @@
  * - Activitats:
  *    * Torn: màxim 4 torns físics simultanis.
  *    * Modelatge: fins a 8 places (limitat pel global de la franja).
- *    * Vidre: fins a 8 places (limitat pel global de la franja).
  *    * Pintar ceràmica: fins a 12 places (limitat pel global de la franja).
  * - Franges de 90 min:
  *    * F1: 10:00 - 11:30
@@ -49,8 +48,7 @@ class ReservesCalendar {
     this.ACTIVITATS = [
       { id: 'torn', nom: 'Torn de terrissaire', icon: '🏺', color: '#C25E3A', capacitatMax: 4, desc: 'Màx. 4 torns' },
       { id: 'modelatge', nom: 'Modelatge i escultura', icon: '🗿', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'vidre', nom: 'Taller de vidre (fusing)', icon: '🔮', color: '#1976D2', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'pintar', nom: 'Pintar ceràmica', icon: '🎨', color: '#7B1FA2', capacitatMax: 12, desc: 'Fins a 12 places' }
+      { id: 'pintar', nom: 'Pintar ceràmica', icon: '🎨', color: '#F59E0B', capacitatMax: 12, desc: 'Fins a 12 places' }
     ];
 
     this.modalEl = null;
@@ -133,6 +131,16 @@ class ReservesCalendar {
     try {
       if (typeof Store !== 'undefined' && Store.getDisponibilitat) {
         this.dayData = await Store.getDisponibilitat(dateStr);
+        if (this.dayData && this.dayData.activitats && Array.isArray(this.dayData.activitats) && this.dayData.activitats.length > 0) {
+          this.ACTIVITATS = this.dayData.activitats.map(a => ({
+            id: a.id,
+            nom: a.nom,
+            icon: a.icon || (a.id === 'torn' ? '🏺' : a.id === 'modelatge' ? '🗿' : '🎨'),
+            color: a.color || (a.id === 'torn' ? '#C25E3A' : a.id === 'modelatge' ? '#5E7E6F' : '#F59E0B'),
+            capacitatMax: a.capacitatMax,
+            desc: a.descripcio || (a.id === 'torn' ? `Màx. ${a.capacitatMax} torns` : `Fins a ${a.capacitatMax} places`)
+          }));
+        }
       }
     } catch (err) {
       console.error('Error carregant dia de reserves:', err);
@@ -179,7 +187,7 @@ class ReservesCalendar {
           <span class="path-icon">🏺</span>
           <div class="path-text">
             <strong>Camí 2: Escollir per Activitat</strong>
-            <small>Tria Torn, Modelatge, Vidre o Pintar i troba places ràpidament</small>
+            <small>Tria Torn, Modelatge o Pintar ceràmica i troba places ràpidament</small>
           </div>
         </button>
       </div>

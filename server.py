@@ -12,9 +12,10 @@ import socket
 import sqlite3
 import sys
 import threading
+import time
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 
 PORT = int(os.environ.get('PORT', 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -106,7 +107,11 @@ def init_db():
             ('activitat_id', "TEXT DEFAULT 'torn'"),
             ('places', "INTEGER DEFAULT 1"),
             ('telefon', "TEXT DEFAULT ''"),
-            ('calendar_event_id', "TEXT DEFAULT NULL")
+            ('calendar_event_id', "TEXT DEFAULT NULL"),
+            ('email', "TEXT DEFAULT ''"),
+            ('whatsapp_notif_confirm', "INTEGER DEFAULT 0"),
+            ('whatsapp_notif_48h', "INTEGER DEFAULT 0"),
+            ('whatsapp_notif_dia', "INTEGER DEFAULT 0")
         ]:
             try:
                 cursor.execute(f"ALTER TABLE reserves ADD COLUMN {col} {col_type}")
@@ -156,6 +161,15 @@ def init_db():
             'google_sheets_url': "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec",
             'google_calendar_name': "roigdecoure",
             'aforament_maxim_per_franja': "12",
+            'capacitat_max_torn': "4",
+            'capacitat_max_modelatge': "8",
+            'capacitat_max_pintar': "12",
+            'whatsapp_enabled': "0",
+            'whatsapp_meta_phone_id': "",
+            'whatsapp_meta_token': "",
+            'whatsapp_meta_template_confirmacio': "reserva_confirmada",
+            'whatsapp_meta_template_recordatori_48h': "reserva_recordatori_48h",
+            'whatsapp_meta_template_recordatori_dia': "reserva_recordatori_dia",
             'franges_horaries': default_franges_json
         }
         for k, v in default_config.items():
@@ -547,12 +561,199 @@ def get_student_balance(student_id):
             'isLow': 0 <= balance_sec < 7200
         }
 
-ACTIVITATS = [
+DEFAULT_ACTIVITATS = [
     {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "🏺", "color": "#3B82F6"},
     {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "🗿", "color": "#10B981"},
-    {"id": "vidre", "nom": "Vidre", "descripcio": "Treball i decoració en vidre", "capacitatMax": 8, "icon": "🔮", "color": "#8B5CF6"},
     {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "🎨", "color": "#F59E0B"}
 ]
+
+def get_activitats_config():
+    """Retorna les 3 activitats oficials amb capacitats dinàmiques des de la base de dades"""
+    cap_torn = 4
+    cap_modelatge = 8
+    cap_pintar = 12
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("capacitat_max_torn", "capacitat_max_modelatge", "capacitat_max_pintar")')
+            rows = cursor.fetchall()
+            for r in rows:
+                val = int(r['valor'])
+                if r['clau'] == 'capacitat_max_torn' and val > 0:
+                    cap_torn = val
+                elif r['clau'] == 'capacitat_max_modelatge' and val > 0:
+                    cap_modelatge = val
+                elif r['clau'] == 'capacitat_max_pintar' and val > 0:
+                    cap_pintar = val
+    except Exception:
+        pass
+
+    return [
+        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "🏺", "color": "#3B82F6"},
+        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "🗿", "color": "#10B981"},
+        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "🎨", "color": "#F59E0B"}
+    ]
+
+# Propietat retrocompatible
+ACTIVITATS = DEFAULT_ACTIVITATS
+
+def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='ca'):
+    """
+    Envia un missatge mitjançant l'API oficial Meta WhatsApp Cloud API (directament, sense intermediaris).
+    Documentació oficial: https://developers.facebook.com/docs/whatsapp/cloud-api
+    """
+    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    if not phone_clean:
+        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
+
+    # Assegurar prefix internacional (Espanya 34 per defecte si en té 9)
+    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
+        phone_clean = '34' + phone_clean
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("whatsapp_enabled", "whatsapp_meta_phone_id", "whatsapp_meta_token")')
+        cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
+
+    if cfg.get('whatsapp_enabled') != '1':
+        return {'ok': False, 'error': 'WhatsApp Meta API no està activat a la configuració'}
+
+    phone_id = (cfg.get('whatsapp_meta_phone_id') or '').strip()
+    token = (cfg.get('whatsapp_meta_token') or '').strip()
+
+    if not phone_id or not token:
+        return {'ok': False, 'error': 'Cal configurar el Phone Number ID i el Token de Meta a l\'Administració'}
+
+    url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
+
+    components = []
+    if parameters and len(parameters) > 0:
+        param_objs = [{'type': 'text', 'text': str(p)} for p in parameters]
+        components.append({'type': 'body', 'parameters': param_objs})
+
+    payload = {
+        'messaging_product': 'whatsapp',
+        'recipient_type': 'individual',
+        'to': phone_clean,
+        'type': 'template',
+        'template': {
+            'name': template_name,
+            'language': {'code': language_code},
+            'components': components
+        }
+    }
+
+    try:
+        data_bytes = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(
+            url,
+            data=data_bytes,
+            headers={
+                'Authorization': f"Bearer {token}",
+                'Content-Type': 'application/json',
+                'User-Agent': 'TallerCeramicaBackend/1.0'
+            }
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            res_json = json.loads(resp.read().decode('utf-8'))
+            msg_id = ''
+            if 'messages' in res_json and len(res_json['messages']) > 0 and 'id' in res_json['messages'][0]:
+                msg_id = res_json['messages'][0]['id']
+            return {'ok': True, 'message_id': msg_id, 'meta_response': res_json, 'destinatari': phone_clean}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='ignore')
+        print(f"[WhatsApp Meta API] HTTP Error {e.code}: {err_body}")
+        return {'ok': False, 'error': f"HTTP {e.code}: {err_body}"}
+    except Exception as e:
+        print(f"[WhatsApp Meta API] Error: {e}")
+        return {'ok': False, 'error': str(e)}
+
+def send_whatsapp_meta_async(to_phone, template_name, parameters=None, language_code='ca', on_success_cb=None):
+    def _worker():
+        res = send_whatsapp_meta(to_phone, template_name, parameters, language_code)
+        if res.get('ok') and callable(on_success_cb):
+            try:
+                on_success_cb(res)
+            except Exception as ex:
+                print(f"[WhatsApp Callback Error]: {ex}")
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
+def start_whatsapp_scheduler():
+    """Fil en segon pla per enviar avisos de WhatsApp (recordatori 48h i recordatori dia 8:00h)"""
+    def _scheduler_loop():
+        while True:
+            try:
+                now = datetime.now()
+                today_str = now.strftime('%Y-%m-%d')
+
+                # 1. Avisos del mateix dia a les 8:00 AM (comprova durant la franja de les 08:00)
+                if now.hour == 8:
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_recordatori_dia"')
+                        r_tpl = cursor.fetchone()
+                        tpl_dia = r_tpl['valor'].strip() if (r_tpl and r_tpl['valor']) else 'reserva_recordatori_dia'
+
+                        cursor.execute("""
+                            SELECT * FROM reserves 
+                            WHERE data = ? AND estat = 'confirmada' 
+                              AND (whatsapp_notif_dia IS NULL OR whatsapp_notif_dia = 0)
+                              AND telefon != ''
+                        """, (today_str,))
+                        res_today = [row_to_dict(x) for x in cursor.fetchall()]
+
+                    for r in res_today:
+                        nom = r.get('student_nom') or 'Client'
+                        hora = r.get('hora_inici') or '10:00'
+                        act = r.get('activitat') or 'Torn'
+                        def _mark_done(res, res_id=r['id']):
+                            with get_db() as c_conn:
+                                c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_dia = 1 WHERE id = ?", (res_id,))
+                                c_conn.commit()
+                        send_whatsapp_meta_async(r['telefon'], tpl_dia, [nom, hora, act], on_success_cb=_mark_done)
+
+                # 2. Recordatoris a 48 hores vista (data = avui + 2 dies)
+                date_48h = (now + timedelta(days=2)).strftime('%Y-%m-%d')
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_recordatori_48h"')
+                    r_tpl48 = cursor.fetchone()
+                    tpl_48 = r_tpl48['valor'].strip() if (r_tpl48 and r_tpl48['valor']) else 'reserva_recordatori_48h'
+
+                    cursor.execute("""
+                        SELECT * FROM reserves 
+                        WHERE data = ? AND estat = 'confirmada' 
+                          AND (whatsapp_notif_48h IS NULL OR whatsapp_notif_48h = 0)
+                          AND telefon != ''
+                    """, (date_48h,))
+                    res_48 = [row_to_dict(x) for x in cursor.fetchall()]
+
+                for r in res_48:
+                    nom = r.get('student_nom') or 'Client'
+                    data_res = r.get('data')
+                    hora = r.get('hora_inici') or '10:00'
+                    act = r.get('activitat') or 'Torn'
+                    def _mark_done_48(res, res_id=r['id']):
+                        with get_db() as c_conn:
+                            c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_48h = 1 WHERE id = ?", (res_id,))
+                            c_conn.commit()
+                    send_whatsapp_meta_async(r['telefon'], tpl_48, [nom, data_res, hora, act], on_success_cb=_mark_done_48)
+
+            except Exception as e:
+                print(f"[WhatsApp Scheduler] Avís: {e}")
+
+            # Comprovar cada 15 minuts
+            time.sleep(900)
+
+    t = threading.Thread(target=_scheduler_loop, daemon=True)
+    t.start()
+
+# Iniciar scheduler
+try:
+    start_whatsapp_scheduler()
+except Exception as e:
+    print(f"[WhatsApp Scheduler Error]: {e}")
 
 DEFAULT_FRANGES = [
     {"id": "F1", "nom": "Matí 1 (10:00 - 11:30)", "inici": "10:00", "fi": "11:30", "hores": 1.5},
@@ -634,6 +835,7 @@ def get_aforament_maxim():
 def get_disponibilitat(data_str):
     franges = get_franges_config()
     max_cap = get_aforament_maxim()
+    activitats_list = get_activitats_config()
     estat_dia = is_dia_tancat(data_str)
 
     if estat_dia['tancat']:
@@ -645,7 +847,7 @@ def get_disponibilitat(data_str):
             'totalPlacesDia': 0,
             'totalOcupadesDia': 0,
             'franges': [],
-            'activitats': ACTIVITATS
+            'activitats': activitats_list
         }
 
     with get_db() as conn:
@@ -673,7 +875,7 @@ def get_disponibilitat(data_str):
         # Ocupació per activitat respectant el límit absolut de la franja (màxim 12)
         ocupacio_per_act = {}
         activitats_franja = []
-        for act in ACTIVITATS:
+        for act in activitats_list:
             act_id = act['id']
             act_nom = act['nom'].lower()
             ocupat_act = sum(int(r.get('places') or 1) for r in f_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
@@ -745,6 +947,7 @@ def get_disponibilitat_mes(year, month):
         ''', (start_date, end_date))
         month_reserves = [row_to_dict(x) for x in cursor.fetchall()]
 
+    activitats_list = get_activitats_config()
     days_dict = {}
     for day in range(1, num_days + 1):
         data_str = f"{year:04d}-{month:02d}-{day:02d}"
@@ -768,7 +971,7 @@ def get_disponibilitat_mes(year, month):
         total_lliures_dia = max(0, total_places_dia - total_ocupat_dia)
 
         acts_amb_places = []
-        for act in ACTIVITATS:
+        for act in activitats_list:
             act_id = act['id']
             act_nom = act['nom'].lower()
             has_spot = False
@@ -808,7 +1011,7 @@ def get_disponibilitat_mes(year, month):
         'mes': month,
         'aforamentMaximFranja': max_cap,
         'dies': days_dict,
-        'activitats': ACTIVITATS
+        'activitats': activitats_list
     }
 
 class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -990,7 +1193,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/reserves/activitats':
-                self.send_json({'ok': True, 'activitats': ACTIVITATS})
+                self.send_json({'ok': True, 'activitats': get_activitats_config()})
                 return
 
             elif path == '/api/config':
@@ -1467,10 +1670,18 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 notes = (data.get('notes') or '').strip()
                 student_nom = (data.get('student_nom') or data.get('studentNom') or data.get('nom') or '').strip()
                 telefon = (data.get('telefon') or '').strip()
+                email = (data.get('email') or '').strip()
 
-                if not student_id or not data_res or not franja_id:
-                    self.send_json({'ok': False, 'error': 'Cal indicar alumne, data i franja horària'}, 400)
+                if not data_res or not franja_id:
+                    self.send_json({'ok': False, 'error': 'Cal indicar data i franja horària'}, 400)
                     return
+
+                # Si és un client no alumne (reserva des de la web pública reserva.html)
+                if not student_id:
+                    if not student_nom or not telefon:
+                        self.send_json({'ok': False, 'error': 'Cal indicar el teu nom complet i telèfon de contacte per a la reserva'}, 400)
+                        return
+                    student_id = f"CLI-{int(datetime.now().timestamp())}"
 
                 # Validar dia tancat (dilluns/dimarts descans, festiu o vacances)
                 estat_dia = is_dia_tancat(data_res)
@@ -1478,9 +1689,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': estat_dia['motiu']}, 400)
                     return
 
-                act_obj = next((a for a in ACTIVITATS if a['id'] == activitat_id or a['nom'].lower() == activitat_id or a['nom'].lower() == activitat_nom.lower()), None)
+                act_list = get_activitats_config()
+                act_obj = next((a for a in act_list if a['id'] == activitat_id or a['nom'].lower() == activitat_id or a['nom'].lower() == activitat_nom.lower()), None)
                 if not act_obj:
-                    act_obj = ACTIVITATS[0]
+                    act_obj = act_list[0]
                 activitat_id = act_obj['id']
                 activitat_nom = act_obj['nom']
 
@@ -1491,14 +1703,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 with get_db() as conn:
                     cursor = conn.cursor()
-                    if not student_nom or not telefon:
-                        cursor.execute('SELECT nom, cognoms, telefon FROM alumnes WHERE id = ?', (student_id,))
+                    if not student_nom or not telefon or not email:
+                        cursor.execute('SELECT nom, cognoms, telefon, email FROM alumnes WHERE id = ?', (student_id,))
                         al = cursor.fetchone()
                         if al:
                             if not student_nom:
                                 student_nom = f"{al['nom']} {al['cognoms'] or ''}".strip()
                             if not telefon and al['telefon']:
                                 telefon = str(al['telefon']).strip()
+                            if not email and al['email']:
+                                email = str(al['email']).strip()
                         else:
                             if not student_nom:
                                 student_nom = student_id
@@ -1532,12 +1746,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     now_iso = datetime.now().isoformat()
                     cal_event_id = (data.get('calendar_event_id') or '').strip() or None
                     cursor.execute('''
-                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
+                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at, calendar_event_id)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
                     ''', (
                         res_id, student_id, student_nom, data_res,
                         franja_obj.get('inici', '10:00'), franja_obj.get('fi', '11:30'),
-                        franja_obj['id'], activitat_nom, activitat_id, places_demanades, telefon,
+                        franja_obj['id'], activitat_nom, activitat_id, places_demanades, telefon, email,
                         float(franja_obj.get('hores', 1.5)), notes, now_iso, cal_event_id
                     ))
                     conn.commit()
@@ -1556,6 +1770,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'student_id': student_id,
                     'student_nom': student_nom,
                     'telefon': telefon,
+                    'email': email,
                     'data': data_res,
                     'hora_inici': franja_obj.get('inici', '10:00'),
                     'hora_fi': franja_obj.get('fi', '11:30'),
@@ -1574,6 +1789,29 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Sincronitzar reserva a Google Sheets i Google Calendar
                 sync_to_google_sheets_async('add_reserva', reserva_dict)
+
+                # Disparar confirmació per WhatsApp Meta Cloud API si està activat
+                if telefon:
+                    with get_db() as conn_wa:
+                        cur_wa = conn_wa.cursor()
+                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_confirmacio"')
+                        r_tpl_c = cur_wa.fetchone()
+                        tpl_conf = r_tpl_c['valor'].strip() if (r_tpl_c and r_tpl_c['valor']) else 'reserva_confirmada'
+
+                    def _mark_conf_done(wa_res, rid=res_id):
+                        try:
+                            with get_db() as conn_up:
+                                conn_up.cursor().execute("UPDATE reserves SET whatsapp_notif_confirm = 1 WHERE id = ?", (rid,))
+                                conn_up.commit()
+                        except Exception:
+                            pass
+
+                    send_whatsapp_meta_async(
+                        telefon,
+                        tpl_conf,
+                        [student_nom, activitat_nom, data_res, franja_obj.get('inici', '10:00'), str(places_demanades)],
+                        on_success_cb=_mark_conf_done
+                    )
 
                 self.send_json({
                     'ok': True,
@@ -1622,6 +1860,38 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 sync_to_google_sheets_async('save_config', {'aforament_maxim_per_franja': str(aforament)})
                 self.send_json({'ok': True, 'aforamentMaxim': aforament, 'message': f'Aforament màxim actualitzat a {aforament} places.'})
+                return
+
+            elif path == '/api/reserves/config-activitats':
+                cap_torn = int(data.get('capacitat_max_torn') or data.get('capacitatMaxTorn') or 4)
+                cap_modelatge = int(data.get('capacitat_max_modelatge') or data.get('capacitatMaxModelatge') or 8)
+                cap_pintar = int(data.get('capacitat_max_pintar') or data.get('capacitatMaxPintar') or 12)
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_torn', str(max(1, cap_torn))))
+                    cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_modelatge', str(max(1, cap_modelatge))))
+                    cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_pintar', str(max(1, cap_pintar))))
+                    conn.commit()
+
+                new_acts = get_activitats_config()
+                sync_to_google_sheets_async('save_config', {
+                    'capacitat_max_torn': str(cap_torn),
+                    'capacitat_max_modelatge': str(cap_modelatge),
+                    'capacitat_max_pintar': str(cap_pintar)
+                })
+                self.send_json({'ok': True, 'message': "Capacitats d'activitat actualitzades correctament!", 'activitats': new_acts})
+                return
+
+            elif path == '/api/whatsapp/test':
+                tel = (data.get('telefon') or data.get('phone') or '').strip()
+                tpl = (data.get('template') or data.get('template_name') or 'reserva_confirmada').strip()
+                params_list = data.get('parameters') or ["Alumne Prova", "Torn", "2026-09-09", "10:00", "1"]
+                lang = (data.get('language') or 'ca').strip()
+
+                res = send_whatsapp_meta(tel, tpl, params_list, lang)
+                status_code = 200 if res.get('ok') else 400
+                self.send_json(res, status_code)
                 return
 
             elif path == '/api/config':

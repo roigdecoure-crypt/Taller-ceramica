@@ -683,11 +683,14 @@ const Store = {
   },
 
   getActivitats() {
+    const data = this._getLocalData();
+    const capTorn = parseInt(data.config?.capacitat_max_torn || 4, 10);
+    const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
+    const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
     return [
-      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: 4, icon: "🏺", color: "#3B82F6" },
-      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: 8, icon: "🗿", color: "#10B981" },
-      { id: "vidre", nom: "Vidre", descripcio: "Treball i decoració en vidre", capacitatMax: 8, icon: "🔮", color: "#8B5CF6" },
-      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: 12, icon: "🎨", color: "#F59E0B" }
+      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "🏺", color: "#C25E3A" },
+      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "🗿", color: "#5E7E6F" },
+      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "🎨", color: "#F59E0B" }
     ];
   },
 
@@ -908,6 +911,58 @@ const Store = {
     }
     await this.saveConfig({ aforament_maxim_per_franja: String(val) });
     return { ok: true, aforamentMaxim: val };
+  },
+
+  async getActivitatsConfig() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/activitats?t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok && json.activitats) return json.activitats;
+      } catch (e) {
+        console.warn('Error obtenint activitats:', e);
+      }
+    }
+    return this.getActivitats();
+  },
+
+  async guardarCapacitatsActivitats(payload) {
+    const dataToSend = {
+      capacitat_max_torn: parseInt(payload.capacitat_max_torn, 10) || 4,
+      capacitat_max_modelatge: parseInt(payload.capacitat_max_modelatge, 10) || 8,
+      capacitat_max_pintar: parseInt(payload.capacitat_max_pintar, 10) || 12
+    };
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/config-activitats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSend)
+        });
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        console.warn('Error guardant capacitats:', e);
+      }
+    }
+    await this.saveConfig({
+      capacitat_max_torn: String(dataToSend.capacitat_max_torn),
+      capacitat_max_modelatge: String(dataToSend.capacitat_max_modelatge),
+      capacitat_max_pintar: String(dataToSend.capacitat_max_pintar)
+    });
+    return { ok: true, activitats: this.getActivitats() };
+  },
+
+  async testWhatsAppMeta(telefon, template = 'reserva_confirmada') {
+    if (this.mode === 'api') {
+      const res = await fetch(`${this.apiBase}/api/whatsapp/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefon, template })
+      });
+      return await res.json();
+    }
+    return { ok: false, error: 'Només disponible en mode servidor/API' };
   },
 
   /* ====================== CÒPIA DE SEGURETAT JSON / CSV ====================== */

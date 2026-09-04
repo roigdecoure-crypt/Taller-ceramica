@@ -364,14 +364,14 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '12'))
         self.conn.commit()
 
-        # Comprovar capacitats oficials: Torn 4, Modelatge 8, Vidre 8, Pintar 12, Total Franja 12
+        # Comprovar capacitats oficials: Torn 4, Modelatge 8, Pintar 12, Total Franja 12
         disp_12 = server.get_disponibilitat('2026-09-12')
         franja_12 = next(f for f in disp_12['franges'] if f['id'] == 'F1')
         self.assertEqual(franja_12['totalPlaces'], 12)
         act_map = {a['id']: a for a in franja_12['activitats']}
+        self.assertEqual(len(act_map), 3)
         self.assertEqual(act_map['torn']['capacitatMax'], 4)
         self.assertEqual(act_map['modelatge']['capacitatMax'], 8)
-        self.assertEqual(act_map['vidre']['capacitatMax'], 8)
         self.assertEqual(act_map['pintar']['capacitatMax'], 12)
 
     def test_09_edat_and_stripe_config(self):
@@ -429,6 +429,67 @@ class TestCeramicsBackend(unittest.TestCase):
         # Neteja
         c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
         self.conn.commit()
+
+    def test_11_activitats_custom_capacities(self):
+        # Comprovar configuració per defecte
+        acts = server.get_activitats_config()
+        self.assertEqual(len(acts), 3)
+        act_map = {a['id']: a['capacitatMax'] for a in acts}
+        self.assertEqual(act_map['torn'], 4)
+        self.assertEqual(act_map['modelatge'], 8)
+        self.assertEqual(act_map['pintar'], 12)
+
+        # Modificar capacitats des de la configuració
+        c = self.conn.cursor()
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_torn', '6')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_modelatge', '10')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_pintar', '14')")
+        self.conn.commit()
+
+        acts_mod = server.get_activitats_config()
+        act_mod_map = {a['id']: a['capacitatMax'] for a in acts_mod}
+        self.assertEqual(act_mod_map['torn'], 6)
+        self.assertEqual(act_mod_map['modelatge'], 10)
+        self.assertEqual(act_mod_map['pintar'], 14)
+
+        # Restaurar valors originals
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_torn', '4')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_modelatge', '8')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_pintar', '12')")
+        self.conn.commit()
+
+    def test_12_non_student_public_booking_and_whatsapp_flags(self):
+        c = self.conn.cursor()
+        cli_res_id = "RES-CLI-TEST-1"
+        c.execute("DELETE FROM reserves WHERE id = ?", (cli_res_id,))
+
+        # Inserir reserva d'un client públic (no alumne registrat)
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at)
+            VALUES (?, 'CLI-1725500000', 'Maria Garcia', '2026-09-18', '17:00', '18:30', 'F3', 'Pintar ceràmica', 'pintar', 2, '+34611223344', 'maria@gmail.com', 'confirmada', 1.5, 'Reserva des de web Elementor', ?)
+        ''', (cli_res_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT student_id, student_nom, telefon, email, places, whatsapp_notif_confirm, whatsapp_notif_48h, whatsapp_notif_dia FROM reserves WHERE id = ?", (cli_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertTrue(row['student_id'].startswith('CLI-'))
+        self.assertEqual(row['student_nom'], 'Maria Garcia')
+        self.assertEqual(row['telefon'], '+34611223344')
+        self.assertEqual(row['email'], 'maria@gmail.com')
+        self.assertEqual(row['places'], 2)
+        # Els camps de WhatsApp han d'estar inicialitzats
+        self.assertIn(row['whatsapp_notif_confirm'], (None, 0))
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (cli_res_id,))
+        self.conn.commit()
+
+    def test_13_whatsapp_meta_cloud_api_format(self):
+        # Validar funcionament de send_whatsapp_meta quan no està configurat
+        res_no_config = server.send_whatsapp_meta("611223344", "reserva_confirmada", ["Joan", "Torn", "2026-09-15", "10:00", "1"])
+        self.assertFalse(res_no_config['ok'])
+        self.assertIn('activat', res_no_config['error'].lower())
 
 if __name__ == '__main__':
     unittest.main()

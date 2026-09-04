@@ -802,6 +802,24 @@ function setupEventListeners() {
       const calName = (cfg.google_calendar_name && cfg.google_calendar_name !== 'Roig de Coure') ? cfg.google_calendar_name : 'roigdecoure';
       document.getElementById('cfg-calendar-name').value = calName;
     }
+    if (document.getElementById('cfg-whatsapp-enabled')) {
+      document.getElementById('cfg-whatsapp-enabled').checked = (cfg.whatsapp_enabled === '1' || cfg.whatsapp_enabled === 'true' || cfg.whatsapp_enabled === true);
+    }
+    if (document.getElementById('cfg-whatsapp-phone-id')) {
+      document.getElementById('cfg-whatsapp-phone-id').value = cfg.whatsapp_meta_phone_id || '';
+    }
+    if (document.getElementById('cfg-whatsapp-token')) {
+      document.getElementById('cfg-whatsapp-token').value = cfg.whatsapp_meta_token || '';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-confirm')) {
+      document.getElementById('cfg-whatsapp-tpl-confirm').value = cfg.whatsapp_meta_template_confirmacio || 'reserva_confirmada';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-48h')) {
+      document.getElementById('cfg-whatsapp-tpl-48h').value = cfg.whatsapp_meta_template_48h || 'recordatori_48h';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-dia')) {
+      document.getElementById('cfg-whatsapp-tpl-dia').value = cfg.whatsapp_meta_template_dia || 'recordatori_dia';
+    }
     document.getElementById('modal-config-backdrop').classList.add('active');
   });
 
@@ -815,7 +833,13 @@ function setupEventListeners() {
       stripe_url_adults: document.getElementById('cfg-stripe-adults') ? document.getElementById('cfg-stripe-adults').value : '',
       stripe_url_infantil: document.getElementById('cfg-stripe-infantil') ? document.getElementById('cfg-stripe-infantil').value : '',
       google_sheets_url: document.getElementById('cfg-sheets-url').value,
-      google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'roigdecoure'
+      google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'roigdecoure',
+      whatsapp_enabled: document.getElementById('cfg-whatsapp-enabled')?.checked ? '1' : '0',
+      whatsapp_meta_phone_id: document.getElementById('cfg-whatsapp-phone-id')?.value.trim() || '',
+      whatsapp_meta_token: document.getElementById('cfg-whatsapp-token')?.value.trim() || '',
+      whatsapp_meta_template_confirmacio: document.getElementById('cfg-whatsapp-tpl-confirm')?.value.trim() || 'reserva_confirmada',
+      whatsapp_meta_template_48h: document.getElementById('cfg-whatsapp-tpl-48h')?.value.trim() || 'recordatori_48h',
+      whatsapp_meta_template_dia: document.getElementById('cfg-whatsapp-tpl-dia')?.value.trim() || 'recordatori_dia'
     };
     try {
       await Store.saveConfig(newCfg);
@@ -824,6 +848,46 @@ function setupEventListeners() {
       await loadConfig();
     } catch (err) {
       showToast(err.message, 'error');
+    }
+  });
+
+  // Prova d'enviament de WhatsApp des del modal de configuració
+  document.getElementById('btn-cfg-test-whatsapp')?.addEventListener('click', async () => {
+    const telInput = document.getElementById('cfg-whatsapp-test-tel');
+    const statusDiv = document.getElementById('cfg-whatsapp-test-status');
+    const tplInput = document.getElementById('cfg-whatsapp-tpl-confirm');
+    const tel = (telInput ? telInput.value : '').trim();
+    if (!tel) {
+      showToast('Introdueix un telèfon amb prefix (ex: +34 600 000 000)', 'warning');
+      return;
+    }
+    const tpl = (tplInput ? tplInput.value : '').trim() || 'reserva_confirmada';
+    if (statusDiv) {
+      statusDiv.style.display = 'block';
+      statusDiv.style.color = '#1E40AF';
+      statusDiv.textContent = '⏳ Enviant missatge de prova a Meta Graph API...';
+    }
+    try {
+      const res = await Store.testWhatsAppMeta(tel, tpl);
+      if (res.ok) {
+        if (statusDiv) {
+          statusDiv.style.color = '#16A34A';
+          statusDiv.textContent = '✅ Missatge enviat correctament! Revisa el teu WhatsApp.';
+        }
+        showToast('WhatsApp de prova enviat amb èxit!', 'success');
+      } else {
+        if (statusDiv) {
+          statusDiv.style.color = '#DC2626';
+          statusDiv.textContent = '❌ Error: ' + (res.error || 'No s\'ha pogut enviar');
+        }
+        showToast('Error: ' + (res.error || 'No s\'ha pogut enviar'), 'error');
+      }
+    } catch (e) {
+      if (statusDiv) {
+        statusDiv.style.color = '#DC2626';
+        statusDiv.textContent = '❌ Error: ' + e.message;
+      }
+      showToast(e.message, 'error');
     }
   });
 
@@ -1252,19 +1316,38 @@ function initReservesAdmin() {
     modal.classList.remove('active');
   });
 
-  // Desar aforament màxim
+  // Desar aforament màxim global
   document.getElementById('btn-admin-save-aforament')?.addEventListener('click', async () => {
     const input = document.getElementById('admin-input-aforament');
     if (!input) return;
     const val = parseInt(input.value, 10) || 12;
     try {
       await Store.guardarAforamentMaxim(val);
-      showToast(`Aforament màxim actualitzat a ${val} places/franja.`, 'success');
+      showToast(`Aforament màxim global actualitzat a ${val} places/franja.`, 'success');
       const dispVal = document.getElementById('admin-display-aforament-val');
       if (dispVal) dispVal.textContent = `${val} places simultànies`;
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
     } catch (err) {
       showToast('Error desant aforament: ' + err.message, 'error');
+    }
+  });
+
+  // Desar capacitats per activitat (Torn, Modelatge, Pintar ceràmica)
+  document.getElementById('btn-admin-save-capacitats-act')?.addEventListener('click', async () => {
+    const torn = parseInt(document.getElementById('admin-cap-torn')?.value, 10) || 4;
+    const modelatge = parseInt(document.getElementById('admin-cap-modelatge')?.value, 10) || 8;
+    const pintar = parseInt(document.getElementById('admin-cap-pintar')?.value, 10) || 12;
+
+    try {
+      await Store.guardarCapacitatsActivitats({
+        capacitat_max_torn: torn,
+        capacitat_max_modelatge: modelatge,
+        capacitat_max_pintar: pintar
+      });
+      showToast(`Capacitats desades: Torn (${torn}), Modelatge (${modelatge}), Pintar (${pintar}).`, 'success');
+      if (adminReservesCalendar) await adminReservesCalendar.refresh();
+    } catch (err) {
+      showToast('Error desant capacitats d\'activitats: ' + err.message, 'error');
     }
   });
 }
@@ -1281,6 +1364,20 @@ async function openReservesModal() {
     if (inputCap) inputCap.value = maxCap;
     const dispVal = document.getElementById('admin-display-aforament-val');
     if (dispVal) dispVal.textContent = `${maxCap} places simultànies`;
+
+    // Carregar capacitats de les 3 activitats
+    const acts = await Store.getActivitatsConfig();
+    const actMap = {};
+    acts.forEach(a => { actMap[a.id] = a.capacitatMax; });
+    if (document.getElementById('admin-cap-torn')) {
+      document.getElementById('admin-cap-torn').value = actMap['torn'] || 4;
+    }
+    if (document.getElementById('admin-cap-modelatge')) {
+      document.getElementById('admin-cap-modelatge').value = actMap['modelatge'] || 8;
+    }
+    if (document.getElementById('admin-cap-pintar')) {
+      document.getElementById('admin-cap-pintar').value = actMap['pintar'] || 12;
+    }
   } catch (e) {}
 
   if (!adminReservesCalendar) {
