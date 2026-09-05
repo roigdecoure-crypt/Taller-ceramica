@@ -895,6 +895,29 @@ const Store = {
     return { ok: false, error: 'Reserva no trobada' };
   },
 
+  async updateReservaAssistencia(id, assistit) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/assistencia`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, assistit })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error actualitzant assistència:', e);
+      }
+    }
+    const data = this._getLocalData();
+    const r = (data.reserves || []).find(x => x.id === id);
+    if (r) {
+      r.estat = assistit ? 'assistit' : 'confirmada';
+      this._saveLocalData(data);
+      return { ok: true, reserva: r };
+    }
+    return { ok: false, error: 'Reserva no trobada' };
+  },
+
   async guardarAforamentMaxim(num) {
     const val = parseInt(num, 10) || 8;
     if (this.mode === 'api') {

@@ -491,6 +491,31 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertFalse(res_no_config['ok'])
         self.assertIn('activat', res_no_config['error'].lower())
 
+    def test_14_reserva_assistencia_attendance(self):
+        c = self.conn.cursor()
+        test_res_id = "RES-ATTEND-TEST-1"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at)
+            VALUES (?, 'TC-101', 'Alumne Test', '2026-09-20', '10:00', '11:30', 'F1', 'Torn', 'torn', 1, '+34600000000', 'test@test.com', 'confirmada', 1.5, 'Test Assistència', ?)
+        ''', (test_res_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        # Comprovar estat inicial confirmada
+        c.execute("SELECT estat FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertEqual(row['estat'], 'confirmada')
+
+        # Canviar a assistit
+        c.execute("UPDATE reserves SET estat = 'assistit' WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+        c.execute("SELECT estat FROM reserves WHERE id = ?", (test_res_id,))
+        self.assertEqual(c.fetchone()['estat'], 'assistit')
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
 

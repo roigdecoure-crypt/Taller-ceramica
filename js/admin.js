@@ -20,6 +20,7 @@ if (typeof document !== 'undefined') {
 
     loadConfig();
     await refreshStudentsList();
+    await initAppointmentsDashboard();
   });
 }
 
@@ -58,7 +59,8 @@ async function loadConfig() {
   try {
     const cfg = await Store.getConfig();
     if (cfg.taller_nom) {
-      document.getElementById('nav-workshop-name').textContent = cfg.taller_nom;
+      const navWs = document.getElementById('nav-workshop-name');
+      if (navWs) navWs.textContent = cfg.taller_nom;
       const wsNameBadge = document.getElementById('badge-ws-name');
       if (wsNameBadge) wsNameBadge.textContent = cfg.taller_nom;
     }
@@ -416,6 +418,49 @@ if (typeof window !== 'undefined') {
 function setupEventListeners() {
   initBrandStudio();
   initReservesAdmin();
+
+  // Navegació de la barra lateral (Estil WordPress)
+  document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
+    item.addEventListener('click', () => {
+      const tab = item.dataset.tab;
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+
+      document.querySelectorAll('.admin-tab-view').forEach(view => view.classList.remove('active'));
+      const targetView = document.getElementById(`view-${tab}`);
+      if (targetView) targetView.classList.add('active');
+
+      const heading = document.getElementById('admin-view-heading');
+      if (heading) {
+        if (tab === 'reserves') heading.textContent = 'Gestió de Reserves';
+        else if (tab === 'alumnes') heading.textContent = 'Alumnes & Clients';
+        else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
+      }
+
+      if (tab === 'reserves') {
+        refreshAppointmentsDashboard();
+      } else if (tab === 'alumnes') {
+        refreshStudentsList();
+      }
+    });
+  });
+
+  // Plegar / desplegar barra lateral
+  document.getElementById('btn-collapse-sidebar')?.addEventListener('click', () => {
+    document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
+  });
+
+  // Botons modals des de la barra lateral
+  document.getElementById('btn-sidebar-branding')?.addEventListener('click', () => {
+    if (typeof openBrandStudioModal === 'function') openBrandStudioModal();
+    else document.getElementById('modal-branding-backdrop')?.classList.add('active');
+  });
+  document.getElementById('btn-sidebar-config')?.addEventListener('click', () => {
+    openConfigModal();
+  });
+  document.getElementById('btn-sidebar-export')?.addEventListener('click', () => {
+    document.getElementById('modal-backup-backdrop')?.classList.add('active');
+  });
 
   // Cerca d'alumnes en temps real
   document.getElementById('search-students-input').addEventListener('input', () => {
@@ -783,7 +828,7 @@ function setupEventListeners() {
   });
 
   // Modal Configuració
-  document.getElementById('btn-configuracio').addEventListener('click', async () => {
+  async function openConfigModal() {
     const cfg = await Store.getConfig();
     document.getElementById('cfg-taller-nom').value = cfg.taller_nom || '';
     document.getElementById('cfg-taller-telefon').value = cfg.taller_telefon || '';
@@ -821,7 +866,10 @@ function setupEventListeners() {
       document.getElementById('cfg-whatsapp-tpl-dia').value = cfg.whatsapp_meta_template_dia || 'recordatori_dia';
     }
     document.getElementById('modal-config-backdrop').classList.add('active');
-  });
+  }
+
+  document.getElementById('btn-configuracio')?.addEventListener('click', openConfigModal);
+  document.getElementById('btn-sidebar-config')?.addEventListener('click', openConfigModal);
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -941,7 +989,10 @@ function setupEventListeners() {
   }
 
   // Modal Backup & Export
-  document.getElementById('btn-exportar').addEventListener('click', () => {
+  document.getElementById('btn-exportar')?.addEventListener('click', () => {
+    document.getElementById('modal-backup-backdrop').classList.add('active');
+  });
+  document.getElementById('btn-sidebar-export')?.addEventListener('click', () => {
     document.getElementById('modal-backup-backdrop').classList.add('active');
   });
 
@@ -1013,11 +1064,11 @@ function setupEventListeners() {
 let previewQrGenerated = false;
 
 function initBrandStudio() {
-  const btnBranding = document.getElementById('btn-branding');
+  const btnBranding = document.getElementById('btn-branding') || document.getElementById('btn-sidebar-branding');
   const modalBranding = document.getElementById('modal-branding-backdrop');
-  if (!btnBranding || !modalBranding) return;
+  if (!modalBranding) return;
 
-  btnBranding.addEventListener('click', async () => {
+  btnBranding?.addEventListener('click', async () => {
     await openBrandStudioModal();
   });
 
@@ -1301,19 +1352,19 @@ let adminSelectedDate = getAdminLocalDate();
 let adminReservesCalendar = null;
 
 function initReservesAdmin() {
-  const btnOpen = document.getElementById('btn-reserves-admin');
+  const btnOpen = document.getElementById('btn-reserves-admin') || document.getElementById('btn-admin-nova-reserva');
   const modal = document.getElementById('modal-reserves-backdrop');
-  if (!btnOpen || !modal) return;
-
-  btnOpen.addEventListener('click', () => {
-    openReservesModal();
-  });
+  if (btnOpen && modal) {
+    btnOpen.addEventListener('click', () => {
+      openReservesModal(adminSelectedDate);
+    });
+  }
 
   document.getElementById('btn-close-modal-reserves')?.addEventListener('click', () => {
-    modal.classList.remove('active');
+    modal?.classList.remove('active');
   });
   document.getElementById('btn-close-modal-reserves-footer')?.addEventListener('click', () => {
-    modal.classList.remove('active');
+    modal?.classList.remove('active');
   });
 
   // Desar aforament màxim global
@@ -1327,6 +1378,7 @@ function initReservesAdmin() {
       const dispVal = document.getElementById('admin-display-aforament-val');
       if (dispVal) dispVal.textContent = `${val} places simultànies`;
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
+      await refreshAppointmentsDashboard();
     } catch (err) {
       showToast('Error desant aforament: ' + err.message, 'error');
     }
@@ -1346,16 +1398,19 @@ function initReservesAdmin() {
       });
       showToast(`Capacitats desades: Torn (${torn}), Modelatge (${modelatge}), Pintar (${pintar}).`, 'success');
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
+      await refreshAppointmentsDashboard();
     } catch (err) {
       showToast('Error desant capacitats d\'activitats: ' + err.message, 'error');
     }
   });
 }
 
-async function openReservesModal() {
+async function openReservesModal(preselectedDate) {
   const modal = document.getElementById('modal-reserves-backdrop');
   if (!modal) return;
   modal.classList.add('active');
+
+  const targetDate = preselectedDate || adminSelectedDate || getAdminLocalDate();
 
   try {
     const cfg = await Store.getConfig();
@@ -1387,18 +1442,351 @@ async function openReservesModal() {
       allStudents: allStudents,
       onBookingSuccess: async () => {
         showToast('Reserva confirmada i sincronitzada.', 'success');
+        await refreshAppointmentsDashboard();
       }
     });
+    if (targetDate) {
+      adminReservesCalendar.selectedDate = targetDate;
+    }
     await adminReservesCalendar.init();
   } else {
     adminReservesCalendar.setAllStudents(allStudents);
+    if (targetDate) {
+      adminReservesCalendar.selectedDate = targetDate;
+      await adminReservesCalendar.loadDay(targetDate);
+    }
     await adminReservesCalendar.refresh();
   }
 }
 
+// ==================== APPOINTMENTS DASHBOARD (2 COLUMNES: CALENDARI + LLISTA) ====================
+let adminCalYear = new Date().getFullYear();
+let adminCalMonth = new Date().getMonth() + 1; // 1-12
+let adminMonthDisponibilitat = null;
+let adminMonthReservesMap = {};
+
+const CATALAN_MONTHS = [
+  'Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
+  'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'
+];
+
+const CATALAN_WEEKDAYS = [
+  'Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'
+];
+
+function formatCatalanFullDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const dayName = CATALAN_WEEKDAYS[d.getDay()];
+    const dayNum = d.getDate();
+    const monthName = CATALAN_MONTHS[d.getMonth()].toLowerCase();
+    const year = d.getFullYear();
+    return `${dayName}, ${dayNum} de ${monthName} de ${year}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+async function initAppointmentsDashboard() {
+  // Navegació mes anterior / següent / avui
+  document.getElementById('btn-cal-prev')?.addEventListener('click', async () => {
+    adminCalMonth--;
+    if (adminCalMonth < 1) {
+      adminCalMonth = 12;
+      adminCalYear--;
+    }
+    await renderAdminCalendar();
+  });
+
+  document.getElementById('btn-cal-next')?.addEventListener('click', async () => {
+    adminCalMonth++;
+    if (adminCalMonth > 12) {
+      adminCalMonth = 1;
+      adminCalYear++;
+    }
+    await renderAdminCalendar();
+  });
+
+  document.getElementById('btn-cal-today')?.addEventListener('click', async () => {
+    const now = new Date();
+    adminCalYear = now.getFullYear();
+    adminCalMonth = now.getMonth() + 1;
+    adminSelectedDate = now.toISOString().split('T')[0];
+    await renderAdminCalendar();
+    await renderAdminDayAppointments(adminSelectedDate);
+  });
+
+  // Botons "+ Nova Reserva"
+  document.getElementById('btn-admin-nova-reserva')?.addEventListener('click', () => {
+    openReservesModal(adminSelectedDate);
+  });
+
+  document.getElementById('btn-nova-reserva-dia')?.addEventListener('click', () => {
+    openReservesModal(adminSelectedDate);
+  });
+
+  // Render inicial del calendari i llista del dia seleccionat
+  await renderAdminCalendar();
+  await renderAdminDayAppointments(adminSelectedDate);
+}
+
+async function refreshAppointmentsDashboard() {
+  await renderAdminCalendar();
+  await renderAdminDayAppointments(adminSelectedDate);
+}
+
+async function renderAdminCalendar() {
+  const monthTitle = document.getElementById('cal-month-title');
+  if (monthTitle) {
+    monthTitle.textContent = `${CATALAN_MONTHS[adminCalMonth - 1]} ${adminCalYear}`;
+  }
+
+  const grid = document.getElementById('cal-days-grid');
+  if (!grid) return;
+
+  // Carregar disponibilitat del mes i reserves
+  try {
+    adminMonthDisponibilitat = await Store.getDisponibilitatMes(adminCalYear, adminCalMonth);
+  } catch (e) {
+    adminMonthDisponibilitat = null;
+  }
+
+  try {
+    const allRes = await Store.getReserves();
+    adminMonthReservesMap = {};
+    if (Array.isArray(allRes)) {
+      allRes.forEach(r => {
+        if (r.estat !== 'cancel·lada') {
+          if (!adminMonthReservesMap[r.data]) adminMonthReservesMap[r.data] = [];
+          adminMonthReservesMap[r.data].push(r);
+        }
+      });
+    }
+  } catch (e) {
+    adminMonthReservesMap = {};
+  }
+
+  const daysInMonth = new Date(adminCalYear, adminCalMonth, 0).getDate();
+  const firstDayOfMonth = new Date(adminCalYear, adminCalMonth - 1, 1).getDay(); // 0: Dg, 1: Dl...
+  const startOffset = (firstDayOfMonth + 6) % 7; // Dl=0, Dt=1... Dg=6
+
+  const prevMonthDays = new Date(adminCalYear, adminCalMonth - 1, 0).getDate();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  let html = '';
+
+  // Dies previs del mes anterior
+  for (let i = startOffset - 1; i >= 0; i--) {
+    const dNum = prevMonthDays - i;
+    html += `
+      <div class="cal-day-cell other-month">
+        <div class="cal-day-num">${dNum}</div>
+      </div>
+    `;
+  }
+
+  // Dies del mes actual
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${adminCalYear}-${String(adminCalMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === adminSelectedDate;
+    const dayDisp = adminMonthDisponibilitat?.dies?.[dateStr];
+    const isClosed = dayDisp?.tancat;
+    const dayRes = adminMonthReservesMap[dateStr] || [];
+    const count = dayRes.length;
+
+    let cellClasses = ['cal-day-cell'];
+    if (isSelected) cellClasses.push('active-day');
+    if (isToday) cellClasses.push('today-day');
+    if (isClosed) cellClasses.push('closed-day');
+
+    html += `
+      <div class="${cellClasses.join(' ')}" data-date="${dateStr}">
+        <div class="cal-day-num">${day}</div>
+        ${count > 0 ? `<div class="cal-day-badge">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</div>` : ''}
+        ${isClosed && count === 0 ? `<div class="cal-day-closed-label">Tancat</div>` : ''}
+      </div>
+    `;
+  }
+
+  // Dies posteriors per omplir graella
+  const totalCells = startOffset + daysInMonth;
+  const remainingCells = (7 - (totalCells % 7)) % 7;
+  for (let nextDay = 1; nextDay <= remainingCells; nextDay++) {
+    html += `
+      <div class="cal-day-cell other-month">
+        <div class="cal-day-num">${nextDay}</div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = html;
+
+  // Afegir listener de clic per seleccionar dia
+  grid.querySelectorAll('.cal-day-cell[data-date]').forEach(cell => {
+    cell.addEventListener('click', async () => {
+      adminSelectedDate = cell.dataset.date;
+      grid.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('active-day'));
+      cell.classList.add('active-day');
+      await renderAdminDayAppointments(adminSelectedDate);
+    });
+  });
+}
+
+async function renderAdminDayAppointments(dateStr) {
+  const dateDisplay = document.getElementById('app-selected-date-display');
+  const countDisplay = document.getElementById('app-list-count');
+  const tableBody = document.getElementById('app-table-body');
+
+  if (dateDisplay) {
+    dateDisplay.textContent = formatCatalanFullDate(dateStr);
+  }
+
+  if (tableBody) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; color: #6B7280; padding: 24px;">
+          ⏳ Carregant reserves per al ${dateStr}...
+        </td>
+      </tr>
+    `;
+  }
+
+  let reserves = [];
+  try {
+    reserves = await Store.getReserves({ data: dateStr });
+    if (!Array.isArray(reserves)) reserves = [];
+  } catch (e) {
+    console.warn('Error obtenint reserves del dia:', e);
+    reserves = [];
+  }
+
+  const activeReserves = reserves.filter(r => r.estat !== 'cancel·lada');
+  if (countDisplay) {
+    countDisplay.textContent = `Llista de Reserves (${activeReserves.length})`;
+  }
+
+  if (!tableBody) return;
+
+  if (reserves.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" class="app-empty-state">
+          <div style="font-size: 28px; margin-bottom: 8px;">✨</div>
+          <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">No hi ha cap reserva per aquest dia</div>
+          <div style="color: #6B7280; font-size: 13px; margin-bottom: 14px;">Totes les places estan disponibles.</div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openReservesModal('${dateStr}')" style="border-color: #7A3026; color: #7A3026;">
+            ➕ Crear una reserva aquí
+          </button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Renderitzar files amb checkbox "Visited"
+  tableBody.innerHTML = reserves.map((r, idx) => {
+    const isVisited = r.estat === 'assistit';
+    const isCancelled = r.estat === 'cancel·lada';
+    const clientNom = `${r.nom || ''} ${r.cognoms || ''}`.trim() || r.student_nom || r.student_id || 'Client sense nom';
+    const slotDesc = (r.hora_inici && r.hora_fi) ? `${r.hora_inici} - ${r.hora_fi}` : (r.franja_id || '');
+
+    let actIcon = '🏺';
+    let actNom = 'Torn';
+    if (r.activitat_id === 'modelatge') { actIcon = '🗿'; actNom = 'Modelatge'; }
+    else if (r.activitat_id === 'pintar') { actIcon = '🎨'; actNom = 'Pintar ceràmica'; }
+
+    const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
+
+    return `
+      <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">
+        <td style="font-weight: 700; color: #6B7280; font-size: 12px; width: 32px;">${idx + 1}</td>
+        <td>
+          <div class="app-client-name">${clientNom}</div>
+          <div class="app-slot-desc">
+            ${slotDesc} &bull; ${actIcon} ${actNom} ${placesBadge}
+            ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
+          </div>
+        </td>
+        <td style="text-align: center;">
+          <label class="visited-checkbox-label" title="Marca per confirmar l'assistència com a 'Visited'">
+            <input type="checkbox" class="app-visited-checkbox" data-res-id="${r.id}" ${isVisited ? 'checked' : ''} ${isCancelled ? 'disabled' : ''}>
+            <span>Visited</span>
+          </label>
+          <div style="margin-top: 3px;">
+            <span class="badge ${isVisited ? 'badge-success' : (isCancelled ? 'badge-danger' : 'badge-neutral')}" style="font-size: 10px; padding: 2px 6px;">
+              ${isVisited ? '✅ Assistit' : (isCancelled ? '❌ Cancel·lada' : '⏳ Pendent')}
+            </span>
+          </div>
+        </td>
+        <td style="text-align: right;">
+          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+            ${r.student_id && !r.student_id.startsWith('CLI-') ? `
+              <button type="button" class="btn btn-outline btn-sm btn-action-view" data-id="${r.student_id}" style="padding: 3px 8px; font-size: 12px;" title="Veure Fitxa 360°">
+                Fitxa
+              </button>
+            ` : ''}
+            ${r.telefon ? `
+              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 12px;" title="Contactar per WhatsApp">
+                💬 WA
+              </a>
+            ` : ''}
+            ${!isCancelled ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #DC2626; border-color: #FCA5A5;" title="Cancel·lar aquesta reserva">
+                ✕
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Delegar canvi de checkbox "Visited"
+  tableBody.querySelectorAll('.app-visited-checkbox').forEach(chk => {
+    chk.addEventListener('change', async () => {
+      const resId = chk.dataset.resId;
+      const isChecked = chk.checked;
+      try {
+        await Store.updateReservaAssistencia(resId, isChecked);
+        showToast(isChecked ? 'Assistència confirmada (Visited) ✅' : 'Assistència desmarcada', 'success');
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
+        await refreshAppointmentsDashboard();
+      } catch (err) {
+        showToast('Error actualitzant assistència: ' + err.message, 'error');
+        chk.checked = !isChecked;
+      }
+    });
+  });
+
+  // Delegar cancel·lació de reserva
+  tableBody.querySelectorAll('.btn-app-cancel-reserva').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const resId = btn.dataset.resId;
+      if (confirm('Segur que vols cancel·lar aquesta reserva i alliberar la plaça?')) {
+        try {
+          const res = await Store.cancelarReserva(resId);
+          if (res.ok) {
+            showToast('Reserva cancel·lada correctament.', 'info');
+            await refreshAppointmentsDashboard();
+          } else {
+            showToast(res.error || 'No s\'ha pogut cancel·lar la reserva', 'error');
+          }
+        } catch (err) {
+          showToast('Error cancel·lant reserva: ' + err.message, 'error');
+        }
+      }
+    });
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.openReservesModal = openReservesModal;
-  window.loadAdminDisponibilitat = loadAdminDisponibilitat;
+  window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
+  window.refreshAppointmentsDashboard = refreshAppointmentsDashboard;
+  window.initAppointmentsDashboard = initAppointmentsDashboard;
 }
 
 

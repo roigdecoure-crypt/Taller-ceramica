@@ -14,18 +14,19 @@
   <meta name="apple-mobile-web-app-title" content="Roig de Coure">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
-  <!-- Google Fonts per a Serif artesanal i Sans moderna -->
+  <!-- Google Fonts per a Serif artesanal, Sans moderna i lletra lligada oficial -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/card.css">
   <style>
     :root {
-      --brand-primary: #C25E3A;
+      --brand-primary: #7A3026;
       --brand-secondary: #5E7E6F;
       --brand-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-script: 'Caveat', cursive, sans-serif;
     }
     body {
       font-family: var(--brand-font);
@@ -240,8 +241,8 @@
         <img id="login-logo-img" src="" alt="Logo Taller" class="portal-logo-img" style="display: none; height: 55px; margin: 0 auto;">
         <div id="login-logo-icon" style="font-size: 48px;">🏺</div>
       </div>
-      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;" id="login-workshop-title">Roig de Coure</h2>
-      <p style="font-size: 13px; color: var(--color-primary); font-weight: 600; margin-bottom: 16px;" id="login-workshop-subtitle">Taller d'Art i Ceràmica</p>
+      <h2 style="font-family: var(--font-script); font-size: 44px; font-weight: 700; color: var(--brand-primary); margin-bottom: 2px; line-height: 1.1;" id="login-workshop-title">Roig de Coure</h2>
+      <p style="font-size: 12px; color: var(--brand-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;" id="login-workshop-subtitle">Taller de Ceràmica &bull; Olot</p>
       <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 20px;">
         Introdueix el teu Número d'Alumne (ex: <code>TC-101</code>) o el teu PIN per veure el teu carnet, saldo d'hores i comprar paquets.
       </p>
@@ -273,8 +274,8 @@
           <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none;">
           <span id="portal-header-logo-icon">🏺</span>
           <div>
-            <div id="student-workshop-name" style="line-height: 1.1;">Roig de Coure</div>
-            <div id="student-workshop-subtitle" style="font-size: 11px; font-weight: 500; color: var(--color-muted);">Taller de Ceràmica</div>
+            <div id="student-workshop-name" style="font-family: var(--font-script); font-size: 28px; font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
+            <div id="student-workshop-subtitle" style="font-size: 11px; font-weight: 600; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: 0.8px;">Taller de Ceràmica &bull; Olot</div>
           </div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">

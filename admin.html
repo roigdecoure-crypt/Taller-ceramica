@@ -13,103 +13,264 @@
   <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/card.css">
 </head>
-<body class="admin-layout">
+<body class="admin-app-layout">
 
-  <!-- Barra de navegació superior -->
-  <header class="admin-navbar">
-    <div class="brand">
-      <span class="brand-icon">🏺</span>
-      <div class="brand-info">
-        <h1 id="nav-workshop-name">Taller de Ceràmica</h1>
-        <p>Panell d'Administració &bull; Control d'Hores i Assistència</p>
+  <!-- ==================== BARRA LATERAL ESQUERRA (ESTIL WORDPRESS) ==================== -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <a href="#" class="sidebar-brand">
+      <span style="font-size: 24px;">🏺</span>
+      <div>
+        <div class="sidebar-logo-text">Roig de Coure</div>
+        <div class="brand-sub">Taller de Ceràmica &bull; Olot</div>
       </div>
-    </div>
-    <div class="nav-actions">
-      <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
-        📷 Escàner QR
-      </a>
-      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
-        ⏱️ Entrada / Sortida Manual
-      </button>
-      <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
-        ➕ Nou Alumne
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-reserves-admin" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{document.getElementById('modal-reserves-backdrop').classList.add('active');}" style="border-color: #2E7D32; color: #2E7D32; font-weight: 600;" title="Gestió de Reserves i Control d'Aforament">
-        📅 Reserves & Aforament
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
-        🎨 Disseny & Marca
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-configuracio" title="Configurar Stripe, Google Sheets i Taller">
-        ⚙️ Configuració
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-exportar" title="Còpies de seguretat i dades">
-        💾 Dades & Backup
-      </button>
-    </div>
-  </header>
+    </a>
 
-  <!-- Contingut principal -->
-  <main class="admin-content">
+    <ul class="sidebar-menu">
+      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves">
+        <span class="nav-icon">📅</span>
+        <span class="nav-text">Reserves & Calendari</span>
+      </li>
+      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes">
+        <span class="nav-icon">👥</span>
+        <span class="nav-text">Alumnes & Clients</span>
+      </li>
+      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe">
+        <span class="nav-icon">⏱️</span>
+        <span class="nav-text">Al taller ara mateix</span>
+      </li>
 
-    <!-- Secció: Alumnes al taller en viu -->
-    <section class="live-workshop-banner">
-      <div class="banner-header">
-        <div class="banner-title">
-          <span class="live-pulse"></span>
-          <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+      <div class="sidebar-divider"></div>
+
+      <li class="sidebar-item">
+        <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">📷</span>
+          <span class="nav-text">Escàner QR Mòbil</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="reserva.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">🌐</span>
+          <span class="nav-text">Web Pública Reserves</span>
+        </a>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-branding">
+        <span class="nav-icon">🎨</span>
+        <span class="nav-text">Disseny & Marca</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-config">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">Configuració</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-export">
+        <span class="nav-icon">💾</span>
+        <span class="nav-text">Dades & Backup</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer-btn" id="btn-collapse-sidebar" title="Plegar / desplegar menú">
+      <span class="nav-icon">⬅️</span>
+      <span class="nav-text">Plegar menú</span>
+    </div>
+  </aside>
+
+  <!-- ==================== CONTINGUT PRINCIPAL ==================== -->
+  <div class="admin-main-wrapper">
+
+    <!-- Capçalera superior amb títol i botons d'acció -->
+    <header class="admin-top-bar">
+      <div class="top-bar-left">
+        <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
+      </div>
+      <div class="top-bar-actions">
+        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva">
+          <span>➕</span> Nova Reserva
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}">
+          <span>⏱️</span> Entrada / Sortida Manual
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne">
+          <span>👤</span> Nou Alumne
+        </button>
+      </div>
+    </header>
+
+    <!-- PESTANYA 1: RESERVES & CALENDARI (SPLIT DASHBOARD TIPUS APPOINTMENTS MANAGER) -->
+    <section class="admin-tab-view active" id="view-reserves">
+
+      <!-- Cinta superior: Aforaments màxims i de les 3 activitats -->
+      <div class="reserves-top-banner">
+        <div class="reserves-banner-left">
+          <span style="font-size: 20px;">👥</span>
+          <div>
+            <span class="title">Aforament màxim del taller per franja:</span>
+            <span class="badge-val" id="admin-display-aforament-val">12 places simultànies</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: 12px;">
+            <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 58px; text-align: center; padding: 4px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;" value="12">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" style="padding: 4px 8px; font-size: 12px;">Desar</button>
+          </div>
         </div>
-        <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+
+        <div class="reserves-capacitats-group">
+          <span style="font-size: 12px; font-weight: 700; color: #4B5563;">🏺 Activitats:</span>
+          <div class="cap-act-item">
+            <span>🏺 Torn:</span>
+            <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
+          </div>
+          <div class="cap-act-item">
+            <span>🗿 Modelatge:</span>
+            <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
+          </div>
+          <div class="cap-act-item">
+            <span>🎨 Pintar:</span>
+            <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px; background: #7A3026; border-color: #7A3026;">
+            Desar capacitats
+          </button>
+        </div>
       </div>
-      <div class="active-students-grid" id="active-students-container">
-        <!-- Es genera dinàmicament per JS -->
-        <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
-          No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
-        </p>
+
+      <!-- GRAELLA SPLIT 2 COLUMNES: CALENDARI (ESQUERRA) + LLISTA RESERVES (DRETA) -->
+      <div class="appointments-dashboard">
+        
+        <!-- COLUMNA ESQUERRA: CALENDARI MENSUAL -->
+        <div class="appointments-left" id="admin-calendar-split-mount">
+          <div class="calendar-card">
+            <div class="cal-header-blue">
+              <div class="cal-tip-text">
+                <span>ℹ️</span> Fes clic a qualsevol dia per consultar les reserves i l'aforament
+              </div>
+              <div class="cal-nav-row">
+                <h3 class="cal-month-title" id="cal-month-title">Setembre 2026</h3>
+                <div class="cal-nav-buttons">
+                  <button type="button" class="btn-cal-today" id="btn-cal-today">Avui</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-prev" title="Mes anterior">&lt;</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-next" title="Mes següent">&gt;</button>
+                </div>
+              </div>
+            </div>
+            <div class="cal-grid-container">
+              <div class="cal-weekdays">
+                <div>Dl</div>
+                <div>Dt</div>
+                <div>Dc</div>
+                <div>Dj</div>
+                <div>Dv</div>
+                <div>Ds</div>
+                <div>Dg</div>
+              </div>
+              <div class="cal-days-grid" id="cal-days-grid">
+                <!-- Es genera dinàmicament per JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DRETA: LLISTA DE RESERVES DEL DIA (AMB CHECKBOX VISITED) -->
+        <div class="appointments-right" id="admin-appointment-list-mount">
+          <div class="appointment-list-card">
+            <div class="app-list-header">
+              <div>
+                <div class="app-list-count" id="app-list-count">Llista de Reserves (0)</div>
+                <h2 class="app-list-date-title">
+                  <span>📅</span>
+                  <span id="app-selected-date-display">Carregant data...</span>
+                </h2>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" style="border-color: #7A3026; color: #7A3026;">
+                + Nova reserva aquest dia
+              </button>
+            </div>
+
+            <!-- Taula de reserves del dia -->
+            <div class="app-table-wrapper">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th style="width: 32px;">#</th>
+                    <th>Alumne / Client</th>
+                    <th style="text-align: center;">Estat / Assistència</th>
+                    <th style="text-align: right;">Opcions</th>
+                  </tr>
+                </thead>
+                <tbody id="app-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: #6B7280; padding: 30px;">
+                      ⏳ Carregant reserves...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- Taula principal d'alumnes -->
-    <section class="card">
-      <div class="table-toolbar">
-        <div class="search-box">
-          <span>🔍</span>
-          <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+    <!-- PESTANYA 2: LLISTA D'ALUMNES & CLIENTS -->
+    <section class="admin-tab-view" id="view-alumnes">
+      <div class="admin-card-box">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
+              🔄 Hidratar des de Sheets
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
+              📊 Sincronitzar amb Sheets
+            </button>
+          </div>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
-            🔄 Hidratar des de Sheets
-          </button>
-          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
-            📊 Sincronitzar amb Sheets
-          </button>
-        </div>
-      </div>
 
-      <div class="table-responsive">
-        <table class="data-table" id="students-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Alumne</th>
-              <th>Telèfon</th>
-              <th>Email</th>
-              <th>Estat</th>
-              <th>Saldo Hores (H:m:s)</th>
-              <th style="text-align: right;">Accions</th>
-            </tr>
-          </thead>
-          <tbody id="students-table-body">
-            <tr>
-              <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
-                ⏳ Carregant llista d'alumnes del taller...
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="data-table" id="students-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Alumne</th>
+                <th>Telèfon</th>
+                <th>Email</th>
+                <th>Estat</th>
+                <th>Saldo Hores (H:m:s)</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr>
+                <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
+                  ⏳ Carregant llista d'alumnes del taller...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
-  </main>
+
+    <!-- PESTANYA 3: ALUMNES AL TALLER EN DIRECTE -->
+    <section class="admin-tab-view" id="view-directe">
+      <div class="live-workshop-banner">
+        <div class="banner-header">
+          <div class="banner-title">
+            <span class="live-pulse"></span>
+            <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+          </div>
+          <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+        </div>
+        <div class="active-students-grid" id="active-students-container">
+          <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
+            No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
 
   <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
   <div class="drawer-backdrop" id="student-drawer-backdrop">

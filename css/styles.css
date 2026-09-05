@@ -1,23 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+
 /**
- * styles.css - Estètica general i paleta artesanal per al Taller de Ceràmica
+ * styles.css - Identitat corporativa oficial de Roig de Coure (roigdecoure.cat)
  */
 
 :root {
-  --color-primary: #C25E3A;       /* Terracota */
-  --color-primary-dark: #9E4626;
-  --color-primary-light: #F7EAE5;
-  --color-secondary: #5E7E6F;     /* Sàlvia / Esmalt verd */
-  --color-secondary-light: #EBF1EE;
+  --color-primary: #7A3026;       /* Coure profund oficial Roig de Coure */
+  --color-primary-dark: #5C221A;
+  --color-primary-light: #FBF4F2;
+  --color-secondary: #5E7E6F;     /* Sàlvia ceràmic */
+  --color-secondary-light: #EEF5F1;
   --color-dark: #2E2825;          /* Argila fosca */
   --color-muted: #736B66;
-  --color-bg: #FAF6F0;            /* Fons crema artesanal */
+  --color-bg: #F4F8F5;            /* Fons sàlvia suau de roigdecoure.cat */
   --color-card: #FFFFFF;
-  --color-border: #E8DFD5;
+  --color-border: #E5DDD5;
+  
+  --font-script: 'Caveat', cursive, -apple-system, sans-serif;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   
   --color-success: #2E7D32;
   --color-success-bg: #E8F5E9;
-  --color-warning: #EF6C00;
-  --color-warning-bg: #FFF3E0;
+  --color-warning: #D97706;
+  --color-warning-bg: #FEF3C7;
   --color-danger: #C62828;
   --color-danger-bg: #FFEBEE;
   --color-info: #1976D2;

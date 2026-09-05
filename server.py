@@ -1849,6 +1849,32 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path == '/api/reserves/assistencia':
+                res_id = (data.get('id') or '').strip()
+                assistit = bool(data.get('assistit', True))
+                nou_estat = 'assistit' if assistit else 'confirmada'
+                if not res_id:
+                    self.send_json({'ok': False, 'error': 'Cal indicar l\'ID de la reserva'}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE reserves SET estat = ? WHERE id = ?", (nou_estat, res_id))
+                    conn.commit()
+                    cursor.execute("SELECT * FROM reserves WHERE id = ?", (res_id,))
+                    row = cursor.fetchone()
+                    reserva_dict = row_to_dict(row) if row else {'id': res_id, 'estat': nou_estat}
+
+                # Sincronitzar estat a Google Sheets
+                sync_to_google_sheets_async('update_reserva_estat', reserva_dict)
+
+                self.send_json({
+                    'ok': True,
+                    'message': f"Assistència {'marcada com a present' if assistit else 'restablerta com a pendent'}.",
+                    'reserva': reserva_dict
+                })
+                return
+
             elif path == '/api/reserves/config-aforament':
                 aforament = int(data.get('aforamentMaxim') or data.get('aforament_maxim') or 8)
                 if aforament < 1:
