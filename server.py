@@ -173,6 +173,7 @@ def init_db():
             cursor.execute('INSERT OR IGNORE INTO configuracio (clau, valor) VALUES (?, ?)', (k, v))
 
         # Migració de valors antics a configuració oficial si cal
+        cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de Ceràmica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "#831D1D" WHERE clau = "brand_primary" AND (valor = "#C25E3A" OR valor = "#7A3026" OR valor IS NULL OR valor = "")')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND valor = "8"')
         cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND (valor LIKE "%mati_1%" OR valor LIKE "%F1%")', (default_franges_json,))
