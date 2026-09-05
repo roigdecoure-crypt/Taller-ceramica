@@ -307,14 +307,34 @@
 /* ==================== VISTA RESERVES: SPLIT 2 COLUMNES ==================== */
 .appointments-dashboard {
   display: grid;
-  grid-template-columns: 1fr 1.25fr;
-  gap: 24px;
+  grid-template-columns: 370px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1080px) {
+.appointments-left {
+  min-width: 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.appointments-right {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 1180px) {
   .appointments-dashboard {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .appointments-left {
+    max-width: 460px;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 
@@ -538,23 +558,31 @@
   border-radius: 8px;
   border: 1px solid #E5E7EB;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 22px 24px;
+  padding: 18px 20px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .app-list-header {
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #E5E7EB;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
 }
 
+.app-list-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
 .app-list-count {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
   color: #6B7280;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -562,39 +590,44 @@
 }
 
 .app-list-date-title {
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 800;
   color: #831D1D;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 0;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 /* Taula de reserves amb format net estil referència */
 .app-table-wrapper {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
 }
 
 .app-table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .app-table th {
   text-align: left;
-  padding: 10px 12px;
-  font-size: 12px;
+  padding: 8px 10px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #6B7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #E5E7EB;
+  white-space: nowrap;
 }
 
 .app-table td {
-  padding: 14px 12px;
+  padding: 10px 8px;
   border-bottom: 1px solid #F3F4F6;
   vertical-align: middle;
 }
@@ -606,7 +639,8 @@
 .app-row-serial {
   font-weight: 700;
   color: #6B7280;
-  width: 32px;
+  width: 28px;
+  text-align: center;
 }
 
 .app-patient-name {
@@ -639,17 +673,18 @@
 .visited-checkbox-label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 4px 8px;
   border: 1px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: 5px;
   background: #FFFFFF;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #374151;
   transition: all 0.15s;
   user-select: none;
+  white-space: nowrap;
 }
 
 .visited-checkbox-label:hover {
@@ -664,18 +699,28 @@
 }
 
 .visited-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   cursor: pointer;
   accent-color: #5E7E6F;
 }
 
 /* Botons d'opcions de cada reserva */
-.app-options-cell {
+.app-options-cell,
+.app-actions-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.app-actions-group .btn,
+.app-options-cell .btn {
+  padding: 3px 6px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .btn-app-opt {

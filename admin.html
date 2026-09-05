@@ -13,9 +13,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=5.0">
-  <link rel="stylesheet" href="css/admin.css?v=5.0">
-  <link rel="stylesheet" href="css/card.css?v=5.0">
+  <link rel="stylesheet" href="css/styles.css?v=6.0">
+  <link rel="stylesheet" href="css/admin.css?v=6.0">
+  <link rel="stylesheet" href="css/card.css?v=6.0">
 </head>
 <body class="admin-app-layout">
 
@@ -234,8 +234,8 @@
                   <span id="app-selected-date-display">Carregant data...</span>
                 </h2>
               </div>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}" style="border-color: #831D1D; color: #831D1D;">
-                + Nova reserva aquest dia
+              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}" style="border-color: #831D1D; color: #831D1D; white-space: nowrap; flex-shrink: 0; padding: 5px 10px;">
+                + Nova reserva
               </button>
             </div>
 
