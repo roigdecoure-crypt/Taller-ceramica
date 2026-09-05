@@ -1679,6 +1679,9 @@ async function renderAdminCalendar() {
       grid.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('active-day'));
       cell.classList.add('active-day');
       await renderAdminDayAppointments(adminSelectedDate);
+      if (window.innerWidth <= 1180) {
+        document.getElementById('admin-appointment-list-mount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
   });
 }
@@ -1768,19 +1771,19 @@ async function renderAdminDayAppointments(dateStr) {
           </div>
         </td>
         <td style="text-align: right;">
-          <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+          <div class="app-actions-group">
             ${r.student_id && !r.student_id.startsWith('CLI-') ? `
-              <button type="button" class="btn btn-outline btn-sm btn-action-view" data-id="${r.student_id}" style="padding: 3px 8px; font-size: 12px;" title="Veure Fitxa 360°">
+              <button type="button" class="btn btn-outline btn-sm btn-action-view" data-id="${r.student_id}" style="padding: 3px 6px; font-size: 11.5px;" title="Veure Fitxa 360°">
                 Fitxa
               </button>
             ` : ''}
             ${r.telefon ? `
-              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 12px;" title="Contactar per WhatsApp">
+              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
                 WhatsApp
               </a>
             ` : ''}
             ${!isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 6px; font-size: 11.5px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
                 Cancel·lar
               </button>
             ` : ''}

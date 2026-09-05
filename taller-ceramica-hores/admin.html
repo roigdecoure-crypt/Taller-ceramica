@@ -5,111 +5,327 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panell d'Administració - Taller de Ceràmica</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#C25E3A">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="shortcut icon" href="icons/favicon-32x32.png">
+  <meta name="theme-color" content="#831D1D">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/admin.css">
-  <link rel="stylesheet" href="css/card.css">
+  <link rel="stylesheet" href="css/styles.css?v=6.0">
+  <link rel="stylesheet" href="css/admin.css?v=6.0">
+  <link rel="stylesheet" href="css/card.css?v=6.0">
 </head>
-<body class="admin-layout">
+<body class="admin-app-layout">
 
-  <!-- Barra de navegació superior -->
-  <header class="admin-navbar">
-    <div class="brand">
-      <span class="brand-icon">🏺</span>
-      <div class="brand-info">
-        <h1 id="nav-workshop-name">Taller de Ceràmica</h1>
-        <p>Panell d'Administració &bull; Control d'Hores i Assistència</p>
+  <!-- ==================== BARRA LATERAL ESQUERRA ==================== -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <a href="#" class="sidebar-brand" title="Roig de Coure">
+      <img src="img/logo.png" alt="Roig de Coure" class="sidebar-logo-img" id="sidebar-logo-img">
+    </a>
+
+    <ul class="sidebar-menu">
+      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <span class="nav-text">Reserves & Calendari</span>
+      </li>
+      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes" title="Alumnes & Clients">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Alumnes & Clients</span>
+      </li>
+      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe" title="Al taller ara mateix">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
+        <span class="nav-text">Al taller ara mateix</span>
+      </li>
+
+      <div class="sidebar-divider"></div>
+
+      <li class="sidebar-item" title="Escàner QR Mòbil">
+        <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </span>
+          <span class="nav-text">Escàner QR Mòbil</span>
+        </a>
+      </li>
+      <li class="sidebar-item" title="Web Pública Reserves">
+        <a href="reserva.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Web Pública Reserves</span>
+        </a>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Disseny & Marca</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-config" title="Configuració">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Configuració</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Dades & Backup</span>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer-btn" id="btn-collapse-sidebar" title="Plegar / desplegar menú">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </span>
+      <span class="nav-text">Plegar menú</span>
+    </div>
+  </aside>
+
+  <!-- ==================== CONTINGUT PRINCIPAL ==================== -->
+  <div class="admin-main-wrapper">
+
+    <!-- Capçalera superior amb títol i botons d'acció -->
+    <header class="admin-top-bar">
+      <div class="top-bar-left">
+        <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
       </div>
-    </div>
-    <div class="nav-actions">
-      <a href="scanner.html" class="btn btn-secondary btn-sm" title="Obrir escàner per a mòbil o tauleta">
-        📷 Escàner QR
-      </a>
-      <button class="btn btn-primary btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}" style="background:#C25E3A; border-color:#C25E3A;" title="Marcar entrada o sortida manualment">
-        ⏱️ Entrada / Sortida Manual
-      </button>
-      <button class="btn btn-primary btn-sm" id="btn-nou-alumne">
-        ➕ Nou Alumne
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-reserves-admin" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{document.getElementById('modal-reserves-backdrop').classList.add('active');}" style="border-color: #2E7D32; color: #2E7D32; font-weight: 600;" title="Gestió de Reserves i Control d'Aforament">
-        📅 Reserves & Aforament
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-branding" style="border-color: #C25E3A; color: #C25E3A; font-weight: 600;" title="Personalitzar colors, tipografia i logotip del taller">
-        🎨 Disseny & Marca
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-configuracio" title="Configurar Stripe, Google Sheets i Taller">
-        ⚙️ Configuració
-      </button>
-      <button class="btn btn-outline btn-sm" id="btn-exportar" title="Còpies de seguretat i dades">
-        💾 Dades & Backup
-      </button>
-    </div>
-  </header>
+      <div class="top-bar-actions">
+        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal();}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}">
+          + Nova Reserva
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="openReservesModal(adminSelectedDate);">
+          Control Aforament
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}">
+          Entrada / Sortida Manual
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne">
+          Nou Alumne
+        </button>
+      </div>
+    </header>
 
-  <!-- Contingut principal -->
-  <main class="admin-content">
+    <!-- PESTANYA 1: RESERVES & CALENDARI (SPLIT DASHBOARD TIPUS APPOINTMENTS MANAGER) -->
+    <section class="admin-tab-view active" id="view-reserves">
 
-    <!-- Secció: Alumnes al taller en viu -->
-    <section class="live-workshop-banner">
-      <div class="banner-header">
-        <div class="banner-title">
-          <span class="live-pulse"></span>
-          <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+      <!-- Cinta superior: Aforaments màxims i de les 3 activitats -->
+      <div class="reserves-top-banner">
+        <div class="reserves-banner-left">
+          <div>
+            <span class="title">Aforament màxim del taller (Torn de matí):</span>
+            <span class="badge-val" id="admin-display-aforament-val">12 places simultànies</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: 12px;">
+            <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 58px; text-align: center; padding: 4px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;" value="12">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" style="padding: 4px 8px; font-size: 12px;">Desar</button>
+          </div>
         </div>
-        <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+
+        <div class="reserves-capacitats-group">
+          <span style="font-size: 12px; font-weight: 700; color: #4B5563;">Activitats:</span>
+          <div class="cap-act-item">
+            <span>Torn:</span>
+            <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
+          </div>
+          <div class="cap-act-item">
+            <span>Modelatge:</span>
+            <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
+          </div>
+          <div class="cap-act-item">
+            <span>Pintar:</span>
+            <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px; background: #831D1D; border-color: #831D1D;">
+            Desar capacitats
+          </button>
+        </div>
       </div>
-      <div class="active-students-grid" id="active-students-container">
-        <!-- Es genera dinàmicament per JS -->
-        <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
-          No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
-        </p>
+
+      <!-- GRAELLA SPLIT 2 COLUMNES: CALENDARI (ESQUERRA) + LLISTA RESERVES (DRETA) -->
+      <div class="appointments-dashboard">
+        
+        <!-- COLUMNA ESQUERRA: CALENDARI MENSUAL -->
+        <div class="appointments-left" id="admin-calendar-split-mount">
+          <div class="calendar-card">
+            <div class="cal-header-blue">
+              <div class="cal-tip-text">
+                Fes clic a qualsevol dia per consultar les reserves i l'aforament
+              </div>
+              <div class="cal-nav-row">
+                <h3 class="cal-month-title" id="cal-month-title">Setembre 2026</h3>
+                <div class="cal-nav-buttons">
+                  <button type="button" class="btn-cal-today" id="btn-cal-today">Avui</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-prev" title="Mes anterior">&lt;</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-next" title="Mes següent">&gt;</button>
+                </div>
+              </div>
+            </div>
+            <div class="cal-grid-container">
+              <div class="cal-weekdays">
+                <div>Dl</div>
+                <div>Dt</div>
+                <div>Dc</div>
+                <div>Dj</div>
+                <div>Dv</div>
+                <div>Ds</div>
+                <div>Dg</div>
+              </div>
+              <div class="cal-days-grid" id="cal-days-grid">
+                <!-- Es genera dinàmicament per JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUMNA DRETA: LLISTA DE RESERVES DEL DIA (AMB CHECKBOX VISITED) -->
+        <div class="appointments-right" id="admin-appointment-list-mount">
+          <div class="appointment-list-card">
+            <div class="app-list-header">
+              <div>
+                <div class="app-list-count" id="app-list-count">Llista de Reserves (0)</div>
+                <h2 class="app-list-date-title">
+                  <span id="app-selected-date-display">Carregant data...</span>
+                </h2>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}" style="border-color: #831D1D; color: #831D1D; white-space: nowrap; flex-shrink: 0; padding: 5px 10px;">
+                + Nova reserva
+              </button>
+            </div>
+
+            <!-- Taula de reserves del dia -->
+            <div class="app-table-wrapper">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th style="width: 32px;">#</th>
+                    <th>Alumne / Client</th>
+                    <th style="text-align: center;">Estat / Assistència</th>
+                    <th style="text-align: right;">Opcions</th>
+                  </tr>
+                </thead>
+                <tbody id="app-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: #6B7280; padding: 30px;">
+                      Carregant reserves...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- Taula principal d'alumnes -->
-    <section class="card">
-      <div class="table-toolbar">
-        <div class="search-box">
-          <span>🔍</span>
-          <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+    <!-- PESTANYA 2: LLISTA D'ALUMNES & CLIENTS -->
+    <section class="admin-tab-view" id="view-alumnes">
+      <div class="admin-card-box">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
+              Hidratar des de Sheets
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
+              Sincronitzar amb Sheets
+            </button>
+          </div>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
-            🔄 Hidratar des de Sheets
-          </button>
-          <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
-            📊 Sincronitzar amb Sheets
-          </button>
-        </div>
-      </div>
 
-      <div class="table-responsive">
-        <table class="data-table" id="students-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Alumne</th>
-              <th>Telèfon</th>
-              <th>Email</th>
-              <th>Estat</th>
-              <th>Saldo Hores (H:m:s)</th>
-              <th style="text-align: right;">Accions</th>
-            </tr>
-          </thead>
-          <tbody id="students-table-body">
-            <tr>
-              <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
-                ⏳ Carregant llista d'alumnes del taller...
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="data-table" id="students-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Alumne</th>
+                <th>Telèfon</th>
+                <th>Email</th>
+                <th>Estat</th>
+                <th>Saldo Hores (H:m:s)</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr>
+                <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
+                  Carregant llista d'alumnes del taller...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
-  </main>
+
+    <!-- PESTANYA 3: ALUMNES AL TALLER EN DIRECTE -->
+    <section class="admin-tab-view" id="view-directe">
+      <div class="live-workshop-banner">
+        <div class="banner-header">
+          <div class="banner-title">
+            <span class="live-pulse"></span>
+            <span>Alumnes actualment al taller (<span id="count-alumnes-actius">0</span>)</span>
+          </div>
+          <span class="badge badge-neutral" id="live-time-clock">--:--:--</span>
+        </div>
+        <div class="active-students-grid" id="active-students-container">
+          <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
+            No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </div>
 
   <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
   <div class="drawer-backdrop" id="student-drawer-backdrop">
@@ -145,9 +361,9 @@
               <div style="font-weight: 600; font-size: 14px;" id="drawer-student-contact">Tel: - | Email: -</div>
             </div>
             <div style="display: flex; gap: 8px;">
-              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">💬 WhatsApp</a>
-              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">💳 Veure Carnet QR</button>
-              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">✏️ Editar</button>
+              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">WhatsApp</a>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">Veure Carnet QR</button>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">Editar</button>
             </div>
           </div>
         </div>
@@ -155,24 +371,24 @@
         <!-- Botons d'acció ràpida de temps -->
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button class="btn btn-primary" id="drawer-btn-add-hours">
-            ➕ Afegir Compra d'Hores
+            Afegir Compra d'Hores
           </button>
-          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#2E7D32; border-color:#2E7D32;">
-            🟢 Marcar Entrada
+          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#5E7E6F; border-color:#5E7E6F;">
+            Marcar Entrada
           </button>
-          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#1976D2; border-color:#1976D2;">
-            🔴 Marcar Sortida
+          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#831D1D; border-color:#831D1D;">
+            Marcar Sortida
           </button>
           <button class="btn btn-outline" id="drawer-btn-add-manual-session">
-            ⏱️ Sessió Manual (Passada)
+            Sessió Manual (Passada)
           </button>
         </div>
 
         <!-- Pestanyes d'historial dins de la fitxa -->
         <div>
           <div class="admin-tabs-nav">
-            <button class="tab-btn active" data-tab="tab-sessions">⏱️ Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
-            <button class="tab-btn" data-tab="tab-paquets">📦 Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
+            <button class="tab-btn active" data-tab="tab-sessions">Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-paquets">Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
           </div>
 
           <!-- Tab 1: Sessions -->
@@ -247,6 +463,10 @@
           <input type="email" id="alumne-form-email" class="form-control" placeholder="ex: maria.garcia@email.com">
         </div>
         <div class="form-group">
+          <label>Edat (anys)</label>
+          <input type="number" id="alumne-form-edat" class="form-control" min="1" max="120" placeholder="ex: 32 (aplica tarifa Adult >=12 o Infantil <12)">
+        </div>
+        <div class="form-group">
           <label>Número d'Identificació / PIN (opcional, es genera automàtic)</label>
           <input type="text" id="alumne-form-pin" class="form-control" placeholder="ex: 101">
         </div>
@@ -276,20 +496,12 @@
           <input type="text" id="paquet-form-student-name" class="form-control" readonly style="background:#F5F2ED;">
         </div>
         <div class="form-group">
-          <label>Packs ràpids:</label>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="5" data-price="65" data-name="Pack 5 Hores">5 Hores</button>
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="10" data-price="120" data-name="Pack 10 Hores">10 Hores</button>
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="20" data-price="220" data-name="Pack 20 Hores">20 Hores</button>
-          </div>
+          <label>Quantitat d'Hores a Sumar * (mínim 4h)</label>
+          <input type="number" step="0.5" min="4" value="4" id="paquet-form-hores" class="form-control" required placeholder="ex: 4">
         </div>
         <div class="form-group">
-          <label>Quantitat d'Hores a Sumar *</label>
-          <input type="number" step="0.5" min="0.5" id="paquet-form-hores" class="form-control" required placeholder="ex: 10">
-        </div>
-        <div class="form-group">
-          <label>Concepte / Nom del Pack</label>
-          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: Pack 10 Hores Torn">
+          <label>Concepte</label>
+          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: 4 Hores Taller">
         </div>
         <div class="form-group">
           <label>Preu Cobrat (€)</label>
@@ -358,7 +570,7 @@
   <div class="modal-backdrop" id="modal-tancar-cicle-backdrop">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>⚠️ Tancar Cicle Oblidat (Forçar Sortida)</h3>
+        <h3>Tancar Cicle Oblidat (Forçar Sortida)</h3>
         <button class="modal-close" data-close="modal-tancar-cicle-backdrop">&times;</button>
       </div>
       <form id="form-tancar-cicle">
@@ -416,36 +628,29 @@
         <div class="ceramic-badge" id="printable-badge">
           <div class="badge-top">
             <div class="workshop-brand">
-              <img id="badge-ws-logo-img" src="" alt="Logo" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
-              <span class="workshop-icon" id="badge-ws-logo-icon">🏺</span>
               <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
             </div>
-            <span class="badge-type">CARNET DE SOCI</span>
+            <span style="font-size: 11px; font-weight: 700; color: #5E7E6F; text-transform: uppercase; letter-spacing: 0.5px;">Taller de Ceràmica</span>
           </div>
           <div class="badge-content">
             <div class="badge-info">
+              <div class="badge-label">Nom:</div>
               <div class="badge-student-name" id="badge-nom">Nom</div>
+              <div class="badge-label">Cognoms:</div>
               <div class="badge-student-surnames" id="badge-cognoms">Cognoms</div>
-              <div class="badge-id-pill">
-                <span>ID:</span>
-                <strong id="badge-id">TC-100</strong>
-              </div>
-              <div class="badge-phone" id="badge-tel">Tel: -</div>
+              <div class="badge-label">Codi Alumne:</div>
+              <div class="badge-id-val" id="badge-id">TC-100</div>
             </div>
             <div class="badge-qr-box" id="badge-qr-container">
               <!-- QR generat per QREngine -->
             </div>
           </div>
-          <div class="badge-footer">
-            <span>Passa aquest QR per l'escàner</span>
-            <span id="badge-data-alta">Alta: 2026</span>
-          </div>
         </div>
 
         <!-- Botons d'acció -->
         <div class="card-actions">
-          <button class="btn btn-primary btn-sm" id="btn-print-card">🖨️ Imprimir Carnet</button>
-          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">🔗 Copiar Enllaç Alumne</button>
+          <button class="btn btn-primary btn-sm" id="btn-print-card">Imprimir Carnet</button>
+          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">Copiar Enllaç Alumne</button>
         </div>
       </div>
     </div>
@@ -459,7 +664,7 @@
         <button class="modal-close" data-close="modal-config-backdrop">&times;</button>
       </div>
       <form id="form-config">
-        <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏺 Dades del Taller</h4>
+        <h4 style="margin-bottom: 10px; color: var(--color-primary);">Dades del Taller</h4>
         <div class="form-group">
           <label>Nom del Taller</label>
           <input type="text" id="cfg-taller-nom" class="form-control" placeholder="Taller de Ceràmica">
@@ -473,24 +678,25 @@
           <input type="text" id="cfg-durada-oblit" class="form-control" placeholder="01:30:00">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe</h4>
+        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">Enllaços de Pagament de Stripe (segons Edat)</h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
-          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats:
+          Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats. El sistema redirigirà l'alumne a la passarel·la corresponent automàticament segons la seva edat:
         </p>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 5 Hores</label>
-          <input type="url" id="cfg-stripe-pack5" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>Edat de tall per a tarifa Infantil (anys)</label>
+          <input type="number" id="cfg-edat-tall" class="form-control" min="1" max="99" value="12" style="max-width: 140px;">
+          <small style="color: var(--color-muted); font-size: 11px;">Alumnes de 12 anys o menys (&le; 12) aniran a Infantil; de més de 12 anys aniran a Adults.</small>
         </div>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 10 Hores</label>
-          <input type="url" id="cfg-stripe-pack10" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>Enllaç Stripe: Adults (més de 12 anys)</label>
+          <input type="url" id="cfg-stripe-adults" class="form-control" placeholder="https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n">
         </div>
         <div class="form-group">
-          <label>Enllaç Stripe: Pack 20 Hores</label>
-          <input type="url" id="cfg-stripe-pack20" class="form-control" placeholder="https://buy.stripe.com/...">
+          <label>Enllaç Stripe: Infantil / Menors (fins a 12 anys)</label>
+          <input type="url" id="cfg-stripe-infantil" class="form-control" placeholder="https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">📊 Sincronització amb Google Sheets</h4>
+        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">Sincronització amb Google Sheets</h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
           Enganxa l'URL de la teva aplicació web de Google Apps Script (que acaba en <code>/exec</code>):
         </p>
@@ -498,13 +704,73 @@
           <label>URL Web App de Google Apps Script</label>
           <input type="url" id="cfg-sheets-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
+        <div class="form-group">
+          <label>Nom del Calendari a Google Calendar</label>
+          <input type="text" id="cfg-calendar-name" class="form-control" placeholder="reserves" value="reserves">
+          <small style="color: var(--color-muted); font-size: 11px;">Nom del teu calendari a Google Calendar (per defecte: <strong>reserves</strong>) on s'enregistraran automàticament les reserves.</small>
+        </div>
         <div style="display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap;">
           <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-hydrate-sheets" style="flex:1;">
-            🔄 Hidratar ara (Llegir del Full)
+            Hidratar ara (Llegir del Full)
           </button>
           <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-push-sheets" style="flex:1;">
-            📤 Enviar dades locals al Full
+            Enviar dades locals al Full
           </button>
+        </div>
+
+        <h4 style="margin: 22px 0 10px; color: var(--color-secondary); display: flex; align-items: center; gap: 6px;">
+          WhatsApp Notificacions (Meta Cloud API Oficial)
+        </h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 12px;">
+          Connecta directament amb Meta (sense tercers ni intermediaris de pagament com Twilio o ManyChat). 
+          Envia confirmacions immediates en reservar, recordatori a 48 hores i recordatori el mateix dia a les 8:00 AM (tant per alumnes com per reserves públiques).
+        </p>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #EEF5F1; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid #E5DDD5; margin-bottom: 12px;">
+          <input type="checkbox" id="cfg-whatsapp-enabled" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-secondary);">
+          <label for="cfg-whatsapp-enabled" style="margin: 0; font-weight: 600; cursor: pointer; color: var(--color-secondary);">
+            Activar notificacions automàtiques per WhatsApp
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number ID de WhatsApp (des de developers.facebook.com)</label>
+          <input type="text" id="cfg-whatsapp-phone-id" class="form-control" placeholder="Ex: 102938475610293">
+          <small style="color: var(--color-muted); font-size: 11px;">Identificador numèric del número de telèfon a la teva App de Meta for Developers.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Token d'Accés Permanent de Meta (System User Token)</label>
+          <input type="password" id="cfg-whatsapp-token" class="form-control" placeholder="EAAxxxxxxx...">
+          <small style="color: var(--color-muted); font-size: 11px;">Token permanent generat des de Meta Business Suite &gt; Configuració del negoci &gt; Usuaris del sistema.</small>
+        </div>
+
+        <div style="background: #F9FAFB; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); margin-bottom: 14px;">
+          <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--color-dark);">Noms de les Plantilles a Meta (Templates):</div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 11px;">Plantilla Confirmació Immediata</label>
+            <input type="text" id="cfg-whatsapp-tpl-confirm" class="form-control" value="reserva_confirmada" placeholder="reserva_confirmada" style="font-size: 12px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label style="font-size: 11px;">Plantilla Recordatori 48h abans</label>
+            <input type="text" id="cfg-whatsapp-tpl-48h" class="form-control" value="recordatori_48h" placeholder="recordatori_48h" style="font-size: 12px;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 11px;">Plantilla Recordatori Dia a les 8:00 AM</label>
+            <input type="text" id="cfg-whatsapp-tpl-dia" class="form-control" value="recordatori_dia" placeholder="recordatori_dia" style="font-size: 12px;">
+          </div>
+        </div>
+
+        <!-- Prova d'enviament de WhatsApp -->
+        <div style="background: #EEF5F1; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid #E5DDD5; margin-bottom: 16px;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 6px;">Prova de connexió WhatsApp Meta</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="cfg-whatsapp-test-tel" class="form-control" placeholder="+34 600 000 000" style="flex: 1; font-size: 13px;">
+            <button type="button" class="btn btn-sm btn-outline" id="btn-cfg-test-whatsapp" style="white-space: nowrap; background: white;">
+              Enviar prova
+            </button>
+          </div>
+          <div id="cfg-whatsapp-test-status" style="font-size: 11px; margin-top: 6px; display: none;"></div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
@@ -521,7 +787,7 @@
       <div class="modal-header">
         <div>
           <h3 style="display: flex; align-items: center; gap: 8px;">
-            <span>🎨</span> Estudi de Disseny & Imatge Corporativa
+            Estudi de Disseny & Imatge Corporativa
           </h3>
           <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
             Personalitza els colors, el logotip i la tipografia de l'App de l'Alumne i del Carnet Digital en temps real.
@@ -537,84 +803,67 @@
           
           <!-- Identitat del Taller -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🏛️ Identitat del Taller</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">Identitat del Taller</h4>
             <div class="form-group" style="margin-bottom: 10px;">
               <label style="font-size: 12px;">Nom del Taller</label>
               <input type="text" id="brand-input-nom" class="form-control" placeholder="ex: Roig de Coure" value="Roig de Coure" required>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 12px;">Subtítol o Lema</label>
-              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="ex: Taller d'Art i Ceràmica" value="Taller d'Art i Ceràmica">
+              <label style="font-size: 12px;">Subtítol o Lema (Opcional)</label>
+              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="Opcional (pots deixar-ho en blanc)" value="">
             </div>
           </div>
 
           <!-- Logotip del Taller -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🖼️ Logotip Oficial</h4>
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div id="brand-logo-preview-box" style="width: 64px; height: 64px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
-                <span id="brand-logo-preview-placeholder" style="font-size: 28px;">🏺</span>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">Logotip Oficial</h4>
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <div id="brand-logo-preview-box" style="width: 72px; height: 72px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
+                <span id="brand-logo-preview-placeholder" style="font-size: 13px; color: var(--color-muted); font-weight: 700;">LOGO</span>
                 <img id="brand-logo-preview-img" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
               </div>
-              <div style="flex: 1;">
-                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 6px;">
-                <div style="display: flex; gap: 8px;">
-                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">🗑️ Eliminar Logo</button>
+              <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--color-dark); margin-bottom: 3px; display: block;">1. Pujar fitxer d'imatge (PNG, SVG, JPG, WebP):</label>
+                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 8px; width: 100%;">
+
+                <label style="font-size: 11px; font-weight: 600; color: var(--color-dark); margin-bottom: 3px; display: block;">2. O enganxar URL o ruta directa de la imatge:</label>
+                <input type="text" id="brand-input-logo-url" class="form-control" placeholder="https://... o ruta d'imatge" style="font-size: 12px; padding: 6px 10px; margin-bottom: 8px;">
+
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">Eliminar Logo</button>
+                  <span id="brand-logo-status" style="font-size: 11px; color: var(--color-muted);"></span>
                 </div>
-                <input type="hidden" id="brand-input-logo-url" value="">
-                <p style="font-size: 11px; color: var(--color-muted); margin-top: 4px;">PNG, SVG o JPG (es guarda i s'aplica immediatament a l'App mòbil).</p>
               </div>
             </div>
           </div>
 
           <!-- Paletes de Ceràmica Predefinides -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">🏺 Paletes de Color Ceràmiques</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">Paletes de Color Ceràmiques</h4>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px;">
-              <button type="button" class="btn-palette" data-primary="#C25E3A" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+              <button type="button" class="btn-palette" data-primary="#831D1D" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
                 <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #C25E3A;"></span>
+                  <span style="flex: 1; background: #831D1D;"></span>
                   <span style="flex: 1; background: #5E7E6F;"></span>
                 </span>
                 <span style="font-size: 12px; font-weight: 600;">Roig de Coure</span>
               </button>
-              <button type="button" class="btn-palette" data-primary="#B45309" data-secondary="#78350F" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+              <button type="button" class="btn-palette" data-primary="#631515" data-secondary="#466356" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
                 <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #B45309;"></span>
-                  <span style="flex: 1; background: #78350F;"></span>
+                  <span style="flex: 1; background: #631515;"></span>
+                  <span style="flex: 1; background: #466356;"></span>
                 </span>
-                <span style="font-size: 12px; font-weight: 600;">Terracota & Fang</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#1E40AF" data-secondary="#0369A1" data-name="cobalt" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #1E40AF;"></span>
-                  <span style="flex: 1; background: #0369A1;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Blau Cobalt</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#3F6212" data-secondary="#65A30D" data-name="celado" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #3F6212;"></span>
-                  <span style="flex: 1; background: #65A30D;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Celadó & Esmalt</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#27272A" data-secondary="#52525B" data-name="gres" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left; grid-column: span 2;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #27272A;"></span>
-                  <span style="flex: 1; background: #52525B;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Gres Negre & Carbó</span>
+                <span style="font-size: 12px; font-weight: 600;">Coure Fosc & Sàlvia</span>
               </button>
             </div>
 
             <!-- Colors Personalitzats Manuals -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px dashed var(--color-border); padding-top: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 11px;">Color Principal (Degradats & Botons)</label>
+                <label style="font-size: 11px;">Color Principal (Botons & Capçaleres)</label>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="color" id="brand-input-primary-color" value="#C25E3A" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
-                  <input type="text" id="brand-input-primary-hex" value="#C25E3A" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                  <input type="color" id="brand-input-primary-color" value="#831D1D" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-primary-hex" value="#831D1D" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
                 </div>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
@@ -629,29 +878,33 @@
 
           <!-- Tipografia -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">✍️ Estil de Lletra</h4>
-            <div style="display: flex; gap: 16px;">
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">Estil de Lletra</h4>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                <input type="radio" name="brand_font_choice" value="serif" checked>
-                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
+                <input type="radio" name="brand_font_choice" value="verdana" checked>
+                <span style="font-family: Verdana, sans-serif; font-size: 14px; font-weight: 600;">Verdana (Oficial)</span>
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
                 <input type="radio" name="brand_font_choice" value="sans">
-                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;">Inter</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="serif">
+                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 14px; font-weight: 500;">Playfair</span>
               </label>
             </div>
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
             <button type="button" class="btn btn-outline" data-close="modal-branding-backdrop">Tancar</button>
-            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">💾 Desar Disseny i Aplicar</button>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">Desar Disseny i Aplicar</button>
           </div>
         </form>
 
         <!-- COLUMNA DRETA: PREVISUALITZACIÓ EN VIU (MOCKUP MÒBIL / APP) -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <div style="font-size: 12px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
-            📱 Vista Prèvia en Temps Real (App de l'Alumne)
+            Vista Prèvia en Temps Real (App de l'Alumne)
           </div>
 
           <!-- Mockup Carcassa de Telèfon -->
@@ -660,54 +913,39 @@
             <!-- Notificació barra superior mòbil -->
             <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #555; padding: 0 6px;">
               <span>09:41</span>
-              <span>5G 🔋 100%</span>
+              <span>5G 100%</span>
             </div>
 
             <!-- Header App Alumne -->
             <div style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img id="preview-header-logo-img" src="" alt="Logo" style="display: none; height: 20px; width: 20px; object-fit: contain;">
-                <span id="preview-header-logo-icon" style="font-size: 18px;">🏺</span>
+                <span id="preview-header-logo-icon" style="display: none;"></span>
                 <div>
-                  <div id="preview-header-title" style="font-size: 12px; font-weight: 800; line-height: 1;">Roig de Coure</div>
+                  <div id="preview-header-title" style="font-family: var(--font-script, 'Buffalo', cursive, sans-serif); font-size: 16px; font-weight: 700; color: var(--color-primary); line-height: 1;">Roig de Coure</div>
                   <div id="preview-header-sub" style="font-size: 9px; color: var(--color-muted);">Taller d'Art i Ceràmica</div>
                 </div>
               </div>
-              <span style="font-size: 10px; background: #EFEFEF; padding: 2px 6px; border-radius: 4px;">App</span>
+              <span style="font-size: 10px; background: #EEF5F1; color: #5E7E6F; padding: 2px 6px; border-radius: 4px; font-weight: 700;">App</span>
             </div>
 
-            <!-- Carnet Digital Preview -->
-            <div class="ceramic-badge" id="preview-ceramic-badge" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: 0 auto; transform: scale(0.92); transform-origin: top center;">
-              <div class="badge-top" id="preview-badge-top" style="background: linear-gradient(135deg, #C25E3A 0%, #5E7E6F 100%);">
-                <div class="workshop-brand">
-                  <img id="preview-badge-logo-img" src="" alt="Logo" style="display: none; height: 22px; max-width: 80px; object-fit: contain; margin-right: 6px;">
-                  <span class="workshop-icon" id="preview-badge-logo-icon">🏺</span>
-                  <span class="workshop-name" id="preview-badge-title" style="font-size: 13px;">Roig de Coure</span>
-                </div>
-                <span class="badge-type" style="font-size: 9px;">CARNET SOCI</span>
+            <!-- Perfil Alumne & QR a Dalt Preview -->
+            <div id="preview-ceramic-badge" style="width: 100%; background: #FFF; border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; box-sizing: border-box;">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #2C3338;">Maria Garcia Font</div>
+                <div style="font-size: 10px; color: var(--color-muted);">Codi: <strong id="preview-badge-title" style="color: #831D1D;">TC-101</strong></div>
+                <div style="font-size: 9px; color: #5E7E6F; font-weight: 600; margin-top: 4px;">Al taller ara mateix</div>
               </div>
-              <div class="badge-content" style="padding: 10px;">
-                <div class="badge-info">
-                  <div class="badge-student-name" style="font-size: 16px;">Maria</div>
-                  <div class="badge-student-surnames" style="font-size: 12px;">Garcia Font</div>
-                  <div class="badge-id-pill" style="font-size: 11px; padding: 2px 6px;">
-                    <span>ID:</span>
-                    <strong>TC-101</strong>
-                  </div>
-                  <div class="badge-phone" style="font-size: 10px;">Tel: 600 123 456</div>
-                </div>
-                <div class="badge-qr-box" id="preview-badge-qr" style="width: 75px; height: 75px; padding: 4px;">
+              <div style="display: flex; flex-direction: column; align-items: center; text-align: center; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 8px; padding: 4px 6px;">
+                <div id="preview-badge-qr" style="width: 48px; height: 48px; background: #FFF; border: 1px solid #E5DDD5; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                   <!-- QR preview -->
                 </div>
-              </div>
-              <div class="badge-footer" style="padding: 6px 12px; font-size: 9px;">
-                <span>Passa aquest QR per l'escàner</span>
-                <span>Alta: 2026</span>
+                <span style="font-size: 7px; font-weight: 700; color: #831D1D; margin-top: 2px;">AMPLIAR</span>
               </div>
             </div>
 
             <!-- Saldo Card Preview -->
-            <div id="preview-balance-card" style="background: linear-gradient(135deg, #C25E3A 0%, #2E2825 100%); color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
+            <div id="preview-balance-card" style="background: #831D1D; color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
               <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Saldo d'Hores Disponible</div>
               <div style="font-size: 22px; font-weight: 800; font-family: monospace; margin: 2px 0;">08:30:00</div>
               <div style="font-size: 10px; opacity: 0.9;">8h 30m restants</div>
@@ -715,7 +953,7 @@
 
             <!-- Botó Comprar Preview -->
             <div style="display: flex; gap: 6px;">
-              <button type="button" id="preview-btn-sample" style="flex: 1; background: #C25E3A; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
+              <button type="button" id="preview-btn-sample" style="flex: 1; background: #831D1D; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
                 Comprar 10h (120€)
               </button>
             </div>
@@ -724,7 +962,7 @@
 
           <div style="margin-top: 12px; text-align: center;">
             <a href="alumne.html" target="_blank" style="font-size: 12px; color: var(--color-primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-              <span>📱 Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
+              <span>Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
             </a>
           </div>
 
@@ -738,91 +976,186 @@
   <div class="modal-backdrop" id="modal-reserves-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog modal-lg" style="max-width: 920px;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 24px;">📅</span>
-          <div>
-            <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
-            <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
-          </div>
+        <div>
+          <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
+          <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
         </div>
-        <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="btn-roig-coure btn-sm" id="btn-modal-reserves-add-reserva" onclick="openAdminNovaReservaModal(adminReservesCalendar ? adminReservesCalendar.selectedDate : null);" style="padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer;">
+            + Nova Reserva d'Alumne
+          </button>
+          <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+        </div>
       </div>
 
       <div class="modal-body" style="padding: 20px;">
-        <!-- Barra superior: Selector de dia i Aforament màxim -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; background: #F8F9FA; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 16px;">
-          <!-- Selector de data -->
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <label style="font-weight: 700; font-size: 13px; color: var(--color-dark); margin: 0;">Data:</label>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-res-avui" style="font-weight: 600; padding: 4px 10px;">Avui</button>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-res-dema" style="font-weight: 600; padding: 4px 10px;">Demà</button>
-            <input type="date" id="admin-res-date-input" class="form-control" style="width: auto; padding: 4px 10px; font-size: 13px;">
-          </div>
-
-          <!-- Configuració de capacitat màxima -->
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 13px; font-weight: 600; color: var(--color-dark); margin: 0;">Aforament màx./franja:</label>
-            <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 65px; text-align: center; padding: 4px 6px; font-size: 13px;" class="form-control" value="8">
-            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" title="Desar límit d'aforament">Desar</button>
-          </div>
-        </div>
-
-        <!-- Barra de resum d'ocupació global del dia -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-          <div id="admin-res-occupancy-summary" style="font-size: 14px; font-weight: 600; color: var(--color-dark);">
-            Carregant dades del dia...
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-toggle-add-reserva-form" style="background:#2E7D32; border-color:#2E7D32; font-weight:600;">
-            ➕ Nova Reserva Manual
-          </button>
-        </div>
-
-        <!-- Formulari desplegable per afegir reserva manual -->
-        <div id="admin-add-reserva-form-container" style="display: none; background: #FFF; border: 2px dashed #2E7D32; border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px;">
-          <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #2E7D32;">Registrar Reserva Manual</h4>
-          <form id="form-admin-add-reserva">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-              <div class="form-group" style="margin: 0;">
-                <label style="font-size: 12px; font-weight: 600;">Alumne</label>
-                <select id="admin-res-student-select" class="form-control" required style="font-size: 13px;">
-                  <option value="">-- Tria un alumne --</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin: 0;">
-                <label style="font-size: 12px; font-weight: 600;">Franja Horària</label>
-                <select id="admin-res-slot-select" class="form-control" required style="font-size: 13px;">
-                  <option value="mati_1">Matí 1 (10:00 - 12:00)</option>
-                  <option value="mati_2">Matí 2 (12:00 - 14:00)</option>
-                  <option value="tarda_1">Tarda 1 (16:00 - 18:00)</option>
-                  <option value="tarda_2">Tarda 2 (18:00 - 20:00)</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin: 0;">
-                <label style="font-size: 12px; font-weight: 600;">Notes (opcional)</label>
-                <input type="text" id="admin-res-notes" class="form-control" placeholder="ex: Reserva telefònica / torn" style="font-size: 13px;">
+        <!-- Barra superior: Aforament màxim del taller i per activitat -->
+        <div style="background: #F8F9FA; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #E5E7EB;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div>
+                <span style="font-size: 13px; font-weight: 700; color: var(--color-dark);">Aforament màxim del taller (Torn de matí):</span>
+                <span style="font-size: 13px; font-weight: 800; color: var(--color-primary); margin-left: 4px;" id="admin-display-aforament-val">12 places simultànies</span>
               </div>
             </div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px;">
-              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-add-reserva-form">Cancel·lar</button>
-              <button type="submit" class="btn btn-primary btn-sm" style="background:#2E7D32; border-color:#2E7D32;">Confirmar Reserva</button>
+
+            <!-- Configuració de capacitat màxima global -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 12px; font-weight: 600; color: var(--color-dark); margin: 0;">Límit global matí:</label>
+              <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 65px; text-align: center; padding: 4px 6px; font-size: 13px;" class="form-control" value="12">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" title="Desar límit global d'aforament">Desar global</button>
             </div>
-          </form>
+          </div>
+
+          <!-- Capacitats de les 3 activitats oficials -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="font-size: 12px; font-weight: 700; color: #4B5563;">
+              Capacitats per activitat:
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-size: 12px; font-weight: 600; margin: 0;">Torn:</label>
+                <input type="number" id="admin-cap-torn" min="1" max="20" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="4">
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-size: 12px; font-weight: 600; margin: 0;">Modelatge:</label>
+                <input type="number" id="admin-cap-modelatge" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="8">
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-size: 12px; font-weight: 600; margin: 0;">Pintar:</label>
+                <input type="number" id="admin-cap-pintar" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="12">
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px;" title="Desar capacitats de les 3 activitats">
+                Desar capacitats
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Graella de franges horàries del dia -->
-        <div id="admin-res-slots-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px;">
-          <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 24px;">
-            Carregant franges i reserves...
-          </p>
+        <!-- Contenidor dinàmic per al Calendari Visual & 2 Camins -->
+        <div id="admin-reserves-calendar-mount">
+          <div style="text-align: center; color: var(--color-muted); padding: 36px;">
+            Carregant calendari de reserves i aforament...
+          </div>
         </div>
       </div>
 
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
         <span style="font-size: 12px; color: var(--color-muted);">
-          ⚡ Les reserves s'emmagatzemen a SQLite i s'envien automàticament al teu Google Sheets.
+          Les reserves s'emmagatzemen a SQLite i es sincronitzen amb Google Sheets i Google Calendar.
         </span>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA RESERVA D'ALUMNE (ADMIN DIRECTE) -->
+  <div class="modal-backdrop" id="modal-admin-nova-reserva-backdrop" onclick="if(event.target===this) closeAdminNovaReservaModal();">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header" style="border-bottom: 1px solid #E5E7EB; padding: 16px 20px;">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; color: #831D1D; font-weight: 700;">+ Nova Reserva d'Alumne</h3>
+          <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Crear una reserva per a un alumne o nou client amb sessió de 2 hores</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeAdminNovaReservaModal();">&times;</button>
+      </div>
+      <form id="form-admin-nova-reserva" onsubmit="handleAdminSubmitNovaReserva(event);">
+        <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Tipus de client -->
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Tipus d'assistència:</label>
+            <div style="display: flex; gap: 20px; background: #F9FAFB; padding: 8px 12px; border-radius: 6px; border: 1px solid #E5E7EB;">
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_client_type" value="existent" checked onchange="toggleAdminReservaClientType();">
+                Alumne Registrat
+              </label>
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_client_type" value="nou" onchange="toggleAdminReservaClientType();">
+                Nou Client Extern (no registrat)
+              </label>
+            </div>
+          </div>
+
+          <!-- Selector Alumne Existent -->
+          <div id="admin-res-group-existent">
+            <label for="admin-res-student-select" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Selecciona l'Alumne:</label>
+            <select id="admin-res-student-select" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <option value="">-- Carregant alumnes... --</option>
+            </select>
+          </div>
+
+          <!-- Camps Nou Client Extern -->
+          <div id="admin-res-group-nou" style="display: none; background: #FFFBF5; padding: 12px; border-radius: 6px; border: 1px solid #FDE68A;">
+            <div style="margin-bottom: 8px;">
+              <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Nom i cognoms (*):</label>
+              <input type="text" id="admin-res-nou-nom" class="form-control" placeholder="ex: Maria Garcia" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Telèfon (*):</label>
+                <input type="tel" id="admin-res-nou-tel" class="form-control" placeholder="612345678" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Email (opcional):</label>
+                <input type="email" id="admin-res-nou-email" class="form-control" placeholder="maria@gmail.com" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Data de la reserva -->
+          <div>
+            <label for="admin-res-data" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Data de la reserva:</label>
+            <input type="date" id="admin-res-data" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;" onchange="handleAdminResDataChange();">
+            <div id="admin-res-data-warning" style="display: none; margin-top: 5px; font-size: 12px; color: #DC2626; font-weight: 600; background: #FEF2F2; padding: 6px 10px; border-radius: 4px; border: 1px solid #FCA5A5;"></div>
+          </div>
+
+          <!-- Activitat i Places -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+            <div>
+              <label for="admin-res-activitat" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Activitat:</label>
+              <select id="admin-res-activitat" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+                <option value="torn">🏺 Torn de terrissaire (màx 4)</option>
+                <option value="modelatge">👐 Modelatge i escultura (màx 8)</option>
+                <option value="pintar">🎨 Pintar peces ceràmiques (màx 12)</option>
+              </select>
+            </div>
+            <div>
+              <label for="admin-res-places" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Places:</label>
+              <input type="number" id="admin-res-places" value="1" min="1" max="12" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; text-align: center; border: 1px solid #D1D5DB; border-radius: 6px;">
+            </div>
+          </div>
+
+          <!-- Hora d'arribada (de 10:00 a 11:00 cada 15 min - 2 hores) -->
+          <div>
+            <label for="admin-res-hora-inici" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Hora d'arribada (Sessió de 2 hores):</label>
+            <select id="admin-res-hora-inici" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <option value="10:00" data-fi="12:00">10:00 h (fins a les 12:00) — 2 hores</option>
+              <option value="10:15" data-fi="12:15">10:15 h (fins a les 12:15) — 2 hores</option>
+              <option value="10:30" data-fi="12:30">10:30 h (fins a les 12:30) — 2 hores</option>
+              <option value="10:45" data-fi="12:45">10:45 h (fins a les 12:45) — 2 hores</option>
+              <option value="11:00" data-fi="13:00">11:00 h (fins a les 13:00) — 2 hores</option>
+            </select>
+            <small style="color: var(--color-muted); font-size: 11px; margin-top: 3px; display: block;">
+              Horari disponible entre les 10:00 i les 11:00 en intervals de 1/4 d'hora. Totes les reserves tenen una durada de 2 hores.
+            </small>
+          </div>
+
+          <!-- Notes / Observacions -->
+          <div>
+            <label for="admin-res-notes" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Notes o observacions (opcional):</label>
+            <textarea id="admin-res-notes" rows="2" class="form-control" placeholder="Observacions o indicacions especials..." style="width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 6px;"></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAdminNovaReservaModal();">Cancel·lar</button>
+          <button type="submit" class="btn-roig-coure" id="btn-admin-submit-nova-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
+            Confirmar Reserva
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -830,7 +1163,7 @@
   <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog" style="max-width: 440px;">
       <div class="modal-header">
-        <h3>⏱️ Marcar Entrada o Sortida Manual</h3>
+        <h3>Marcar Entrada o Sortida Manual</h3>
         <button type="button" class="modal-close" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop">&times;</button>
       </div>
       <form id="form-admin-manual-checkin">
@@ -846,11 +1179,11 @@
           <div style="display: flex; gap: 14px; margin-bottom: 8px;">
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="admin_manual_time_opt" value="now" checked onchange="document.getElementById('admin-manual-custom-time').style.display='none';">
-              <span>⏰ Ara mateix</span>
+              <span>Ara mateix</span>
             </label>
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="admin_manual_time_opt" value="custom" onchange="document.getElementById('admin-manual-custom-time').style.display='block';">
-              <span>✏️ Hora personalitzada</span>
+              <span>Hora personalitzada</span>
             </label>
           </div>
           <input type="datetime-local" id="admin-manual-custom-time" class="form-control" style="display: none;">
@@ -859,11 +1192,11 @@
         <div style="margin-top: 20px;">
           <label style="margin-bottom: 8px; display: block;">Acció a realitzar:</label>
           <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="padding: 12px 8px;">
-              🟢 Registrar ENTRADA
+            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="background:#5E7E6F; border-color:#5E7E6F; padding: 12px 8px;">
+              Registrar ENTRADA
             </button>
-            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
-              🔴 Registrar SORTIDA
+            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#831D1D; border-color:#831D1D; padding: 12px 8px;">
+              Registrar SORTIDA
             </button>
           </div>
           <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
@@ -883,7 +1216,7 @@
       </div>
       <div style="flex-direction: column; display: flex; gap: 18px;">
         <div class="card" style="padding: 16px;">
-          <h4>💾 Còpia de Seguretat Completa (JSON)</h4>
+          <h4>Còpia de Seguretat Completa (JSON)</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Descarrega un arxiu amb tots els alumnes, paquets d'hores, sessions i configuració.
           </p>
@@ -891,7 +1224,7 @@
         </div>
 
         <div class="card" style="padding: 16px;">
-          <h4>📥 Restaurar Còpia de Seguretat</h4>
+          <h4>Restaurar Còpia de Seguretat</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Carrega un arxiu JSON de còpia prèvia per restaurar la base de dades.
           </p>
@@ -899,7 +1232,7 @@
         </div>
 
         <div class="card" style="padding: 16px;">
-          <h4>📄 Exportació per a Excel (CSV)</h4>
+          <h4>Exportació per a Excel (CSV)</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Exporta l'historial d'entrades i sortides amb durades (H:m:s) en format CSV compatible amb Excel.
           </p>
@@ -917,10 +1250,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.4"></script>
-  <script src="js/sound.js?v=3.4"></script>
-  <script src="js/qr-engine.js?v=3.4"></script>
-  <script src="js/store.js?v=3.4"></script>
-  <script src="js/admin.js?v=3.4"></script>
+  <script src="js/time-utils.js?v=6.0"></script>
+  <script src="js/sound.js?v=6.0"></script>
+  <script src="js/qr-engine.js?v=6.0"></script>
+  <script src="js/store.js?v=6.0"></script>
+  <script src="js/reserves-calendar.js?v=6.0"></script>
+  <script src="js/admin.js?v=6.0"></script>
 </body>
 </html>

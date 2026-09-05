@@ -25,10 +25,10 @@
   font-family: var(--brand-font, Verdana, Geneva, Tahoma, sans-serif);
 }
 
-/* ==================== BARRA LATERAL ESQUERRA (GRIS CLAR & VERDANA) ==================== */
+/* ==================== BARRA LATERAL ESQUERRA (GRIS MOLT CLAR & VERDANA) ==================== */
 .admin-sidebar {
   width: 250px;
-  background-color: #E8ECEF;
+  background-color: #F2F4F7; /* Gris de fons molt més clar, net i elegant */
   color: #334155;
   display: flex;
   flex-direction: column;
@@ -37,9 +37,9 @@
   top: 0;
   height: 100vh;
   z-index: 100;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, background-color 0.2s ease;
   overflow-y: auto;
-  border-right: 1px solid #CFD4D9;
+  border-right: 1px solid #DCE1E7;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
@@ -47,42 +47,89 @@
   width: 64px;
 }
 
-/* Capçalera del Logo a la barra lateral */
+/* Capçalera del Logo a la barra lateral (sense caixes ni fons blanc) */
 .sidebar-brand {
-  padding: 16px 14px;
-  background: #DEE3E7;
-  border-bottom: 1px solid #CFD4D9;
+  padding: 18px 14px;
+  background: transparent !important;
+  border-bottom: 1px solid #DCE1E7;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  min-height: 72px;
+  box-sizing: border-box;
 }
 
 .sidebar-logo-img {
-  height: 48px;
   max-height: 48px;
+  max-width: 140px;
   width: auto;
-  max-width: 100%;
+  height: auto;
   object-fit: contain;
   display: block;
   margin: 0 auto;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   transition: all 0.2s ease;
 }
 
+/* Quan el menú està plegat */
 .admin-sidebar.collapsed .sidebar-brand {
-  padding: 12px 6px;
+  padding: 14px 6px;
+  min-height: 64px;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent !important;
 }
 
 .admin-sidebar.collapsed .sidebar-logo-img {
-  height: 32px;
-  max-height: 32px;
-  max-width: 32px;
+  max-height: 38px;
+  max-width: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .admin-sidebar.collapsed .sidebar-logo-text,
 .admin-sidebar.collapsed .brand-sub,
 .admin-sidebar.collapsed .nav-text {
-  display: none;
+  display: none !important;
+}
+
+.admin-sidebar.collapsed .sidebar-item {
+  justify-content: center;
+  padding: 14px 0;
+  text-align: center;
+}
+
+.admin-sidebar.collapsed .sidebar-item a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.admin-sidebar.collapsed .sidebar-item .nav-icon {
+  margin: 0 auto;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn {
+  justify-content: center;
+  padding: 14px 0;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn .nav-icon {
+  margin: 0 auto;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn .nav-icon svg {
+  transform: rotate(180deg);
 }
 
 /* Menú de navegació lateral */
@@ -117,7 +164,7 @@
 }
 
 .sidebar-item:hover {
-  background-color: #D8DDE2;
+  background-color: #DFE4EA;
   color: #0F172A;
 }
 
@@ -134,12 +181,36 @@
 
 .sidebar-item .nav-icon,
 .sidebar-footer-btn .nav-icon {
-  display: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #4B5563;
+  transition: color 0.15s ease, transform 0.2s ease;
+}
+
+.sidebar-item .nav-icon svg,
+.sidebar-footer-btn .nav-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.sidebar-item:hover .nav-icon {
+  color: #0F172A;
+}
+
+.sidebar-item.active .nav-icon,
+.sidebar-item.active .nav-icon svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
 }
 
 .sidebar-divider {
   height: 1px;
-  background-color: #CFD4D9;
+  background-color: #DCE1E7;
   margin: 10px 16px;
 }
 
@@ -148,18 +219,18 @@
   color: #4B5563;
   font-size: 12.5px;
   cursor: pointer;
-  border-top: 1px solid #CFD4D9;
+  border-top: 1px solid #DCE1E7;
   display: flex;
   align-items: center;
   gap: 10px;
   transition: all 0.15s;
-  background: #DEE3E7;
+  background: #E4E8ED;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-weight: 500;
 }
 
 .sidebar-footer-btn:hover {
-  background-color: #D3D8DE;
+  background-color: #D9DFE5;
   color: #0F172A;
 }
 
@@ -236,14 +307,34 @@
 /* ==================== VISTA RESERVES: SPLIT 2 COLUMNES ==================== */
 .appointments-dashboard {
   display: grid;
-  grid-template-columns: 1fr 1.25fr;
-  gap: 24px;
+  grid-template-columns: 370px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 1080px) {
+.appointments-left {
+  min-width: 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.appointments-right {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 1180px) {
   .appointments-dashboard {
     grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .appointments-left {
+    max-width: 460px;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 
@@ -467,23 +558,31 @@
   border-radius: 8px;
   border: 1px solid #E5E7EB;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  padding: 22px 24px;
+  padding: 18px 20px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .app-list-header {
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #E5E7EB;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
 }
 
+.app-list-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
 .app-list-count {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 700;
   color: #6B7280;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -491,39 +590,44 @@
 }
 
 .app-list-date-title {
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 800;
   color: #831D1D;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 0;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 /* Taula de reserves amb format net estil referència */
 .app-table-wrapper {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 6px;
 }
 
 .app-table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .app-table th {
   text-align: left;
-  padding: 10px 12px;
-  font-size: 12px;
+  padding: 8px 10px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #6B7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #E5E7EB;
+  white-space: nowrap;
 }
 
 .app-table td {
-  padding: 14px 12px;
+  padding: 10px 8px;
   border-bottom: 1px solid #F3F4F6;
   vertical-align: middle;
 }
@@ -535,7 +639,8 @@
 .app-row-serial {
   font-weight: 700;
   color: #6B7280;
-  width: 32px;
+  width: 28px;
+  text-align: center;
 }
 
 .app-patient-name {
@@ -568,17 +673,18 @@
 .visited-checkbox-label {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 4px 8px;
   border: 1px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: 5px;
   background: #FFFFFF;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
   color: #374151;
   transition: all 0.15s;
   user-select: none;
+  white-space: nowrap;
 }
 
 .visited-checkbox-label:hover {
@@ -593,18 +699,28 @@
 }
 
 .visited-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   cursor: pointer;
   accent-color: #5E7E6F;
 }
 
 /* Botons d'opcions de cada reserva */
-.app-options-cell {
+.app-options-cell,
+.app-actions-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.app-actions-group .btn,
+.app-options-cell .btn {
+  padding: 3px 6px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .btn-app-opt {
