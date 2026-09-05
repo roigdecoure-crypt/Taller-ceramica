@@ -270,31 +270,35 @@
       color: #9CA3AF;
     }
 
-    /* Selector de Places */
-    .pax-selector {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+    /* Selector de Places (Desplegable Corporatiu) */
+    .pax-wrapper {
+      max-width: 320px;
       margin-bottom: 24px;
+      position: relative;
     }
-    .pax-btn {
-      width: 42px;
-      height: 42px;
-      border: 1.5px solid var(--border);
-      background: white;
-      border-radius: 8px;
+    .pax-select {
+      width: 100%;
+      height: 48px;
+      padding: 0 40px 0 16px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 600;
+      color: var(--dark);
+      background-color: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.15s;
+      outline: none;
+      transition: all 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23831D1D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
     }
-    .pax-btn:hover {
+    .pax-select:focus {
       border-color: var(--primary);
-    }
-    .pax-btn.active {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(131, 29, 29, 0.12);
     }
 
     /* Formulari de Contacte */
@@ -497,11 +501,10 @@
           <div class="section-title" style="margin-top: 20px;">
             <span class="step-badge">3</span> Quantes persones veniu?
           </div>
-          <div class="pax-selector" id="pax-container">
-            <button type="button" class="pax-btn active" data-pax="1">1</button>
-            <button type="button" class="pax-btn" data-pax="2">2</button>
-            <button type="button" class="pax-btn" data-pax="3">3</button>
-            <button type="button" class="pax-btn" data-pax="4">4</button>
+          <div class="pax-wrapper" id="pax-container">
+            <select id="pax-select" class="pax-select" aria-label="Nombre de persones que assistiran">
+              <option value="1">1 persona</option>
+            </select>
           </div>
 
           <!-- 4. DADES DE CONTACTE -->
@@ -735,7 +738,7 @@
             state.horaInici = f.inici;
             state.horaFi = f.fi;
             state.maxPlacesDisponibles = lliuresAct;
-            updatePaxButtons(lliuresAct);
+            updatePaxDropdown(lliuresAct);
             document.getElementById('btn-submit').disabled = false;
           });
         }
@@ -751,33 +754,55 @@
       }
     }
 
-    function updatePaxButtons(maxAvail) {
+    function updatePaxDropdown(maxAvail) {
       const paxContainer = document.getElementById('pax-container');
-      paxContainer.innerHTML = '';
-      const limit = Math.min(maxAvail, 6); // Màxim 6 per reserva pública
+      if (!paxContainer) return;
+
+      const limit = Math.max(0, maxAvail || 0);
       if (limit <= 0) {
-        paxContainer.innerHTML = '<span style="font-size: 13px; color: #DC2626;">Sense places lliures</span>';
+        paxContainer.innerHTML = '<div style="font-size: 13px; color: var(--primary); font-weight: 600; padding: 10px 14px; background: var(--primary-light); border-radius: 8px;">Sense places lliures en aquesta franja.</div>';
+        state.places = 0;
+        document.getElementById('btn-submit').disabled = true;
         return;
       }
 
-      for (let i = 1; i <= limit; i++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `pax-btn ${i === state.places ? 'active' : ''}`;
-        btn.textContent = i;
-        btn.dataset.pax = i;
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.pax-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          state.places = i;
-        });
-        paxContainer.appendChild(btn);
+      document.getElementById('btn-submit').disabled = false;
+
+      let select = document.getElementById('pax-select');
+      if (!select) {
+        paxContainer.innerHTML = `<select id="pax-select" class="pax-select" aria-label="Nombre de persones que assistiran"></select>`;
+        select = document.getElementById('pax-select');
       }
 
-      if (state.places > limit) {
-        state.places = 1;
-        paxContainer.firstChild?.classList.add('active');
+      const prevPlaces = state.places || 1;
+      select.innerHTML = '';
+      for (let i = 1; i <= limit; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        if (i === 1) {
+          opt.textContent = '1 persona';
+        } else if (i === limit && limit >= 10) {
+          opt.textContent = `${i} persones (Aforament complet)`;
+        } else {
+          opt.textContent = `${i} persones`;
+        }
+        if (i === prevPlaces) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
       }
+
+      if (prevPlaces > limit) {
+        state.places = 1;
+        select.value = '1';
+      } else {
+        state.places = prevPlaces;
+        select.value = String(prevPlaces);
+      }
+
+      select.onchange = (e) => {
+        state.places = parseInt(e.target.value, 10) || 1;
+      };
     }
 
     // Format Data en Català
