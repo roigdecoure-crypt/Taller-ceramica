@@ -1679,9 +1679,7 @@ async function renderAdminCalendar() {
       grid.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('active-day'));
       cell.classList.add('active-day');
       await renderAdminDayAppointments(adminSelectedDate);
-      if (window.innerWidth <= 1180) {
-        document.getElementById('admin-appointment-list-mount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+      document.getElementById('admin-appointment-list-mount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
