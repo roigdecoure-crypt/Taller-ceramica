@@ -25,10 +25,10 @@
   font-family: var(--brand-font, Verdana, Geneva, Tahoma, sans-serif);
 }
 
-/* ==================== BARRA LATERAL ESQUERRA (GRIS CLAR & VERDANA) ==================== */
+/* ==================== BARRA LATERAL ESQUERRA (GRIS MOLT CLAR & VERDANA) ==================== */
 .admin-sidebar {
   width: 250px;
-  background-color: #E8ECEF;
+  background-color: #F2F4F7; /* Gris de fons molt més clar, net i elegant */
   color: #334155;
   display: flex;
   flex-direction: column;
@@ -37,9 +37,9 @@
   top: 0;
   height: 100vh;
   z-index: 100;
-  transition: width 0.2s ease;
+  transition: width 0.2s ease, background-color 0.2s ease;
   overflow-y: auto;
-  border-right: 1px solid #CFD4D9;
+  border-right: 1px solid #DCE1E7;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
@@ -47,42 +47,70 @@
   width: 64px;
 }
 
-/* Capçalera del Logo a la barra lateral */
+/* Capçalera del Logo a la barra lateral (sense caixes ni fons blanc) */
 .sidebar-brand {
-  padding: 16px 14px;
-  background: #DEE3E7;
-  border-bottom: 1px solid #CFD4D9;
+  padding: 18px 14px;
+  background: transparent !important;
+  border-bottom: 1px solid #DCE1E7;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  min-height: 72px;
+  box-sizing: border-box;
 }
 
 .sidebar-logo-img {
-  height: 48px;
   max-height: 48px;
+  max-width: 140px;
   width: auto;
-  max-width: 100%;
+  height: auto;
   object-fit: contain;
   display: block;
   margin: 0 auto;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   transition: all 0.2s ease;
 }
 
+/* Quan el menú està plegat */
 .admin-sidebar.collapsed .sidebar-brand {
-  padding: 12px 6px;
+  padding: 14px 6px;
+  min-height: 64px;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent !important;
 }
 
 .admin-sidebar.collapsed .sidebar-logo-img {
-  height: 32px;
-  max-height: 32px;
-  max-width: 32px;
+  max-height: 38px;
+  max-width: 44px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .admin-sidebar.collapsed .sidebar-logo-text,
 .admin-sidebar.collapsed .brand-sub,
 .admin-sidebar.collapsed .nav-text {
-  display: none;
+  display: none !important;
+}
+
+.admin-sidebar.collapsed .sidebar-item {
+  justify-content: center;
+  padding: 14px 0;
+  text-align: center;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn {
+  justify-content: center;
+  padding: 14px 0;
 }
 
 /* Menú de navegació lateral */
@@ -117,7 +145,7 @@
 }
 
 .sidebar-item:hover {
-  background-color: #D8DDE2;
+  background-color: #DFE4EA;
   color: #0F172A;
 }
 
@@ -139,7 +167,7 @@
 
 .sidebar-divider {
   height: 1px;
-  background-color: #CFD4D9;
+  background-color: #DCE1E7;
   margin: 10px 16px;
 }
 
@@ -148,18 +176,18 @@
   color: #4B5563;
   font-size: 12.5px;
   cursor: pointer;
-  border-top: 1px solid #CFD4D9;
+  border-top: 1px solid #DCE1E7;
   display: flex;
   align-items: center;
   gap: 10px;
   transition: all 0.15s;
-  background: #DEE3E7;
+  background: #E4E8ED;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
   font-weight: 500;
 }
 
 .sidebar-footer-btn:hover {
-  background-color: #D3D8DE;
+  background-color: #D9DFE5;
   color: #0F172A;
 }
 
