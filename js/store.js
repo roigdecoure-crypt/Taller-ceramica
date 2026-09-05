@@ -114,9 +114,11 @@ const Store = {
   },
 
   async getAlumne(id) {
+    if (!id) return null;
+    const cleanId = String(id).trim();
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(id)}`);
+        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(cleanId)}`);
         const json = await res.json();
         if (json.ok) return json;
       } catch (e) {
@@ -126,7 +128,12 @@ const Store = {
     }
 
     const data = this._getLocalData();
-    const student = (data.alumnes || []).find(a => a.id === id || a.pin === id);
+    const cleanDigits = cleanId.replace(/[^0-9]/g, '');
+    const student = (data.alumnes || []).find(a => 
+      (a.id && a.id.trim().toUpperCase() === cleanId.toUpperCase()) ||
+      (a.pin && String(a.pin).trim() === cleanId) ||
+      (cleanDigits.length >= 6 && a.telefon && String(a.telefon).replace(/[^0-9]/g, '').endsWith(cleanDigits))
+    );
     if (!student) return null;
 
     const packs = (data.paquets || []).filter(p => p.student_id === student.id).sort((a,b) => new Date(b.data) - new Date(a.data));

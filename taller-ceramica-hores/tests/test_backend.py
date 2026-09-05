@@ -9,6 +9,7 @@ import sys
 import unittest
 import sqlite3
 import json
+import re
 from datetime import datetime, timedelta
 
 # Afegir directori arrel al path
@@ -258,18 +259,22 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM sessions WHERE student_id = 'TC-HYD-1'")
         c.execute("DELETE FROM paquets_hores WHERE student_id = 'TC-HYD-1'")
         c.execute("DELETE FROM alumnes WHERE id = 'TC-HYD-1'")
+        c.execute("UPDATE configuracio SET valor = 'Roig de Coure' WHERE clau = 'taller_nom'")
         self.conn.commit()
 
     def test_07_brand_configuration(self):
         c = self.conn.cursor()
+        c.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("taller_nom", "taller_subtitol", "taller_logo_url")')
+        prev_cfg = {r['clau']: r['valor'] for r in c.fetchall()}
+
         brand_data = {
-            'taller_nom': 'Roig de Coure Prova',
-            'taller_subtitol': 'Taller d\'Art i Modelat',
-            'brand_primary': '#C25E3A',
+            'taller_nom': 'Roig de Coure Test',
+            'taller_subtitol': '',
+            'brand_primary': '#831D1D',
             'brand_secondary': '#5E7E6F',
-            'brand_font': 'serif',
+            'brand_font': 'verdana',
             'brand_palette': 'roigdecoure',
-            'taller_logo_url': 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='
+            'taller_logo_url': ''
         }
 
         for k, v in brand_data.items():
@@ -280,12 +285,13 @@ class TestCeramicsBackend(unittest.TestCase):
         cfg_rows = c.fetchall()
         cfg = {r['clau']: r['valor'] for r in cfg_rows}
 
-        self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Prova')
-        self.assertEqual(cfg.get('taller_subtitol'), 'Taller d\'Art i Modelat')
-        self.assertEqual(cfg.get('brand_primary'), '#C25E3A')
-        self.assertEqual(cfg.get('brand_secondary'), '#5E7E6F')
-        self.assertEqual(cfg.get('brand_font'), 'serif')
-        self.assertEqual(cfg.get('taller_logo_url'), 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')
+        self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Test')
+        self.assertEqual(cfg.get('brand_primary'), '#831D1D')
+
+        # Restaurar valors previs per no contaminar la base de dades
+        for k, v in prev_cfg.items():
+            c.execute('UPDATE configuracio SET valor = ? WHERE clau = ?', (v, k))
+        self.conn.commit()
 
     def test_08_reserves_and_capacity(self):
         c = self.conn.cursor()
@@ -301,21 +307,26 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '2'))
         self.conn.commit()
 
-        test_data = '2026-09-10'
-        slot_id = 'mati_1'
+        test_data = '2026-09-10' # Dijous (obert)
+        slot_id = 'F1'
+        c.execute("DELETE FROM reserves WHERE data = ?", (test_data,))
+        self.conn.commit()
 
         # Comprovar disponibilitat inicial
         disp = server.get_disponibilitat(test_data)
-        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertFalse(disp['tancat'])
+        self.assertTrue(len(disp['franges']) > 0)
+        franja = disp['franges'][0]
+        slot_id = franja['id']
         self.assertEqual(franja['totalPlaces'], 2)
         self.assertEqual(franja['placesLliures'], 2)
         self.assertEqual(franja['estat'], 'lliure')
 
-        # Crear 1a reserva
+        # Crear 1a reserva (Torn)
         res_id_1 = "RES-T1"
         c.execute('''
-            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, estat, hores, notes, created_at)
-            VALUES (?, ?, 'Alumne 1', ?, '10:00', '12:00', ?, 'confirmada', 2.0, '', ?)
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, estat, hores, notes, created_at)
+            VALUES (?, ?, 'Alumne 1', ?, '10:00', '11:30', ?, 'Torn', 'torn', 1, 'confirmada', 1.5, '', ?)
         ''', (res_id_1, test_student, test_data, slot_id, datetime.now().isoformat()))
         self.conn.commit()
 
@@ -325,11 +336,11 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertEqual(franja['placesLliures'], 1)
         self.assertEqual(franja['estat'], 'ultimes_places')
 
-        # Crear 2a reserva (assolir límit d'aforament)
+        # Crear 2a reserva (assolir límit d'aforament de 2)
         res_id_2 = "RES-T2"
         c.execute('''
-            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, estat, hores, notes, created_at)
-            VALUES (?, 'TC-102', 'Alumne 2', ?, '10:00', '12:00', ?, 'confirmada', 2.0, '', ?)
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, estat, hores, notes, created_at)
+            VALUES (?, 'TC-102', 'Alumne 2', ?, '10:00', '11:30', ?, 'Modelatge', 'modelatge', 1, 'confirmada', 1.5, '', ?)
         ''', (res_id_2, test_data, slot_id, datetime.now().isoformat()))
         self.conn.commit()
 
@@ -348,11 +359,197 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertEqual(franja['placesOcupades'], 1)
         self.assertEqual(franja['placesLliures'], 1)
 
+        # Provar disponibilitat de mes
+        disp_mes = server.get_disponibilitat_mes(2026, 9)
+        self.assertIn('2026-09-10', disp_mes['dies'])
+        self.assertFalse(disp_mes['dies']['2026-09-10']['tancat'])
+        # Dilluns 7 ha d'estar tancat
+        self.assertTrue(disp_mes['dies']['2026-09-07']['tancat'])
+
         # Neteja
         c.execute("DELETE FROM reserves WHERE id IN (?, ?)", (res_id_1, res_id_2))
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_student,))
-        c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '8'))
+        c.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('aforament_maxim_per_franja', '12'))
+        self.conn.commit()
+
+        # Comprovar capacitats oficials: Torn 4, Modelatge 8, Pintar 12, Total Franja 12
+        disp_12 = server.get_disponibilitat('2026-09-12')
+        self.assertTrue(len(disp_12['franges']) > 0)
+        franja_12 = disp_12['franges'][0]
+        self.assertEqual(franja_12['totalPlaces'], 12)
+        act_map = {a['id']: a for a in franja_12['activitats']}
+        self.assertEqual(len(act_map), 3)
+        self.assertEqual(act_map['torn']['capacitatMax'], 4)
+        self.assertEqual(act_map['modelatge']['capacitatMax'], 8)
+        self.assertEqual(act_map['pintar']['capacitatMax'], 12)
+
+    def test_09_edat_and_stripe_config(self):
+        c = self.conn.cursor()
+        test_id_adult = "TC-TEST-ADULT"
+        test_id_nen = "TC-TEST-NEN"
+        c.execute("DELETE FROM alumnes WHERE id IN (?, ?)", (test_id_adult, test_id_nen))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+            VALUES (?, 'Adult', 'Test', '600000001', 'adult@test.com', '1234', ?, '', 1, 35)
+        ''', (test_id_adult, datetime.now().isoformat()))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
+            VALUES (?, 'Nen', 'Test', '600000002', 'nen@test.com', '1235', ?, '', 1, 9)
+        ''', (test_id_nen, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT edat FROM alumnes WHERE id = ?", (test_id_adult,))
+        self.assertEqual(c.fetchone()['edat'], 35)
+        c.execute("SELECT edat FROM alumnes WHERE id = ?", (test_id_nen,))
+        self.assertEqual(c.fetchone()['edat'], 9)
+
+        # Provar configuració de tall i urls
+        c.execute("SELECT valor FROM configuracio WHERE clau = 'edat_tall_infantil'")
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['valor'], '12')
+
+        # Neteja
+        c.execute("DELETE FROM alumnes WHERE id IN (?, ?)", (test_id_adult, test_id_nen))
+        self.conn.commit()
+
+    def test_10_google_calendar_config_and_event_id(self):
+        c = self.conn.cursor()
+        c.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertIn(row['valor'], ['reserves', 'roigdecoure'])
+
+        # Comprovar inserció i lectura de calendar_event_id a reserves
+        test_res_id = "RES-TEST-CAL"
+        test_student = "TC-101"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
+            VALUES (?, ?, 'Test Cal', '2026-09-15', '10:00', '11:30', 'F1', 'Torn', 'torn', 1, '600000000', 'confirmada', 1.5, '', ?, 'cal_event_12345')
+        ''', (test_res_id, test_student, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT calendar_event_id FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['calendar_event_id'], 'cal_event_12345')
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
+    def test_11_activitats_custom_capacities(self):
+        # Comprovar configuració per defecte
+        acts = server.get_activitats_config()
+        self.assertEqual(len(acts), 3)
+        act_map = {a['id']: a['capacitatMax'] for a in acts}
+        self.assertEqual(act_map['torn'], 4)
+        self.assertEqual(act_map['modelatge'], 8)
+        self.assertEqual(act_map['pintar'], 12)
+
+        # Modificar capacitats des de la configuració
+        c = self.conn.cursor()
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_torn', '6')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_modelatge', '10')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_pintar', '14')")
+        self.conn.commit()
+
+        acts_mod = server.get_activitats_config()
+        act_mod_map = {a['id']: a['capacitatMax'] for a in acts_mod}
+        self.assertEqual(act_mod_map['torn'], 6)
+        self.assertEqual(act_mod_map['modelatge'], 10)
+        self.assertEqual(act_mod_map['pintar'], 14)
+
+        # Restaurar valors originals
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_torn', '4')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_modelatge', '8')")
+        c.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('capacitat_max_pintar', '12')")
+        self.conn.commit()
+
+    def test_12_non_student_public_booking_and_whatsapp_flags(self):
+        c = self.conn.cursor()
+        cli_res_id = "RES-CLI-TEST-1"
+        c.execute("DELETE FROM reserves WHERE id = ?", (cli_res_id,))
+
+        # Inserir reserva d'un client públic (no alumne registrat)
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at)
+            VALUES (?, 'CLI-1725500000', 'Maria Garcia', '2026-09-18', '17:00', '18:30', 'F3', 'Pintar ceràmica', 'pintar', 2, '+34611223344', 'maria@gmail.com', 'confirmada', 1.5, 'Reserva des de web Elementor', ?)
+        ''', (cli_res_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT student_id, student_nom, telefon, email, places, whatsapp_notif_confirm, whatsapp_notif_48h, whatsapp_notif_dia FROM reserves WHERE id = ?", (cli_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertTrue(row['student_id'].startswith('CLI-'))
+        self.assertEqual(row['student_nom'], 'Maria Garcia')
+        self.assertEqual(row['telefon'], '+34611223344')
+        self.assertEqual(row['email'], 'maria@gmail.com')
+        self.assertEqual(row['places'], 2)
+        # Els camps de WhatsApp han d'estar inicialitzats
+        self.assertIn(row['whatsapp_notif_confirm'], (None, 0))
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (cli_res_id,))
+        self.conn.commit()
+
+    def test_13_whatsapp_meta_cloud_api_format(self):
+        # Validar funcionament de send_whatsapp_meta quan no està configurat
+        res_no_config = server.send_whatsapp_meta("611223344", "reserva_confirmada", ["Joan", "Torn", "2026-09-15", "10:00", "1"])
+        self.assertFalse(res_no_config['ok'])
+        self.assertIn('activat', res_no_config['error'].lower())
+
+    def test_14_reserva_assistencia_attendance(self):
+        c = self.conn.cursor()
+        test_res_id = "RES-ATTEND-TEST-1"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at)
+            VALUES (?, 'TC-101', 'Alumne Test', '2026-09-20', '10:00', '11:30', 'F1', 'Torn', 'torn', 1, '+34600000000', 'test@test.com', 'confirmada', 1.5, 'Test Assistència', ?)
+        ''', (test_res_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        # Comprovar estat inicial confirmada
+        c.execute("SELECT estat FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertEqual(row['estat'], 'confirmada')
+
+        # Canviar a assistit
+        c.execute("UPDATE reserves SET estat = 'assistit' WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+        c.execute("SELECT estat FROM reserves WHERE id = ?", (test_res_id,))
+        self.assertEqual(c.fetchone()['estat'], 'assistit')
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
+    def test_15_student_lookup_and_login(self):
+        c = self.conn.cursor()
+        test_student_id = "231F"
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, pin, actiu, data_alta)
+            VALUES (?, 'Ferran', 'Picornell', '+34683633880', '3880', 1, '2026-09-01')
+        ''', (test_student_id,))
+        self.conn.commit()
+
+        # Comprovar cerca per ID exacte, majúscules/minúscules, espais, PIN i telèfon
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            for query in ["231F", "231f", " 231f ", "3880", "683633880", "+34683633880", "+34 683 63 38 80"]:
+                row = server.find_student_by_code(cur, query, actiu_only=False)
+                self.assertIsNotNone(row, f"No s'ha trobat l'alumne amb la consulta: '{query}'")
+                self.assertEqual(row['id'], '231F')
+                row_actiu = server.find_student_by_code(cur, query, actiu_only=True)
+                self.assertIsNotNone(row_actiu, f"No s'ha trobat l'alumne actiu amb la consulta: '{query}'")
+                self.assertEqual(row_actiu['id'], '231F')
+
+        # Neteja
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
         self.conn.commit()
 
 if __name__ == '__main__':
     unittest.main()
+

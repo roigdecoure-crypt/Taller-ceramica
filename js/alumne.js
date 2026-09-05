@@ -200,9 +200,16 @@ async function checkUrlParamsOrSession() {
 // Identificació de l'alumne
 async function loginStudent(code) {
   try {
-    const details = await Store.getAlumne(code);
+    const cleanCode = (code || '').trim();
+    if (!cleanCode) return;
+
+    let details = await Store.getAlumne(cleanCode);
+    if ((!details || !details.alumne) && cleanCode !== cleanCode.toUpperCase()) {
+      details = await Store.getAlumne(cleanCode.toUpperCase());
+    }
+
     if (!details || !details.alumne) {
-      showToast(`No s'ha trobat cap alumne amb el codi "${code}"`, 'error');
+      showToast(`No s'ha trobat cap alumne amb "${cleanCode}". Revisa el codi o demana'l al taller.`, 'error');
       return;
     }
 

@@ -45,7 +45,7 @@ if (typeof window !== 'undefined') {
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.style.display = 'none';
-    showToast('🎉 App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
+    showToast('App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
   });
 }
 
@@ -69,7 +69,7 @@ function showToast(message, type = 'info') {
   if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -97,61 +97,59 @@ function applyBrandingToPortal(cfg) {
   if (!cfg) return;
 
   const nom = cfg.taller_nom || 'Roig de Coure';
-  const subtitol = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
 
-  // Textos de marca
+  // Textos de marca (sense subtítol redundant)
   const loginTitle = document.getElementById('login-workshop-title');
   if (loginTitle) loginTitle.textContent = nom;
-  const loginSub = document.getElementById('login-workshop-subtitle');
-  if (loginSub) loginSub.textContent = subtitol;
 
   const pwaTitle = document.getElementById('pwa-banner-title');
   if (pwaTitle) pwaTitle.textContent = `Baixa l'App de ${nom}`;
 
   const studentWs = document.getElementById('student-workshop-name');
   if (studentWs) studentWs.textContent = nom;
-  const studentWsSub = document.getElementById('student-workshop-subtitle');
-  if (studentWsSub) studentWsSub.textContent = subtitol;
-
-  const badgeWs = document.getElementById('portal-badge-ws-name');
-  if (badgeWs) badgeWs.textContent = nom;
 
   // Colors personalitzats
-  if (cfg.brand_primary) {
-    document.documentElement.style.setProperty('--brand-primary', cfg.brand_primary);
-    document.documentElement.style.setProperty('--color-primary', cfg.brand_primary);
-  }
+  const primaryColor = (cfg.brand_primary && cfg.brand_primary !== '#831D1D') 
+    ? cfg.brand_primary 
+    : '#831D1D';
+  document.documentElement.style.setProperty('--brand-primary', primaryColor);
+  document.documentElement.style.setProperty('--color-primary', primaryColor);
+
   if (cfg.brand_secondary) {
     document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
   }
 
-  // Tipografia
-  if (cfg.brand_font === 'sans') {
-    document.documentElement.style.setProperty('--brand-font', "'Inter', -apple-system, sans-serif");
-  } else {
-    document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
-  }
+  // Tipografia - Verdana per defecte oficial
+  document.documentElement.style.setProperty('--brand-font', "Verdana, Geneva, Tahoma, sans-serif");
 
-  // Logotip
-  const logoUrl = cfg.taller_logo_url;
-  if (logoUrl && logoUrl.trim() !== '') {
-    // Login
-    const loginImg = document.getElementById('login-logo-img');
-    const loginIcon = document.getElementById('login-logo-icon');
-    if (loginImg) { loginImg.src = logoUrl; loginImg.style.display = 'block'; }
+  // Logotip (amb comprovació de càrrega segura i gestió d'errors per no trencar la imatge)
+  const rawLogo = (cfg.taller_logo_url || '').trim();
+  const isValidLogo = rawLogo !== '' && !rawLogo.includes('PHN2Zz48L3N2Zz4=');
+
+  const loginImg = document.getElementById('login-logo-img');
+  const loginIcon = document.getElementById('login-logo-icon');
+  const headImg = document.getElementById('portal-header-logo-img');
+  const headIcon = document.getElementById('portal-header-logo-icon');
+
+  if (isValidLogo) {
+    if (loginImg) {
+      loginImg.onerror = () => { loginImg.style.display = 'none'; };
+      loginImg.onload = () => { loginImg.style.display = 'block'; };
+      loginImg.src = rawLogo;
+    }
     if (loginIcon) loginIcon.style.display = 'none';
 
-    // Header Portal
-    const headImg = document.getElementById('portal-header-logo-img');
-    const headIcon = document.getElementById('portal-header-logo-icon');
-    if (headImg) { headImg.src = logoUrl; headImg.style.display = 'block'; }
+    if (headImg) {
+      headImg.onerror = () => { headImg.style.display = 'none'; };
+      headImg.onload = () => { headImg.style.display = 'block'; };
+      headImg.src = rawLogo;
+    }
     if (headIcon) headIcon.style.display = 'none';
-
-    // Badge Carnet
-    const badgeImg = document.getElementById('portal-badge-logo-img');
-    const badgeIcon = document.getElementById('portal-badge-logo-icon');
-    if (badgeImg) { badgeImg.src = logoUrl; badgeImg.style.display = 'inline-block'; }
-    if (badgeIcon) badgeIcon.style.display = 'none';
+  } else {
+    if (loginImg) { loginImg.src = ''; loginImg.style.display = 'none'; }
+    if (loginIcon) loginIcon.style.display = 'none';
+    if (headImg) { headImg.src = ''; headImg.style.display = 'none'; }
+    if (headIcon) headIcon.style.display = 'none';
   }
 }
 
@@ -188,9 +186,12 @@ async function checkUrlParamsOrSession() {
   if (targetId) {
     await loginStudent(targetId);
 
-    // Si retorna d'un pagament de Stripe amb èxit
-    if (paymentStatus === 'success' && packHours && currentStudent) {
-      await processSuccessfulPayment(parseFloat(packHours), 'Pack Stripe (Retorn)', 0, 'Stripe');
+    // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
+    const pendingHours = sessionStorage.getItem('pending_stripe_hours');
+    const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
+    if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
+      sessionStorage.removeItem('pending_stripe_hours');
+      await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
       window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
     }
   }
@@ -199,9 +200,16 @@ async function checkUrlParamsOrSession() {
 // Identificació de l'alumne
 async function loginStudent(code) {
   try {
-    const details = await Store.getAlumne(code);
+    const cleanCode = (code || '').trim();
+    if (!cleanCode) return;
+
+    let details = await Store.getAlumne(cleanCode);
+    if ((!details || !details.alumne) && cleanCode !== cleanCode.toUpperCase()) {
+      details = await Store.getAlumne(cleanCode.toUpperCase());
+    }
+
     if (!details || !details.alumne) {
-      showToast(`No s'ha trobat cap alumne amb el codi "${code}"`, 'error');
+      showToast(`No s'ha trobat cap alumne amb "${cleanCode}". Revisa el codi o demana'l al taller.`, 'error');
       return;
     }
 
@@ -229,7 +237,11 @@ function renderDashboard(details) {
   document.getElementById('portal-student-alta').textContent = TimeUtils.formatDate(a.data_alta);
 
   document.getElementById('portal-balance-hms').textContent = bal.formatBalance;
-  document.getElementById('portal-balance-human').textContent = `${bal.humanBalance} restants`;
+  const human = bal.humanBalance || (typeof TimeUtils !== 'undefined' && bal.balanceSeconds !== undefined ? TimeUtils.formatHmsHuman(bal.balanceSeconds) : '');
+  const humanEl = document.getElementById('portal-balance-human');
+  if (humanEl) {
+    humanEl.textContent = human ? `${human} restants` : (bal.formatBalance ? `${bal.formatBalance} restants` : '');
+  }
   document.getElementById('portal-total-bought').textContent = bal.formatBought;
   document.getElementById('portal-total-spent').textContent = bal.formatSpent;
 
@@ -242,7 +254,7 @@ function renderDashboard(details) {
     const updateLiveTimer = () => {
       const durSec = TimeUtils.calculateDuration(entrada, new Date());
       liveStatusEl.innerHTML = `
-        <div style="background: #E8F5E9; border: 1px solid #C8E6C9; padding: 8px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #2E7D32;">
+        <div style="background: #EEF5F1; border: 1px solid var(--color-border); padding: 8px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #5E7E6F;">
           <span class="live-pulse"></span>
           <span>Al taller ara mateix (${TimeUtils.secondsToHms(durSec)})</span>
         </div>
@@ -256,21 +268,213 @@ function renderDashboard(details) {
     `;
   }
 
-  // Carnet digital
-  document.getElementById('portal-badge-nom').textContent = a.nom;
-  document.getElementById('portal-badge-cognoms').textContent = a.cognoms || '';
-  document.getElementById('portal-badge-id').textContent = a.id;
-  document.getElementById('portal-badge-tel').textContent = a.telefon ? `Tel: ${a.telefon}` : '';
-  document.getElementById('portal-badge-footer-alta').textContent = `Alta: ${TimeUtils.formatDate(a.data_alta)}`;
+  // Generar QR visible a dalt (compacte: 80px)
+  const topQrContainer = document.getElementById('portal-top-qr');
+  if (topQrContainer) {
+    QREngine.generateQR(topQrContainer, a.id, 80);
+  }
 
-  const qrContainer = document.getElementById('portal-badge-qr');
-  QREngine.generateQR(qrContainer, a.id, 105);
+  // Preparar contingut del modal de zoom
+  const zoomNameEl = document.getElementById('qr-zoom-student-name');
+  if (zoomNameEl) zoomNameEl.textContent = `${a.nom} ${a.cognoms || ''}`.trim();
+  const zoomIdEl = document.getElementById('qr-zoom-student-id');
+  if (zoomIdEl) zoomIdEl.textContent = a.id;
+  const zoomQrBox = document.getElementById('modal-qr-zoom-box');
+  if (zoomQrBox) {
+    QREngine.generateQR(zoomQrBox, a.id, 216);
+  }
 
   // Historial de sessions
   renderSessionsTable(details.sessions);
 
   // Historial de paquets
   renderPaquetsTable(details.paquets);
+
+  // Secció de Reserves i Aforament
+  renderReservationsSection(a.id);
+
+  // Secció d'adquisició d'hores segons edat
+  setupStudentPurchaseSection(a);
+}
+
+let studentReservesCalendar = null;
+
+async function renderReservationsSection(studentId) {
+  const mount = document.getElementById('student-reserves-calendar-mount');
+  if (!mount) return;
+
+  if (!studentReservesCalendar) {
+    studentReservesCalendar = new ReservesCalendar({
+      containerId: 'student-reserves-calendar-mount',
+      isAdmin: false,
+      currentStudent: currentStudent,
+      onBookingSuccess: async () => {
+        await loadStudentBookings(studentId);
+      }
+    });
+    await studentReservesCalendar.init();
+  } else {
+    studentReservesCalendar.setStudent(currentStudent);
+    await studentReservesCalendar.refresh();
+  }
+
+  await loadStudentBookings(studentId);
+}
+
+// Gestió de Finestres Flotants (Modals)
+function openModal(modal) {
+  if (!modal) return;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('active');
+  if (!document.querySelector('.modal-backdrop.active')) {
+    document.body.style.overflow = '';
+  }
+}
+
+async function openReservarModal() {
+  const modalReservar = document.getElementById('modal-reservar-sessio');
+  if (!modalReservar) return;
+  openModal(modalReservar);
+  if (studentReservesCalendar) {
+    await studentReservesCalendar.refresh();
+  }
+}
+
+function openComprarModal() {
+  const modalComprar = document.getElementById('modal-comprar-hores');
+  if (!modalComprar) return;
+  openModal(modalComprar);
+}
+
+async function loadStudentBookings(studentId) {
+  const container = document.getElementById('portal-my-bookings-list');
+  if (!container) return;
+
+  try {
+    const reserves = await Store.getReserves({ student_id: studentId, estat: 'confirmada' });
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const upcoming = reserves.filter(r => r.data >= todayStr).sort((a, b) => a.data.localeCompare(b.data) || a.hora_inici.localeCompare(b.hora_inici));
+
+    if (upcoming.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 16px; text-align: center; background: #FAF8F5; border-radius: 8px; border: 1px dashed var(--color-border);">
+          <p style="font-size: 13px; color: var(--color-muted); margin: 0 0 10px;">No tens cap reserva activa per als propers dies.</p>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-empty-open-reservar" style="color: var(--brand-secondary, #5E7E6F); border-color: var(--brand-secondary, #5E7E6F); font-weight: 700; font-size: 13px;">
+            + Reservar la teva propera sessió
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-empty-open-reservar')?.addEventListener('click', openReservarModal);
+      return;
+    }
+
+    container.innerHTML = '';
+    upcoming.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'booking-item-card';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: var(--color-dark);">
+            ${TimeUtils.formatDate(r.data)} &bull; ${r.hora_inici} - ${r.hora_fi}
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-top: 2px;">
+            <strong style="color:var(--color-primary);">${r.activitat || 'Taller'}</strong> (${r.places || 1} persona${(r.places || 1) > 1 ? 'es' : ''}) &bull; Torn ${r.franja_nom || r.franja}
+          </div>
+        </div>
+        <div>
+          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: var(--color-primary, #831D1D); border-color: var(--color-border, #E2EBE5); font-size: 12px; font-weight: 600;">
+            Cancel·lar
+          </button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+
+    container.querySelectorAll('.btn-cancel-student-res').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const resId = btn.dataset.resId;
+        const confirmCancel = confirm('Estàs segur que vols cancel·lar aquesta reserva? La teva plaça al taller quedarà lliure per a altres companys.');
+        if (!confirmCancel) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Cancel·lant...';
+        const res = await Store.cancelarReserva(resId);
+        if (res.ok) {
+          showToast('Reserva cancel·lada correctament i plaça alliberada.', 'info');
+          if (studentReservesCalendar) await studentReservesCalendar.refresh();
+          await loadStudentBookings(studentId);
+        } else {
+          showToast(res.error || 'Error cancel·lant la reserva', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Cancel·lar';
+        }
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `<p style="font-size: 13px; color: var(--color-danger);">Error carregant reserves: ${err.message}</p>`;
+  }
+}
+
+async function setupStudentPurchaseSection(a) {
+  try {
+    const cfg = await Store.getConfig();
+    const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
+    const selectCat = document.getElementById('portal-select-categoria');
+    const titleEl = document.getElementById('portal-edat-title');
+    const descEl = document.getElementById('portal-edat-desc');
+    const iconEl = document.getElementById('portal-edat-icon');
+    const idEl = document.getElementById('portal-buy-student-id');
+    const bizumConceptEl = document.getElementById('portal-bizum-concept');
+    const bizumPhoneEl = document.getElementById('portal-bizum-phone');
+
+    if (idEl) idEl.textContent = a.id;
+    if (bizumConceptEl) bizumConceptEl.textContent = `${a.id} ${a.nom}`;
+    if (bizumPhoneEl) bizumPhoneEl.textContent = cfg.taller_telefon || '+34 600 000 000';
+
+    // Determinar categoria per defecte segons l'edat registrada a la base de dades (<= 12 infantil, > 12 adults)
+    let categoria = 'adults';
+    const hasEdat = a.edat !== null && a.edat !== undefined && String(a.edat).trim() !== '';
+    if (hasEdat) {
+      const edatNum = parseInt(a.edat, 10);
+      if (!isNaN(edatNum)) {
+        categoria = edatNum <= edatTall ? 'infantil' : 'adults';
+      }
+    }
+
+    function updateCategoryUI(cat) {
+      if (!titleEl || !descEl || !iconEl) return;
+      if (cat === 'infantil') {
+        iconEl.textContent = '';
+        titleEl.textContent = `Tarifa Infantil (fins a ${edatTall} anys)`;
+        descEl.textContent = hasEdat
+          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article infantil de Stripe.`
+          : `S'aplicarà la passarel·la per a alumnes de fins a ${edatTall} anys.`;
+      } else {
+        iconEl.textContent = '';
+        titleEl.textContent = `Tarifa Adults (més de ${edatTall} anys)`;
+        descEl.textContent = hasEdat
+          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article d'adults de Stripe.`
+          : `S'aplicarà la passarel·la d'adults (més de ${edatTall} anys).`;
+      }
+      if (selectCat) selectCat.value = cat;
+    }
+
+    updateCategoryUI(categoria);
+
+    if (selectCat) {
+      selectCat.onchange = (e) => {
+        updateCategoryUI(e.target.value);
+      };
+    }
+  } catch (err) {
+    console.warn('Error configurant secció de compra:', err);
+  }
 }
 
 function renderSessionsTable(sessions) {
@@ -333,8 +537,12 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
     });
 
     SoundEngine.playCheckin();
-    showToast(`🎉 S'han sumat ${hores} hores al teu compte! Nou saldo: ${res.balanc.formatBalance}`, 'success');
+    showToast(`S'han sumat ${hores} hores al teu compte! Nou saldo: ${res.balanc.formatBalance}`, 'success');
     
+    // Tancar modal de compra si estava obert
+    const modalComprar = document.getElementById('modal-comprar-hores');
+    if (modalComprar) closeModal(modalComprar);
+
     // Refrescar dades
     const updated = await Store.getAlumne(studentId);
     currentStudent = updated;
@@ -399,91 +607,181 @@ function setupEventListeners() {
     });
   }
 
-  // Botons de compra de paquets d'hores
-  document.querySelectorAll('.btn-buy-pack').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const hours = parseFloat(btn.dataset.hours);
-      const price = parseFloat(btn.dataset.price);
-      const name = btn.dataset.name;
-      openCheckoutModal({ hours, price, name });
-    });
-  });
+  // Botó Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
+  const btnPortalBuyStripe = document.getElementById('btn-portal-buy-stripe');
+  if (btnPortalBuyStripe) {
+    btnPortalBuyStripe.addEventListener('click', async () => {
+      if (!currentStudent) return;
+      const cfg = await Store.getConfig();
+      const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
+      const selectCat = document.getElementById('portal-select-categoria');
+      const categoria = selectCat ? selectCat.value : 'adults';
 
-  // Hores personalitzades
-  document.getElementById('btn-custom-hours').addEventListener('click', () => {
-    const customH = prompt('Quantes hores vols adquirir?', '8');
-    if (customH) {
-      const h = parseFloat(customH);
-      if (!isNaN(h) && h > 0) {
-        const estPrice = Math.round(h * 12);
-        openCheckoutModal({ hours: h, price: estPrice, name: `Pack Personalitzat ${h} Hores` });
+      let stripeUrl = '';
+      let catNom = '';
+      if (categoria === 'infantil') {
+        stripeUrl = (cfg.stripe_url_infantil || '').trim();
+        catNom = `Infantil (fins a ${edatTall} anys)`;
+      } else {
+        stripeUrl = (cfg.stripe_url_adults || '').trim();
+        catNom = `Adults (més de ${edatTall} anys)`;
       }
-    }
-  });
 
-  // Obrir modal de Checkout
-  function openCheckoutModal(pack) {
-    currentSelectedPack = pack;
-    document.getElementById('checkout-pack-name').textContent = pack.name;
-    document.getElementById('checkout-pack-price').textContent = `${pack.price}€`;
-    document.getElementById('checkout-pack-hours').textContent = `+${pack.hours} Hores al teu compte`;
-
-    // Concepte per a Bizum
-    const a = currentStudent.alumne;
-    const bizConcept = `${a.id} ${a.nom} ${pack.hours}h`;
-    document.getElementById('bizum-concept').textContent = bizConcept;
-    document.getElementById('bizum-instructions').style.display = 'none';
-
-    document.getElementById('modal-checkout-backdrop').classList.add('active');
+      if (stripeUrl && stripeUrl.startsWith('http')) {
+        const separator = stripeUrl.includes('?') ? '&' : '?';
+        const finalUrl = `${stripeUrl}${separator}client_reference_id=${encodeURIComponent(currentStudent.alumne.id)}`;
+        window.open(finalUrl, '_blank');
+        showToast(`S'ha obert la passarel·la de Stripe per a ${catNom}.`, 'info');
+      } else {
+        const confirmSim = confirm(
+          `L'enllaç de Stripe per a la categoria "${catNom}" no està configurat a l'Administració.\n\n` +
+          `Vols simular el pagament d'hores de prova per a ${currentStudent.alumne.nom}?`
+        );
+        if (confirmSim) {
+          const hStr = prompt('Quantes hores vols carregar de prova? (Mínim 4h)', '4');
+          const h = parseFloat(hStr);
+          if (!isNaN(h) && h >= 4) {
+            await processSuccessfulPayment(h, `Adquisició ${h} Hores (${catNom})`, 0, 'Stripe (Simulació)');
+          }
+        }
+      }
+    });
   }
 
-  // Tancar Checkout
-  document.getElementById('btn-close-checkout').addEventListener('click', () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-  });
-
-  // Botó Pagar amb Stripe
-  document.getElementById('btn-pay-stripe').addEventListener('click', async () => {
-    if (!currentSelectedPack || !currentStudent) return;
-    const cfg = await Store.getConfig();
-    let stripeUrl = '';
-
-    if (currentSelectedPack.hours === 5) stripeUrl = cfg.stripe_pack5_url;
-    else if (currentSelectedPack.hours === 10) stripeUrl = cfg.stripe_pack10_url;
-    else if (currentSelectedPack.hours === 20) stripeUrl = cfg.stripe_pack20_url;
-
-    if (stripeUrl && stripeUrl.startsWith('http')) {
-      const separator = stripeUrl.includes('?') ? '&' : '?';
-      window.open(`${stripeUrl}${separator}client_reference_id=${currentStudent.alumne.id}`, '_blank');
-      document.getElementById('modal-checkout-backdrop').classList.remove('active');
-      showToast('S\'ha obert la passarel·la segura de Stripe. Quan completis el pagament les hores se sumaran automàticament.', 'info');
-    } else {
-      const confirmDirect = confirm(`L'enllaç de Stripe per a aquest pack no està configurat a l'Admin. Vols simular el pagament i sumar directament les ${currentSelectedPack.hours} hores al compte de ${currentStudent.alumne.nom}?`);
-      if (confirmDirect) {
-        document.getElementById('modal-checkout-backdrop').classList.remove('active');
-        await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Stripe');
+  // Desplegable i simulació Pagament de Prova
+  const btnShowTestPay = document.getElementById('btn-portal-show-testpay');
+  if (btnShowTestPay) {
+    btnShowTestPay.addEventListener('click', () => {
+      const box = document.getElementById('portal-testpay-box');
+      if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
       }
+    });
+  }
+
+  const btnConfirmTestPay = document.getElementById('btn-portal-confirm-testpay');
+  if (btnConfirmTestPay) {
+    btnConfirmTestPay.addEventListener('click', async () => {
+      if (!currentStudent) return;
+      const inputH = document.getElementById('testpay-input-hours');
+      let hores = parseFloat(inputH ? inputH.value : 4);
+      if (isNaN(hores) || hores < 4) hores = 4;
+      btnConfirmTestPay.disabled = true;
+      btnConfirmTestPay.textContent = 'Sumant hores...';
+      try {
+        await processSuccessfulPayment(hores, `Adquisició ${hores} Hores (Mode Prova)`, 0, 'Stripe (Test)');
+        const box = document.getElementById('portal-testpay-box');
+        if (box) box.style.display = 'none';
+      } finally {
+        btnConfirmTestPay.disabled = false;
+        btnConfirmTestPay.textContent = 'Simular Pagament i Sumar Hores';
+      }
+    });
+  }
+
+  // Desplegable i confirmació Bizum (mínim 4h)
+  const btnPortalShowBizum = document.getElementById('btn-portal-show-bizum');
+  if (btnPortalShowBizum) {
+    btnPortalShowBizum.addEventListener('click', () => {
+      const box = document.getElementById('portal-bizum-box');
+      if (box) {
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      }
+    });
+  }
+
+  const btnPortalConfirmBizum = document.getElementById('btn-portal-confirm-bizum');
+  if (btnPortalConfirmBizum) {
+    btnPortalConfirmBizum.addEventListener('click', async () => {
+      if (!currentStudent) return;
+      const hStr = prompt(`Quantes hores has pagat per Bizum? (Mínim 4 hores)`, '4');
+      if (hStr === null) return;
+      const h = parseFloat(hStr);
+      if (isNaN(h) || h < 4) {
+        alert('La quantitat mínima permesa és de 4 hores (com a Stripe).');
+        return;
+      }
+      const selectCat = document.getElementById('portal-select-categoria');
+      const cat = selectCat ? selectCat.value : 'adults';
+      await processSuccessfulPayment(h, `Pagament Bizum ${h} Hores (${cat})`, 0, 'Bizum');
+      const box = document.getElementById('portal-bizum-box');
+      if (box) box.style.display = 'none';
+    });
+  }
+
+  // Finestres flotants (Modals): Comprar Hores & Reservar Sessió
+  const btnOpenComprar = document.getElementById('btn-open-modal-comprar');
+  const modalComprar = document.getElementById('modal-comprar-hores');
+  const btnCloseComprar = document.getElementById('btn-close-modal-comprar');
+
+  if (btnOpenComprar) {
+    btnOpenComprar.addEventListener('click', openComprarModal);
+  }
+  if (btnCloseComprar && modalComprar) {
+    btnCloseComprar.addEventListener('click', () => closeModal(modalComprar));
+  }
+  if (modalComprar) {
+    modalComprar.addEventListener('click', (e) => {
+      if (e.target === modalComprar) closeModal(modalComprar);
+    });
+  }
+
+  const btnOpenReservar = document.getElementById('btn-open-modal-reservar');
+  const btnSubOpenReservar = document.getElementById('btn-sub-open-reservar');
+  const modalReservar = document.getElementById('modal-reservar-sessio');
+  const btnCloseReservar = document.getElementById('btn-close-modal-reservar');
+
+  if (btnOpenReservar) {
+    btnOpenReservar.addEventListener('click', openReservarModal);
+  }
+  if (btnSubOpenReservar) {
+    btnSubOpenReservar.addEventListener('click', openReservarModal);
+  }
+  if (btnCloseReservar && modalReservar) {
+    btnCloseReservar.addEventListener('click', () => closeModal(modalReservar));
+  }
+  if (modalReservar) {
+    modalReservar.addEventListener('click', (e) => {
+      if (e.target === modalReservar) closeModal(modalReservar);
+    });
+  }
+
+  // Modal de zoom del codi QR
+  const btnOpenQrZoom = document.getElementById('btn-open-qr-zoom');
+  const modalQrZoom = document.getElementById('modal-qr-zoom');
+  const btnCloseQrZoom = document.getElementById('btn-close-qr-zoom');
+  const btnCloseQrModal = document.getElementById('btn-close-qr-modal');
+
+  if (btnOpenQrZoom && modalQrZoom) {
+    btnOpenQrZoom.addEventListener('click', () => {
+      modalQrZoom.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+
+    const closeQrModal = () => {
+      modalQrZoom.style.display = 'none';
+      if (!document.querySelector('.modal-backdrop.active')) {
+        document.body.style.overflow = '';
+      }
+    };
+
+    if (btnCloseQrZoom) btnCloseQrZoom.addEventListener('click', closeQrModal);
+    if (btnCloseQrModal) btnCloseQrModal.addEventListener('click', closeQrModal);
+
+    modalQrZoom.addEventListener('click', (e) => {
+      if (e.target === modalQrZoom) closeQrModal();
+    });
+  }
+
+  // Tecla Escape per tancar qualsevol finestra flotant activa
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (modalQrZoom && modalQrZoom.style.display === 'flex') {
+        modalQrZoom.style.display = 'none';
+      }
+      const activeModals = document.querySelectorAll('.modal-backdrop.active');
+      activeModals.forEach(m => closeModal(m));
+      document.body.style.overflow = '';
     }
-  });
-
-  // Botó Bizum
-  document.getElementById('btn-pay-bizum').addEventListener('click', () => {
-    document.getElementById('bizum-instructions').style.display = 'block';
-  });
-
-  document.getElementById('btn-confirm-bizum').addEventListener('click', async () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-    await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Bizum');
-  });
-
-  // Botó simulació / suma immediata
-  document.getElementById('btn-simulate-pay').addEventListener('click', async () => {
-    document.getElementById('modal-checkout-backdrop').classList.remove('active');
-    await processSuccessfulPayment(currentSelectedPack.hours, currentSelectedPack.name, currentSelectedPack.price, 'Pagament Immediat');
-  });
-
-  // Imprimir carnet
-  document.getElementById('btn-portal-print-badge').addEventListener('click', () => {
-    window.print();
   });
 }

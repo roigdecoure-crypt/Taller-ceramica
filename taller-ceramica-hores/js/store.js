@@ -31,9 +31,9 @@ const Store = {
       const nowIso = new Date().toISOString();
       const initial = {
         alumnes: [
-          { id: 'TC-101', nom: 'Maria', cognoms: 'Garcia Font', telefon: '612345678', email: 'maria.garcia@email.com', pin: '1001', data_alta: nowIso, notes: 'Curs de torn nivell mig', actiu: 1 },
-          { id: 'TC-102', nom: 'Jordi', cognoms: 'Rovira Pons', telefon: '623456789', email: 'jordi.rovira@email.com', pin: '1002', data_alta: nowIso, notes: 'Modelatge i escultura', actiu: 1 },
-          { id: 'TC-103', nom: 'Clara', cognoms: 'Vidal Soler', telefon: '634567890', email: 'clara.vidal@email.com', pin: '1003', data_alta: nowIso, notes: 'Esmalts i pintura', actiu: 1 }
+          { id: 'TC-101', nom: 'Maria', cognoms: 'Garcia Font', telefon: '612345678', email: 'maria.garcia@email.com', pin: '1001', data_alta: nowIso, notes: 'Curs de torn nivell mig', actiu: 1, edat: 32 },
+          { id: 'TC-102', nom: 'Jordi', cognoms: 'Rovira Pons', telefon: '623456789', email: 'jordi.rovira@email.com', pin: '1002', data_alta: nowIso, notes: 'Modelatge i escultura', actiu: 1, edat: 28 },
+          { id: 'TC-103', nom: 'Clara', cognoms: 'Vidal Soler', telefon: '634567890', email: 'clara.vidal@email.com', pin: '1003', data_alta: nowIso, notes: 'Esmalts i pintura', actiu: 1, edat: 10 }
         ],
         paquets: [
           { id: 'PK-101-1', student_id: 'TC-101', data: nowIso, hores: 10, segons: 36000, concepte: 'Pack 10 Hores Torn', preu: 120, metode_pagament: 'Stripe', notes: 'Pagat amb Stripe' },
@@ -48,10 +48,14 @@ const Store = {
           taller_telefon: '+34 600 000 000',
           taller_email: 'info@tallerdecoramica.cat',
           hores_per_defecte_oblit: '01:30:00',
+          stripe_url_adults: 'https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n',
+          stripe_url_infantil: 'https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j',
+          edat_tall_infantil: '12',
           stripe_pack5_url: '',
           stripe_pack10_url: '',
           stripe_pack20_url: '',
-          google_sheets_url: ''
+          google_sheets_url: 'https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec',
+          google_calendar_name: 'reserves'
         }
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initial));
@@ -110,9 +114,11 @@ const Store = {
   },
 
   async getAlumne(id) {
+    if (!id) return null;
+    const cleanId = String(id).trim();
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(id)}`);
+        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(cleanId)}`);
         const json = await res.json();
         if (json.ok) return json;
       } catch (e) {
@@ -122,7 +128,12 @@ const Store = {
     }
 
     const data = this._getLocalData();
-    const student = (data.alumnes || []).find(a => a.id === id || a.pin === id);
+    const cleanDigits = cleanId.replace(/[^0-9]/g, '');
+    const student = (data.alumnes || []).find(a => 
+      (a.id && a.id.trim().toUpperCase() === cleanId.toUpperCase()) ||
+      (a.pin && String(a.pin).trim() === cleanId) ||
+      (cleanDigits.length >= 6 && a.telefon && String(a.telefon).replace(/[^0-9]/g, '').endsWith(cleanDigits))
+    );
     if (!student) return null;
 
     const packs = (data.paquets || []).filter(p => p.student_id === student.id).sort((a,b) => new Date(b.data) - new Date(a.data));
@@ -176,7 +187,8 @@ const Store = {
       pin: studentData.pin || id.replace('TC-', ''),
       data_alta: studentData.data_alta || new Date().toISOString(),
       notes: studentData.notes || '',
-      actiu: 1
+      actiu: 1,
+      edat: studentData.edat !== undefined && studentData.edat !== null && String(studentData.edat).trim() !== '' ? parseInt(studentData.edat, 10) : null
     };
 
     if (existingIdx >= 0) {
@@ -186,6 +198,14 @@ const Store = {
     }
     this._saveLocalData(data);
     return { ok: true, id: id, message: 'Alumne desat correctament' };
+  },
+
+  getCategoriaEdat(edat, edatTall = 12) {
+    const tall = parseInt(edatTall, 10) || 12;
+    if (edat === undefined || edat === null || edat === '') return 'indefinida';
+    const num = parseInt(edat, 10);
+    if (isNaN(num)) return 'indefinida';
+    return num <= tall ? 'infantil' : 'adults';
   },
 
   async deleteAlumne(id) {
@@ -669,9 +689,22 @@ const Store = {
     return resList;
   },
 
+  getActivitats() {
+    const data = this._getLocalData();
+    const capTorn = parseInt(data.config?.capacitat_max_torn || 4, 10);
+    const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
+    const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
+    return [
+      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "", color: "#831D1D" },
+      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "", color: "#5E7E6F" },
+      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "", color: "#831D1D" }
+    ];
+  },
+
   async getDisponibilitat(dataStr) {
     if (!dataStr) {
-      dataStr = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      dataStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
     }
     if (this.mode === 'api') {
       try {
@@ -685,18 +718,55 @@ const Store = {
 
     // Fallback local
     const data = this._getLocalData();
-    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 8, 10);
+    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
+    const activitats = this.getActivitats();
     const defFranges = [
-      { id: "mati_1", nom: "Matí 1 (10:00 - 12:00)", inici: "10:00", fi: "12:00", hores: 2.0 },
-      { id: "mati_2", nom: "Matí 2 (12:00 - 14:00)", inici: "12:00", fi: "14:00", hores: 2.0 },
-      { id: "tarda_1", nom: "Tarda 1 (16:00 - 18:00)", inici: "16:00", fi: "18:00", hores: 2.0 },
-      { id: "tarda_2", nom: "Tarda 2 (18:00 - 20:00)", inici: "18:00", fi: "20:00", hores: 2.0 }
+      { id: "M1", nom: "Matí (10:00 - 13:00)", inici: "10:00", fi: "13:00", hores: 2.0 }
     ];
+
+    // Comprovar si dilluns o dimarts
+    const dParts = dataStr.split('-').map(Number);
+    const dt = new Date(dParts[0], dParts[1] - 1, dParts[2]);
+    const dayOfWeek = dt.getDay(); // 0 Diumenge, 1 Dilluns, 2 Dimarts
+    if (dayOfWeek === 1 || dayOfWeek === 2) {
+      return {
+        data: dataStr,
+        tancat: true,
+        motiu: `Tancat per descans setmanal (${dayOfWeek === 1 ? 'Dilluns' : 'Dimarts'}). Obrim de Dimecres a Diumenge.`,
+        aforamentMaxim: maxCap,
+        totalPlacesDia: 0,
+        totalOcupadesDia: 0,
+        franges: [],
+        activitats: activitats
+      };
+    }
+
     const reservesDia = (data.reserves || []).filter(r => r.data === dataStr && r.estat === 'confirmada');
+    let totalOcupadesDia = 0;
+
     const franges = defFranges.map(f => {
       const fRes = reservesDia.filter(r => r.franja === f.id || r.franja === f.nom);
-      const ocupades = fRes.length;
+      const ocupades = fRes.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+      totalOcupadesDia += ocupades;
       const lliures = Math.max(0, maxCap - ocupades);
+
+      const activitatsFranja = activitats.map(act => {
+        const ocupatAct = fRes.filter(r => (r.activitat_id || '').toLowerCase() === act.id || (r.activitat || '').toLowerCase() === act.nom.toLowerCase())
+                              .reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+        const lliuresAct = Math.max(0, act.capacitatMax - ocupatAct);
+        const placesEfectives = Math.min(lliures, lliuresAct);
+        return {
+          id: act.id,
+          nom: act.nom,
+          icon: act.icon,
+          color: act.color,
+          capacitatMax: act.capacitatMax,
+          ocupat: ocupatAct,
+          placesDisponibles: placesEfectives,
+          complet: placesEfectives === 0
+        };
+      });
+
       return {
         id: f.id,
         nom: f.nom,
@@ -706,18 +776,54 @@ const Store = {
         totalPlaces: maxCap,
         placesOcupades: ocupades,
         placesLliures: lliures,
-        estat: lliures === 0 ? 'complet' : (lliures <= 2 && ocupades > 0 ? 'ultimes_places' : 'lliure'),
+        estat: lliures === 0 ? 'complet' : (lliures <= 3 && ocupades > 0 ? 'ultimes_places' : 'lliure'),
+        estaComplet: lliures === 0,
+        activitats: activitatsFranja,
         reserves: fRes
       };
     });
 
     return {
       data: dataStr,
+      tancat: false,
+      motiu: '',
       aforamentMaxim: maxCap,
       totalPlacesDia: maxCap * franges.length,
-      totalOcupadesDia: reservesDia.length,
-      franges: franges
+      totalOcupadesDia: totalOcupadesDia,
+      franges: franges,
+      activitats: activitats
     };
+  },
+
+  async getDisponibilitatMes(any, mes) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/mes?any=${any}&mes=${mes}&t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        console.warn('Error obtenint disponibilitat de mes de l\'API:', e);
+      }
+    }
+
+    // Fallback local per mes
+    const daysInMonth = new Date(any, mes, 0).getDate();
+    const dies = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dataStr = `${any}-${String(mes).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dispDia = await this.getDisponibilitat(dataStr);
+      dies[dataStr] = {
+        data: dataStr,
+        tancat: dispDia.tancat,
+        motiu: dispDia.motiu,
+        placesTotals: dispDia.totalPlacesDia,
+        placesOcupades: dispDia.totalOcupadesDia,
+        placesLliures: Math.max(0, dispDia.totalPlacesDia - dispDia.totalOcupadesDia),
+        estat: dispDia.tancat ? 'tancat' : (dispDia.totalPlacesDia - dispDia.totalOcupadesDia <= 0 ? 'complet' : 'lliure'),
+        activitatsAmbPlaces: dispDia.tancat ? [] : (dispDia.franges || []).flatMap(f => (f.activitats || []).filter(a => a.placesDisponibles > 0).map(a => a.id))
+      };
+    }
+    return { any, mes, dies, activitats: this.getActivitats() };
   },
 
   async crearReserva(reservaData) {
@@ -736,14 +842,12 @@ const Store = {
 
     const data = this._getLocalData();
     if (!data.reserves) data.reserves = [];
-    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 8, 10);
+    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
     const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
-    if (existing.length >= maxCap) {
-      return { ok: false, error: 'Aforament complet per a aquesta franja.' };
-    }
-    const alreadyStudent = data.reserves.find(r => r.student_id === reservaData.student_id && r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
-    if (alreadyStudent) {
-      return { ok: false, error: 'Ja tens una reserva confirmada per a aquesta franja.' };
+    const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+    const demanades = parseInt(reservaData.places || 1, 10);
+    if (ocupades + demanades > maxCap) {
+      return { ok: false, error: `Aforament complet per a aquesta franja (Màx. ${maxCap} places).` };
     }
 
     const resId = `RES-${Date.now()}-${reservaData.student_id}`;
@@ -751,18 +855,22 @@ const Store = {
       id: resId,
       student_id: reservaData.student_id,
       student_nom: reservaData.student_nom || reservaData.student_id,
+      telefon: reservaData.telefon || '',
       data: reservaData.data,
+      franja: reservaData.franja || reservaData.franja_id || 'M1',
+      activitat: reservaData.activitat || 'Torn',
+      activitat_id: reservaData.activitat_id || 'torn',
+      places: demanades,
       hora_inici: reservaData.hora_inici || '10:00',
       hora_fi: reservaData.hora_fi || '12:00',
-      franja: reservaData.franja || reservaData.franja_id || 'mati_1',
-      estat: 'confirmada',
-      hores: Number(reservaData.hores) || 2.0,
+      hores: parseFloat(reservaData.hores) || 2.0,
       notes: reservaData.notes || '',
+      estat: 'confirmada',
       created_at: new Date().toISOString()
     };
     data.reserves.push(newRes);
     this._saveLocalData(data);
-    return { ok: true, message: 'Reserva confirmada correctament!', reserva: newRes };
+    return { ok: true, reserva: newRes };
   },
 
   async cancelarReserva(reservaId) {
@@ -791,6 +899,29 @@ const Store = {
     return { ok: false, error: 'Reserva no trobada' };
   },
 
+  async updateReservaAssistencia(id, assistit) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/assistencia`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, assistit })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error actualitzant assistència:', e);
+      }
+    }
+    const data = this._getLocalData();
+    const r = (data.reserves || []).find(x => x.id === id);
+    if (r) {
+      r.estat = assistit ? 'assistit' : 'confirmada';
+      this._saveLocalData(data);
+      return { ok: true, reserva: r };
+    }
+    return { ok: false, error: 'Reserva no trobada' };
+  },
+
   async guardarAforamentMaxim(num) {
     const val = parseInt(num, 10) || 8;
     if (this.mode === 'api') {
@@ -807,6 +938,58 @@ const Store = {
     }
     await this.saveConfig({ aforament_maxim_per_franja: String(val) });
     return { ok: true, aforamentMaxim: val };
+  },
+
+  async getActivitatsConfig() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/activitats?t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok && json.activitats) return json.activitats;
+      } catch (e) {
+        console.warn('Error obtenint activitats:', e);
+      }
+    }
+    return this.getActivitats();
+  },
+
+  async guardarCapacitatsActivitats(payload) {
+    const dataToSend = {
+      capacitat_max_torn: parseInt(payload.capacitat_max_torn, 10) || 4,
+      capacitat_max_modelatge: parseInt(payload.capacitat_max_modelatge, 10) || 8,
+      capacitat_max_pintar: parseInt(payload.capacitat_max_pintar, 10) || 12
+    };
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/config-activitats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSend)
+        });
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        console.warn('Error guardant capacitats:', e);
+      }
+    }
+    await this.saveConfig({
+      capacitat_max_torn: String(dataToSend.capacitat_max_torn),
+      capacitat_max_modelatge: String(dataToSend.capacitat_max_modelatge),
+      capacitat_max_pintar: String(dataToSend.capacitat_max_pintar)
+    });
+    return { ok: true, activitats: this.getActivitats() };
+  },
+
+  async testWhatsAppMeta(telefon, template = 'reserva_confirmada') {
+    if (this.mode === 'api') {
+      const res = await fetch(`${this.apiBase}/api/whatsapp/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefon, template })
+      });
+      return await res.json();
+    }
+    return { ok: false, error: 'Només disponible en mode servidor/API' };
   },
 
   /* ====================== CÒPIA DE SEGURETAT JSON / CSV ====================== */
