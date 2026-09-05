@@ -389,8 +389,31 @@
             <span style="font-size: 12px; color: var(--color-muted);">
               Connexió encriptada SSL. El pagament s'assignarà al teu ID: <strong id="portal-buy-student-id">TC-101</strong>
             </span>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-bizum" style="font-size: 12px;">
-              Pagar per Bizum
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-testpay" style="font-size: 12px; color: #5E7E6F; border-color: #5E7E6F;">
+                Provar Pagament (Test)
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-bizum" style="font-size: 12px;">
+                Pagar per Bizum
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bloc Proves de Pagament (Sense diners reals) -->
+        <div id="portal-testpay-box" style="display: none; margin-top: 14px; background: #F4F8F5; border: 1px solid #C7DEC8; padding: 14px; border-radius: 8px; font-size: 13px;">
+          <strong style="color: #5E7E6F;">Mode de Prova (Sense targeta ni diners reals):</strong>
+          <p style="margin: 4px 0 10px; font-size: 12px; color: var(--color-muted);">
+            Tria quantes hores de prova vols carregar per comprovar com s'actualitza el teu saldo:
+          </p>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <select id="select-test-pack" class="form-control" style="width: auto; font-size: 13px; padding: 6px 12px; border-color: #C7DEC8;">
+              <option value="5">Pack 5 Hores (Prova)</option>
+              <option value="10" selected>Pack 10 Hores (Prova)</option>
+              <option value="20">Pack 20 Hores (Prova)</option>
+            </select>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-portal-confirm-testpay" style="background: #5E7E6F; border-color: #5E7E6F; font-size: 13px;">
+              Simular Pagament i Sumar Hores
             </button>
           </div>
         </div>
