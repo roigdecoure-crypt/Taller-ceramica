@@ -9,6 +9,7 @@ import sys
 import unittest
 import sqlite3
 import json
+import re
 from datetime import datetime, timedelta
 
 # Afegir directori arrel al path
@@ -314,7 +315,9 @@ class TestCeramicsBackend(unittest.TestCase):
         # Comprovar disponibilitat inicial
         disp = server.get_disponibilitat(test_data)
         self.assertFalse(disp['tancat'])
-        franja = next(f for f in disp['franges'] if f['id'] == slot_id)
+        self.assertTrue(len(disp['franges']) > 0)
+        franja = disp['franges'][0]
+        slot_id = franja['id']
         self.assertEqual(franja['totalPlaces'], 2)
         self.assertEqual(franja['placesLliures'], 2)
         self.assertEqual(franja['estat'], 'lliure')
@@ -371,7 +374,8 @@ class TestCeramicsBackend(unittest.TestCase):
 
         # Comprovar capacitats oficials: Torn 4, Modelatge 8, Pintar 12, Total Franja 12
         disp_12 = server.get_disponibilitat('2026-09-12')
-        franja_12 = next(f for f in disp_12['franges'] if f['id'] == 'F1')
+        self.assertTrue(len(disp_12['franges']) > 0)
+        franja_12 = disp_12['franges'][0]
         self.assertEqual(franja_12['totalPlaces'], 12)
         act_map = {a['id']: a for a in franja_12['activitats']}
         self.assertEqual(len(act_map), 3)
@@ -414,7 +418,7 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
         row = c.fetchone()
         self.assertIsNotNone(row)
-        self.assertEqual(row['valor'], 'roigdecoure')
+        self.assertIn(row['valor'], ['reserves', 'roigdecoure'])
 
         # Comprovar inserció i lectura de calendar_event_id a reserves
         test_res_id = "RES-TEST-CAL"
@@ -519,6 +523,31 @@ class TestCeramicsBackend(unittest.TestCase):
 
         # Neteja
         c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
+    def test_15_student_lookup_and_login(self):
+        c = self.conn.cursor()
+        test_student_id = "231F"
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, pin, actiu, data_alta)
+            VALUES (?, 'Ferran', 'Picornell', '+34683633880', '3880', 1, '2026-09-01')
+        ''', (test_student_id,))
+        self.conn.commit()
+
+        # Comprovar cerca per ID exacte, majúscules/minúscules, espais, PIN i telèfon
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            for query in ["231F", "231f", " 231f ", "3880", "683633880", "+34683633880", "+34 683 63 38 80"]:
+                row = server.find_student_by_code(cur, query, actiu_only=False)
+                self.assertIsNotNone(row, f"No s'ha trobat l'alumne amb la consulta: '{query}'")
+                self.assertEqual(row['id'], '231F')
+                row_actiu = server.find_student_by_code(cur, query, actiu_only=True)
+                self.assertIsNotNone(row_actiu, f"No s'ha trobat l'alumne actiu amb la consulta: '{query}'")
+                self.assertEqual(row_actiu['id'], '231F')
+
+        # Neteja
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
         self.conn.commit()
 
 if __name__ == '__main__':

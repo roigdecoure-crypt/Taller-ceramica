@@ -1043,6 +1043,27 @@ def get_disponibilitat_mes(year, month):
         'activitats': activitats_list
     }
 
+def find_student_by_code(cursor, code, actiu_only=False):
+    if not code:
+        return None
+    clean_code = str(code).strip()
+    clean_digits = re.sub(r'[^0-9]', '', clean_code)
+    phone_suffix = clean_digits[-9:] if len(clean_digits) >= 9 else (clean_digits if len(clean_digits) >= 6 else None)
+    
+    actiu_clause = "actiu = 1 AND " if actiu_only else ""
+    query = f'''
+        SELECT * FROM alumnes 
+        WHERE {actiu_clause}(
+            UPPER(TRIM(id)) = UPPER(TRIM(?))
+            OR TRIM(pin) = TRIM(?)
+            OR TRIM(telefon) = TRIM(?)
+            OR (? IS NOT NULL AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, '+', ''), ' ', ''), '-', ''), '.', '') LIKE '%' || ?)
+        )
+        LIMIT 1
+    '''
+    cursor.execute(query, (clean_code, clean_code, clean_code, phone_suffix, phone_suffix if phone_suffix else '###'))
+    return row_to_dict(cursor.fetchone())
+
 class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
@@ -1103,25 +1124,25 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path.startswith('/api/alumnes/'):
-                student_id = path.replace('/api/alumnes/', '').strip()
+                student_code = urllib.parse.unquote(path.replace('/api/alumnes/', '').strip())
                 with get_db() as conn:
                     cursor = conn.cursor()
-                    cursor.execute('SELECT * FROM alumnes WHERE id = ?', (student_id,))
-                    student = row_to_dict(cursor.fetchone())
+                    student = find_student_by_code(cursor, student_code, actiu_only=False)
                     if not student:
                         self.send_json({'ok': False, 'error': 'Alumne no trobat'}, 404)
                         return
 
-                    cursor.execute('SELECT * FROM paquets_hores WHERE student_id = ? ORDER BY data DESC', (student_id,))
+                    real_id = student['id']
+                    cursor.execute('SELECT * FROM paquets_hores WHERE student_id = ? ORDER BY data DESC', (real_id,))
                     packs = [row_to_dict(r) for r in cursor.fetchall()]
 
-                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? ORDER BY entrada DESC', (student_id,))
+                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? ORDER BY entrada DESC', (real_id,))
                     sessions = [row_to_dict(r) for r in cursor.fetchall()]
 
-                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? AND estat = "oberta" ORDER BY entrada DESC LIMIT 1', (student_id,))
+                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? AND estat = "oberta" ORDER BY entrada DESC LIMIT 1', (real_id,))
                     active_session = row_to_dict(cursor.fetchone())
 
-                    balance = get_student_balance(student_id)
+                    balance = get_student_balance(real_id)
 
                 self.send_json({
                     'ok': True,
@@ -1365,15 +1386,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 with get_db() as conn:
                     cursor = conn.cursor()
-                    # Cerca per ID directe (ex: TC-101) o PIN o telèfon
-                    cursor.execute('''
-                        SELECT * FROM alumnes 
-                        WHERE actiu = 1 AND (id = ? OR pin = ? OR telefon = ?)
-                    ''', (code, code, code))
-                    student = row_to_dict(cursor.fetchone())
+                    student = find_student_by_code(cursor, code, actiu_only=True)
 
                     if not student:
-                        self.send_json({'ok': False, 'error': f'No s\'ha trobat cap alumne amb el codi "{code}"'}, 404)
+                        self.send_json({'ok': False, 'error': f'No s\'ha trobat cap alumne actiu amb el codi "{code}"'}, 404)
                         return
 
                     student_id = student['id']
@@ -1748,7 +1764,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with get_db() as conn:
                     cursor = conn.cursor()
                     if not student_nom or not telefon or not email:
-                        cursor.execute('SELECT nom, cognoms, telefon, email FROM alumnes WHERE id = ?', (student_id,))
+                        cursor.execute('SELECT nom, cognoms, telefon, email FROM alumnes WHERE UPPER(TRIM(id)) = UPPER(TRIM(?))', (student_id,))
                         al = cursor.fetchone()
                         if al:
                             if not student_nom:
