@@ -3,6 +3,19 @@
  * Inspirat en el disseny Doctor Chamber amb la identitat corporativa de roigdecoure.cat
  */
 
+@font-face {
+  font-family: 'Buffalo';
+  src: url('../fonts/buffalo.woff2') format('woff2'),
+       url('/fonts/buffalo.woff2') format('woff2'),
+       url('../fonts/buffalo.woff') format('woff'),
+       url('/fonts/buffalo.woff') format('woff'),
+       url('../fonts/buffalo.ttf') format('truetype'),
+       url('https://db.onlinewebfonts.com/t/d65cf77ad028b823f585bfa44b3307c6.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Layout general amb barra lateral fixa */
 .admin-app-layout {
   display: flex;
@@ -45,9 +58,9 @@
 }
 
 .sidebar-logo-text {
-  font-family: 'Caveat', cursive, sans-serif;
+  font-family: 'Buffalo', 'Buffalo Regular', var(--font-script), cursive, sans-serif;
   color: #FFFFFF;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.5px;

@@ -8,11 +8,22 @@
   <meta name="theme-color" content="#1A1817">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/scanner.css">
+  <style>
+    @font-face {
+      font-family: 'Buffalo';
+      src: url('./fonts/buffalo.woff2') format('woff2'),
+           url('/fonts/buffalo.woff2') format('woff2'),
+           url('./fonts/buffalo.woff') format('woff'),
+           url('/fonts/buffalo.woff') format('woff'),
+           url('./fonts/buffalo.ttf') format('truetype'),
+           url('https://db.onlinewebfonts.com/t/d65cf77ad028b823f585bfa44b3307c6.woff2') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
 </head>
 <body class="scanner-body">
 
@@ -20,7 +31,7 @@
   <header class="scanner-header">
     <div class="scanner-title">
       <div>
-        <h2 id="scanner-ws-name" style="font-family: 'Caveat', cursive, sans-serif; font-size: 28px; line-height: 1; margin: 0 0 2px;">Roig de Coure</h2>
+        <h2 id="scanner-ws-name" style="font-family: 'Buffalo', 'Buffalo Regular', cursive, sans-serif; font-size: 32px; line-height: 1; margin: 0 0 2px;">Roig de Coure</h2>
         <p>Apropa el teu carnet QR per entrar o sortir</p>
       </div>
     </div>

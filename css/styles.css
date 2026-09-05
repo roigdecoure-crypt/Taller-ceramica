@@ -1,4 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+
+@font-face {
+  font-family: 'Buffalo';
+  src: url('../fonts/buffalo.woff2') format('woff2'),
+       url('/fonts/buffalo.woff2') format('woff2'),
+       url('../fonts/buffalo.woff') format('woff'),
+       url('/fonts/buffalo.woff') format('woff'),
+       url('../fonts/buffalo.ttf') format('truetype'),
+       url('https://db.onlinewebfonts.com/t/d65cf77ad028b823f585bfa44b3307c6.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 /**
  * styles.css - Identitat corporativa oficial de Roig de Coure (roigdecoure.cat)
@@ -16,7 +29,7 @@
   --color-card: #FFFFFF;
   --color-border: #E5DDD5;
   
-  --font-script: 'Caveat', cursive, -apple-system, sans-serif;
+  --font-script: 'Buffalo', 'Buffalo Regular', cursive, -apple-system, sans-serif;
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   
   --color-success: #5E7E6F;
