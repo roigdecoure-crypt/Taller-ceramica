@@ -137,8 +137,11 @@
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
       </div>
       <div class="top-bar-actions">
-        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva">
-          Nova Reserva
+        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal();}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}">
+          + Nova Reserva
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="openReservesModal(adminSelectedDate);">
+          Control Aforament
         </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}">
           Entrada / Sortida Manual
@@ -231,7 +234,7 @@
                   <span id="app-selected-date-display">Carregant data...</span>
                 </h2>
               </div>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" style="border-color: #831D1D; color: #831D1D;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}" style="border-color: #831D1D; color: #831D1D;">
                 + Nova reserva aquest dia
               </button>
             </div>
@@ -977,7 +980,12 @@
           <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
           <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
         </div>
-        <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button type="button" class="btn-roig-coure btn-sm" id="btn-modal-reserves-add-reserva" onclick="openAdminNovaReservaModal(adminReservesCalendar ? adminReservesCalendar.selectedDate : null);" style="padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer;">
+            + Nova Reserva d'Alumne
+          </button>
+          <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+        </div>
       </div>
 
       <div class="modal-body" style="padding: 20px;">
@@ -1038,6 +1046,116 @@
         </span>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA RESERVA D'ALUMNE (ADMIN DIRECTE) -->
+  <div class="modal-backdrop" id="modal-admin-nova-reserva-backdrop" onclick="if(event.target===this) closeAdminNovaReservaModal();">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header" style="border-bottom: 1px solid #E5E7EB; padding: 16px 20px;">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; color: #831D1D; font-weight: 700;">+ Nova Reserva d'Alumne</h3>
+          <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Crear una reserva per a un alumne o nou client amb sessió de 2 hores</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeAdminNovaReservaModal();">&times;</button>
+      </div>
+      <form id="form-admin-nova-reserva" onsubmit="handleAdminSubmitNovaReserva(event);">
+        <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          
+          <!-- Tipus de client -->
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Tipus d'assistència:</label>
+            <div style="display: flex; gap: 20px; background: #F9FAFB; padding: 8px 12px; border-radius: 6px; border: 1px solid #E5E7EB;">
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_client_type" value="existent" checked onchange="toggleAdminReservaClientType();">
+                Alumne Registrat
+              </label>
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_client_type" value="nou" onchange="toggleAdminReservaClientType();">
+                Nou Client Extern (no registrat)
+              </label>
+            </div>
+          </div>
+
+          <!-- Selector Alumne Existent -->
+          <div id="admin-res-group-existent">
+            <label for="admin-res-student-select" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Selecciona l'Alumne:</label>
+            <select id="admin-res-student-select" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <option value="">-- Carregant alumnes... --</option>
+            </select>
+          </div>
+
+          <!-- Camps Nou Client Extern -->
+          <div id="admin-res-group-nou" style="display: none; background: #FFFBF5; padding: 12px; border-radius: 6px; border: 1px solid #FDE68A;">
+            <div style="margin-bottom: 8px;">
+              <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Nom i cognoms (*):</label>
+              <input type="text" id="admin-res-nou-nom" class="form-control" placeholder="ex: Maria Garcia" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Telèfon (*):</label>
+                <input type="tel" id="admin-res-nou-tel" class="form-control" placeholder="612345678" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+              </div>
+              <div>
+                <label style="font-size: 11px; font-weight: 700; color: #4B5563; display: block; margin-bottom: 2px;">Email (opcional):</label>
+                <input type="email" id="admin-res-nou-email" class="form-control" placeholder="maria@gmail.com" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Data de la reserva -->
+          <div>
+            <label for="admin-res-data" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Data de la reserva:</label>
+            <input type="date" id="admin-res-data" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;" onchange="handleAdminResDataChange();">
+            <div id="admin-res-data-warning" style="display: none; margin-top: 5px; font-size: 12px; color: #DC2626; font-weight: 600; background: #FEF2F2; padding: 6px 10px; border-radius: 4px; border: 1px solid #FCA5A5;"></div>
+          </div>
+
+          <!-- Activitat i Places -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+            <div>
+              <label for="admin-res-activitat" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Activitat:</label>
+              <select id="admin-res-activitat" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+                <option value="torn">🏺 Torn de terrissaire (màx 4)</option>
+                <option value="modelatge">👐 Modelatge i escultura (màx 8)</option>
+                <option value="pintar">🎨 Pintar peces ceràmiques (màx 12)</option>
+              </select>
+            </div>
+            <div>
+              <label for="admin-res-places" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Places:</label>
+              <input type="number" id="admin-res-places" value="1" min="1" max="12" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; text-align: center; border: 1px solid #D1D5DB; border-radius: 6px;">
+            </div>
+          </div>
+
+          <!-- Hora d'arribada (de 10:00 a 11:00 cada 15 min - 2 hores) -->
+          <div>
+            <label for="admin-res-hora-inici" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Hora d'arribada (Sessió de 2 hores):</label>
+            <select id="admin-res-hora-inici" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <option value="10:00" data-fi="12:00">10:00 h (fins a les 12:00) — 2 hores</option>
+              <option value="10:15" data-fi="12:15">10:15 h (fins a les 12:15) — 2 hores</option>
+              <option value="10:30" data-fi="12:30">10:30 h (fins a les 12:30) — 2 hores</option>
+              <option value="10:45" data-fi="12:45">10:45 h (fins a les 12:45) — 2 hores</option>
+              <option value="11:00" data-fi="13:00">11:00 h (fins a les 13:00) — 2 hores</option>
+            </select>
+            <small style="color: var(--color-muted); font-size: 11px; margin-top: 3px; display: block;">
+              Horari disponible entre les 10:00 i les 11:00 en intervals de 1/4 d'hora. Totes les reserves tenen una durada de 2 hores.
+            </small>
+          </div>
+
+          <!-- Notes / Observacions -->
+          <div>
+            <label for="admin-res-notes" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Notes o observacions (opcional):</label>
+            <textarea id="admin-res-notes" rows="2" class="form-control" placeholder="Observacions o indicacions especials..." style="width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 6px;"></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAdminNovaReservaModal();">Cancel·lar</button>
+          <button type="submit" class="btn-roig-coure" id="btn-admin-submit-nova-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
+            Confirmar Reserva
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1132,11 +1250,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.9"></script>
-  <script src="js/sound.js?v=3.9"></script>
-  <script src="js/qr-engine.js?v=3.9"></script>
-  <script src="js/store.js?v=3.9"></script>
-  <script src="js/reserves-calendar.js?v=5.0"></script>
-  <script src="js/admin.js?v=5.0"></script>
+  <script src="js/time-utils.js?v=6.0"></script>
+  <script src="js/sound.js?v=6.0"></script>
+  <script src="js/qr-engine.js?v=6.0"></script>
+  <script src="js/store.js?v=6.0"></script>
+  <script src="js/reserves-calendar.js?v=6.0"></script>
+  <script src="js/admin.js?v=6.0"></script>
 </body>
 </html>

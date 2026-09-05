@@ -430,7 +430,7 @@ class ReservesCalendar {
 
     return `
       <div class="res-day-detail-card">
-        <div class="res-day-detail-header">
+        <div class="res-day-detail-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div>
             <div class="res-day-detail-date">
               <span>${formattedDate}</span>
@@ -439,8 +439,15 @@ class ReservesCalendar {
               Ocupació total del dia: <strong>${day.totalOcupadesDia} / ${day.totalPlacesDia} places</strong>
             </div>
           </div>
-          <div class="res-day-global-rule">
-            Aforament màxim del taller: <strong>12 places simultànies</strong> per torn
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${this.isAdmin ? `
+              <button type="button" class="btn btn-roig-coure btn-sm" onclick="if(typeof openAdminNovaReservaModal==='function') openAdminNovaReservaModal('${dateStr}');" style="padding:6px 14px; font-size:13px; font-weight:700; cursor:pointer;">
+                + Nova Reserva d'Alumne
+              </button>
+            ` : ''}
+            <div class="res-day-global-rule" style="margin:0;">
+              Aforament màxim: <strong>12 places</strong>
+            </div>
           </div>
         </div>
 
@@ -608,6 +615,8 @@ class ReservesCalendar {
           this.selectedDate = date;
           await this.loadDayData(date);
           this.render();
+          const detailCard = this.container.querySelector('.res-day-detail-card');
+          if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       });
     });
@@ -649,6 +658,8 @@ class ReservesCalendar {
         await this.loadMonthData(this.currentYear, this.currentMonth);
         await this.loadDayData(this.selectedDate);
         this.render();
+        const detailCard = this.container.querySelector('.res-day-detail-card');
+        if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
     }
 
@@ -656,10 +667,16 @@ class ReservesCalendar {
     this.container.querySelectorAll('.res-cal-day.open-day').forEach(cell => {
       cell.addEventListener('click', async () => {
         const date = cell.dataset.date;
-        if (date && date !== this.selectedDate) {
-          this.selectedDate = date;
-          await this.loadDayData(date);
-          this.render();
+        if (date) {
+          if (date !== this.selectedDate) {
+            this.selectedDate = date;
+            await this.loadDayData(date);
+            this.render();
+          }
+          const detailCard = this.container.querySelector('.res-day-detail-card');
+          if (detailCard) {
+            detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
         }
       });
     });

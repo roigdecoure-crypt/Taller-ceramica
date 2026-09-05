@@ -1400,7 +1400,7 @@ let adminSelectedDate = getAdminLocalDate();
 let adminReservesCalendar = null;
 
 function initReservesAdmin() {
-  const btnOpen = document.getElementById('btn-reserves-admin') || document.getElementById('btn-admin-nova-reserva');
+  const btnOpen = document.getElementById('btn-reserves-admin') || document.getElementById('btn-admin-aforament-modal');
   const modal = document.getElementById('modal-reserves-backdrop');
   if (btnOpen && modal) {
     btnOpen.addEventListener('click', () => {
@@ -1568,11 +1568,11 @@ async function initAppointmentsDashboard() {
 
   // Botons "+ Nova Reserva"
   document.getElementById('btn-admin-nova-reserva')?.addEventListener('click', () => {
-    openReservesModal(adminSelectedDate);
+    openAdminNovaReservaModal(adminSelectedDate);
   });
 
   document.getElementById('btn-nova-reserva-dia')?.addEventListener('click', () => {
-    openReservesModal(adminSelectedDate);
+    openAdminNovaReservaModal(adminSelectedDate);
   });
 
   // Render inicial del calendari i llista del dia seleccionat
@@ -1724,7 +1724,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td colspan="4" class="app-empty-state">
           <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">No hi ha cap reserva per aquest dia</div>
           <div style="color: #6B7280; font-size: 13px; margin-bottom: 14px;">Totes les places estan disponibles.</div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="openReservesModal('${dateStr}')" style="border-color: #831D1D; color: #831D1D;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="openAdminNovaReservaModal('${dateStr}')" style="border-color: #831D1D; color: #831D1D;">
             + Crear una reserva aquí
           </button>
         </td>
@@ -1828,8 +1828,240 @@ async function renderAdminDayAppointments(dateStr) {
   });
 }
 
+// ==================== MODAL ADMIN NOVA RESERVA D'ALUMNE ====================
+async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, preselectedActId) {
+  const modal = document.getElementById('modal-admin-nova-reserva-backdrop');
+  if (!modal) {
+    console.error('Modal #modal-admin-nova-reserva-backdrop no trobat');
+    return;
+  }
+  // Obrir el modal immediatament
+  modal.classList.add('active');
+
+  // Selector d'alumnes
+  const studentSelect = document.getElementById('admin-res-student-select');
+  const fillSelect = (list) => {
+    if (!studentSelect) return;
+    studentSelect.innerHTML = '<option value="">-- Selecciona un alumne registrat --</option>';
+    const sorted = [...(list || [])].sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
+    sorted.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.dataset.nom = `${s.nom} ${s.cognoms || ''}`.trim();
+      opt.dataset.tel = s.telefon || '';
+      opt.dataset.email = s.email || '';
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${s.telefon ? '· Tel: ' + s.telefon : ''}`;
+      if (preselectedStudentId && preselectedStudentId === s.id) {
+        opt.selected = true;
+      }
+      studentSelect.appendChild(opt);
+    });
+  };
+
+  if (allStudents && allStudents.length > 0) {
+    fillSelect(allStudents);
+  } else {
+    if (studentSelect) studentSelect.innerHTML = '<option value="">Carregant alumnes...</option>';
+    Store.getAlumnes().then(list => {
+      allStudents = Array.isArray(list) ? list : [];
+      fillSelect(allStudents);
+    }).catch(e => {
+      console.warn('Error carregant alumnes:', e);
+      if (studentSelect) studentSelect.innerHTML = '<option value="">-- No s\'han pogut carregar alumnes --</option>';
+    });
+  }
+
+  // Reset al tipus existent
+  const radioExistent = document.querySelector('input[name="admin_res_client_type"][value="existent"]');
+  if (radioExistent) radioExistent.checked = true;
+  toggleAdminReservaClientType();
+
+  // Netejar inputs de nou client
+  const mNom = document.getElementById('admin-res-nou-nom');
+  const mTel = document.getElementById('admin-res-nou-tel');
+  const mEmail = document.getElementById('admin-res-nou-email');
+  if (mNom) mNom.value = '';
+  if (mTel) mTel.value = '';
+  if (mEmail) mEmail.value = '';
+
+  // Data
+  const todayISO = getAdminLocalDate();
+  const targetDate = preselectedDate || adminSelectedDate || todayISO;
+  const dateInput = document.getElementById('admin-res-data');
+  if (dateInput) {
+    dateInput.min = todayISO;
+    dateInput.value = targetDate;
+  }
+  handleAdminResDataChange();
+
+  // Activitat
+  const actSelect = document.getElementById('admin-res-activitat');
+  if (actSelect) {
+    actSelect.value = (preselectedActId || 'torn').toLowerCase();
+  }
+
+  // Places
+  const placesInput = document.getElementById('admin-res-places');
+  if (placesInput) placesInput.value = 1;
+
+  // Hora inici 10:00
+  const horaSelect = document.getElementById('admin-res-hora-inici');
+  if (horaSelect) horaSelect.value = '10:00';
+
+  // Notes
+  const notesInput = document.getElementById('admin-res-notes');
+  if (notesInput) notesInput.value = '';
+}
+
+function closeAdminNovaReservaModal() {
+  const modal = document.getElementById('modal-admin-nova-reserva-backdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+function toggleAdminReservaClientType() {
+  const type = document.querySelector('input[name="admin_res_client_type"]:checked')?.value || 'existent';
+  const grpExistent = document.getElementById('admin-res-group-existent');
+  const grpNou = document.getElementById('admin-res-group-nou');
+  if (type === 'nou') {
+    if (grpExistent) grpExistent.style.display = 'none';
+    if (grpNou) grpNou.style.display = 'block';
+  } else {
+    if (grpExistent) grpExistent.style.display = 'block';
+    if (grpNou) grpNou.style.display = 'none';
+  }
+}
+
+function handleAdminResDataChange() {
+  const dateInput = document.getElementById('admin-res-data');
+  const warningDiv = document.getElementById('admin-res-data-warning');
+  if (!dateInput || !warningDiv) return;
+
+  const dateVal = dateInput.value;
+  if (!dateVal) {
+    warningDiv.style.display = 'none';
+    return;
+  }
+
+  const parts = dateVal.split('-').map(Number);
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  const dayOfWeek = d.getDay(); // 0 = Dg, 1 = Dl, 2 = Dt...
+
+  if (dayOfWeek === 1 || dayOfWeek === 2) {
+    warningDiv.textContent = 'Atenció: Els dilluns i dimarts el taller roman tancat per descans setmanal.';
+    warningDiv.style.display = 'block';
+  } else {
+    warningDiv.style.display = 'none';
+  }
+}
+
+async function handleAdminSubmitNovaReserva(e) {
+  if (e) e.preventDefault();
+  const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Confirmant...';
+  }
+
+  const clientType = document.querySelector('input[name="admin_res_client_type"]:checked')?.value || 'existent';
+  let studentId = '';
+  let studentNom = '';
+  let studentTel = '';
+  let studentEmail = '';
+
+  if (clientType === 'existent') {
+    const sel = document.getElementById('admin-res-student-select');
+    studentId = sel ? sel.value : '';
+    if (!studentId) {
+      alert('Si us plau, selecciona un alumne registrat a la llista.');
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+      return;
+    }
+    const opt = sel.options[sel.selectedIndex];
+    studentNom = opt.dataset.nom || studentId;
+    studentTel = opt.dataset.tel || '';
+    studentEmail = opt.dataset.email || '';
+  } else {
+    studentNom = document.getElementById('admin-res-nou-nom')?.value?.trim();
+    studentTel = document.getElementById('admin-res-nou-tel')?.value?.trim();
+    studentEmail = document.getElementById('admin-res-nou-email')?.value?.trim();
+    if (!studentNom || !studentTel) {
+      alert('Cal indicar el nom complet i el telèfon de contacte del client.');
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+      return;
+    }
+    studentId = `CLI-${Date.now().toString().slice(-4)}`;
+  }
+
+  const dataRes = document.getElementById('admin-res-data')?.value;
+  if (!dataRes) {
+    alert('Cal indicar la data de la reserva.');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+    return;
+  }
+
+  const actSelect = document.getElementById('admin-res-activitat');
+  const actId = actSelect ? actSelect.value : 'torn';
+  const actOpt = actSelect?.options[actSelect.selectedIndex];
+  const actNom = actOpt ? actOpt.text.split('(')[0].replace(/[🏺👐🎨]/g, '').trim() : 'Torn';
+
+  const places = parseInt(document.getElementById('admin-res-places')?.value || 1, 10);
+
+  const horaSelect = document.getElementById('admin-res-hora-inici');
+  const horaInici = horaSelect ? horaSelect.value : '10:00';
+  const horaFi = horaSelect?.options[horaSelect.selectedIndex]?.dataset.fi || '12:00';
+
+  const notes = document.getElementById('admin-res-notes')?.value?.trim() || '';
+
+  try {
+    const res = await Store.crearReserva({
+      student_id: studentId,
+      student_nom: studentNom,
+      telefon: studentTel,
+      email: studentEmail,
+      data: dataRes,
+      franja_id: 'M1',
+      franja: 'M1',
+      activitat: actNom,
+      activitat_id: actId,
+      places: places,
+      hora_inici: horaInici,
+      hora_fi: horaFi,
+      hores: 2.0,
+      notes: notes
+    });
+
+    if (res && res.ok) {
+      showToast(`Reserva confirmada amb èxit per a ${studentNom}!`, 'success');
+      if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+      closeAdminNovaReservaModal();
+
+      adminSelectedDate = dataRes;
+      await refreshAppointmentsDashboard();
+
+      if (adminReservesCalendar) {
+        adminReservesCalendar.selectedDate = dataRes;
+        await adminReservesCalendar.refresh();
+      }
+    } else {
+      alert(`No s'ha pogut crear la reserva: ${(res && res.error) || 'Aforament complet o dia no disponible'}`);
+    }
+  } catch (err) {
+    alert(`Error en crear la reserva: ${err.message}`);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirmar Reserva';
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.openReservesModal = openReservesModal;
+  window.openAdminNovaReservaModal = openAdminNovaReservaModal;
+  window.closeAdminNovaReservaModal = closeAdminNovaReservaModal;
+  window.toggleAdminReservaClientType = toggleAdminReservaClientType;
+  window.handleAdminResDataChange = handleAdminResDataChange;
+  window.handleAdminSubmitNovaReserva = handleAdminSubmitNovaReserva;
   window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
   window.refreshAppointmentsDashboard = refreshAppointmentsDashboard;
   window.initAppointmentsDashboard = initAppointmentsDashboard;

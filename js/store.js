@@ -714,10 +714,7 @@ const Store = {
     const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
     const activitats = this.getActivitats();
     const defFranges = [
-      { id: "F1", nom: "Matí 1 (10:00 - 11:30)", inici: "10:00", fi: "11:30", hores: 1.5 },
-      { id: "F2", nom: "Matí 2 (11:30 - 13:00)", inici: "11:30", fi: "13:00", hores: 1.5 },
-      { id: "F3", nom: "Tarda 1 (17:00 - 18:30)", inici: "17:00", fi: "18:30", hores: 1.5 },
-      { id: "F4", nom: "Tarda 2 (18:30 - 20:00)", inici: "18:30", fi: "20:00", hores: 1.5 }
+      { id: "M1", nom: "Matí (10:00 - 13:00)", inici: "10:00", fi: "13:00", hores: 2.0 }
     ];
 
     // Comprovar si dilluns o dimarts
@@ -853,13 +850,13 @@ const Store = {
       student_nom: reservaData.student_nom || reservaData.student_id,
       telefon: reservaData.telefon || '',
       data: reservaData.data,
-      franja: reservaData.franja || reservaData.franja_id || 'F1',
+      franja: reservaData.franja || reservaData.franja_id || 'M1',
       activitat: reservaData.activitat || 'Torn',
       activitat_id: reservaData.activitat_id || 'torn',
       places: demanades,
       hora_inici: reservaData.hora_inici || '10:00',
-      hora_fi: reservaData.hora_fi || '11:30',
-      hores: parseFloat(reservaData.hores) || 1.5,
+      hora_fi: reservaData.hora_fi || '12:00',
+      hores: parseFloat(reservaData.hores) || 2.0,
       notes: reservaData.notes || '',
       estat: 'confirmada',
       created_at: new Date().toISOString()
