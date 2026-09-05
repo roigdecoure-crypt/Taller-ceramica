@@ -1,11 +1,11 @@
 {
-  "name": "Roig de Coure - Carnet de l-Alumne",
+  "name": "Roig de Coure - Carnet de l'Alumne",
   "short_name": "Roig de Coure",
-  "description": "Carnet digital d-alumne, codi QR d-acces, consulta de saldo d-hores i recarregues",
+  "description": "Carnet digital d'alumne, codi QR d'accés, consulta de saldo d'hores i recàrregues",
   "start_url": "./alumne.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1A1817",
+  "background_color": "#FAF9F5",
   "theme_color": "#831D1D",
   "orientation": "portrait-primary",
   "icons": [
@@ -13,13 +13,13 @@
       "src": "./icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
