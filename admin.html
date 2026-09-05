@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=4.5">
-  <link rel="stylesheet" href="css/admin.css?v=4.5">
-  <link rel="stylesheet" href="css/card.css?v=4.5">
+  <link rel="stylesheet" href="css/styles.css?v=5.0">
+  <link rel="stylesheet" href="css/admin.css?v=5.0">
+  <link rel="stylesheet" href="css/card.css?v=5.0">
 </head>
 <body class="admin-app-layout">
 
@@ -22,40 +22,104 @@
     </a>
 
     <ul class="sidebar-menu">
-      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves">
+      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
         <span class="nav-text">Reserves & Calendari</span>
       </li>
-      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes">
+      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes" title="Alumnes & Clients">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </span>
         <span class="nav-text">Alumnes & Clients</span>
       </li>
-      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe">
+      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe" title="Al taller ara mateix">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
 
       <div class="sidebar-divider"></div>
 
-      <li class="sidebar-item">
+      <li class="sidebar-item" title="Escàner QR Mòbil">
         <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </span>
           <span class="nav-text">Escàner QR Mòbil</span>
         </a>
       </li>
-      <li class="sidebar-item">
+      <li class="sidebar-item" title="Web Pública Reserves">
         <a href="reserva.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </span>
           <span class="nav-text">Web Pública Reserves</span>
         </a>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-branding">
+      <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+          </svg>
+        </span>
         <span class="nav-text">Disseny & Marca</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-config">
+      <li class="sidebar-item" id="btn-sidebar-config" title="Configuració">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </span>
         <span class="nav-text">Configuració</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-export">
+      <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+        </span>
         <span class="nav-text">Dades & Backup</span>
       </li>
     </ul>
 
     <div class="sidebar-footer-btn" id="btn-collapse-sidebar" title="Plegar / desplegar menú">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </span>
       <span class="nav-text">Plegar menú</span>
     </div>
   </aside>
@@ -1068,7 +1132,7 @@
   <script src="js/sound.js?v=3.9"></script>
   <script src="js/qr-engine.js?v=3.9"></script>
   <script src="js/store.js?v=3.9"></script>
-  <script src="js/reserves-calendar.js?v=4.5"></script>
-  <script src="js/admin.js?v=4.5"></script>
+  <script src="js/reserves-calendar.js?v=5.0"></script>
+  <script src="js/admin.js?v=5.0"></script>
 </body>
 </html>

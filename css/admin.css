@@ -108,9 +108,28 @@
   text-align: center;
 }
 
+.admin-sidebar.collapsed .sidebar-item a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.admin-sidebar.collapsed .sidebar-item .nav-icon {
+  margin: 0 auto;
+}
+
 .admin-sidebar.collapsed .sidebar-footer-btn {
   justify-content: center;
   padding: 14px 0;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn .nav-icon {
+  margin: 0 auto;
+}
+
+.admin-sidebar.collapsed .sidebar-footer-btn .nav-icon svg {
+  transform: rotate(180deg);
 }
 
 /* Menú de navegació lateral */
@@ -162,7 +181,31 @@
 
 .sidebar-item .nav-icon,
 .sidebar-footer-btn .nav-icon {
-  display: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #4B5563;
+  transition: color 0.15s ease, transform 0.2s ease;
+}
+
+.sidebar-item .nav-icon svg,
+.sidebar-footer-btn .nav-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.sidebar-item:hover .nav-icon {
+  color: #0F172A;
+}
+
+.sidebar-item.active .nav-icon,
+.sidebar-item.active .nav-icon svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
 }
 
 .sidebar-divider {
