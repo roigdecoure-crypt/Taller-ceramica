@@ -505,9 +505,12 @@
 
           <!-- Franges de la data -->
           <div id="slots-wrapper">
-            <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; color: var(--dark);">
-              Franja horària disponible:
+            <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--dark);">
+              Tria l'hora d'arribada (Sessió de 2 hores):
             </label>
+            <p style="font-size: 12px; color: var(--muted); margin: 0 0 10px 0;">
+              Arribada flexible entre les 10:00h i les 11:00h cada 1/4 d'hora. Totes les reserves tenen una durada de 2 hores.
+            </p>
             <div class="slots-grid" id="slots-container">
               <div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">
                 Comprovant disponibilitat...
@@ -646,10 +649,11 @@
       activitatNom: 'Torn',
       activitatCapMax: 4,
       data: '',
-      franja: 'F1',
-      franjaNom: 'Matí 1 (10:00 - 11:30)',
+      franja: 'M1',
+      franjaNom: 'Matí (10:00 - 13:00)',
       horaInici: '10:00',
-      horaFi: '11:30',
+      horaFi: '12:00',
+      hores: 2.0,
       places: 1,
       maxPlacesDisponibles: 4,
       lastConfirmed: null
@@ -713,48 +717,58 @@
           return;
         }
 
-        renderSlots(data.franges || []);
+        renderSlots(data);
       } catch (e) {
         slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #831D1D; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
       }
     }
 
-    function renderSlots(franges) {
+    function renderSlots(data) {
       const slotsContainer = document.getElementById('slots-container');
       slotsContainer.innerHTML = '';
 
+      const franja = (data.franges && data.franges[0]) ? data.franges[0] : {};
+      const actObj = (franja.activitats || data.activitats || []).find(a => a.id === state.activitatId);
+      const lliuresAct = actObj ? actObj.placesDisponibles : (franja.placesLliures !== undefined ? franja.placesLliures : 12);
+      const isComplet = lliuresAct <= 0;
+
+      const intervals = data.intervals || (franja.intervals) || [
+        { id: '10:00', inici: '10:00', fi: '12:00', nom: '10:00 - 12:00 (2h)' },
+        { id: '10:15', inici: '10:15', fi: '12:15', nom: '10:15 - 12:15 (2h)' },
+        { id: '10:30', inici: '10:30', fi: '12:30', nom: '10:30 - 12:30 (2h)' },
+        { id: '10:45', inici: '10:45', fi: '12:45', nom: '10:45 - 12:45 (2h)' },
+        { id: '11:00', inici: '11:00', fi: '13:00', nom: '11:00 - 13:00 (2h)' }
+      ];
+
       let firstValidSlot = null;
 
-      franges.forEach(f => {
-        const actObj = (f.activitats || []).find(a => a.id === state.activitatId);
-        const lliuresAct = actObj ? actObj.placesDisponibles : f.placesLliures;
-        const isComplet = lliuresAct <= 0 || f.placesLliures <= 0;
-
+      intervals.forEach(item => {
         const div = document.createElement('div');
         div.className = `slot-item ${isComplet ? 'disabled' : ''}`;
-        div.dataset.id = f.id;
-        div.dataset.nom = f.nom;
-        div.dataset.inici = f.inici;
-        div.dataset.fi = f.fi;
+        div.dataset.id = item.id;
+        div.dataset.inici = item.inici;
+        div.dataset.fi = item.fi;
+        div.dataset.nom = item.nom || `${item.inici} - ${item.fi} (2h)`;
         div.dataset.places = lliuresAct;
 
         div.innerHTML = `
-          <div class="slot-time">${f.inici} - ${f.fi}</div>
-          <div class="slot-avail">${isComplet ? 'Complet' : `${lliuresAct} lliures`}</div>
+          <div class="slot-time">${item.inici} - ${item.fi}</div>
+          <div class="slot-avail">${isComplet ? 'Complet' : `${lliuresAct} lliures (2h)`}</div>
         `;
 
         if (!isComplet && !firstValidSlot) {
-          firstValidSlot = { id: f.id, nom: f.nom, inici: f.inici, fi: f.fi, places: lliuresAct };
+          firstValidSlot = { id: item.id, inici: item.inici, fi: item.fi, nom: item.nom, places: lliuresAct };
         }
 
         if (!isComplet) {
           div.addEventListener('click', () => {
             document.querySelectorAll('.slot-item').forEach(s => s.classList.remove('active'));
             div.classList.add('active');
-            state.franja = f.id;
-            state.franjaNom = f.nom;
-            state.horaInici = f.inici;
-            state.horaFi = f.fi;
+            state.franja = franja.id || 'M1';
+            state.franjaNom = item.nom || `${item.inici} - ${item.fi} (2h)`;
+            state.horaInici = item.inici;
+            state.horaFi = item.fi;
+            state.hores = 2.0;
             state.maxPlacesDisponibles = lliuresAct;
             updatePaxDropdown(lliuresAct);
             document.getElementById('btn-submit').disabled = false;
@@ -888,7 +902,10 @@
           telefon: tel,
           email: email,
           data: state.data,
-          franja: state.franja,
+          franja: state.franja || 'M1',
+          hora_inici: state.horaInici || '10:00',
+          hora_fi: state.horaFi || '12:00',
+          hores: 2.0,
           activitat_id: state.activitatId,
           activitat: state.activitatNom,
           places: state.places,
@@ -936,14 +953,14 @@
       document.getElementById('success-client-msg').textContent = `Moltíssimes gràcies, ${clientName}! T'esperem al taller.`;
       document.getElementById('sum-act').textContent = reserva.activitat || state.activitatNom;
       document.getElementById('sum-data').textContent = formatCatalanDate(reserva.data);
-      document.getElementById('sum-horari').textContent = `${reserva.hora_inici || state.horaInici} - ${reserva.hora_fi || state.horaFi}`;
+      document.getElementById('sum-horari').textContent = `${reserva.hora_inici || state.horaInici} - ${reserva.hora_fi || state.horaFi} (2 hores)`;
       document.getElementById('sum-places').textContent = `${reserva.places} persona${reserva.places > 1 ? 'es' : ''}`;
       document.getElementById('sum-ref').textContent = reserva.id || 'CONFIRMADA';
 
       // Enllaç Google Calendar
       const dClean = reserva.data.replace(/-/g, '');
       const tInici = (reserva.hora_inici || '10:00').replace(':', '') + '00';
-      const tFi = (reserva.hora_fi || '11:30').replace(':', '') + '00';
+      const tFi = (reserva.hora_fi || '12:00').replace(':', '') + '00';
       const datesParam = `${dClean}T${tInici}/${dClean}T${tFi}`;
       const titleParam = encodeURIComponent(`Sessió de Ceràmica (${reserva.activitat || state.activitatNom}) - Roig de Coure`);
       const detailsParam = encodeURIComponent(`Reserva de ${reserva.places} plaça/es per a ${reserva.student_nom}.\nTaller Roig de Coure.\nReferència: ${reserva.id || ''}`);

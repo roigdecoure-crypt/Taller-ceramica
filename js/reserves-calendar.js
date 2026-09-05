@@ -524,7 +524,7 @@ class ReservesCalendar {
               <div class="res-student-info">
                 <strong>${r.student_id || ''}</strong>
                 <span>${r.student_nom || r.nom || ''}</span>
-                <span style="color:var(--color-muted); font-size:11px;">(${r.activitat || 'Torn'}, ${r.places || 1}p)</span>
+                <span style="color:var(--color-muted); font-size:11px;">(${r.hora_inici ? `<strong>${r.hora_inici} - ${r.hora_fi}</strong> · ` : ''}${r.activitat || 'Torn'}, ${r.places || 1}p)</span>
               </div>
               <div class="res-student-actions">
                 ${r.telefon ? `
@@ -711,7 +711,7 @@ class ReservesCalendar {
     const day = this.dayData;
     if (!day) return;
 
-    const franja = (day.franges || []).find(f => f.id === slotId) || { id: slotId, nom: slotId, inici: '10:00', fi: '11:30', hores: 1.5 };
+    const franja = (day.franges || []).find(f => f.id === slotId) || { id: slotId, nom: slotId, inici: '10:00', fi: '13:00', hores: 2.0 };
     const act = this.ACTIVITATS.find(a => a.id === actId) || this.ACTIVITATS[0];
 
     // Eliminar modal existent si n'hi ha
@@ -776,16 +776,28 @@ class ReservesCalendar {
           </div>
           <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px;">
             <span style="color:var(--color-muted);">Franja horària:</span>
-            <strong style="color:var(--color-dark);">${franja.nom} (${franja.inici} - ${franja.fi})</strong>
+            <strong style="color:var(--color-dark);">${franja.nom}</strong>
           </div>
           <div style="display:flex; justify-content:space-between; font-size:13px;">
             <span style="color:var(--color-muted);">Durada de la sessió:</span>
-            <strong style="color:var(--color-primary-dark);">${franja.hores} hores</strong>
+            <strong style="color:var(--color-primary-dark);">2 hores</strong>
           </div>
         </div>
 
         <form id="form-confirm-booking">
           ${studentFieldsHtml}
+
+          <!-- Selector d'Hora d'Arribada (2h) -->
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-size:12px; font-weight:700;">Hora d'arribada (Sessió de 2 hores) *</label>
+            <select id="modal-booking-arrival-time" class="form-control" style="font-size:13px; font-weight:600;">
+              <option value="10:00" data-fi="12:00">10:00 a 12:00 (2h)</option>
+              <option value="10:15" data-fi="12:15">10:15 a 12:15 (2h)</option>
+              <option value="10:30" data-fi="12:30">10:30 a 12:30 (2h)</option>
+              <option value="10:45" data-fi="12:45">10:45 a 12:45 (2h)</option>
+              <option value="11:00" data-fi="13:00">11:00 a 13:00 (2h)</option>
+            </select>
+          </div>
 
           <!-- Selector de Persones (Pax) -->
           <div class="form-group">
@@ -928,6 +940,10 @@ class ReservesCalendar {
         } catch (e) {}
       }
 
+      const arrivalSelect = modalBackdrop.querySelector('#modal-booking-arrival-time');
+      const selectedHoraInici = arrivalSelect ? arrivalSelect.value : (franja.inici || '10:00');
+      const selectedHoraFi = (arrivalSelect && arrivalSelect.selectedOptions[0]) ? (arrivalSelect.selectedOptions[0].dataset.fi || '12:00') : (franja.fi || '12:00');
+
       try {
         const res = await Store.crearReserva({
           student_id: studentId,
@@ -939,9 +955,9 @@ class ReservesCalendar {
           activitat: act.nom,
           activitat_id: act.id,
           places: currentPax,
-          hora_inici: franja.inici,
-          hora_fi: franja.fi,
-          hores: parseFloat(franja.hores) || 1.5,
+          hora_inici: selectedHoraInici,
+          hora_fi: selectedHoraFi,
+          hores: 2.0,
           notes: notes
         });
 

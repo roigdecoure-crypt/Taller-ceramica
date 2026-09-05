@@ -55,7 +55,7 @@ const Store = {
           stripe_pack10_url: '',
           stripe_pack20_url: '',
           google_sheets_url: 'https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec',
-          google_calendar_name: 'roigdecoure'
+          google_calendar_name: 'reserves'
         }
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(initial));

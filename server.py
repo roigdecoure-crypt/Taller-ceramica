@@ -94,7 +94,7 @@ def init_db():
                 places INTEGER DEFAULT 1,
                 telefon TEXT DEFAULT '',
                 estat TEXT DEFAULT 'confirmada',
-                hores REAL DEFAULT 1.5,
+                hores REAL DEFAULT 2.0,
                 notes TEXT,
                 created_at TEXT NOT NULL,
                 calendar_event_id TEXT DEFAULT NULL,
@@ -103,12 +103,12 @@ def init_db():
         ''')
         # Migració de columnes addicionals per a bases de dades existents
         for col, col_type in [
-            ('activitat', "TEXT DEFAULT 'Torn'"),
-            ('activitat_id', "TEXT DEFAULT 'torn'"),
-            ('places', "INTEGER DEFAULT 1"),
             ('telefon', "TEXT DEFAULT ''"),
-            ('calendar_event_id', "TEXT DEFAULT NULL"),
+            ('activitat_id', "TEXT DEFAULT 'torn'"),
+            ('activitat', "TEXT DEFAULT 'Torn'"),
+            ('places', "INTEGER DEFAULT 1"),
             ('email', "TEXT DEFAULT ''"),
+            ('calendar_event_id', "TEXT DEFAULT NULL"),
             ('whatsapp_notif_confirm', "INTEGER DEFAULT 0"),
             ('whatsapp_notif_48h', "INTEGER DEFAULT 0"),
             ('whatsapp_notif_dia', "INTEGER DEFAULT 0")
@@ -132,12 +132,9 @@ def init_db():
             )
         ''')
 
-        # Franges horàries oficials de 90 minuts (Roig de Coure)
+        # Franges horàries oficials: Torn únic de matí de 2 hores (Roig de Coure)
         default_franges_json = json.dumps([
-            {"id": "F1", "nom": "Matí 1 (10:00 - 11:30)", "inici": "10:00", "fi": "11:30", "hores": 1.5},
-            {"id": "F2", "nom": "Matí 2 (11:30 - 13:00)", "inici": "11:30", "fi": "13:00", "hores": 1.5},
-            {"id": "F3", "nom": "Tarda 1 (17:00 - 18:30)", "inici": "17:00", "fi": "18:30", "hores": 1.5},
-            {"id": "F4", "nom": "Tarda 2 (18:30 - 20:00)", "inici": "18:30", "fi": "20:00", "hores": 1.5}
+            {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
         ], ensure_ascii=False)
 
         # Valors de configuració inicials per defecte si no existeixen
@@ -151,7 +148,7 @@ def init_db():
             'brand_secondary': "#5E7E6F",
             'brand_font': "serif",
             'brand_palette': "roigdecoure",
-            'hores_per_defecte_oblit': "01:30:00",
+            'hores_per_defecte_oblit': "02:00:00",
             'stripe_url_adults': "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n",
             'stripe_url_infantil': "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j",
             'edat_tall_infantil': "12",
@@ -178,7 +175,8 @@ def init_db():
         # Migració de valors antics a configuració oficial si cal
         cursor.execute('UPDATE configuracio SET valor = "#831D1D" WHERE clau = "brand_primary" AND (valor = "#C25E3A" OR valor = "#7A3026" OR valor IS NULL OR valor = "")')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND valor = "8"')
-        cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND valor LIKE "%mati_1%"', (default_franges_json,))
+        cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND (valor LIKE "%mati_1%" OR valor LIKE "%F1%")', (default_franges_json,))
+        cursor.execute('UPDATE configuracio SET valor = "02:00:00" WHERE clau = "hores_per_defecte_oblit" AND valor = "01:30:00"')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
@@ -770,11 +768,20 @@ try:
 except Exception as e:
     print(f"[WhatsApp Scheduler Error]: {e}")
 
+INTERVALS_INICI_2H = ["10:00", "10:15", "10:30", "10:45", "11:00"]
+
+def calcular_hora_fi_2h(hora_inici_str):
+    try:
+        parts = [int(p) for p in hora_inici_str.split(':')]
+        total_min = parts[0] * 60 + parts[1] + 120
+        h = total_min // 60
+        m = total_min % 60
+        return f"{h:02d}:{m:02d}"
+    except Exception:
+        return "12:00"
+
 DEFAULT_FRANGES = [
-    {"id": "F1", "nom": "Matí 1 (10:00 - 11:30)", "inici": "10:00", "fi": "11:30", "hores": 1.5},
-    {"id": "F2", "nom": "Matí 2 (11:30 - 13:00)", "inici": "11:30", "fi": "13:00", "hores": 1.5},
-    {"id": "F3", "nom": "Tarda 1 (17:00 - 18:30)", "inici": "17:00", "fi": "18:30", "hores": 1.5},
-    {"id": "F4", "nom": "Tarda 2 (18:30 - 20:00)", "inici": "18:30", "fi": "20:00", "hores": 1.5}
+    {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
 ]
 
 FESTIUS_CATALUNYA = [
@@ -861,7 +868,9 @@ def get_disponibilitat(data_str):
             'aforamentMaxim': max_cap,
             'totalPlacesDia': 0,
             'totalOcupadesDia': 0,
+            'placesLliuresDia': 0,
             'franges': [],
+            'intervals': [],
             'activitats': activitats_list
         }
 
@@ -876,61 +885,73 @@ def get_disponibilitat(data_str):
         ''', (data_str,))
         active_reserves = [row_to_dict(x) for x in cursor.fetchall()]
 
-    result_franges = []
-    total_ocupades_dia = 0
+    # Totes les reserves del matí comparteixen l'aforament del taller (màx 12)
+    total_ocupades_dia = sum(int(r.get('places') or 1) for r in active_reserves)
+    lliures_dia = max(0, max_cap - total_ocupades_dia)
+    esta_complet = (lliures_dia == 0)
 
+    # Ocupació per activitat respectant el límit absolut de la franja (màxim 12)
+    ocupacio_per_act = {}
+    activitats_franja = []
+    for act in activitats_list:
+        act_id = act['id']
+        act_nom = act['nom'].lower()
+        ocupat_act = sum(int(r.get('places') or 1) for r in active_reserves if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
+        ocupacio_per_act[act_id] = ocupat_act
+        capacitat_max_act = act['capacitatMax']
+        lliures_act = max(0, capacitat_max_act - ocupat_act)
+        # El límit efectiu és el mínim entre les places lliures globals del dia i les de l'activitat
+        places_efectives = min(lliures_dia, lliures_act)
+        activitats_franja.append({
+            'id': act_id,
+            'nom': act['nom'],
+            'icon': act['icon'],
+            'color': act['color'],
+            'capacitatMax': capacitat_max_act,
+            'ocupat': ocupat_act,
+            'placesDisponibles': places_efectives,
+            'complet': places_efectives == 0
+        })
+
+    if lliures_dia == 0:
+        estat_franja = 'complet'
+    elif lliures_dia <= 3 and total_ocupades_dia > 0:
+        estat_franja = 'ultimes_places'
+    else:
+        estat_franja = 'lliure'
+
+    # 5 intervals d'arribada cada 15 minuts de 10:00 a 11:00 (tots de 2h)
+    intervals_list = []
+    for h_ini in INTERVALS_INICI_2H:
+        h_fi = calcular_hora_fi_2h(h_ini)
+        intervals_list.append({
+            'id': h_ini,
+            'inici': h_ini,
+            'fi': h_fi,
+            'hores': 2.0,
+            'nom': f"{h_ini} - {h_fi} (2h)",
+            'placesLliures': lliures_dia,
+            'estaComplet': esta_complet
+        })
+
+    result_franges = []
     for f in franges:
         f_id = f['id']
-        f_res = [r for r in active_reserves if r.get('franja') == f_id or r.get('franja') == f.get('nom')]
-        ocupades_franja = sum(int(r.get('places') or 1) for r in f_res)
-        total_ocupades_dia += ocupades_franja
-        lliures_franja = max(0, max_cap - ocupades_franja)
-        esta_complet = (lliures_franja == 0)
-
-        # Ocupació per activitat respectant el límit absolut de la franja (màxim 12)
-        ocupacio_per_act = {}
-        activitats_franja = []
-        for act in activitats_list:
-            act_id = act['id']
-            act_nom = act['nom'].lower()
-            ocupat_act = sum(int(r.get('places') or 1) for r in f_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
-            ocupacio_per_act[act_id] = ocupat_act
-            capacitat_max_act = act['capacitatMax']
-            lliures_act = max(0, capacitat_max_act - ocupat_act)
-            # El límit efectiu és el mínim entre les places lliures de la franja i les de l'activitat
-            places_efectives = min(lliures_franja, lliures_act)
-            activitats_franja.append({
-                'id': act_id,
-                'nom': act['nom'],
-                'icon': act['icon'],
-                'color': act['color'],
-                'capacitatMax': capacitat_max_act,
-                'ocupat': ocupat_act,
-                'placesDisponibles': places_efectives,
-                'complet': places_efectives == 0
-            })
-
-        if lliures_franja == 0:
-            estat_franja = 'complet'
-        elif lliures_franja <= 3 and ocupades_franja > 0:
-            estat_franja = 'ultimes_places'
-        else:
-            estat_franja = 'lliure'
-
         result_franges.append({
             'id': f_id,
             'nom': f.get('nom'),
             'inici': f.get('inici'),
             'fi': f.get('fi'),
-            'hores': f.get('hores', 1.5),
+            'hores': float(f.get('hores', 2.0)),
             'totalPlaces': max_cap,
-            'placesOcupades': ocupades_franja,
-            'placesLliures': lliures_franja,
+            'placesOcupades': total_ocupades_dia,
+            'placesLliures': lliures_dia,
             'estat': estat_franja,
             'estaComplet': esta_complet,
             'ocupacioPerActivitat': ocupacio_per_act,
             'activitats': activitats_franja,
-            'reserves': f_res
+            'reserves': active_reserves,
+            'intervals': intervals_list
         })
 
     return {
@@ -940,8 +961,10 @@ def get_disponibilitat(data_str):
         'aforamentMaxim': max_cap,
         'totalPlacesDia': max_cap * len(franges),
         'totalOcupadesDia': total_ocupades_dia,
+        'placesLliuresDia': lliures_dia,
         'franges': result_franges,
-        'activitats': ACTIVITATS
+        'intervals': intervals_list,
+        'activitats': activitats_franja
     }
 
 def get_disponibilitat_mes(year, month):
@@ -989,23 +1012,14 @@ def get_disponibilitat_mes(year, month):
         for act in activitats_list:
             act_id = act['id']
             act_nom = act['nom'].lower()
-            has_spot = False
-            for f in franges:
-                f_id = f['id']
-                f_res = [r for r in day_res if r.get('franja') == f_id or r.get('franja') == f.get('nom')]
-                ocupades_franja = sum(int(r.get('places') or 1) for r in f_res)
-                lliures_franja = max(0, max_cap - ocupades_franja)
-                if lliures_franja > 0:
-                    ocupat_act = sum(int(r.get('places') or 1) for r in f_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
-                    if ocupat_act < act['capacitatMax']:
-                        has_spot = True
-                        break
-            if has_spot:
-                acts_amb_places.append(act_id)
+            if total_lliures_dia > 0:
+                ocupat_act = sum(int(r.get('places') or 1) for r in day_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
+                if ocupat_act < act['capacitatMax']:
+                    acts_amb_places.append(act_id)
 
         if total_lliures_dia == 0:
             estat = 'complet'
-        elif total_lliures_dia <= (len(franges) * 2):
+        elif total_lliures_dia <= 3:
             estat = 'ultimes_places'
         else:
             estat = 'lliure'
@@ -1711,10 +1725,25 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 activitat_id = act_obj['id']
                 activitat_nom = act_obj['nom']
 
+                hora_inici_req = (data.get('hora_inici') or data.get('horaInici') or '').strip()
+                if not hora_inici_req:
+                    if franja_id in INTERVALS_INICI_2H:
+                        hora_inici_req = franja_id
+                    elif ':' in franja_id and len(franja_id) == 5:
+                        hora_inici_req = franja_id
+                    else:
+                        hora_inici_req = '10:00'
+
+                hora_fi_req = (data.get('hora_fi') or data.get('horaFi') or '').strip()
+                if not hora_fi_req:
+                    hora_fi_req = calcular_hora_fi_2h(hora_inici_req)
+
+                hores_req = float(data.get('hores') or 2.0)
+
                 franges = get_franges_config()
                 franja_obj = next((f for f in franges if f['id'] == franja_id or f['nom'] == franja_id), None)
                 if not franja_obj:
-                    franja_obj = {"id": franja_id, "nom": franja_id, "inici": "10:00", "fi": "11:30", "hores": 1.5}
+                    franja_obj = franges[0] if franges else {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
 
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -1732,24 +1761,24 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             if not student_nom:
                                 student_nom = student_id
 
-                    # Comprovar aforament global de la franja (màxim 12 places en total)
+                    # Comprovar aforament global del taller (màxim 12 places en total per dia)
                     max_cap = get_aforament_maxim()
                     cursor.execute('''
                         SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
-                        WHERE data = ? AND franja = ? AND estat = 'confirmada'
-                    ''', (data_res, franja_obj['id']))
+                        WHERE data = ? AND estat = 'confirmada'
+                    ''', (data_res,))
                     r_ocup = cursor.fetchone()
-                    current_ocupat_franja = r_ocup['total_ocupades'] or 0
-                    if current_ocupat_franja + places_demanades > max_cap:
-                        lliures = max(0, max_cap - current_ocupat_franja)
-                        self.send_json({'ok': False, 'error': f"Aforament complet de la franja. Queden {lliures} places lliures (Màx. {max_cap})."}, 400)
+                    current_ocupat_dia = r_ocup['total_ocupades'] or 0
+                    if current_ocupat_dia + places_demanades > max_cap:
+                        lliures = max(0, max_cap - current_ocupat_dia)
+                        self.send_json({'ok': False, 'error': f"Aforament complet del taller per a aquest dia. Queden {lliures} places lliures (Màx. {max_cap})."}, 400)
                         return
 
                     # Comprovar aforament particular de l'activitat
                     cursor.execute('''
                         SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
-                        WHERE data = ? AND franja = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat = 'confirmada'
-                    ''', (data_res, franja_obj['id'], activitat_id, activitat_nom.lower()))
+                        WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat = 'confirmada'
+                    ''', (data_res, activitat_id, activitat_nom.lower()))
                     r_act = cursor.fetchone()
                     current_ocupat_act = r_act['act_ocupades'] or 0
                     if current_ocupat_act + places_demanades > act_obj['capacitatMax']:
@@ -1765,9 +1794,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?)
                     ''', (
                         res_id, student_id, student_nom, data_res,
-                        franja_obj.get('inici', '10:00'), franja_obj.get('fi', '11:30'),
+                        hora_inici_req, hora_fi_req,
                         franja_obj['id'], activitat_nom, activitat_id, places_demanades, telefon, email,
-                        float(franja_obj.get('hores', 1.5)), notes, now_iso, cal_event_id
+                        hores_req, notes, now_iso, cal_event_id
                     ))
                     conn.commit()
 
@@ -1787,15 +1816,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'telefon': telefon,
                     'email': email,
                     'data': data_res,
-                    'hora_inici': franja_obj.get('inici', '10:00'),
-                    'hora_fi': franja_obj.get('fi', '11:30'),
+                    'hora_inici': hora_inici_req,
+                    'hora_fi': hora_fi_req,
                     'franja': franja_obj['id'],
-                    'franja_nom': franja_obj.get('nom'),
+                    'franja_nom': f"{hora_inici_req} - {hora_fi_req} (2h)",
                     'activitat': activitat_nom,
                     'activitat_id': activitat_id,
                     'places': places_demanades,
                     'estat': 'confirmada',
-                    'hores': float(franja_obj.get('hores', 1.5)),
+                    'hores': hores_req,
                     'notes': notes,
                     'created_at': now_iso,
                     'calendar_event_id': cal_event_id,
@@ -1824,7 +1853,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     send_whatsapp_meta_async(
                         telefon,
                         tpl_conf,
-                        [student_nom, activitat_nom, data_res, franja_obj.get('inici', '10:00'), str(places_demanades)],
+                        [student_nom, activitat_nom, data_res, hora_inici_req, str(places_demanades)],
                         on_success_cb=_mark_conf_done
                     )
 
