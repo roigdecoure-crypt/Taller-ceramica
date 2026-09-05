@@ -80,6 +80,13 @@ async function loadConfig() {
     }
     const lblDefecte = document.getElementById('lbl-durada-defecte');
     if (lblDefecte) lblDefecte.textContent = cfg.hores_per_defecte_oblit || '01:30:00';
+
+    const sbLogo = document.getElementById('sidebar-logo-img');
+    if (sbLogo) {
+      let logoVal = (cfg.taller_logo_url || '').trim();
+      if (logoVal.includes('PHN2Zz48L3N2Zz4=')) logoVal = '';
+      sbLogo.src = logoVal || 'img/logo.png';
+    }
   } catch (err) {
     console.warn('Error carregant configuració:', err);
   }
@@ -1129,10 +1136,20 @@ function initBrandStudio() {
     radio.addEventListener('change', updateBrandPreview);
   });
 
-  // Pujada de logotip oficial (FileReader -> Base64)
+  // Pujada de logotip oficial (Fitxer o URL)
   const logoFileInput = document.getElementById('brand-input-logo-file');
-  const logoUrlHidden = document.getElementById('brand-input-logo-url');
+  const logoUrlInput = document.getElementById('brand-input-logo-url');
   const btnRemoveLogo = document.getElementById('btn-remove-logo');
+  const logoStatusEl = document.getElementById('brand-logo-status');
+
+  if (logoUrlInput) {
+    logoUrlInput.addEventListener('input', () => {
+      const url = logoUrlInput.value.trim();
+      setLogoPreview(url);
+      updateBrandPreview();
+      if (logoStatusEl) logoStatusEl.textContent = url ? 'URL introduïda' : '';
+    });
+  }
 
   if (logoFileInput) {
     logoFileInput.addEventListener('change', (e) => {
@@ -1140,17 +1157,23 @@ function initBrandStudio() {
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        alert('La imatge supera els 2MB. Si us plau, tria una imatge més lleugera.');
+        alert('La imatge supera els 2MB. Si us plau, tria una imatge més lleugera (o redueix-ne la mida abans de pujar-la).');
         logoFileInput.value = '';
         return;
       }
 
+      if (logoStatusEl) logoStatusEl.textContent = 'Llegint imatge...';
+
       const reader = new FileReader();
       reader.onload = (loadEvt) => {
         const base64 = loadEvt.target.result;
-        if (logoUrlHidden) logoUrlHidden.value = base64;
+        if (logoUrlInput) logoUrlInput.value = base64;
         setLogoPreview(base64);
         updateBrandPreview();
+        if (logoStatusEl) logoStatusEl.textContent = `Fitxer llest (${Math.round(file.size / 1024)} KB)`;
+      };
+      reader.onerror = () => {
+        if (logoStatusEl) logoStatusEl.textContent = 'Error llegint el fitxer.';
       };
       reader.readAsDataURL(file);
     });
@@ -1158,8 +1181,9 @@ function initBrandStudio() {
 
   if (btnRemoveLogo) {
     btnRemoveLogo.addEventListener('click', () => {
-      if (logoUrlHidden) logoUrlHidden.value = '';
+      if (logoUrlInput) logoUrlInput.value = '';
       if (logoFileInput) logoFileInput.value = '';
+      if (logoStatusEl) logoStatusEl.textContent = '';
       setLogoPreview('');
       updateBrandPreview();
     });
@@ -1171,11 +1195,12 @@ function initBrandStudio() {
     formBrand.addEventListener('submit', async (e) => {
       e.preventDefault();
       const nom = nomInput ? nomInput.value.trim() : 'Roig de Coure';
-      const sub = subInput ? subInput.value.trim() : "Taller d'Art i Ceràmica";
+      const sub = subInput ? subInput.value.trim() : '';
       const prim = primaryHexInput ? primaryHexInput.value.trim() : '#831D1D';
       const sec = secondaryHexInput ? secondaryHexInput.value.trim() : '#5E7E6F';
       const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'verdana';
-      const logoUrl = logoUrlHidden ? logoUrlHidden.value : '';
+      let logoUrl = logoUrlInput ? logoUrlInput.value.trim() : '';
+      if (logoUrl.includes('PHN2Zz48L3N2Zz4=')) logoUrl = '';
 
       try {
         showToast('Desant i aplicant imatge corporativa...', 'info');
@@ -1193,6 +1218,8 @@ function initBrandStudio() {
         if (wsNav) wsNav.textContent = nom;
         const bWs = document.getElementById('badge-ws-name');
         if (bWs) bWs.textContent = nom;
+        const sbLogo = document.getElementById('sidebar-logo-img');
+        if (sbLogo) sbLogo.src = logoUrl || 'img/logo.png';
 
         // Actualitzar variables CSS globals a l'admin
         document.documentElement.style.setProperty('--brand-primary', prim);
@@ -1215,11 +1242,12 @@ async function openBrandStudioModal() {
   try {
     const cfg = await Store.getConfig();
     const nom = cfg.taller_nom || 'Roig de Coure';
-    const sub = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
+    const sub = cfg.taller_subtitol || '';
     const prim = cfg.brand_primary || '#831D1D';
     const sec = cfg.brand_secondary || '#5E7E6F';
     const font = cfg.brand_font || 'verdana';
-    const logoUrl = cfg.taller_logo_url || '';
+    let logoUrl = (cfg.taller_logo_url || '').trim();
+    if (logoUrl.includes('PHN2Zz48L3N2Zz4=')) logoUrl = '';
 
     const nomInput = document.getElementById('brand-input-nom');
     if (nomInput) nomInput.value = nom;
@@ -1239,10 +1267,13 @@ async function openBrandStudioModal() {
     const radioFont = document.querySelector(`input[name="brand_font_choice"][value="${font}"]`);
     if (radioFont) radioFont.checked = true;
 
-    const logoHidden = document.getElementById('brand-input-logo-url');
-    if (logoHidden) logoHidden.value = logoUrl;
+    const logoInput = document.getElementById('brand-input-logo-url');
+    if (logoInput) logoInput.value = logoUrl;
     const logoFile = document.getElementById('brand-input-logo-file');
     if (logoFile) logoFile.value = '';
+    const statusEl = document.getElementById('brand-logo-status');
+    if (statusEl) statusEl.textContent = logoUrl ? (logoUrl.startsWith('data:') ? 'Logotip desat' : 'Enllaç URL carregat') : '';
+
     setLogoPreview(logoUrl);
 
     // Generar QR de mostra al mockup si encara no s'ha fet
@@ -1264,9 +1295,18 @@ function setLogoPreview(url) {
   const previewPlaceholder = document.getElementById('brand-logo-preview-placeholder');
   const btnRemove = document.getElementById('btn-remove-logo');
 
-  if (url && url.trim() !== '') {
-    if (previewImg) { previewImg.src = url; previewImg.style.display = 'block'; }
-    if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+  if (url && url.trim() !== '' && !url.includes('PHN2Zz48L3N2Zz4=')) {
+    if (previewImg) {
+      previewImg.onerror = () => {
+        previewImg.style.display = 'none';
+        if (previewPlaceholder) previewPlaceholder.style.display = 'block';
+      };
+      previewImg.onload = () => {
+        previewImg.style.display = 'block';
+        if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      };
+      previewImg.src = url;
+    }
     if (btnRemove) btnRemove.style.display = 'inline-block';
   } else {
     if (previewImg) { previewImg.src = ''; previewImg.style.display = 'none'; }
@@ -1277,17 +1317,20 @@ function setLogoPreview(url) {
 
 function updateBrandPreview() {
   const nom = document.getElementById('brand-input-nom')?.value.trim() || 'Roig de Coure';
-  const sub = document.getElementById('brand-input-subtitol')?.value.trim() || "Taller d'Art i Ceràmica";
+  const sub = document.getElementById('brand-input-subtitol')?.value.trim() || '';
   const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#831D1D';
   const sec = document.getElementById('brand-input-secondary-hex')?.value.trim() || '#5E7E6F';
   const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'sans';
-  const logoUrl = document.getElementById('brand-input-logo-url')?.value || '';
+  const logoUrl = (document.getElementById('brand-input-logo-url')?.value || '').trim();
 
   // Textos
   const prevHdrTitle = document.getElementById('preview-header-title');
   if (prevHdrTitle) prevHdrTitle.textContent = nom;
   const prevHdrSub = document.getElementById('preview-header-sub');
-  if (prevHdrSub) prevHdrSub.textContent = sub;
+  if (prevHdrSub) {
+    prevHdrSub.textContent = sub;
+    prevHdrSub.style.display = sub ? 'block' : 'none';
+  }
   const prevBadgeTitle = document.getElementById('preview-badge-title');
   if (prevBadgeTitle) prevBadgeTitle.textContent = nom;
 
@@ -1297,10 +1340,18 @@ function updateBrandPreview() {
   const prevBadgeImg = document.getElementById('preview-badge-logo-img');
   const prevBadgeIcon = document.getElementById('preview-badge-logo-icon');
 
-  if (logoUrl && logoUrl.trim() !== '') {
-    if (prevHdrImg) { prevHdrImg.src = logoUrl; prevHdrImg.style.display = 'block'; }
+  if (logoUrl && !logoUrl.includes('PHN2Zz48L3N2Zz4=')) {
+    if (prevHdrImg) {
+      prevHdrImg.onerror = () => { prevHdrImg.style.display = 'none'; };
+      prevHdrImg.onload = () => { prevHdrImg.style.display = 'block'; };
+      prevHdrImg.src = logoUrl;
+    }
     if (prevHdrIcon) prevHdrIcon.style.display = 'none';
-    if (prevBadgeImg) { prevBadgeImg.src = logoUrl; prevBadgeImg.style.display = 'inline-block'; }
+    if (prevBadgeImg) {
+      prevBadgeImg.onerror = () => { prevBadgeImg.style.display = 'none'; };
+      prevBadgeImg.onload = () => { prevBadgeImg.style.display = 'inline-block'; };
+      prevBadgeImg.src = logoUrl;
+    }
     if (prevBadgeIcon) prevBadgeIcon.style.display = 'none';
   } else {
     if (prevHdrImg) { prevHdrImg.src = ''; prevHdrImg.style.display = 'none'; }

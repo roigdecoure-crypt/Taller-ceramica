@@ -1,162 +1,657 @@
 /**
- * admin.css - Estils per al Panell d'Administració 360°
+ * admin.css - Estètica Panell d'Administració WordPress / Roig de Coure
+ * Inspirat en el disseny Doctor Chamber amb la identitat corporativa de roigdecoure.cat
  */
 
-.admin-layout {
+@font-face {
+  font-family: 'Buffalo';
+  src: url('../fonts/buffalo.woff2') format('woff2'),
+       url('/fonts/buffalo.woff2') format('woff2'),
+       url('../fonts/buffalo.woff') format('woff'),
+       url('/fonts/buffalo.woff') format('woff'),
+       url('../fonts/buffalo.ttf') format('truetype'),
+       url('https://db.onlinewebfonts.com/t/d65cf77ad028b823f585bfa44b3307c6.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Layout general amb barra lateral fixa */
+.admin-app-layout {
+  display: flex;
   min-height: 100vh;
+  background-color: #F0F2F5;
+  color: #2C3338;
+  font-family: var(--brand-font, Verdana, Geneva, Tahoma, sans-serif);
+}
+
+/* ==================== BARRA LATERAL ESQUERRA (GRIS CLAR & VERDANA) ==================== */
+.admin-sidebar {
+  width: 250px;
+  background-color: #E8ECEF;
+  color: #334155;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: width 0.2s ease;
+  overflow-y: auto;
+  border-right: 1px solid #CFD4D9;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.admin-sidebar.collapsed {
+  width: 64px;
+}
+
+/* Capçalera del Logo a la barra lateral */
+.sidebar-brand {
+  padding: 16px 14px;
+  background: #DEE3E7;
+  border-bottom: 1px solid #CFD4D9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.sidebar-logo-img {
+  height: 48px;
+  max-height: 48px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar.collapsed .sidebar-brand {
+  padding: 12px 6px;
+}
+
+.admin-sidebar.collapsed .sidebar-logo-img {
+  height: 32px;
+  max-height: 32px;
+  max-width: 32px;
+}
+
+.admin-sidebar.collapsed .sidebar-logo-text,
+.admin-sidebar.collapsed .brand-sub,
+.admin-sidebar.collapsed .nav-text {
+  display: none;
+}
+
+/* Menú de navegació lateral */
+.sidebar-menu {
+  list-style: none;
+  padding: 10px 0;
+  margin: 0;
+  flex: 1;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 4px solid transparent;
+  user-select: none;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+.sidebar-item a {
+  color: inherit;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.sidebar-item:hover {
+  background-color: #D8DDE2;
+  color: #0F172A;
+}
+
+.sidebar-item.active {
+  background-color: #831D1D; /* Coure Roig de Coure */
+  color: #FFFFFF;
+  border-left-color: #5E7E6F;
+  font-weight: 700;
+}
+
+.sidebar-item.active a {
+  color: #FFFFFF;
+}
+
+.sidebar-item .nav-icon,
+.sidebar-footer-btn .nav-icon {
+  display: none !important;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: #CFD4D9;
+  margin: 10px 16px;
+}
+
+.sidebar-footer-btn {
+  padding: 14px 18px;
+  color: #4B5563;
+  font-size: 12.5px;
+  cursor: pointer;
+  border-top: 1px solid #CFD4D9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.15s;
+  background: #DEE3E7;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  font-weight: 500;
+}
+
+.sidebar-footer-btn:hover {
+  background-color: #D3D8DE;
+  color: #0F172A;
+}
+
+/* ==================== ÀREA PRINCIPAL DE CONTINGUT ==================== */
+.admin-main-wrapper {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-/* Barra superior */
-.admin-navbar {
-  background: var(--color-card);
-  border-bottom: 1px solid var(--color-border);
-  padding: 14px 24px;
+/* Capçalera superior fixa */
+.admin-top-bar {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
+  padding: 16px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 90;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.brand {
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-bar-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D2327;
+  margin: 0;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-roig-coure {
+  background-color: #831D1D !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-roig-coure:hover {
+  background-color: #631515 !important;
+}
+
+/* Pestanyes de contingut */
+.admin-tab-view {
+  padding: 24px 28px 40px;
+  display: none;
+}
+
+.admin-tab-view.active {
+  display: block;
+}
+
+/* ==================== VISTA RESERVES: SPLIT 2 COLUMNES ==================== */
+.appointments-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .appointments-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Barra superior d'aforaments de la vista de reserves */
+.reserves-top-banner {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.reserves-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reserves-banner-left .title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1D2327;
+}
+
+.reserves-banner-left .badge-val {
+  font-weight: 800;
+  color: #831D1D;
+}
+
+.reserves-capacitats-group {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
-.brand-icon {
-  font-size: 28px;
-  line-height: 1;
-}
-.brand-info h1 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-dark);
-}
-.brand-info p {
+
+.cap-act-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
-  color: var(--color-muted);
+  font-weight: 600;
 }
 
-.nav-actions {
+.cap-act-item input {
+  width: 52px;
+  text-align: center;
+  padding: 3px 5px;
+  font-size: 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+}
+
+/* Targeta Esquerra: Calendari Mensual Interactiu */
+.calendar-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cal-header-blue {
+  background: #831D1D; /* Color corporatiu Roig de Coure */
+  color: #FFFFFF;
+  padding: 18px 20px;
+}
+
+.cal-tip-text {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
-/* Contingut principal */
-.admin-content {
-  flex: 1;
-  max-width: 1280px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 24px 20px;
-}
-
-/* Banner d'alumnes al taller en viu */
-.live-workshop-banner {
-  background: linear-gradient(135deg, #FFF8F5 0%, #FAF0EC 100%);
-  border: 1px solid #F0D5CA;
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: var(--shadow-sm);
-}
-.banner-header {
+.cal-nav-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
 }
-.banner-title {
+
+.cal-month-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+.cal-nav-buttons {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 17px;
+  gap: 8px;
+}
+
+.btn-cal-today {
+  background: #FFFFFF;
+  color: #831D1D;
+  border: none;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--color-dark);
+  cursor: pointer;
+  transition: opacity 0.15s;
 }
-.active-students-grid {
+
+.btn-cal-today:hover {
+  opacity: 0.9;
+}
+
+.btn-cal-arrow {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-cal-arrow:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Graella de dies del calendari */
+.cal-grid-container {
+  padding: 16px;
+}
+
+.cal-weekdays {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6B7280;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #F3F4F6;
+  margin-bottom: 8px;
 }
-.active-student-card {
-  background: #FFF;
-  border: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-success);
-  border-radius: var(--radius-md);
-  padding: 14px;
+
+.cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-day-cell {
+  min-height: 64px;
+  border: 1px solid #F3F4F6;
+  border-radius: 6px;
+  padding: 6px;
+  background: #FFFFFF;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: var(--shadow-sm);
+  justify-content: space-between;
+  transition: all 0.15s ease;
 }
-.student-head {
+
+.cal-day-cell:hover:not(.empty) {
+  border-color: #831D1D;
+  background: #FDF9F8;
+}
+
+.cal-day-cell.selected {
+  border-color: #831D1D;
+  background: #FDF5F5;
+  box-shadow: 0 0 0 2px rgba(122, 48, 38, 0.2);
+}
+
+.cal-day-cell.tancat {
+  background: #F9FAFB;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cal-day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1F2937;
+}
+
+.cal-day-cell.tancat .cal-day-num {
+  color: #9CA3AF;
+}
+
+.cal-day-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+  margin-top: 4px;
+  background: #831D1D;
+  color: #FFFFFF;
+}
+
+.cal-day-badge.secondary {
+  background: #5E7E6F;
+  color: #FFFFFF;
+}
+
+/* Targeta Dreta: Llista de Reserves del dia */
+.appointment-list-card {
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 22px 24px;
+}
+
+.app-list-header {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #E5E7EB;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-}
-.student-head h4 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-dark);
-}
-.student-head .student-id {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-muted);
-}
-.live-timer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--color-bg);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-}
-.live-timer-label {
-  font-size: 12px;
-  color: var(--color-muted);
-}
-.live-timer-value {
-  font-size: 16px;
-  font-weight: 700;
-  font-family: monospace;
-  color: var(--color-primary);
-}
-.active-card-actions {
-  display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-/* Tauler de pestanyes i llista */
-.admin-tabs-nav {
-  display: flex;
-  gap: 8px;
-  border-bottom: 2px solid var(--color-border);
-  margin-bottom: 20px;
-}
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 10px 18px;
-  font-size: 15px;
+.app-list-count {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--color-muted);
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+}
+
+.app-list-date-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #831D1D;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+/* Taula de reserves amb format net estil referència */
+.app-table-wrapper {
+  overflow-x: auto;
+}
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.app-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #E5E7EB;
+}
+
+.app-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: middle;
+}
+
+.app-table tr:hover td {
+  background: #FDFDFD;
+}
+
+.app-row-serial {
+  font-weight: 700;
+  color: #6B7280;
+  width: 32px;
+}
+
+.app-patient-name {
+  font-weight: 700;
+  color: #111827;
+  font-size: 14.5px;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-patient-time {
+  font-size: 12px;
+  color: #6B7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-act-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+/* Casella de verificació d'assistència (Checkbox Visited) */
+.visited-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background: #FFFFFF;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: var(--transition);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.15s;
+  user-select: none;
 }
-.tab-btn:hover {
-  color: var(--color-primary);
+
+.visited-checkbox-label:hover {
+  border-color: #831D1D;
+  background: #FDF9F8;
 }
-.tab-btn.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+
+.visited-checkbox-label.checked {
+  background: #EEF5F1;
+  border-color: #5E7E6F;
+  color: #466356;
+}
+
+.visited-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #5E7E6F;
+}
+
+/* Botons d'opcions de cada reserva */
+.app-options-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-app-opt {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.btn-app-profile {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+.btn-app-profile:hover {
+  background: #BAE6FD;
+}
+
+.btn-app-wa {
+  background: #DCFCE7;
+  color: #15803D;
+}
+.btn-app-wa:hover {
+  background: #BBF7D0;
+}
+
+.btn-app-cancel {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+.btn-app-cancel:hover {
+  background: #FECACA;
+}
+
+/* ==================== VISTA ALUMNES (ESTIL DATA TABLE WORDPRESS) ==================== */
+.admin-card-box {
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 20px;
 }
 
 .table-toolbar {
@@ -167,17 +662,19 @@
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
+
 .search-box {
   display: flex;
   align-items: center;
   gap: 8px;
   background: #FFF;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
   padding: 8px 14px;
   min-width: 280px;
   flex: 1;
 }
+
 .search-box input {
   border: none;
   outline: none;
@@ -185,7 +682,7 @@
   width: 100%;
 }
 
-/* Panell Drawer 360° d'Alumne */
+/* Drawer 360 Alumne */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -207,8 +704,8 @@
   bottom: 0;
   width: 100%;
   max-width: 680px;
-  background: var(--color-card);
-  box-shadow: var(--shadow-lg);
+  background: #FFFFFF;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
   z-index: 1001;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -221,8 +718,8 @@
 }
 .drawer-header {
   padding: 18px 24px;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
+  background: #F4F8F5;
+  border-bottom: 1px solid #E5E7EB;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -230,7 +727,7 @@
 .drawer-header h3 {
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-dark);
+  color: #1D2327;
 }
 .drawer-body {
   flex: 1;
@@ -240,12 +737,10 @@
   flex-direction: column;
   gap: 24px;
 }
-
-/* Resum de saldo a la fitxa */
 .balance-hero-card {
-  background: linear-gradient(135deg, #2D2825 0%, #3D3531 100%);
+  background: #831D1D;
   color: #FFF;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   padding: 20px;
   display: flex;
   justify-content: space-between;
@@ -255,7 +750,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #D3CBC4;
+  color: #FDF5F5;
 }
 .balance-hero-main .value {
   font-size: 32px;
@@ -266,26 +761,107 @@
 .balance-hero-sub {
   text-align: right;
   font-size: 13px;
-  color: #D3CBC4;
+  color: #FDF5F5;
   line-height: 1.6;
 }
 
+/* Banner de presència en directe al taller */
+.live-workshop-banner {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.banner-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1D2327;
+}
+.active-students-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.active-student-card {
+  background: #FFF;
+  border: 1px solid #E5E7EB;
+  border-left: 4px solid #5E7E6F;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.student-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.student-head h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1D2327;
+}
+.student-head .student-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+}
+.live-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F9FAFB;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.live-timer-label {
+  font-size: 12px;
+  color: #6B7280;
+}
+.live-timer-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #831D1D;
+}
+.active-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
-  .admin-navbar {
+  .admin-app-layout {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
   }
-  .nav-actions {
+  .admin-sidebar {
     width: 100%;
-    justify-content: space-between;
+    height: auto;
+    position: relative;
   }
-  .balance-hero-card {
+  .admin-top-bar {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 16px;
   }
-  .balance-hero-sub {
-    text-align: left;
+  .top-bar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .admin-tab-view {
+    padding: 16px;
   }
 }

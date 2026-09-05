@@ -146,7 +146,7 @@ def init_db():
             'taller_subtitol': "Taller d'Art i Ceràmica",
             'taller_telefon': "+34 600 000 000",
             'taller_email': "roigdecoure@gmail.com",
-            'taller_logo_url': "",
+            'taller_logo_url': "img/logo.png",
             'brand_primary': "#831D1D",
             'brand_secondary': "#5E7E6F",
             'brand_font': "serif",

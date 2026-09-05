@@ -304,8 +304,7 @@
         <img id="login-logo-img" src="" alt="Logo Taller" class="portal-logo-img" style="display: none; height: 55px; margin: 0 auto;">
         <div id="login-logo-icon" style="display: none;"></div>
       </div>
-      <h2 style="font-family: var(--font-script); font-size: 44px; font-weight: 700; color: var(--brand-primary); margin-bottom: 2px; line-height: 1.1;" id="login-workshop-title">Roig de Coure</h2>
-      <p style="font-size: 12px; color: var(--brand-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;" id="login-workshop-subtitle">Taller de Ceràmica &bull; Olot</p>
+      <h2 style="font-family: var(--font-script); font-size: 44px; font-weight: 700; color: var(--brand-primary); margin-bottom: 12px; line-height: 1.1;" id="login-workshop-title">Roig de Coure</h2>
       <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 20px;">
         Introdueix el teu Número d'Alumne (ex: <code>TC-101</code>) o el teu PIN per veure el teu carnet, saldo d'hores i comprar paquets.
       </p>
@@ -333,13 +332,10 @@
       
       <!-- Barra superior de l'alumne -->
       <div class="portal-top-bar">
-        <div class="portal-logo">
-          <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none;">
+        <div class="portal-logo" style="display: flex; align-items: center; gap: 12px;">
+          <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; max-height: 42px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
           <span id="portal-header-logo-icon" style="display: none;"></span>
-          <div>
-            <div id="student-workshop-name" style="font-family: var(--font-script); font-size: 28px; font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
-            <div id="student-workshop-subtitle" style="font-size: 11px; font-weight: 600; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: 0.8px;">Taller de Ceràmica &bull; Olot</div>
-          </div>
+          <div id="student-workshop-name" style="font-family: var(--font-script); font-size: 32px; font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button class="btn btn-outline btn-sm" id="btn-portal-install-app" title="Instal·lar l'App al mòbil" style="display: inline-flex; align-items: center; gap: 4px;">
@@ -625,11 +621,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.8"></script>
-  <script src="js/sound.js?v=3.8"></script>
-  <script src="js/qr-engine.js?v=3.8"></script>
-  <script src="js/store.js?v=3.8"></script>
-  <script src="js/reserves-calendar.js?v=3.8"></script>
-  <script src="js/alumne.js?v=3.8"></script>
+  <script src="js/time-utils.js?v=3.9"></script>
+  <script src="js/sound.js?v=3.9"></script>
+  <script src="js/qr-engine.js?v=3.9"></script>
+  <script src="js/store.js?v=3.9"></script>
+  <script src="js/reserves-calendar.js?v=3.9"></script>
+  <script src="js/alumne.js?v=3.9"></script>
 </body>
 </html>

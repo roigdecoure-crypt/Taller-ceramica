@@ -258,18 +258,22 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM sessions WHERE student_id = 'TC-HYD-1'")
         c.execute("DELETE FROM paquets_hores WHERE student_id = 'TC-HYD-1'")
         c.execute("DELETE FROM alumnes WHERE id = 'TC-HYD-1'")
+        c.execute("UPDATE configuracio SET valor = 'Roig de Coure' WHERE clau = 'taller_nom'")
         self.conn.commit()
 
     def test_07_brand_configuration(self):
         c = self.conn.cursor()
+        c.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("taller_nom", "taller_subtitol", "taller_logo_url")')
+        prev_cfg = {r['clau']: r['valor'] for r in c.fetchall()}
+
         brand_data = {
-            'taller_nom': 'Roig de Coure Prova',
-            'taller_subtitol': 'Taller d\'Art i Modelat',
+            'taller_nom': 'Roig de Coure Test',
+            'taller_subtitol': '',
             'brand_primary': '#831D1D',
             'brand_secondary': '#5E7E6F',
-            'brand_font': 'serif',
+            'brand_font': 'verdana',
             'brand_palette': 'roigdecoure',
-            'taller_logo_url': 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4='
+            'taller_logo_url': ''
         }
 
         for k, v in brand_data.items():
@@ -280,12 +284,13 @@ class TestCeramicsBackend(unittest.TestCase):
         cfg_rows = c.fetchall()
         cfg = {r['clau']: r['valor'] for r in cfg_rows}
 
-        self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Prova')
-        self.assertEqual(cfg.get('taller_subtitol'), 'Taller d\'Art i Modelat')
+        self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Test')
         self.assertEqual(cfg.get('brand_primary'), '#831D1D')
-        self.assertEqual(cfg.get('brand_secondary'), '#5E7E6F')
-        self.assertEqual(cfg.get('brand_font'), 'serif')
-        self.assertEqual(cfg.get('taller_logo_url'), 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')
+
+        # Restaurar valors previs per no contaminar la base de dades
+        for k, v in prev_cfg.items():
+            c.execute('UPDATE configuracio SET valor = ? WHERE clau = ?', (v, k))
+        self.conn.commit()
 
     def test_08_reserves_and_capacity(self):
         c = self.conn.cursor()

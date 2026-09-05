@@ -17,11 +17,8 @@
 
   <!-- ==================== BARRA LATERAL ESQUERRA (ESTIL WORDPRESS) ==================== -->
   <aside class="admin-sidebar" id="admin-sidebar">
-    <a href="#" class="sidebar-brand">
-      <div>
-        <div class="sidebar-logo-text">Roig de Coure</div>
-        <div class="brand-sub">Taller de Ceràmica &bull; Olot</div>
-      </div>
+    <a href="#" class="sidebar-brand" title="Roig de Coure">
+      <img src="img/logo.png" alt="Roig de Coure" class="sidebar-logo-img" id="sidebar-logo-img">
     </a>
 
     <ul class="sidebar-menu">
@@ -741,26 +738,30 @@
               <input type="text" id="brand-input-nom" class="form-control" placeholder="ex: Roig de Coure" value="Roig de Coure" required>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label style="font-size: 12px;">Subtítol o Lema</label>
-              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="ex: Taller d'Art i Ceràmica" value="Taller d'Art i Ceràmica">
+              <label style="font-size: 12px;">Subtítol o Lema (Opcional)</label>
+              <input type="text" id="brand-input-subtitol" class="form-control" placeholder="Opcional (pots deixar-ho en blanc)" value="">
             </div>
           </div>
 
           <!-- Logotip del Taller -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
             <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">Logotip Oficial</h4>
-            <div style="display: flex; align-items: center; gap: 14px;">
-              <div id="brand-logo-preview-box" style="width: 64px; height: 64px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
-                <span id="brand-logo-preview-placeholder" style="font-size: 14px; color: var(--color-muted); font-weight: 700;">LOGO</span>
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <div id="brand-logo-preview-box" style="width: 72px; height: 72px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
+                <span id="brand-logo-preview-placeholder" style="font-size: 13px; color: var(--color-muted); font-weight: 700;">LOGO</span>
                 <img id="brand-logo-preview-img" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
               </div>
-              <div style="flex: 1;">
-                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 6px;">
-                <div style="display: flex; gap: 8px;">
+              <div style="flex: 1; min-width: 200px;">
+                <label style="font-size: 11px; font-weight: 600; color: var(--color-dark); margin-bottom: 3px; display: block;">1. Pujar fitxer d'imatge (PNG, SVG, JPG, WebP):</label>
+                <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 8px; width: 100%;">
+
+                <label style="font-size: 11px; font-weight: 600; color: var(--color-dark); margin-bottom: 3px; display: block;">2. O enganxar URL o ruta directa de la imatge:</label>
+                <input type="text" id="brand-input-logo-url" class="form-control" placeholder="https://... o ruta d'imatge" style="font-size: 12px; padding: 6px 10px; margin-bottom: 8px;">
+
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                   <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">Eliminar Logo</button>
+                  <span id="brand-logo-status" style="font-size: 11px; color: var(--color-muted);"></span>
                 </div>
-                <input type="hidden" id="brand-input-logo-url" value="">
-                <p style="font-size: 11px; color: var(--color-muted); margin-top: 4px;">PNG, SVG o JPG (es guarda i s'aplica immediatament a l'App mòbil).</p>
               </div>
             </div>
           </div>
@@ -1063,11 +1064,11 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=3.7"></script>
-  <script src="js/sound.js?v=3.7"></script>
-  <script src="js/qr-engine.js?v=3.7"></script>
-  <script src="js/store.js?v=3.7"></script>
-  <script src="js/reserves-calendar.js?v=3.7"></script>
-  <script src="js/admin.js?v=3.7"></script>
+  <script src="js/time-utils.js?v=3.9"></script>
+  <script src="js/sound.js?v=3.9"></script>
+  <script src="js/qr-engine.js?v=3.9"></script>
+  <script src="js/store.js?v=3.9"></script>
+  <script src="js/reserves-calendar.js?v=3.9"></script>
+  <script src="js/admin.js?v=3.9"></script>
 </body>
 </html>

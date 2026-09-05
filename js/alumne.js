@@ -97,24 +97,19 @@ function applyBrandingToPortal(cfg) {
   if (!cfg) return;
 
   const nom = cfg.taller_nom || 'Roig de Coure';
-  const subtitol = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
 
-  // Textos de marca
+  // Textos de marca (sense subtítol redundant)
   const loginTitle = document.getElementById('login-workshop-title');
   if (loginTitle) loginTitle.textContent = nom;
-  const loginSub = document.getElementById('login-workshop-subtitle');
-  if (loginSub) loginSub.textContent = subtitol;
 
   const pwaTitle = document.getElementById('pwa-banner-title');
   if (pwaTitle) pwaTitle.textContent = `Baixa l'App de ${nom}`;
 
   const studentWs = document.getElementById('student-workshop-name');
   if (studentWs) studentWs.textContent = nom;
-  const studentWsSub = document.getElementById('student-workshop-subtitle');
-  if (studentWsSub) studentWsSub.textContent = subtitol;
 
   // Colors personalitzats
-  const primaryColor = (cfg.brand_primary && cfg.brand_primary !== '#831D1D' && cfg.brand_primary !== '#831D1D') 
+  const primaryColor = (cfg.brand_primary && cfg.brand_primary !== '#831D1D') 
     ? cfg.brand_primary 
     : '#831D1D';
   document.documentElement.style.setProperty('--brand-primary', primaryColor);
@@ -127,19 +122,33 @@ function applyBrandingToPortal(cfg) {
   // Tipografia - Verdana per defecte oficial
   document.documentElement.style.setProperty('--brand-font', "Verdana, Geneva, Tahoma, sans-serif");
 
-  // Logotip
-  const logoUrl = cfg.taller_logo_url;
-  if (logoUrl && logoUrl.trim() !== '') {
-    // Login
-    const loginImg = document.getElementById('login-logo-img');
-    const loginIcon = document.getElementById('login-logo-icon');
-    if (loginImg) { loginImg.src = logoUrl; loginImg.style.display = 'block'; }
+  // Logotip (amb comprovació de càrrega segura i gestió d'errors per no trencar la imatge)
+  const rawLogo = (cfg.taller_logo_url || '').trim();
+  const isValidLogo = rawLogo !== '' && !rawLogo.includes('PHN2Zz48L3N2Zz4=');
+
+  const loginImg = document.getElementById('login-logo-img');
+  const loginIcon = document.getElementById('login-logo-icon');
+  const headImg = document.getElementById('portal-header-logo-img');
+  const headIcon = document.getElementById('portal-header-logo-icon');
+
+  if (isValidLogo) {
+    if (loginImg) {
+      loginImg.onerror = () => { loginImg.style.display = 'none'; };
+      loginImg.onload = () => { loginImg.style.display = 'block'; };
+      loginImg.src = rawLogo;
+    }
     if (loginIcon) loginIcon.style.display = 'none';
 
-    // Header Portal
-    const headImg = document.getElementById('portal-header-logo-img');
-    const headIcon = document.getElementById('portal-header-logo-icon');
-    if (headImg) { headImg.src = logoUrl; headImg.style.display = 'block'; }
+    if (headImg) {
+      headImg.onerror = () => { headImg.style.display = 'none'; };
+      headImg.onload = () => { headImg.style.display = 'block'; };
+      headImg.src = rawLogo;
+    }
+    if (headIcon) headIcon.style.display = 'none';
+  } else {
+    if (loginImg) { loginImg.src = ''; loginImg.style.display = 'none'; }
+    if (loginIcon) loginIcon.style.display = 'none';
+    if (headImg) { headImg.src = ''; headImg.style.display = 'none'; }
     if (headIcon) headIcon.style.display = 'none';
   }
 }
