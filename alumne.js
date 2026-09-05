@@ -96,7 +96,7 @@ async function loadPortalConfig() {
 function applyBrandingToPortal(cfg) {
   if (!cfg) return;
 
-  const nom = cfg.taller_nom || 'Roig de Coure';
+  const nom = (cfg.taller_nom && cfg.taller_nom !== 'Taller de Ceràmica' && cfg.taller_nom !== 'Taller de Ceramica') ? cfg.taller_nom : 'Roig de Coure';
 
   // Textos de marca (sense subtítol redundant)
   const loginTitle = document.getElementById('login-workshop-title');

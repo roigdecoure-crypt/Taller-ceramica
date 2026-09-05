@@ -121,8 +121,9 @@
       color: var(--color-dark);
     }
     .portal-logo-img {
-      height: 38px;
-      max-width: 140px;
+      height: 48px;
+      max-height: 54px;
+      max-width: 160px;
       object-fit: contain;
       border-radius: 6px;
     }
@@ -334,10 +335,10 @@
       
       <!-- Barra superior de l'alumne -->
       <div class="portal-top-bar">
-        <div class="portal-logo" style="display: flex; align-items: center; gap: 12px;">
-          <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; max-height: 42px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
+        <div class="portal-logo" style="display: flex; align-items: center; gap: 14px;">
+          <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; max-height: 52px; width: auto; object-fit: contain;" onerror="this.style.display='none'">
           <span id="portal-header-logo-icon" style="display: none;"></span>
-          <div id="student-workshop-name" style="font-family: var(--font-script); font-size: 32px; font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
+          <div id="student-workshop-name" style="font-family: var(--font-script); font-size: clamp(36px, 5.5vw, 44px); font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button class="btn btn-outline btn-sm" id="btn-portal-install-app" title="Instal·lar l'App al mòbil" style="display: inline-flex; align-items: center; gap: 4px;">

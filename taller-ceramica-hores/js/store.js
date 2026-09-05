@@ -44,7 +44,7 @@ const Store = {
           { id: 'SES-DEMO-1', student_id: 'TC-101', data: '2026-09-01', entrada: '2026-09-01T10:00:00', sortida: '2026-09-01T11:45:20', durada_segons: 6320, format_hms: '01:45:20', tipus: 'qr', estat: 'tancada', notes: 'Sessió de torn' }
         ],
         config: {
-          taller_nom: 'Taller de Ceràmica',
+          taller_nom: 'Roig de Coure',
           taller_telefon: '+34 600 000 000',
           taller_email: 'info@tallerdecoramica.cat',
           hores_per_defecte_oblit: '01:30:00',
