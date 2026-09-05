@@ -94,20 +94,19 @@
 
 .sidebar-item:hover {
   background-color: #2C3338;
-  color: #72AEE6;
+  color: #FFFFFF;
 }
 
 .sidebar-item.active {
   background-color: #7A3026; /* Coure Roig de Coure */
   color: #FFFFFF;
-  border-left-color: #F4F8F5;
+  border-left-color: #5E7E6F;
   font-weight: 700;
 }
 
-.sidebar-item .nav-icon {
-  font-size: 18px;
-  min-width: 24px;
-  text-align: center;
+.sidebar-item .nav-icon,
+.sidebar-footer-btn .nav-icon {
+  display: none !important;
 }
 
 .sidebar-divider {
@@ -129,7 +128,7 @@
 }
 
 .sidebar-footer-btn:hover {
-  color: #72AEE6;
+  color: #FFFFFF;
 }
 
 /* ==================== ÀREA PRINCIPAL DE CONTINGUT ==================== */
@@ -417,29 +416,16 @@
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 12px;
+  border-radius: 4px;
   text-align: center;
   white-space: nowrap;
   margin-top: 4px;
-}
-
-.cal-day-badge.blue {
-  background: #0284C7;
-  color: #FFFFFF;
-}
-
-.cal-day-badge.grey {
-  background: #6B7280;
-  color: #FFFFFF;
-}
-
-.cal-day-badge.copper {
   background: #7A3026;
   color: #FFFFFF;
 }
 
-.cal-day-badge.green {
-  background: #059669;
+.cal-day-badge.secondary {
+  background: #5E7E6F;
   color: #FFFFFF;
 }
 
@@ -569,16 +555,16 @@
 }
 
 .visited-checkbox-label.checked {
-  background: #ECFDF5;
-  border-color: #10B981;
-  color: #065F46;
+  background: #EEF5F1;
+  border-color: #5E7E6F;
+  color: #466356;
 }
 
 .visited-checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #10B981;
+  accent-color: #5E7E6F;
 }
 
 /* Botons d'opcions de cada reserva */
@@ -720,7 +706,7 @@
   gap: 24px;
 }
 .balance-hero-card {
-  background: linear-gradient(135deg, #7A3026 0%, #5C221A 100%);
+  background: #7A3026;
   color: #FFF;
   border-radius: 8px;
   padding: 20px;
@@ -778,7 +764,7 @@
 .active-student-card {
   background: #FFF;
   border: 1px solid #E5E7EB;
-  border-left: 4px solid #10B981;
+  border-left: 4px solid #5E7E6F;
   border-radius: 8px;
   padding: 14px;
   display: flex;

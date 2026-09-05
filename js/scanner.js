@@ -55,7 +55,7 @@ async function startCamera(cameraModeOrId = 'user') {
     await populateCameraDropdown();
   } catch (err) {
     console.error('Error iniciant càmera:', err);
-    statusEl.textContent = '⚠️ Càmera desactivada o sense permís';
+    statusEl.textContent = 'Càmera desactivada o sense permís';
     errorContainer.style.display = 'block';
     document.getElementById('camera-error-message').textContent = 
       `No s'ha pogut obrir la càmera (${err.message || err}). Prem el botó per activar-la o tria una altra càmera a dalt.`;
@@ -77,11 +77,9 @@ async function populateCameraDropdown() {
         
         let label = dev.label || `Càmera ${idx + 1}`;
         if (/front|user|anterior|delantera|selfie/i.test(label)) {
-          label = `🤳 ${label}`;
+          label = `Frontal (${label})`;
         } else if (/back|rear|trasera|posterior|environment/i.test(label)) {
-          label = `📷 ${label}`;
-        } else {
-          label = `📹 ${label}`;
+          label = `Posterior (${label})`;
         }
         
         opt.textContent = label;
@@ -153,14 +151,14 @@ function displayScanResult(res) {
   if (res.action === 'entrada') {
     SoundEngine.playCheckin();
     box.classList.add('is-entrada');
-    iconEl.textContent = '👋🏺';
+    iconEl.textContent = '';
     badgeEl.textContent = 'BENVINGUT/DA • ENTRADA';
     rowSortida.style.display = 'none';
     rowDurada.style.display = 'none';
   } else {
     SoundEngine.playCheckout();
     box.classList.add('is-sortida');
-    iconEl.textContent = '🎨✨';
+    iconEl.textContent = '';
     badgeEl.textContent = 'FINS AVIAT • SORTIDA';
     rowSortida.style.display = 'flex';
     rowDurada.style.display = 'flex';
@@ -191,7 +189,7 @@ async function loadStudentSelector() {
       const opt = document.createElement('option');
       opt.value = s.id;
       const isInside = activeStudentIds.has(s.id);
-      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '🟢 [Al taller]' : '⚪ [A fora]'}`;
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '[Al taller]' : '[A fora]'}`;
       select.appendChild(opt);
     });
   } catch (err) {
@@ -230,7 +228,7 @@ function setupScannerEvents() {
     });
   }
 
-  // Alternar ràpidament càmera amb el botó 🔄
+  // Alternar ràpidament càmera amb el botó Canviar
   const switchBtn = document.getElementById('btn-switch-camera');
   if (switchBtn) {
     switchBtn.addEventListener('click', async () => {

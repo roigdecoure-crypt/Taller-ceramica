@@ -45,7 +45,7 @@ if (typeof window !== 'undefined') {
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.style.display = 'none';
-    showToast('🎉 App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
+    showToast('App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
   });
 }
 
@@ -69,7 +69,7 @@ function showToast(message, type = 'info') {
   if (!container) return;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -242,7 +242,7 @@ function renderDashboard(details) {
     const updateLiveTimer = () => {
       const durSec = TimeUtils.calculateDuration(entrada, new Date());
       liveStatusEl.innerHTML = `
-        <div style="background: #E8F5E9; border: 1px solid #C8E6C9; padding: 8px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #2E7D32;">
+        <div style="background: #EEF5F1; border: 1px solid var(--color-border); padding: 8px 14px; border-radius: 99px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #5E7E6F;">
           <span class="live-pulse"></span>
           <span>Al taller ara mateix (${TimeUtils.secondsToHms(durSec)})</span>
         </div>
@@ -324,14 +324,14 @@ async function loadStudentBookings(studentId) {
       item.innerHTML = `
         <div>
           <div style="font-weight: 700; font-size: 14px; color: var(--color-dark);">
-            📅 ${TimeUtils.formatDate(r.data)} &bull; ⏰ ${r.hora_inici} - ${r.hora_fi}
+            ${TimeUtils.formatDate(r.data)} &bull; ${r.hora_inici} - ${r.hora_fi}
           </div>
           <div style="font-size: 12px; color: var(--color-muted); margin-top: 2px;">
             <strong style="color:var(--color-primary);">${r.activitat || 'Taller'}</strong> (${r.places || 1} persona${(r.places || 1) > 1 ? 'es' : ''}) &bull; Torn ${r.franja_nom || r.franja}
           </div>
         </div>
         <div>
-          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: #C62828; border-color: #FFCDD2; font-size: 12px; font-weight: 600;">
+          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: var(--color-primary, #7A3026); border-color: var(--color-border, #E2EBE5); font-size: 12px; font-weight: 600;">
             Cancel·lar
           </button>
         </div>
@@ -394,13 +394,13 @@ async function setupStudentPurchaseSection(a) {
     function updateCategoryUI(cat) {
       if (!titleEl || !descEl || !iconEl) return;
       if (cat === 'infantil') {
-        iconEl.textContent = '🧒';
+        iconEl.textContent = '';
         titleEl.textContent = `Tarifa Infantil (fins a ${edatTall} anys)`;
         descEl.textContent = hasEdat
           ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article infantil de Stripe.`
           : `S'aplicarà la passarel·la per a alumnes de fins a ${edatTall} anys.`;
       } else {
-        iconEl.textContent = '👤';
+        iconEl.textContent = '';
         titleEl.textContent = `Tarifa Adults (més de ${edatTall} anys)`;
         descEl.textContent = hasEdat
           ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article d'adults de Stripe.`
@@ -481,7 +481,7 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
     });
 
     SoundEngine.playCheckin();
-    showToast(`🎉 S'han sumat ${hores} hores al teu compte! Nou saldo: ${res.balanc.formatBalance}`, 'success');
+    showToast(`S'han sumat ${hores} hores al teu compte! Nou saldo: ${res.balanc.formatBalance}`, 'success');
     
     // Refrescar dades
     const updated = await Store.getAlumne(studentId);

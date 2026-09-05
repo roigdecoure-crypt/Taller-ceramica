@@ -19,14 +19,14 @@
   --font-script: 'Caveat', cursive, -apple-system, sans-serif;
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   
-  --color-success: #2E7D32;
-  --color-success-bg: #E8F5E9;
-  --color-warning: #D97706;
-  --color-warning-bg: #FEF3C7;
-  --color-danger: #C62828;
-  --color-danger-bg: #FFEBEE;
-  --color-info: #1976D2;
-  --color-info-bg: #E3F2FD;
+  --color-success: #5E7E6F;
+  --color-success-bg: #EEF5F1;
+  --color-warning: #736B66;
+  --color-warning-bg: #F4F8F5;
+  --color-danger: #7A3026;
+  --color-danger-bg: #FBF4F2;
+  --color-info: #5E7E6F;
+  --color-info-bg: #EEF5F1;
 
   --shadow-sm: 0 2px 4px rgba(46, 40, 37, 0.05);
   --shadow-md: 0 4px 12px rgba(46, 40, 37, 0.08);
@@ -116,15 +116,15 @@ button {
   color: #fff;
 }
 .btn-danger:hover {
-  background-color: #A01B1B;
+  background-color: var(--color-primary-dark);
 }
 
 .btn-success {
-  background-color: var(--color-success);
+  background-color: var(--color-secondary);
   color: #fff;
 }
 .btn-success:hover {
-  background-color: #236327;
+  background-color: #4B675A;
 }
 
 .btn-sm {
@@ -334,9 +334,9 @@ table.data-table tr:hover td {
   gap: 10px;
   animation: slideIn 0.3s ease;
 }
-.toast.success { background: #2E7D32; }
-.toast.error { background: #C62828; }
-.toast.info { background: #1976D2; }
+.toast.success { background: #5E7E6F; }
+.toast.error { background: #7A3026; }
+.toast.info { background: #2E2825; }
 
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
@@ -576,9 +576,9 @@ table.data-table tr:hover td {
   opacity: 0.7;
 }
 .res-cal-day.closed-holiday {
-  background: #FFF8E1;
-  border-color: #FFE082;
-  color: #F57F17;
+  background: #FBF4F2;
+  border-color: #E2EBE5;
+  color: var(--color-primary, #7A3026);
   cursor: not-allowed;
 }
 .res-cal-day.open-day {
@@ -633,20 +633,20 @@ table.data-table tr:hover td {
   white-space: nowrap;
 }
 .res-cal-day .badge-lliure {
-  background: #E8F5E9;
-  color: #2E7D32;
+  background: #EEF5F1;
+  color: #5E7E6F;
 }
 .res-cal-day .badge-ultimes {
-  background: #FFF3E0;
-  color: #E65100;
+  background: #FBF4F2;
+  color: #7A3026;
 }
 .res-cal-day .badge-complet {
-  background: #FFEBEE;
-  color: #C62828;
+  background: #FBF4F2;
+  color: #7A3026;
 }
 .res-cal-day .badge-tancat {
-  background: #ECEFF1;
-  color: #78909C;
+  background: #F4F8F5;
+  color: #736B66;
 }
 
 /* Detall de Franges del Dia Seleccionat */
@@ -704,10 +704,10 @@ table.data-table tr:hover td {
 }
 .res-slot-box.is-full {
   background: #FFFDFD;
-  border-color: #FFCDD2;
+  border-color: #E5DDD5;
 }
 .res-slot-box.is-open {
-  border-color: #C8E6C9;
+  border-color: #5E7E6F;
 }
 .res-slot-header {
   display: flex;
@@ -727,19 +727,19 @@ table.data-table tr:hover td {
   font-size: 11px;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 99px;
+  border-radius: 4px;
 }
 .res-slot-cap-badge.open {
-  background: #E8F5E9;
-  color: #2E7D32;
+  background: #EEF5F1;
+  color: #5E7E6F;
 }
 .res-slot-cap-badge.warning {
-  background: #FFF3E0;
-  color: #E65100;
+  background: #FBF4F2;
+  color: #7A3026;
 }
 .res-slot-cap-badge.full {
-  background: #FFEBEE;
-  color: #C62828;
+  background: #FBF4F2;
+  color: #7A3026;
 }
 
 /* Barra de Progrés d'Aforament Franja (Màx 12) */
@@ -755,11 +755,11 @@ table.data-table tr:hover td {
 }
 .res-slot-progress-fill {
   height: 100%;
-  background: #2E7D32;
+  background: #5E7E6F;
   transition: width 0.3s ease;
 }
-.res-slot-progress-fill.warning { background: #EF6C00; }
-.res-slot-progress-fill.full { background: #C62828; }
+.res-slot-progress-fill.warning { background: #736B66; }
+.res-slot-progress-fill.full { background: #7A3026; }
 .res-slot-progress-label {
   display: flex;
   justify-content: space-between;
@@ -803,10 +803,10 @@ table.data-table tr:hover td {
 .res-slot-act-spots {
   font-size: 11px;
   font-weight: 600;
-  color: #2E7D32;
+  color: #5E7E6F;
 }
 .res-slot-act-row.is-full .res-slot-act-spots {
-  color: #C62828;
+  color: #7A3026;
 }
 .btn-book-act {
   padding: 4px 10px;
@@ -865,14 +865,14 @@ table.data-table tr:hover td {
 .btn-admin-cancel-res {
   padding: 2px 8px;
   font-size: 11px;
-  color: #C62828;
-  border: 1px solid #FFCDD2;
+  color: #7A3026;
+  border: 1px solid #E5DDD5;
   border-radius: 4px;
   background: #FFF;
   cursor: pointer;
 }
 .btn-admin-cancel-res:hover {
-  background: #FFEBEE;
+  background: #FBF4F2;
 }
 
 /* Modal de Confirmació de Reserva Net */

@@ -61,7 +61,7 @@
       border-radius: 6px;
     }
     .pwa-banner {
-      background: linear-gradient(135deg, var(--color-dark, #2E2825) 0%, #3D3531 100%);
+      background: var(--color-dark, #2E2825);
       color: #FFF;
       padding: 12px 16px;
       border-radius: var(--radius-md);
@@ -88,7 +88,7 @@
       text-align: center;
     }
     .balance-card-student {
-      background: linear-gradient(135deg, var(--brand-primary, #C25E3A) 0%, #2E2825 100%);
+      background: var(--color-primary, #7A3026);
       color: #FFF;
       border-radius: var(--radius-lg);
       padding: 24px;
@@ -168,7 +168,7 @@
       transition: var(--transition);
     }
     .slot-card.available:hover {
-      border-color: #2E7D32;
+      border-color: var(--color-secondary, #5E7E6F);
       transform: translateY(-2px);
       box-shadow: var(--shadow-sm);
     }
@@ -192,16 +192,17 @@
       width: fit-content;
     }
     .capacity-badge.green {
-      background: #E8F5E9;
-      color: #2E7D32;
+      background: #EEF5F1;
+      color: #5E7E6F;
     }
     .capacity-badge.orange {
-      background: #FFF3E0;
-      color: #E65100;
+      background: #FBF4F2;
+      color: #7A3026;
     }
     .capacity-badge.red {
-      background: #FFEBEE;
-      color: #C62828;
+      background: #FBF4F2;
+      color: #7A3026;
+      font-weight: 800;
     }
     .booking-item-card {
       background: #FAFAFA;
@@ -223,7 +224,6 @@
     <!-- BANNER INSTAL·LACIÓ APP MÒBIL (PWA) -->
     <div id="pwa-install-banner" class="pwa-banner" style="display: none;">
       <div class="pwa-banner-left">
-        <span style="font-size: 28px;">📲</span>
         <div>
           <div style="font-weight: 700; font-size: 14px;" id="pwa-banner-title">Baixa l'App de Roig de Coure</div>
           <div style="font-size: 12px; opacity: 0.85;">Tindràs el teu carnet QR a mà fins i tot sense connexió!</div>
@@ -239,7 +239,7 @@
     <div id="section-login" class="login-container">
       <div id="login-logo-container" style="margin-bottom: 12px;">
         <img id="login-logo-img" src="" alt="Logo Taller" class="portal-logo-img" style="display: none; height: 55px; margin: 0 auto;">
-        <div id="login-logo-icon" style="font-size: 48px;">🏺</div>
+        <div id="login-logo-icon" style="display: none;"></div>
       </div>
       <h2 style="font-family: var(--font-script); font-size: 44px; font-weight: 700; color: var(--brand-primary); margin-bottom: 2px; line-height: 1.1;" id="login-workshop-title">Roig de Coure</h2>
       <p style="font-size: 12px; color: var(--brand-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;" id="login-workshop-subtitle">Taller de Ceràmica &bull; Olot</p>
@@ -260,7 +260,7 @@
         <p>Ets nou alumne o no saps el teu codi? Demana'l al taller.</p>
         <div style="margin-top: 12px; display: flex; justify-content: center; gap: 14px;">
           <a href="index.html">&larr; Pàgina d'inici</a>
-          <button id="btn-login-install-prompt" style="background: none; border: none; color: var(--color-primary); text-decoration: underline; cursor: pointer; font-size: 13px;">📲 Instal·lar App</button>
+          <button id="btn-login-install-prompt" style="background: none; border: none; color: var(--color-primary); text-decoration: underline; cursor: pointer; font-size: 13px;">Instal·lar App</button>
         </div>
       </div>
     </div>
@@ -272,7 +272,7 @@
       <div class="portal-top-bar">
         <div class="portal-logo">
           <img id="portal-header-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none;">
-          <span id="portal-header-logo-icon">🏺</span>
+          <span id="portal-header-logo-icon" style="display: none;"></span>
           <div>
             <div id="student-workshop-name" style="font-family: var(--font-script); font-size: 28px; font-weight: 700; color: var(--brand-primary); line-height: 1.1;">Roig de Coure</div>
             <div id="student-workshop-subtitle" style="font-size: 11px; font-weight: 600; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: 0.8px;">Taller de Ceràmica &bull; Olot</div>
@@ -280,7 +280,7 @@
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button class="btn btn-outline btn-sm" id="btn-portal-install-app" title="Instal·lar l'App al mòbil" style="display: inline-flex; align-items: center; gap: 4px;">
-            <span>📲</span> <span>Instal·lar App</span>
+            <span>Instal·lar App</span>
           </button>
           <button class="btn btn-outline btn-sm" id="btn-logout" title="Sortir">Tancar Sessió</button>
         </div>
@@ -314,11 +314,11 @@
       </div>
 
       <!-- SECCIÓ ADQUIRIR HORES (STRIPE SEGONS EDAT) -->
-      <section class="card" style="margin-bottom: 24px; border-left: 4px solid #635BFF;" id="portal-adquirir-hores-section">
+      <section class="card" style="margin-bottom: 24px; border-left: 4px solid var(--color-primary);" id="portal-adquirir-hores-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <div>
             <h2 style="font-size: 18px; font-weight: 800; color: var(--color-dark); display: flex; align-items: center; gap: 8px;">
-              <span>🛒</span> <span>Adquirir Hores de Taller</span>
+              <span>Adquirir Hores de Taller</span>
             </h2>
             <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
               Pagament segur directe amb targeta o Apple Pay mitjançant Stripe.
@@ -330,7 +330,7 @@
         <div style="background: #F8F9FA; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 26px;" id="portal-edat-icon">👤</span>
+              <span id="portal-edat-icon" style="display: none;"></span>
               <div>
                 <div style="font-size: 14px; font-weight: 700; color: var(--color-dark);" id="portal-edat-title">Tarifa Adults (12 anys o més)</div>
                 <div style="font-size: 12px; color: var(--color-muted);" id="portal-edat-desc">Assignat segons la teva edat registrada.</div>
@@ -350,22 +350,22 @@
 
         <!-- Botó de compra directa Stripe -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-portal-buy-stripe" style="background: #635BFF; border-color: #635BFF; font-size: 16px; font-weight: 700; box-shadow: 0 4px 14px rgba(99, 91, 255, 0.3);">
-            💳 Comprar Hores amb Stripe (Passarel·la Segura)
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-portal-buy-stripe" style="background: var(--color-primary); border-color: var(--color-primary); font-size: 16px; font-weight: 700;">
+            Comprar Hores amb Targeta (Stripe)
           </button>
           
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span style="font-size: 12px; color: var(--color-muted);">
-              🔒 Connexió encriptada SSL. El pagament s'assignarà al teu ID: <strong id="portal-buy-student-id">TC-101</strong>
+              Connexió encriptada SSL. El pagament s'assignarà al teu ID: <strong id="portal-buy-student-id">TC-101</strong>
             </span>
             <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-bizum" style="font-size: 12px;">
-              📱 Pagar per Bizum
+              Pagar per Bizum
             </button>
           </div>
         </div>
 
         <!-- Bloc Bizum desplegable -->
-        <div id="portal-bizum-box" style="display: none; margin-top: 14px; background: #FFF8E1; border: 1px solid #FFE082; padding: 14px; border-radius: 10px; font-size: 13px;">
+        <div id="portal-bizum-box" style="display: none; margin-top: 14px; background: #F4F8F5; border: 1px solid var(--color-border); padding: 14px; border-radius: 8px; font-size: 13px;">
           <strong>Pagament per Bizum:</strong> Envia l'import desitjat al número del taller <strong id="portal-bizum-phone">+34 600 000 000</strong> indicant com a concepte el teu ID d'alumne: <code id="portal-bizum-concept">TC-101 Nom</code>.<br>
           <div style="margin-top: 10px;">
             <button type="button" class="btn btn-secondary btn-sm" id="btn-portal-confirm-bizum">Notificar Pagament Bizum</button>
@@ -377,7 +377,7 @@
       <section class="card" style="margin-bottom: 24px; border-left: 4px solid var(--color-primary);" id="portal-reserva-section">
         <div style="margin-bottom: 16px;">
           <h2 style="font-size: 20px; font-weight: 800; color: var(--color-dark); display: flex; align-items: center; gap: 8px;">
-            <span>📅</span> <span>Reserva de Sessions al Taller</span>
+            <span>Reserva de Sessions al Taller</span>
           </h2>
           <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
             Horaris de 90 min (Dimecres a Diumenge). Aforament màxim del taller: 12 persones simultànies en total.
@@ -387,14 +387,14 @@
         <!-- Contenidor dinàmic per al Calendari Visual & 2 Camins -->
         <div id="student-reserves-calendar-mount">
           <div style="text-align: center; color: var(--color-muted); padding: 30px;">
-            ⏳ Carregant calendari interactiu i aforament en directe...
+            Carregant disponibilitat...
           </div>
         </div>
 
         <!-- Les meves reserves confirmades -->
         <div id="portal-my-bookings-container" style="margin-top: 24px; padding-top: 18px; border-top: 1px dashed var(--color-border);">
           <h3 style="font-size: 15px; font-weight: 800; margin-bottom: 12px; color: var(--color-dark); display: flex; align-items: center; gap: 6px;">
-            <span>🎟️</span> <span>Les Teves Reserves Actives</span>
+            <span>Les Teves Reserves Actives</span>
           </h3>
           <div id="portal-my-bookings-list" style="display: flex; flex-direction: column; gap: 8px;">
             <p style="font-size: 13px; color: var(--color-muted);">Carregant les teves reserves...</p>
@@ -406,10 +406,10 @@
       <section class="card" style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
           <div>
-            <h2 style="font-size: 18px; font-weight: 800;">💳 El Teu Carnet Digital</h2>
+            <h2 style="font-size: 18px; font-weight: 800;">El Teu Carnet Digital</h2>
             <p style="font-size: 13px; color: var(--color-muted);">Porta'l al mòbil i ensenya aquest codi QR a la càmera de la recepció en arribar i en marxar.</p>
           </div>
-          <button class="btn btn-outline btn-sm" id="btn-portal-print-badge">🖨️ Descarregar / Imprimir</button>
+          <button class="btn btn-outline btn-sm" id="btn-portal-print-badge">Descarregar / Imprimir</button>
         </div>
 
         <div style="display: flex; justify-content: center;">
@@ -417,7 +417,7 @@
             <div class="badge-top">
               <div class="workshop-brand">
                 <img id="portal-badge-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
-                <span class="workshop-icon" id="portal-badge-logo-icon">🏺</span>
+                <span class="workshop-icon" id="portal-badge-logo-icon" style="display: none;"></span>
                 <span class="workshop-name" id="portal-badge-ws-name">Roig de Coure</span>
               </div>
               <span class="badge-type">CARNET DE SOCI</span>
@@ -446,7 +446,7 @@
 
       <!-- HISTORIAL DE SESSIONS I ASSISTÈNCIA -->
       <section class="card" style="margin-bottom: 24px;">
-        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">⏱️ Historial d'Entrades i Sortides</h2>
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">Historial d'Entrades i Sortides</h2>
         <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 14px;">Detall segon a segon del temps que has estat treballant al taller.</p>
 
         <div class="table-responsive">
@@ -469,7 +469,7 @@
 
       <!-- HISTORIAL DE COMPRES D'HORES -->
       <section class="card">
-        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">📦 Historial de Paquets Adquirits</h2>
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">Historial de Paquets Adquirits</h2>
         <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 14px;">Totes les compres d'hores registrades al teu compte.</p>
 
         <div class="table-responsive">
@@ -510,20 +510,20 @@
         <div class="form-group">
           <label>Tria com vols pagar:</label>
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
-            <button class="btn btn-primary btn-block" id="btn-pay-stripe" style="background:#635BFF; border-color:#635BFF; font-size:16px;">
-              💳 Pagar amb Stripe (Targeta / Apple Pay)
+            <button class="btn btn-primary btn-block" id="btn-pay-stripe" style="background:var(--color-primary); border-color:var(--color-primary); font-size:16px;">
+              Pagar amb Targeta / Apple Pay (Stripe)
             </button>
             <button class="btn btn-outline btn-block" id="btn-pay-bizum" style="font-size:14px;">
-              📱 Pagament per Bizum
+              Pagament per Bizum
             </button>
             <button class="btn btn-outline btn-sm btn-block" id="btn-simulate-pay" style="color:var(--color-muted); border-style:dashed;">
-              ⚡ Confirmar i Sumar Hores Automàticament (Test/Immediat)
+              Confirmar i Sumar Hores Automàticament (Test/Immediat)
             </button>
           </div>
         </div>
 
         <!-- Secció informativa Bizum (oculta per defecte) -->
-        <div id="bizum-instructions" style="display: none; background: #FFF8E1; border: 1px solid #FFE082; padding: 12px; border-radius: 8px; font-size: 13px;">
+        <div id="bizum-instructions" style="display: none; background: #F4F8F5; border: 1px solid var(--color-border); padding: 12px; border-radius: 8px; font-size: 13px;">
           Envia el Bizum al número del taller <strong id="bizum-phone">+34 600 000 000</strong> amb el concepte: <code id="bizum-concept">TC-101 10h</code>.<br>
           En prémer el botó inferior les hores es carregaran al teu compte.
           <div style="margin-top: 10px;">
@@ -538,7 +538,7 @@
   <div class="modal-backdrop" id="modal-ios-install" style="display: none;">
     <div class="modal-dialog" style="max-width: 400px; text-align: center;">
       <div class="modal-header">
-        <h3>📲 Instal·lar al teu iPhone / iPad</h3>
+        <h3>Instal·lar al teu iPhone / iPad</h3>
         <button class="modal-close" id="btn-close-ios-modal">&times;</button>
       </div>
       <div style="padding: 10px 0; font-size: 14px; text-align: left; line-height: 1.6;">
@@ -548,15 +548,15 @@
         <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</span>
-            <span>Toca el botó de <strong>Compartir</strong> a Safari (<span style="font-size: 18px;">⎋</span> o <span style="font-size: 18px;">⬆️</span> al menú inferior del navegador).</span>
+            <span>Toca el botó de <strong>Compartir</strong> al menú inferior del navegador Safari.</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</span>
-            <span>Fes lliscar cap avall i selecciona <strong>"Afegeix a la pantalla d'inici"</strong> (<i>Add to Home Screen</i> ➕).</span>
+            <span>Fes lliscar cap avall i selecciona <strong>"Afegeix a la pantalla d'inici"</strong> (<i>Add to Home Screen</i>).</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="background: var(--color-primary); color: white; border-radius: 50%; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</span>
-            <span>Prem <strong>"Afegeix"</strong> a la cantonada superior dreta. Llest! Tindràs la icona directa al mòbil.</span>
+            <span>Prem <strong>"Afegeix"</strong> a la cantonada superior dreta. Llest! Tindràs l'accés directe al mòbil.</span>
           </div>
         </div>
       </div>

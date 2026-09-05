@@ -145,28 +145,28 @@
     .act-card.active {
       border-color: var(--primary);
       background: #FDF7F4;
-      box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
+      box-shadow: 0 0 0 2px rgba(122, 48, 38, 0.15);
     }
     .act-card .act-top {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       margin-bottom: 8px;
     }
     .act-card .act-icon {
-      font-size: 26px;
+      display: none;
     }
     .act-card .act-cap-badge {
       font-size: 11px;
       font-weight: 700;
       padding: 2px 7px;
-      border-radius: 20px;
-      background: #F3F4F6;
-      color: #4B5563;
+      border-radius: 4px;
+      background: #EEF5F1;
+      color: #5E7E6F;
     }
     .act-card.active .act-cap-badge {
-      background: var(--primary-light);
-      color: var(--primary-dark);
+      background: var(--primary);
+      color: #FFFFFF;
     }
     .act-card .act-title {
       font-weight: 700;
@@ -332,9 +332,9 @@
     }
 
     .wa-banner {
-      background: #F0FDF4;
-      border: 1px solid #BBF7D0;
-      color: #166534;
+      background: #EEF5F1;
+      border: 1px solid #E2EBE5;
+      color: #466356;
       padding: 10px 14px;
       border-radius: 8px;
       font-size: 12px;
@@ -376,8 +376,7 @@
       padding: 20px 10px;
     }
     .success-icon {
-      font-size: 64px;
-      margin-bottom: 12px;
+      display: none;
     }
     .success-view h2 {
       font-family: 'Playfair Display', Georgia, serif;
@@ -425,7 +424,6 @@
 
   <!-- Capçalera pública -->
   <header class="public-header">
-    <div style="font-size: 32px; line-height: 1; margin-bottom: 2px;">🏺</div>
     <div style="font-family: var(--font-script); font-size: 52px; font-weight: 700; color: var(--primary); line-height: 1.1; letter-spacing: 0.5px;">Roig de Coure</div>
     <div style="font-size: 13px; font-weight: 700; color: var(--secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1.2px;">Taller de Ceràmica &bull; Olot</div>
     <p>Reserva la teva plaça al taller artesanal per a torn, modelatge o pintar ceràmica</p>
@@ -446,7 +444,6 @@
           <div class="activities-grid" id="activities-container">
             <div class="act-card active" data-id="torn" data-cap="4">
               <div class="act-top">
-                <span class="act-icon">🏺</span>
                 <span class="act-cap-badge" id="badge-cap-torn">Màx. 4 torns</span>
               </div>
               <div class="act-title">Torn</div>
@@ -455,7 +452,6 @@
 
             <div class="act-card" data-id="modelatge" data-cap="8">
               <div class="act-top">
-                <span class="act-icon">🗿</span>
                 <span class="act-cap-badge" id="badge-cap-modelatge">Fins a 8 places</span>
               </div>
               <div class="act-title">Modelatge</div>
@@ -464,7 +460,6 @@
 
             <div class="act-card" data-id="pintar" data-cap="12">
               <div class="act-top">
-                <span class="act-icon">🎨</span>
                 <span class="act-cap-badge" id="badge-cap-pintar">Fins a 12 places</span>
               </div>
               <div class="act-title">Pintar ceràmica</div>
@@ -481,7 +476,7 @@
               <label for="booking-date">Data de la sessió</label>
               <input type="date" id="booking-date" required>
               <div class="schedule-info">
-                <span>🕒</span> Obrim de <strong>Dimecres a Diumenge</strong> (Dilluns i Dimarts descans)
+                Obrim de <strong>Dimecres a Diumenge</strong> (Dilluns i Dimarts descans)
               </div>
             </div>
           </div>
@@ -493,7 +488,7 @@
             </label>
             <div class="slots-grid" id="slots-container">
               <div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">
-                ⏳ Comprovant disponibilitat...
+                Comprovant disponibilitat...
               </div>
             </div>
           </div>
@@ -538,24 +533,22 @@
 
           <!-- Avís WhatsApp -->
           <div class="wa-banner">
-            <span style="font-size: 20px;">💬</span>
             <div>
               <strong>Confirmació i recordatoris per WhatsApp:</strong>
               T'enviarem la confirmació al moment, un recordatori 48h abans i un altre a les 8:00 AM del mateix dia de l'esdeveniment.
             </div>
           </div>
 
-          <div id="booking-error-msg" style="display:none; color: #DC2626; background: #FEF2F2; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+          <div id="booking-error-msg" style="display:none; color: #7A3026; background: #FBF4F2; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
 
           <button type="submit" class="btn-submit-booking" id="btn-submit">
-            <span>✨</span> Confirmar Reserva ara
+            Confirmar Reserva ara
           </button>
         </form>
       </div>
 
       <!-- VISTA CONFIRMACIÓ ÈXIT -->
       <div class="success-view" id="booking-success-view">
-        <div class="success-icon">🎉</div>
         <h2>Reserva Confirmada!</h2>
         <p style="color: var(--muted); font-size: 15px;" id="success-client-msg">
           Moltíssimes gràcies, t'esperem al taller!
@@ -584,19 +577,19 @@
           </div>
         </div>
 
-        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; padding: 12px; border-radius: 8px; max-width: 480px; margin: 0 auto 16px; font-size: 13px;">
-          💬 <strong>T'hem enviat un missatge per WhatsApp</strong> amb tots els detalls de la teva reserva.
+        <div style="background: #EEF5F1; border: 1px solid #E2EBE5; color: #466356; padding: 12px; border-radius: 8px; max-width: 480px; margin: 0 auto 16px; font-size: 13px;">
+          <strong>T'hem enviat un missatge per WhatsApp</strong> amb tots els detalls de la teva reserva.
         </div>
 
         <div class="calendar-actions">
           <a href="#" target="_blank" class="btn btn-primary" id="btn-gcal">
-            📅 Afegir a Google Calendar
+            Afegir a Google Calendar
           </a>
           <button type="button" class="btn btn-outline" id="btn-ics">
-            📥 Descarregar cita (.ics)
+            Descarregar cita (.ics)
           </button>
-          <a href="https://wa.me/34600000000" target="_blank" class="btn btn-secondary" id="btn-wa-direct">
-            💬 Contactar Taller WhatsApp
+          <a href="https://wa.me/34683633880" target="_blank" class="btn btn-secondary" id="btn-wa-direct">
+            Contactar Taller WhatsApp
           </a>
         </div>
 
@@ -611,11 +604,11 @@
 
   <footer class="public-footer" style="text-align: center; padding: 28px 20px 32px; font-size: 13px; color: #6B7280; border-top: 1px solid var(--border); margin-top: auto; background: #FFFFFF;">
     <div style="font-family: var(--font-script); font-size: 28px; font-weight: 700; color: var(--primary); margin-bottom: 4px;">Roig de Coure</div>
-    <div style="margin-bottom: 6px; color: var(--dark); font-weight: 500;">📍 Plaça Rector Ferrer, 15, 17800 Olot (Girona)</div>
+    <div style="margin-bottom: 6px; color: var(--dark); font-weight: 500;">Plaça Rector Ferrer, 15, 17800 Olot (Girona)</div>
     <div style="margin-bottom: 8px;">
-      📞 <a href="tel:+34683633880" style="color: var(--primary); text-decoration: none; font-weight: 600;">+34 683 633 880</a> &bull; 
-      💬 <a href="https://wa.me/34683633880" target="_blank" style="color: var(--secondary); text-decoration: none; font-weight: 600;">WhatsApp</a> &bull; 
-      ✉️ <a href="mailto:roigdecoure@gmail.com" style="color: var(--primary); text-decoration: none;">roigdecoure@gmail.com</a>
+      <a href="tel:+34683633880" style="color: var(--primary); text-decoration: none; font-weight: 600;">+34 683 633 880</a> &bull; 
+      <a href="https://wa.me/34683633880" target="_blank" style="color: var(--secondary); text-decoration: none; font-weight: 600;">WhatsApp</a> &bull; 
+      <a href="mailto:roigdecoure@gmail.com" style="color: var(--primary); text-decoration: none;">roigdecoure@gmail.com</a>
     </div>
     <div style="font-size: 12px; color: #9CA3AF;">Horari: Dilluns a dissabte de 10h a 13h i de 17h a 20h</div>
   </footer>
@@ -683,7 +676,7 @@
       const slotsContainer = document.getElementById('slots-container');
       if (!dateVal) return;
 
-      slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">⏳ Comprovant disponibilitat...</div>`;
+      slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">Comprovant disponibilitat...</div>`;
 
       try {
         const res = await fetch(`/api/reserves/disponibilitat?data=${encodeURIComponent(dateVal)}&t=${Date.now()}`);
@@ -691,8 +684,8 @@
 
         if (data.tancat) {
           slotsContainer.innerHTML = `
-            <div style="grid-column: 1 / -1; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
-              🔒 ${data.motiu || 'Aquest dia el taller està tancat. Obrim de Dimecres a Diumenge.'}
+            <div style="grid-column: 1 / -1; background: #FBF4F2; border: 1px solid #E5DDD5; color: #7A3026; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
+              ${data.motiu || 'Aquest dia el taller està tancat. Obrim de Dimecres a Diumenge.'}
             </div>
           `;
           document.getElementById('btn-submit').disabled = true;
@@ -701,7 +694,7 @@
 
         renderSlots(data.franges || []);
       } catch (e) {
-        slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #DC2626; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
+        slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #7A3026; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
       }
     }
 
@@ -845,7 +838,7 @@
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⏳</span> Confirmant reserva...';
+        submitBtn.innerHTML = 'Confirmant reserva...';
 
         const payload = {
           student_nom: nom,
@@ -878,7 +871,7 @@
           errBox.textContent = err.message;
           errBox.style.display = 'block';
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<span>✨</span> Confirmar Reserva ara';
+          submitBtn.innerHTML = 'Confirmar Reserva ara';
         }
       });
 
@@ -887,7 +880,7 @@
         document.getElementById('booking-success-view').style.display = 'none';
         document.getElementById('booking-form-view').style.display = 'block';
         document.getElementById('btn-submit').disabled = false;
-        document.getElementById('btn-submit').innerHTML = '<span>✨</span> Confirmar Reserva ara';
+        document.getElementById('btn-submit').innerHTML = 'Confirmar Reserva ara';
         checkAvailability();
       });
     });

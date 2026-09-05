@@ -28,7 +28,7 @@ function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -135,7 +135,7 @@ function renderActiveStudentsBanner(students) {
         <span class="badge badge-success">Al taller</span>
       </div>
       <div class="live-timer-row">
-        <span class="live-timer-label">⏱️ Temps actual:</span>
+        <span class="live-timer-label">Temps actual:</span>
         <span class="live-timer-value live-student-timer" data-entrada="${sess.entrada || ''}">${durHms}</span>
       </div>
       <div style="font-size: 12px; color: var(--color-muted);">
@@ -146,10 +146,10 @@ function renderActiveStudentsBanner(students) {
           Sortida Ara
         </button>
         <button class="btn btn-outline btn-sm btn-action-force-close" data-id="${s.id}" data-sess-id="${sess.id || ''}" data-nom="${s.nom}" data-entrada="${horaEntrada}" title="Tancar cicle si s'ha oblidat">
-          ⚠️ Oblit
+          Oblit
         </button>
         <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}">
-          🔍
+          Fitxa
         </button>
       </div>
     `;
@@ -174,7 +174,7 @@ function renderStudentsTable(students) {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-muted); padding:32px; font-size:15px;">ℹ️ No s'ha trobat cap alumne registrat o coincident amb la cerca.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-muted); padding:32px; font-size:15px;">No s'ha trobat cap alumne registrat o coincident amb la cerca.</td></tr>`;
     return;
   }
 
@@ -208,16 +208,16 @@ function renderStudentsTable(students) {
       </td>
       <td style="text-align: right; white-space: nowrap;">
         <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}" title="Veure fitxa 360°">
-          🔍 Fitxa
+          Fitxa
         </button>
         <button class="btn btn-outline btn-sm btn-action-carnet" data-id="${s.id}" title="Veure carnet amb QR">
-          💳 Carnet
+          Carnet
         </button>
-        <button class="btn ${isActiu ? 'btn-primary' : 'btn-success'} btn-sm btn-action-toggle-sessio" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="${isActiu ? 'Registrar sortida ara mateix' : 'Registrar entrada ara mateix'}">
-          ${isActiu ? '🔴 Sortida' : '🟢 Entrada'}
+        <button class="btn ${isActiu ? 'btn-danger' : 'btn-success'} btn-sm btn-action-toggle-sessio" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="${isActiu ? 'Registrar sortida ara mateix' : 'Registrar entrada ara mateix'}">
+          ${isActiu ? 'Sortida' : 'Entrada'}
         </button>
         <button class="btn btn-outline btn-sm btn-action-open-manual-time" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="Ajustar hora d'entrada o sortida">
-          ⏱️
+          Ajustar
         </button>
       </td>
     `;
@@ -296,7 +296,7 @@ function renderDrawerSessions(sessions) {
         ${isForcada ? '<span class="badge badge-warning" title="Tancat per oblit">Oblit</span>' : ''}
       </td>
       <td>
-        <button class="btn btn-outline btn-sm btn-delete-sessio" data-id="${s.id}" style="color:var(--color-danger);" title="Eliminar sessió">🗑️</button>
+        <button class="btn btn-outline btn-sm btn-delete-sessio" data-id="${s.id}" style="color:var(--color-danger);" title="Eliminar sessió">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -320,7 +320,7 @@ function renderDrawerPaquets(paquets) {
       <td>${p.preu ? p.preu + '€' : '-'}</td>
       <td><span class="badge badge-neutral">${p.metode_pagament || 'Efectiu'}</span></td>
       <td>
-        <button class="btn btn-outline btn-sm btn-delete-paquet" data-id="${p.id}" style="color:var(--color-danger);" title="Eliminar compra">🗑️</button>
+        <button class="btn btn-outline btn-sm btn-delete-paquet" data-id="${p.id}" style="color:var(--color-danger);" title="Eliminar compra">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -343,7 +343,7 @@ async function showStudentBadgeModal(studentId) {
     if (badgeLogoIcon) badgeLogoIcon.style.display = 'none';
   } else {
     if (badgeLogoImg) { badgeLogoImg.src = ''; badgeLogoImg.style.display = 'none'; }
-    if (badgeLogoIcon) badgeLogoIcon.style.display = 'inline-block';
+    if (badgeLogoIcon) badgeLogoIcon.style.display = 'none';
   }
 
   document.getElementById('badge-nom').textContent = student.nom;
@@ -377,7 +377,7 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
       const isInside = s.sessioActiva && s.sessioActiva.estat === 'oberta';
       const opt = document.createElement('option');
       opt.value = s.id;
-      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '🟢 [Al taller]' : '⚪ [Fora]'}`;
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id}) ${isInside ? '[Al taller]' : '[Fora]'}`;
       if (preselectedStudentId && preselectedStudentId === s.id) {
         opt.selected = true;
       }
@@ -912,28 +912,28 @@ function setupEventListeners() {
     const tpl = (tplInput ? tplInput.value : '').trim() || 'reserva_confirmada';
     if (statusDiv) {
       statusDiv.style.display = 'block';
-      statusDiv.style.color = '#1E40AF';
-      statusDiv.textContent = '⏳ Enviant missatge de prova a Meta Graph API...';
+      statusDiv.style.color = '#5E7E6F';
+      statusDiv.textContent = 'Enviant missatge de prova a Meta Graph API...';
     }
     try {
       const res = await Store.testWhatsAppMeta(tel, tpl);
       if (res.ok) {
         if (statusDiv) {
-          statusDiv.style.color = '#16A34A';
-          statusDiv.textContent = '✅ Missatge enviat correctament! Revisa el teu WhatsApp.';
+          statusDiv.style.color = '#5E7E6F';
+          statusDiv.textContent = 'Missatge enviat correctament! Revisa el teu WhatsApp.';
         }
         showToast('WhatsApp de prova enviat amb èxit!', 'success');
       } else {
         if (statusDiv) {
-          statusDiv.style.color = '#DC2626';
-          statusDiv.textContent = '❌ Error: ' + (res.error || 'No s\'ha pogut enviar');
+          statusDiv.style.color = '#7A3026';
+          statusDiv.textContent = 'Error: ' + (res.error || 'No s\'ha pogut enviar');
         }
         showToast('Error: ' + (res.error || 'No s\'ha pogut enviar'), 'error');
       }
     } catch (e) {
       if (statusDiv) {
-        statusDiv.style.color = '#DC2626';
-        statusDiv.textContent = '❌ Error: ' + e.message;
+        statusDiv.style.color = '#7A3026';
+        statusDiv.textContent = 'Error: ' + e.message;
       }
       showToast(e.message, 'error');
     }
@@ -957,12 +957,12 @@ function setupEventListeners() {
   // Botons d'hidratació (llegir i bolcar del full)
   const handleHydrateAction = async () => {
     try {
-      showToast('⏳ Connectant amb Google Sheets i descarregant dades...', 'info');
+      showToast('Connectant amb Google Sheets i descarregant dades...', 'info');
       const res = await Store.hydrateFromGoogleSheets();
       showToast(res.message || 'Hidratació completada amb èxit!', 'success');
       await refreshStudentsList();
     } catch (err) {
-      showToast('⚠️ Error en la hidratació: ' + err.message, 'error');
+      showToast('Error en la hidratació: ' + err.message, 'error');
       if (err.message.includes('URL') || err.message.includes('configurat')) {
         document.getElementById('btn-configuracio').click();
       }
@@ -1205,7 +1205,7 @@ function initBrandStudio() {
         document.documentElement.style.setProperty('--brand-secondary', sec);
 
         modalBranding.classList.remove('active');
-        showToast('🎨 Imatge de marca actualitzada i sincronitzada amb èxit!', 'success');
+        showToast('Imatge de marca actualitzada i sincronitzada amb èxit!', 'success');
       } catch (err) {
         showToast('Error desant el disseny: ' + err.message, 'error');
       }
@@ -1221,9 +1221,9 @@ async function openBrandStudioModal() {
     const cfg = await Store.getConfig();
     const nom = cfg.taller_nom || 'Roig de Coure';
     const sub = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
-    const prim = cfg.brand_primary || '#C25E3A';
+    const prim = cfg.brand_primary || '#7A3026';
     const sec = cfg.brand_secondary || '#5E7E6F';
-    const font = cfg.brand_font || 'serif';
+    const font = cfg.brand_font || 'sans';
     const logoUrl = cfg.taller_logo_url || '';
 
     const nomInput = document.getElementById('brand-input-nom');
@@ -1283,9 +1283,9 @@ function setLogoPreview(url) {
 function updateBrandPreview() {
   const nom = document.getElementById('brand-input-nom')?.value.trim() || 'Roig de Coure';
   const sub = document.getElementById('brand-input-subtitol')?.value.trim() || "Taller d'Art i Ceràmica";
-  const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#C25E3A';
+  const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#7A3026';
   const sec = document.getElementById('brand-input-secondary-hex')?.value.trim() || '#5E7E6F';
-  const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'serif';
+  const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'sans';
   const logoUrl = document.getElementById('brand-input-logo-url')?.value || '';
 
   // Textos
@@ -1309,19 +1309,19 @@ function updateBrandPreview() {
     if (prevBadgeIcon) prevBadgeIcon.style.display = 'none';
   } else {
     if (prevHdrImg) { prevHdrImg.src = ''; prevHdrImg.style.display = 'none'; }
-    if (prevHdrIcon) prevHdrIcon.style.display = 'inline-block';
+    if (prevHdrIcon) prevHdrIcon.style.display = 'none';
     if (prevBadgeImg) { prevBadgeImg.src = ''; prevBadgeImg.style.display = 'none'; }
-    if (prevBadgeIcon) prevBadgeIcon.style.display = 'inline-block';
+    if (prevBadgeIcon) prevBadgeIcon.style.display = 'none';
   }
 
-  // Colors al Mockup
+  // Colors al Mockup (Sense gradients, fons corporatiu sòlid)
   const badgeTop = document.getElementById('preview-badge-top');
   if (badgeTop) {
-    badgeTop.style.background = `linear-gradient(135deg, ${prim} 0%, ${sec} 100%)`;
+    badgeTop.style.background = prim;
   }
   const balanceCard = document.getElementById('preview-balance-card');
   if (balanceCard) {
-    balanceCard.style.background = `linear-gradient(135deg, ${prim} 0%, #2E2825 100%)`;
+    balanceCard.style.background = prim;
   }
   const btnSample = document.getElementById('preview-btn-sample');
   if (btnSample) {
@@ -1648,7 +1648,7 @@ async function renderAdminDayAppointments(dateStr) {
     tableBody.innerHTML = `
       <tr>
         <td colspan="4" style="text-align: center; color: #6B7280; padding: 24px;">
-          ⏳ Carregant reserves per al ${dateStr}...
+          Carregant reserves per al ${dateStr}...
         </td>
       </tr>
     `;
@@ -1674,11 +1674,10 @@ async function renderAdminDayAppointments(dateStr) {
     tableBody.innerHTML = `
       <tr>
         <td colspan="4" class="app-empty-state">
-          <div style="font-size: 28px; margin-bottom: 8px;">✨</div>
           <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">No hi ha cap reserva per aquest dia</div>
           <div style="color: #6B7280; font-size: 13px; margin-bottom: 14px;">Totes les places estan disponibles.</div>
           <button type="button" class="btn btn-outline btn-sm" onclick="openReservesModal('${dateStr}')" style="border-color: #7A3026; color: #7A3026;">
-            ➕ Crear una reserva aquí
+            + Crear una reserva aquí
           </button>
         </td>
       </tr>
@@ -1693,10 +1692,9 @@ async function renderAdminDayAppointments(dateStr) {
     const clientNom = `${r.nom || ''} ${r.cognoms || ''}`.trim() || r.student_nom || r.student_id || 'Client sense nom';
     const slotDesc = (r.hora_inici && r.hora_fi) ? `${r.hora_inici} - ${r.hora_fi}` : (r.franja_id || '');
 
-    let actIcon = '🏺';
     let actNom = 'Torn';
-    if (r.activitat_id === 'modelatge') { actIcon = '🗿'; actNom = 'Modelatge'; }
-    else if (r.activitat_id === 'pintar') { actIcon = '🎨'; actNom = 'Pintar ceràmica'; }
+    if (r.activitat_id === 'modelatge') { actNom = 'Modelatge'; }
+    else if (r.activitat_id === 'pintar') { actNom = 'Pintar ceràmica'; }
 
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
 
@@ -1706,7 +1704,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actIcon} ${actNom} ${placesBadge}
+            ${slotDesc} &bull; ${actNom} ${placesBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>
@@ -1717,7 +1715,7 @@ async function renderAdminDayAppointments(dateStr) {
           </label>
           <div style="margin-top: 3px;">
             <span class="badge ${isVisited ? 'badge-success' : (isCancelled ? 'badge-danger' : 'badge-neutral')}" style="font-size: 10px; padding: 2px 6px;">
-              ${isVisited ? '✅ Assistit' : (isCancelled ? '❌ Cancel·lada' : '⏳ Pendent')}
+              ${isVisited ? 'Assistit' : (isCancelled ? 'Cancel·lada' : 'Pendent')}
             </span>
           </div>
         </td>
@@ -1730,12 +1728,12 @@ async function renderAdminDayAppointments(dateStr) {
             ` : ''}
             ${r.telefon ? `
               <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 8px; font-size: 12px;" title="Contactar per WhatsApp">
-                💬 WA
+                WhatsApp
               </a>
             ` : ''}
             ${!isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #DC2626; border-color: #FCA5A5;" title="Cancel·lar aquesta reserva">
-                ✕
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #7A3026; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
+                Cancel·lar
               </button>
             ` : ''}
           </div>
@@ -1751,7 +1749,7 @@ async function renderAdminDayAppointments(dateStr) {
       const isChecked = chk.checked;
       try {
         await Store.updateReservaAssistencia(resId, isChecked);
-        showToast(isChecked ? 'Assistència confirmada (Visited) ✅' : 'Assistència desmarcada', 'success');
+        showToast(isChecked ? 'Assistència confirmada (Visited)' : 'Assistència desmarcada', 'success');
         if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
         await refreshAppointmentsDashboard();
       } catch (err) {

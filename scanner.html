@@ -19,7 +19,6 @@
   <!-- Capçalera de l'escàner -->
   <header class="scanner-header">
     <div class="scanner-title">
-      <span style="font-size: 24px;">🏺</span>
       <div>
         <h2 id="scanner-ws-name" style="font-family: 'Caveat', cursive, sans-serif; font-size: 28px; line-height: 1; margin: 0 0 2px;">Roig de Coure</h2>
         <p>Apropa el teu carnet QR per entrar o sortir</p>
@@ -27,14 +26,14 @@
     </div>
     <div style="display: flex; align-items: center; gap: 6px;">
       <select id="select-camera-device" class="form-control" style="background:#2E2825; color:#FFF; border-color:#554F4B; font-size:12px; padding:6px 8px; max-width:150px;">
-        <option value="user">🤳 Frontal</option>
-        <option value="environment">📷 Darrere</option>
+        <option value="user">Frontal</option>
+        <option value="environment">Darrere</option>
       </select>
       <button class="btn btn-outline btn-sm" id="btn-switch-camera" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Canviar càmera">
-        🔄
+        Canviar
       </button>
       <a href="admin.html" class="btn btn-outline btn-sm" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Panell d'administració">
-        ⚙️
+        Admin
       </a>
     </div>
   </header>
@@ -55,14 +54,13 @@
     </div>
 
     <!-- Panell d'activació si la càmera no s'inicia sola -->
-    <div id="camera-error-container" style="display:none; position:absolute; z-index:25; text-align:center; padding:24px 20px; max-width:320px; background:rgba(30,26,24,0.95); border-radius:16px; border:2px solid #C25E3A; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
-      <div style="font-size:40px; margin-bottom:10px;">🤳</div>
+    <div id="camera-error-container" style="display:none; position:absolute; z-index:25; text-align:center; padding:24px 20px; max-width:320px; background:rgba(30,26,24,0.95); border-radius:16px; border:2px solid #7A3026; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
       <h3 style="font-size:16px; font-weight:700; color:#FFF; margin-bottom:8px;">Activar Càmera Frontal</h3>
       <p id="camera-error-message" style="font-size:13px; color:#D3CBC4; margin-bottom:16px;">
         Fes clic al botó inferior per concedir permís o activar la càmera frontal.
       </p>
       <button class="btn btn-primary btn-block" id="btn-retry-camera">
-        👉 Activar Càmera Ara
+        Activar Càmera Ara
       </button>
     </div>
   </main>
@@ -70,17 +68,17 @@
   <!-- Barra inferior d'accions -->
   <footer class="scanner-bottom-bar">
     <button class="btn btn-primary" id="btn-manual-entry" style="flex: 1; max-width: 240px;">
-      🔢 Introduir Codi Manual
+      Introduir Codi Manual
     </button>
     <button class="btn btn-outline" id="btn-install-pwa" style="border-color:#4A4440; color:#FFF; display: none;">
-      📲 Instal·lar App
+      Instal·lar App
     </button>
   </footer>
 
   <!-- MODAL DE RESULTAT D'ESCANEIG (ENTRADA / SORTIDA) -->
   <div class="scan-result-overlay" id="scan-result-modal">
     <div class="scan-result-box" id="scan-result-box">
-      <div class="result-icon" id="res-icon">🏺</div>
+      <div class="result-icon" id="res-icon" style="display:none;"></div>
       <div class="result-action-badge" id="res-badge">ENTRADA REGISTRADA</div>
       <div class="result-student-name" id="res-student-name">Maria Garcia Font</div>
 
@@ -113,7 +111,7 @@
   <div class="modal-backdrop" id="modal-manual-entry-backdrop">
     <div class="modal-dialog" style="max-width: 420px;">
       <div class="modal-header">
-        <h3>⏱️ Entrada / Sortida Manual</h3>
+        <h3>Entrada / Sortida Manual</h3>
         <button class="modal-close" id="btn-close-manual-modal">&times;</button>
       </div>
       <form id="form-manual-code">
@@ -133,11 +131,11 @@
           <div style="display: flex; gap: 10px; margin-bottom: 8px;">
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="manual_time_option" value="now" checked>
-              <span>⏰ Ara mateix</span>
+              <span>Ara mateix</span>
             </label>
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="manual_time_option" value="custom">
-              <span>✏️ Indicar una altra hora</span>
+              <span>Indicar una altra hora</span>
             </label>
           </div>
           <input type="datetime-local" id="manual-custom-time-input" class="form-control" style="display: none;">
@@ -147,14 +145,14 @@
           <label style="margin-bottom: 8px; display: block;">3. Què vols registrar?</label>
           <div style="display: flex; gap: 10px;">
             <button type="button" class="btn btn-success btn-block btn-manual-action" data-action="entrada" style="padding: 12px 8px;">
-              🟢 Marcar ENTRADA
+              Marcar Entrada
             </button>
-            <button type="button" class="btn btn-primary btn-block btn-manual-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
-              🔴 Marcar SORTIDA
+            <button type="button" class="btn btn-primary btn-block btn-manual-action" data-action="sortida" style="background:var(--color-primary, #7A3026); border-color:var(--color-primary, #7A3026); padding: 12px 8px;">
+              Marcar Sortida
             </button>
           </div>
           <button type="button" class="btn btn-outline btn-block btn-manual-action" data-action="auto" style="margin-top: 8px; font-size: 12px;">
-            ⚡ Detecció Automàtica
+            Detecció Automàtica
           </button>
         </div>
       </form>

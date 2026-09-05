@@ -18,7 +18,6 @@
   <!-- ==================== BARRA LATERAL ESQUERRA (ESTIL WORDPRESS) ==================== -->
   <aside class="admin-sidebar" id="admin-sidebar">
     <a href="#" class="sidebar-brand">
-      <span style="font-size: 24px;">🏺</span>
       <div>
         <div class="sidebar-logo-text">Roig de Coure</div>
         <div class="brand-sub">Taller de Ceràmica &bull; Olot</div>
@@ -27,15 +26,12 @@
 
     <ul class="sidebar-menu">
       <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves">
-        <span class="nav-icon">📅</span>
         <span class="nav-text">Reserves & Calendari</span>
       </li>
       <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes">
-        <span class="nav-icon">👥</span>
         <span class="nav-text">Alumnes & Clients</span>
       </li>
       <li class="sidebar-item" data-tab="directe" id="nav-tab-directe">
-        <span class="nav-icon">⏱️</span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
 
@@ -43,32 +39,26 @@
 
       <li class="sidebar-item">
         <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
-          <span class="nav-icon">📷</span>
           <span class="nav-text">Escàner QR Mòbil</span>
         </a>
       </li>
       <li class="sidebar-item">
         <a href="reserva.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
-          <span class="nav-icon">🌐</span>
           <span class="nav-text">Web Pública Reserves</span>
         </a>
       </li>
       <li class="sidebar-item" id="btn-sidebar-branding">
-        <span class="nav-icon">🎨</span>
         <span class="nav-text">Disseny & Marca</span>
       </li>
       <li class="sidebar-item" id="btn-sidebar-config">
-        <span class="nav-icon">⚙️</span>
         <span class="nav-text">Configuració</span>
       </li>
       <li class="sidebar-item" id="btn-sidebar-export">
-        <span class="nav-icon">💾</span>
         <span class="nav-text">Dades & Backup</span>
       </li>
     </ul>
 
     <div class="sidebar-footer-btn" id="btn-collapse-sidebar" title="Plegar / desplegar menú">
-      <span class="nav-icon">⬅️</span>
       <span class="nav-text">Plegar menú</span>
     </div>
   </aside>
@@ -83,13 +73,13 @@
       </div>
       <div class="top-bar-actions">
         <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva">
-          <span>➕</span> Nova Reserva
+          Nova Reserva
         </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}">
-          <span>⏱️</span> Entrada / Sortida Manual
+          Entrada / Sortida Manual
         </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne">
-          <span>👤</span> Nou Alumne
+          Nou Alumne
         </button>
       </div>
     </header>
@@ -100,7 +90,6 @@
       <!-- Cinta superior: Aforaments màxims i de les 3 activitats -->
       <div class="reserves-top-banner">
         <div class="reserves-banner-left">
-          <span style="font-size: 20px;">👥</span>
           <div>
             <span class="title">Aforament màxim del taller per franja:</span>
             <span class="badge-val" id="admin-display-aforament-val">12 places simultànies</span>
@@ -112,17 +101,17 @@
         </div>
 
         <div class="reserves-capacitats-group">
-          <span style="font-size: 12px; font-weight: 700; color: #4B5563;">🏺 Activitats:</span>
+          <span style="font-size: 12px; font-weight: 700; color: #4B5563;">Activitats:</span>
           <div class="cap-act-item">
-            <span>🏺 Torn:</span>
+            <span>Torn:</span>
             <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
           </div>
           <div class="cap-act-item">
-            <span>🗿 Modelatge:</span>
+            <span>Modelatge:</span>
             <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
           </div>
           <div class="cap-act-item">
-            <span>🎨 Pintar:</span>
+            <span>Pintar:</span>
             <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
           </div>
           <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px; background: #7A3026; border-color: #7A3026;">
@@ -139,7 +128,7 @@
           <div class="calendar-card">
             <div class="cal-header-blue">
               <div class="cal-tip-text">
-                <span>ℹ️</span> Fes clic a qualsevol dia per consultar les reserves i l'aforament
+                Fes clic a qualsevol dia per consultar les reserves i l'aforament
               </div>
               <div class="cal-nav-row">
                 <h3 class="cal-month-title" id="cal-month-title">Setembre 2026</h3>
@@ -174,7 +163,6 @@
               <div>
                 <div class="app-list-count" id="app-list-count">Llista de Reserves (0)</div>
                 <h2 class="app-list-date-title">
-                  <span>📅</span>
                   <span id="app-selected-date-display">Carregant data...</span>
                 </h2>
               </div>
@@ -197,7 +185,7 @@
                 <tbody id="app-table-body">
                   <tr>
                     <td colspan="4" style="text-align: center; color: #6B7280; padding: 30px;">
-                      ⏳ Carregant reserves...
+                      Carregant reserves...
                     </td>
                   </tr>
                 </tbody>
@@ -214,15 +202,14 @@
       <div class="admin-card-box">
         <div class="table-toolbar">
           <div class="search-box">
-            <span>🔍</span>
             <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
-              🔄 Hidratar des de Sheets
+              Hidratar des de Sheets
             </button>
             <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
-              📊 Sincronitzar amb Sheets
+              Sincronitzar amb Sheets
             </button>
           </div>
         </div>
@@ -243,7 +230,7 @@
             <tbody id="students-table-body">
               <tr>
                 <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
-                  ⏳ Carregant llista d'alumnes del taller...
+                  Carregant llista d'alumnes del taller...
                 </td>
               </tr>
             </tbody>
@@ -306,9 +293,9 @@
               <div style="font-weight: 600; font-size: 14px;" id="drawer-student-contact">Tel: - | Email: -</div>
             </div>
             <div style="display: flex; gap: 8px;">
-              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">💬 WhatsApp</a>
-              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">💳 Veure Carnet QR</button>
-              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">✏️ Editar</button>
+              <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">WhatsApp</a>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">Veure Carnet QR</button>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">Editar</button>
             </div>
           </div>
         </div>
@@ -316,24 +303,24 @@
         <!-- Botons d'acció ràpida de temps -->
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button class="btn btn-primary" id="drawer-btn-add-hours">
-            ➕ Afegir Compra d'Hores
+            Afegir Compra d'Hores
           </button>
-          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#2E7D32; border-color:#2E7D32;">
-            🟢 Marcar Entrada
+          <button class="btn btn-success" id="drawer-btn-checkin" style="background:#5E7E6F; border-color:#5E7E6F;">
+            Marcar Entrada
           </button>
-          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#1976D2; border-color:#1976D2;">
-            🔴 Marcar Sortida
+          <button class="btn btn-primary" id="drawer-btn-checkout" style="background:#7A3026; border-color:#7A3026;">
+            Marcar Sortida
           </button>
           <button class="btn btn-outline" id="drawer-btn-add-manual-session">
-            ⏱️ Sessió Manual (Passada)
+            Sessió Manual (Passada)
           </button>
         </div>
 
         <!-- Pestanyes d'historial dins de la fitxa -->
         <div>
           <div class="admin-tabs-nav">
-            <button class="tab-btn active" data-tab="tab-sessions">⏱️ Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
-            <button class="tab-btn" data-tab="tab-paquets">📦 Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
+            <button class="tab-btn active" data-tab="tab-sessions">Sessions i Assistència (<span id="drawer-count-sessions">0</span>)</button>
+            <button class="tab-btn" data-tab="tab-paquets">Compres d'Hores (<span id="drawer-count-paquets">0</span>)</button>
           </div>
 
           <!-- Tab 1: Sessions -->
@@ -523,7 +510,7 @@
   <div class="modal-backdrop" id="modal-tancar-cicle-backdrop">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>⚠️ Tancar Cicle Oblidat (Forçar Sortida)</h3>
+        <h3>Tancar Cicle Oblidat (Forçar Sortida)</h3>
         <button class="modal-close" data-close="modal-tancar-cicle-backdrop">&times;</button>
       </div>
       <form id="form-tancar-cicle">
@@ -582,7 +569,7 @@
           <div class="badge-top">
             <div class="workshop-brand">
               <img id="badge-ws-logo-img" src="" alt="Logo" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
-              <span class="workshop-icon" id="badge-ws-logo-icon">🏺</span>
+              <span class="workshop-icon" id="badge-ws-logo-icon"></span>
               <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
             </div>
             <span class="badge-type">CARNET DE SOCI</span>
@@ -609,8 +596,8 @@
 
         <!-- Botons d'acció -->
         <div class="card-actions">
-          <button class="btn btn-primary btn-sm" id="btn-print-card">🖨️ Imprimir Carnet</button>
-          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">🔗 Copiar Enllaç Alumne</button>
+          <button class="btn btn-primary btn-sm" id="btn-print-card">Imprimir Carnet</button>
+          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">Copiar Enllaç Alumne</button>
         </div>
       </div>
     </div>
@@ -624,7 +611,7 @@
         <button class="modal-close" data-close="modal-config-backdrop">&times;</button>
       </div>
       <form id="form-config">
-        <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏺 Dades del Taller</h4>
+        <h4 style="margin-bottom: 10px; color: var(--color-primary);">Dades del Taller</h4>
         <div class="form-group">
           <label>Nom del Taller</label>
           <input type="text" id="cfg-taller-nom" class="form-control" placeholder="Taller de Ceràmica">
@@ -638,25 +625,25 @@
           <input type="text" id="cfg-durada-oblit" class="form-control" placeholder="01:30:00">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">💳 Enllaços de Pagament de Stripe (segons Edat)</h4>
+        <h4 style="margin: 18px 0 10px; color: var(--color-primary);">Enllaços de Pagament de Stripe (segons Edat)</h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
           Enganxa aquí els teus <em>Stripe Payment Links</em> (ex: <code>https://buy.stripe.com/...</code>) per als teus articles configurats. El sistema redirigirà l'alumne a la passarel·la corresponent automàticament segons la seva edat:
         </p>
         <div class="form-group">
-          <label>🎂 Edat de tall per a tarifa Infantil (anys)</label>
+          <label>Edat de tall per a tarifa Infantil (anys)</label>
           <input type="number" id="cfg-edat-tall" class="form-control" min="1" max="99" value="12" style="max-width: 140px;">
           <small style="color: var(--color-muted); font-size: 11px;">Alumnes de 12 anys o menys (&le; 12) aniran a Infantil; de més de 12 anys aniran a Adults.</small>
         </div>
         <div class="form-group">
-          <label>🔗 Enllaç Stripe: Adults (més de 12 anys)</label>
+          <label>Enllaç Stripe: Adults (més de 12 anys)</label>
           <input type="url" id="cfg-stripe-adults" class="form-control" placeholder="https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n">
         </div>
         <div class="form-group">
-          <label>🔗 Enllaç Stripe: Infantil / Menors (fins a 12 anys)</label>
+          <label>Enllaç Stripe: Infantil / Menors (fins a 12 anys)</label>
           <input type="url" id="cfg-stripe-infantil" class="form-control" placeholder="https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">📊 Sincronització amb Google Sheets</h4>
+        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">Sincronització amb Google Sheets</h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
           Enganxa l'URL de la teva aplicació web de Google Apps Script (que acaba en <code>/exec</code>):
         </p>
@@ -665,30 +652,30 @@
           <input type="url" id="cfg-sheets-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
         <div class="form-group">
-          <label>📅 Nom del Calendari a Google Calendar</label>
+          <label>Nom del Calendari a Google Calendar</label>
           <input type="text" id="cfg-calendar-name" class="form-control" placeholder="roigdecoure" value="roigdecoure">
           <small style="color: var(--color-muted); font-size: 11px;">Nom del teu calendari a Google Calendar (ex: <strong>roigdecoure</strong>) on s'enregistraran automàticament les reserves.</small>
         </div>
         <div style="display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap;">
           <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-hydrate-sheets" style="flex:1;">
-            🔄 Hidratar ara (Llegir del Full)
+            Hidratar ara (Llegir del Full)
           </button>
           <button type="button" class="btn btn-outline btn-sm" id="btn-cfg-push-sheets" style="flex:1;">
-            📤 Enviar dades locals al Full
+            Enviar dades locals al Full
           </button>
         </div>
 
-        <h4 style="margin: 22px 0 10px; color: #16A34A; display: flex; align-items: center; gap: 6px;">
-          <span>💬</span> WhatsApp Notificacions (Meta Cloud API Oficial)
+        <h4 style="margin: 22px 0 10px; color: var(--color-secondary); display: flex; align-items: center; gap: 6px;">
+          WhatsApp Notificacions (Meta Cloud API Oficial)
         </h4>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 12px;">
           Connecta directament amb Meta (sense tercers ni intermediaris de pagament com Twilio o ManyChat). 
           Envia confirmacions immediates en reservar, recordatori a 48 hores i recordatori el mateix dia a les 8:00 AM (tant per alumnes com per reserves públiques).
         </p>
 
-        <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #F0FDF4; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid #BBF7D0; margin-bottom: 12px;">
-          <input type="checkbox" id="cfg-whatsapp-enabled" style="width: 18px; height: 18px; cursor: pointer;">
-          <label for="cfg-whatsapp-enabled" style="margin: 0; font-weight: 600; cursor: pointer; color: #166534;">
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: #EEF5F1; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid #E5DDD5; margin-bottom: 12px;">
+          <input type="checkbox" id="cfg-whatsapp-enabled" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-secondary);">
+          <label for="cfg-whatsapp-enabled" style="margin: 0; font-weight: 600; cursor: pointer; color: var(--color-secondary);">
             Activar notificacions automàtiques per WhatsApp
           </label>
         </div>
@@ -722,8 +709,8 @@
         </div>
 
         <!-- Prova d'enviament de WhatsApp -->
-        <div style="background: #EFF6FF; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid #BFDBFE; margin-bottom: 16px;">
-          <div style="font-size: 12px; font-weight: 700; color: #1E40AF; margin-bottom: 6px;">🧪 Prova de connexió WhatsApp Meta</div>
+        <div style="background: #EEF5F1; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid #E5DDD5; margin-bottom: 16px;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--color-secondary); margin-bottom: 6px;">Prova de connexió WhatsApp Meta</div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <input type="text" id="cfg-whatsapp-test-tel" class="form-control" placeholder="+34 600 000 000" style="flex: 1; font-size: 13px;">
             <button type="button" class="btn btn-sm btn-outline" id="btn-cfg-test-whatsapp" style="white-space: nowrap; background: white;">
@@ -747,7 +734,7 @@
       <div class="modal-header">
         <div>
           <h3 style="display: flex; align-items: center; gap: 8px;">
-            <span>🎨</span> Estudi de Disseny & Imatge Corporativa
+            Estudi de Disseny & Imatge Corporativa
           </h3>
           <p style="font-size: 13px; color: var(--color-muted); margin-top: 2px;">
             Personalitza els colors, el logotip i la tipografia de l'App de l'Alumne i del Carnet Digital en temps real.
@@ -763,7 +750,7 @@
           
           <!-- Identitat del Taller -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🏛️ Identitat del Taller</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">Identitat del Taller</h4>
             <div class="form-group" style="margin-bottom: 10px;">
               <label style="font-size: 12px;">Nom del Taller</label>
               <input type="text" id="brand-input-nom" class="form-control" placeholder="ex: Roig de Coure" value="Roig de Coure" required>
@@ -776,16 +763,16 @@
 
           <!-- Logotip del Taller -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">🖼️ Logotip Oficial</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-dark);">Logotip Oficial</h4>
             <div style="display: flex; align-items: center; gap: 14px;">
               <div id="brand-logo-preview-box" style="width: 64px; height: 64px; border-radius: 8px; border: 2px dashed var(--color-border); display: flex; align-items: center; justify-content: center; background: #FFF; overflow: hidden; flex-shrink: 0;">
-                <span id="brand-logo-preview-placeholder" style="font-size: 28px;">🏺</span>
+                <span id="brand-logo-preview-placeholder" style="font-size: 14px; color: var(--color-muted); font-weight: 700;">LOGO</span>
                 <img id="brand-logo-preview-img" src="" alt="Logo" style="display: none; width: 100%; height: 100%; object-fit: contain;">
               </div>
               <div style="flex: 1;">
                 <input type="file" id="brand-input-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="font-size: 12px; margin-bottom: 6px;">
                 <div style="display: flex; gap: 8px;">
-                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">🗑️ Eliminar Logo</button>
+                  <button type="button" class="btn btn-outline btn-sm" id="btn-remove-logo" style="font-size: 11px; padding: 3px 8px; display: none;">Eliminar Logo</button>
                 </div>
                 <input type="hidden" id="brand-input-logo-url" value="">
                 <p style="font-size: 11px; color: var(--color-muted); margin-top: 4px;">PNG, SVG o JPG (es guarda i s'aplica immediatament a l'App mòbil).</p>
@@ -795,52 +782,31 @@
 
           <!-- Paletes de Ceràmica Predefinides -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">🏺 Paletes de Color Ceràmiques</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">Paletes de Color Ceràmiques</h4>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px;">
-              <button type="button" class="btn-palette" data-primary="#C25E3A" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+              <button type="button" class="btn-palette" data-primary="#7A3026" data-secondary="#5E7E6F" data-name="roigdecoure" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
                 <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #C25E3A;"></span>
+                  <span style="flex: 1; background: #7A3026;"></span>
                   <span style="flex: 1; background: #5E7E6F;"></span>
                 </span>
                 <span style="font-size: 12px; font-weight: 600;">Roig de Coure</span>
               </button>
-              <button type="button" class="btn-palette" data-primary="#B45309" data-secondary="#78350F" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
+              <button type="button" class="btn-palette" data-primary="#5C221A" data-secondary="#466356" data-name="terracota" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
                 <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #B45309;"></span>
-                  <span style="flex: 1; background: #78350F;"></span>
+                  <span style="flex: 1; background: #5C221A;"></span>
+                  <span style="flex: 1; background: #466356;"></span>
                 </span>
-                <span style="font-size: 12px; font-weight: 600;">Terracota & Fang</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#1E40AF" data-secondary="#0369A1" data-name="cobalt" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #1E40AF;"></span>
-                  <span style="flex: 1; background: #0369A1;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Blau Cobalt</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#3F6212" data-secondary="#65A30D" data-name="celado" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #3F6212;"></span>
-                  <span style="flex: 1; background: #65A30D;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Celadó & Esmalt</span>
-              </button>
-              <button type="button" class="btn-palette" data-primary="#27272A" data-secondary="#52525B" data-name="gres" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #D7CCC8; border-radius: 6px; background: #FFF; cursor: pointer; text-align: left; grid-column: span 2;">
-                <span style="display: flex; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0;">
-                  <span style="flex: 1; background: #27272A;"></span>
-                  <span style="flex: 1; background: #52525B;"></span>
-                </span>
-                <span style="font-size: 12px; font-weight: 600;">Gres Negre & Carbó</span>
+                <span style="font-size: 12px; font-weight: 600;">Coure Fosc & Sàlvia</span>
               </button>
             </div>
 
             <!-- Colors Personalitzats Manuals -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px dashed var(--color-border); padding-top: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label style="font-size: 11px;">Color Principal (Degradats & Botons)</label>
+                <label style="font-size: 11px;">Color Principal (Botons & Capçaleres)</label>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <input type="color" id="brand-input-primary-color" value="#C25E3A" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
-                  <input type="text" id="brand-input-primary-hex" value="#C25E3A" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
+                  <input type="color" id="brand-input-primary-color" value="#7A3026" style="width: 40px; height: 36px; padding: 2px; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer;">
+                  <input type="text" id="brand-input-primary-hex" value="#7A3026" class="form-control" style="font-family: monospace; font-size: 12px; text-transform: uppercase;">
                 </div>
               </div>
               <div class="form-group" style="margin-bottom: 0;">
@@ -855,29 +821,29 @@
 
           <!-- Tipografia -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
-            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">✍️ Estil de Lletra</h4>
+            <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">Estil de Lletra</h4>
             <div style="display: flex; gap: 16px;">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                <input type="radio" name="brand_font_choice" value="serif" checked>
-                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
+                <input type="radio" name="brand_font_choice" value="sans" checked>
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                <input type="radio" name="brand_font_choice" value="sans">
-                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
+                <input type="radio" name="brand_font_choice" value="serif">
+                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
               </label>
             </div>
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
             <button type="button" class="btn btn-outline" data-close="modal-branding-backdrop">Tancar</button>
-            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">💾 Desar Disseny i Aplicar</button>
+            <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">Desar Disseny i Aplicar</button>
           </div>
         </form>
 
         <!-- COLUMNA DRETA: PREVISUALITZACIÓ EN VIU (MOCKUP MÒBIL / APP) -->
         <div style="display: flex; flex-direction: column; align-items: center;">
           <div style="font-size: 12px; font-weight: 700; color: var(--color-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
-            📱 Vista Prèvia en Temps Real (App de l'Alumne)
+            Vista Prèvia en Temps Real (App de l'Alumne)
           </div>
 
           <!-- Mockup Carcassa de Telèfon -->
@@ -886,28 +852,28 @@
             <!-- Notificació barra superior mòbil -->
             <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #555; padding: 0 6px;">
               <span>09:41</span>
-              <span>5G 🔋 100%</span>
+              <span>5G 100%</span>
             </div>
 
             <!-- Header App Alumne -->
             <div style="display: flex; justify-content: space-between; align-items: center; background: #FFF; padding: 8px 10px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <img id="preview-header-logo-img" src="" alt="Logo" style="display: none; height: 20px; width: 20px; object-fit: contain;">
-                <span id="preview-header-logo-icon" style="font-size: 18px;">🏺</span>
+                <span id="preview-header-logo-icon" style="display: none;"></span>
                 <div>
                   <div id="preview-header-title" style="font-size: 12px; font-weight: 800; line-height: 1;">Roig de Coure</div>
                   <div id="preview-header-sub" style="font-size: 9px; color: var(--color-muted);">Taller d'Art i Ceràmica</div>
                 </div>
               </div>
-              <span style="font-size: 10px; background: #EFEFEF; padding: 2px 6px; border-radius: 4px;">App</span>
+              <span style="font-size: 10px; background: #EEF5F1; color: #5E7E6F; padding: 2px 6px; border-radius: 4px; font-weight: 700;">App</span>
             </div>
 
             <!-- Carnet Digital Preview -->
             <div class="ceramic-badge" id="preview-ceramic-badge" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: 0 auto; transform: scale(0.92); transform-origin: top center;">
-              <div class="badge-top" id="preview-badge-top" style="background: linear-gradient(135deg, #C25E3A 0%, #5E7E6F 100%);">
+              <div class="badge-top" id="preview-badge-top" style="background: #7A3026;">
                 <div class="workshop-brand">
                   <img id="preview-badge-logo-img" src="" alt="Logo" style="display: none; height: 22px; max-width: 80px; object-fit: contain; margin-right: 6px;">
-                  <span class="workshop-icon" id="preview-badge-logo-icon">🏺</span>
+                  <span class="workshop-icon" id="preview-badge-logo-icon" style="display: none;"></span>
                   <span class="workshop-name" id="preview-badge-title" style="font-size: 13px;">Roig de Coure</span>
                 </div>
                 <span class="badge-type" style="font-size: 9px;">CARNET SOCI</span>
@@ -933,7 +899,7 @@
             </div>
 
             <!-- Saldo Card Preview -->
-            <div id="preview-balance-card" style="background: linear-gradient(135deg, #C25E3A 0%, #2E2825 100%); color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
+            <div id="preview-balance-card" style="background: #7A3026; color: white; border-radius: 12px; padding: 12px; text-align: center; margin-top: -10px;">
               <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">Saldo d'Hores Disponible</div>
               <div style="font-size: 22px; font-weight: 800; font-family: monospace; margin: 2px 0;">08:30:00</div>
               <div style="font-size: 10px; opacity: 0.9;">8h 30m restants</div>
@@ -941,7 +907,7 @@
 
             <!-- Botó Comprar Preview -->
             <div style="display: flex; gap: 6px;">
-              <button type="button" id="preview-btn-sample" style="flex: 1; background: #C25E3A; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
+              <button type="button" id="preview-btn-sample" style="flex: 1; background: #7A3026; color: white; border: none; border-radius: 8px; padding: 8px; font-size: 11px; font-weight: 700; cursor: default;">
                 Comprar 10h (120€)
               </button>
             </div>
@@ -950,7 +916,7 @@
 
           <div style="margin-top: 12px; text-align: center;">
             <a href="alumne.html" target="_blank" style="font-size: 12px; color: var(--color-primary); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-              <span>📱 Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
+              <span>Obrir Portal de l'Alumne real</span> <span>&rarr;</span>
             </a>
           </div>
 
@@ -964,12 +930,9 @@
   <div class="modal-backdrop" id="modal-reserves-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog modal-lg" style="max-width: 920px;">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 24px;">📅</span>
-          <div>
-            <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
-            <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
-          </div>
+        <div>
+          <h3 style="margin: 0; font-size: 18px;">Control de Reserves & Aforament</h3>
+          <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Gestió de torns, places ocupades i sincronització dual SQLite + Sheets</p>
         </div>
         <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
       </div>
@@ -979,7 +942,6 @@
         <div style="background: #F8F9FA; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #E5E7EB;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 20px;">👥</span>
               <div>
                 <span style="font-size: 13px; font-weight: 700; color: var(--color-dark);">Aforament màxim del taller per franja:</span>
                 <span style="font-size: 13px; font-weight: 800; color: var(--color-primary); margin-left: 4px;" id="admin-display-aforament-val">12 places simultànies</span>
@@ -997,21 +959,18 @@
           <!-- Capacitats de les 3 activitats oficials -->
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div style="font-size: 12px; font-weight: 700; color: #4B5563;">
-              🏺 Capacitats per activitat:
+              Capacitats per activitat:
             </div>
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 14px;">🏺</span>
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Torn:</label>
                 <input type="number" id="admin-cap-torn" min="1" max="20" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="4">
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 14px;">🗿</span>
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Modelatge:</label>
                 <input type="number" id="admin-cap-modelatge" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="8">
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
-                <span style="font-size: 14px;">🎨</span>
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Pintar:</label>
                 <input type="number" id="admin-cap-pintar" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="12">
               </div>
@@ -1025,14 +984,14 @@
         <!-- Contenidor dinàmic per al Calendari Visual & 2 Camins -->
         <div id="admin-reserves-calendar-mount">
           <div style="text-align: center; color: var(--color-muted); padding: 36px;">
-            ⏳ Carregant calendari de reserves i aforament...
+            Carregant calendari de reserves i aforament...
           </div>
         </div>
       </div>
 
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
         <span style="font-size: 12px; color: var(--color-muted);">
-          ⚡ Les reserves s'emmagatzemen a SQLite i es sincronitzen amb Google Sheets i Google Calendar.
+          Les reserves s'emmagatzemen a SQLite i es sincronitzen amb Google Sheets i Google Calendar.
         </span>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
       </div>
@@ -1043,7 +1002,7 @@
   <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
     <div class="modal-dialog" style="max-width: 440px;">
       <div class="modal-header">
-        <h3>⏱️ Marcar Entrada o Sortida Manual</h3>
+        <h3>Marcar Entrada o Sortida Manual</h3>
         <button type="button" class="modal-close" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop">&times;</button>
       </div>
       <form id="form-admin-manual-checkin">
@@ -1059,11 +1018,11 @@
           <div style="display: flex; gap: 14px; margin-bottom: 8px;">
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="admin_manual_time_opt" value="now" checked onchange="document.getElementById('admin-manual-custom-time').style.display='none';">
-              <span>⏰ Ara mateix</span>
+              <span>Ara mateix</span>
             </label>
             <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
               <input type="radio" name="admin_manual_time_opt" value="custom" onchange="document.getElementById('admin-manual-custom-time').style.display='block';">
-              <span>✏️ Hora personalitzada</span>
+              <span>Hora personalitzada</span>
             </label>
           </div>
           <input type="datetime-local" id="admin-manual-custom-time" class="form-control" style="display: none;">
@@ -1072,11 +1031,11 @@
         <div style="margin-top: 20px;">
           <label style="margin-bottom: 8px; display: block;">Acció a realitzar:</label>
           <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="padding: 12px 8px;">
-              🟢 Registrar ENTRADA
+            <button type="button" class="btn btn-success btn-block btn-admin-action" data-action="entrada" style="background:#5E7E6F; border-color:#5E7E6F; padding: 12px 8px;">
+              Registrar ENTRADA
             </button>
-            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#1976D2; border-color:#1976D2; padding: 12px 8px;">
-              🔴 Registrar SORTIDA
+            <button type="button" class="btn btn-primary btn-block btn-admin-action" data-action="sortida" style="background:#7A3026; border-color:#7A3026; padding: 12px 8px;">
+              Registrar SORTIDA
             </button>
           </div>
           <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
@@ -1096,7 +1055,7 @@
       </div>
       <div style="flex-direction: column; display: flex; gap: 18px;">
         <div class="card" style="padding: 16px;">
-          <h4>💾 Còpia de Seguretat Completa (JSON)</h4>
+          <h4>Còpia de Seguretat Completa (JSON)</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Descarrega un arxiu amb tots els alumnes, paquets d'hores, sessions i configuració.
           </p>
@@ -1104,7 +1063,7 @@
         </div>
 
         <div class="card" style="padding: 16px;">
-          <h4>📥 Restaurar Còpia de Seguretat</h4>
+          <h4>Restaurar Còpia de Seguretat</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Carrega un arxiu JSON de còpia prèvia per restaurar la base de dades.
           </p>
@@ -1112,7 +1071,7 @@
         </div>
 
         <div class="card" style="padding: 16px;">
-          <h4>📄 Exportació per a Excel (CSV)</h4>
+          <h4>Exportació per a Excel (CSV)</h4>
           <p style="font-size: 13px; color: var(--color-muted); margin: 6px 0 12px;">
             Exporta l'historial d'entrades i sortides amb durades (H:m:s) en format CSV compatible amb Excel.
           </p>

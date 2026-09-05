@@ -46,9 +46,9 @@ class ReservesCalendar {
     ];
 
     this.ACTIVITATS = [
-      { id: 'torn', nom: 'Torn de terrissaire', icon: '🏺', color: '#C25E3A', capacitatMax: 4, desc: 'Màx. 4 torns' },
-      { id: 'modelatge', nom: 'Modelatge i escultura', icon: '🗿', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'pintar', nom: 'Pintar ceràmica', icon: '🎨', color: '#F59E0B', capacitatMax: 12, desc: 'Fins a 12 places' }
+      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#7A3026', capacitatMax: 4, desc: 'Màx. 4 torns' },
+      { id: 'modelatge', nom: 'Modelatge i escultura', icon: '', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
+      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#7A3026', capacitatMax: 12, desc: 'Fins a 12 places' }
     ];
 
     this.modalEl = null;
@@ -105,15 +105,22 @@ class ReservesCalendar {
       return;
     }
     await this.refresh();
+    this.ACTIVITATS = [
+      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#7A3026', capacitatMax: 4, desc: 'Màx. 4 torns' },
+      { id: 'modelatge', nom: 'Modelatge i escultura', icon: '', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
+      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#7A3026', capacitatMax: 12, desc: 'Fins a 12 places' }
+    ];
+
+    this.modalEl = null;
   }
 
   async refresh() {
-    await this.loadMonthData(this.currentYear, this.currentMonth);
-    await this.loadDayData(this.selectedDate);
+    await this.loadMonth(this.currentYear, this.currentMonth);
+    await this.loadDay(this.selectedDate);
     this.render();
   }
 
-  async loadMonthData(year, month) {
+  async loadMonth(year, month) {
     this.loadingMonth = true;
     try {
       if (typeof Store !== 'undefined' && Store.getDisponibilitatMes) {
@@ -126,7 +133,8 @@ class ReservesCalendar {
     }
   }
 
-  async loadDayData(dateStr) {
+  async loadDay(dateStr) {
+    this.selectedDate = dateStr;
     this.loadingDay = true;
     try {
       if (typeof Store !== 'undefined' && Store.getDisponibilitat) {
@@ -135,8 +143,8 @@ class ReservesCalendar {
           this.ACTIVITATS = this.dayData.activitats.map(a => ({
             id: a.id,
             nom: a.nom,
-            icon: a.icon || (a.id === 'torn' ? '🏺' : a.id === 'modelatge' ? '🗿' : '🎨'),
-            color: a.color || (a.id === 'torn' ? '#C25E3A' : a.id === 'modelatge' ? '#5E7E6F' : '#F59E0B'),
+            icon: '',
+            color: a.color || (a.id === 'torn' ? '#7A3026' : a.id === 'modelatge' ? '#5E7E6F' : '#7A3026'),
             capacitatMax: a.capacitatMax,
             desc: a.descripcio || (a.id === 'torn' ? `Màx. ${a.capacitatMax} torns` : `Fins a ${a.capacitatMax} places`)
           }));
@@ -176,7 +184,6 @@ class ReservesCalendar {
     return `
       <div class="res-paths-nav">
         <button type="button" class="res-path-btn ${this.activePath === 'date' ? 'active' : ''}" data-path="date">
-          <span class="path-icon">📅</span>
           <div class="path-text">
             <strong>Camí 1: Triar per Data</strong>
             <small>Consulta el calendari i tria l'activitat per al dia que vulguis</small>
@@ -184,7 +191,6 @@ class ReservesCalendar {
         </button>
 
         <button type="button" class="res-path-btn ${this.activePath === 'activity' ? 'active' : ''}" data-path="activity">
-          <span class="path-icon">🏺</span>
           <div class="path-text">
             <strong>Camí 2: Escollir per Activitat</strong>
             <small>Tria Torn, Modelatge o Pintar ceràmica i troba places ràpidament</small>
@@ -251,13 +257,12 @@ class ReservesCalendar {
     return `
       <div class="res-upcoming-sessions-box">
         <h4>
-          <span>✨</span>
-          <span>Properes dates amb places disponibles per a ${act.icon} ${act.nom}:</span>
+          <span>Properes dates amb places disponibles per a ${act.nom}:</span>
         </h4>
         <div class="res-upcoming-list">
           ${upcomingChips.map(c => `
             <button type="button" class="res-upcoming-chip ${c.date === this.selectedDate ? 'selected' : ''}" data-date="${c.date}">
-              <span>📅 ${c.text}</span>
+              <span>${c.text}</span>
             </button>
           `).join('')}
         </div>
@@ -307,30 +312,30 @@ class ReservesCalendar {
 
       if (isRest) {
         cellClasses.push('closed-rest');
-        badgeHtml = `<span class="day-badge badge-tancat" title="Descans setmanal">🔒 Tancat</span>`;
+        badgeHtml = `<span class="day-badge badge-tancat" title="Descans setmanal">Tancat</span>`;
       } else if (isHoliday) {
         cellClasses.push('closed-holiday');
-        badgeHtml = `<span class="day-badge badge-complet" title="${dInfo && dInfo.motiu ? dInfo.motiu : 'Festiu'}">🎉 Festiu</span>`;
+        badgeHtml = `<span class="day-badge badge-complet" title="${dInfo && dInfo.motiu ? dInfo.motiu : 'Festiu'}">Festiu</span>`;
       } else {
         cellClasses.push('open-day');
         if (this.activePath === 'activity') {
           // Camí 2: Highlight segons si té plaça per a l'activitat seleccionada
           const hasActSpot = dInfo && dInfo.activitatsAmbPlaces && dInfo.activitatsAmbPlaces.includes(this.selectedActivityId);
           if (hasActSpot) {
-            badgeHtml = `<span class="day-badge badge-lliure">🟢 Places</span>`;
+            badgeHtml = `<span class="day-badge badge-lliure">Places</span>`;
           } else {
-            badgeHtml = `<span class="day-badge badge-complet">🔴 Esgotat</span>`;
+            badgeHtml = `<span class="day-badge badge-complet">Esgotat</span>`;
           }
         } else {
           // Camí 1: Disponibilitat global
           if (!dInfo) {
-            badgeHtml = `<span class="day-badge badge-lliure">🟢 Lliure</span>`;
+            badgeHtml = `<span class="day-badge badge-lliure">Lliure</span>`;
           } else if (dInfo.estat === 'complet') {
-            badgeHtml = `<span class="day-badge badge-complet">🔴 Ple</span>`;
+            badgeHtml = `<span class="day-badge badge-complet">Ple</span>`;
           } else if (dInfo.estat === 'ultimes_places') {
-            badgeHtml = `<span class="day-badge badge-ultimes">🟠 ${dInfo.placesLliures} ll.</span>`;
+            badgeHtml = `<span class="day-badge badge-ultimes">${dInfo.placesLliures} ll.</span>`;
           } else {
-            badgeHtml = `<span class="day-badge badge-lliure">🟢 ${dInfo.placesLliures} ll.</span>`;
+            badgeHtml = `<span class="day-badge badge-lliure">${dInfo.placesLliures} ll.</span>`;
           }
         }
       }
@@ -352,7 +357,6 @@ class ReservesCalendar {
       <div class="res-calendar-card">
         <div class="res-calendar-header">
           <div class="res-calendar-title">
-            <span>📅</span>
             <span>${monthTitle}</span>
           </div>
           <div class="res-calendar-nav-btns">
@@ -388,7 +392,7 @@ class ReservesCalendar {
       return `
         <div class="res-day-detail-card">
           <div style="text-align:center; padding: 30px; color: var(--color-muted);">
-            ⏳ Carregant disponibilitat per al ${formattedDate}...
+            Carregant disponibilitat per al ${formattedDate}...
           </div>
         </div>
       `;
@@ -409,12 +413,11 @@ class ReservesCalendar {
         <div class="res-day-detail-card">
           <div class="res-day-detail-header">
             <div class="res-day-detail-date">
-              <span>📅</span> <span>${formattedDate}</span>
+              <span>${formattedDate}</span>
             </div>
-            <span class="res-day-global-rule" style="background:#FFEBEE; color:#C62828;">Taller Tancat</span>
+            <span class="res-day-global-rule" style="background:#FBF4F2; color:#7A3026;">Taller Tancat</span>
           </div>
           <div style="padding: 24px; text-align: center; color: var(--color-muted); background: #FAF9F8; border-radius: var(--radius-md);">
-            <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
             <h4 style="font-size: 15px; font-weight: 700; color: var(--color-dark);">${day.motiu || 'El taller roman tancat aquest dia.'}</h4>
             <p style="font-size: 13px; margin-top: 4px;">Horari habitual: obert de <strong>Dimecres a Diumenge</strong> de 10:00 a 13:00 i de 17:00 a 20:00.</p>
           </div>
@@ -430,14 +433,14 @@ class ReservesCalendar {
         <div class="res-day-detail-header">
           <div>
             <div class="res-day-detail-date">
-              <span>📅</span> <span>${formattedDate}</span>
+              <span>${formattedDate}</span>
             </div>
             <div style="font-size: 12px; color: var(--color-muted); margin-top: 2px;">
               Ocupació total del dia: <strong>${day.totalOcupadesDia} / ${day.totalPlacesDia} places</strong>
             </div>
           </div>
           <div class="res-day-global-rule">
-            👥 Aforament màxim del taller: <strong>12 places simultànies</strong> per torn
+            Aforament màxim del taller: <strong>12 places simultànies</strong> per torn
           </div>
         </div>
 
@@ -455,16 +458,16 @@ class ReservesCalendar {
     const perc = Math.min(100, Math.round((ocupades / maxCapFranja) * 100));
 
     let badgeClass = 'open';
-    let badgeText = `🟢 ${lliures} places lliures`;
+    let badgeText = `${lliures} places lliures`;
     let fillClass = '';
 
     if (isFull) {
       badgeClass = 'full';
-      badgeText = `🔴 COMPLET (${ocupades}/${maxCapFranja})`;
+      badgeText = `COMPLET (${ocupades}/${maxCapFranja})`;
       fillClass = 'full';
     } else if (lliures <= 3) {
       badgeClass = 'warning';
-      badgeText = `🟠 ÚLTIMES ${lliures} PLACES!`;
+      badgeText = `ÚLTIMES ${lliures} PLACES`;
       fillClass = 'warning';
     }
 
@@ -491,7 +494,6 @@ class ReservesCalendar {
       return `
         <div class="res-slot-act-row ${isHighlighted ? 'is-highlighted' : ''} ${isActFull ? 'is-full' : ''}">
           <div class="res-slot-act-name">
-            <span>${act.icon}</span>
             <span>${act.nom}</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
@@ -513,7 +515,7 @@ class ReservesCalendar {
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; color:var(--color-muted);">
             <span>ALUMNES INSCRITS (${resList.length})</span>
             <button type="button" class="btn btn-outline btn-sm btn-quick-add-admin" data-slot-id="${f.id}" style="padding:1px 6px; font-size:10px; font-weight:700;">
-              ➕ Reserva Manual
+              + Reserva Manual
             </button>
           </div>
           ${resList.length === 0 ? '<p style="font-size:11px; color:var(--color-muted); margin:4px 0;">Cap alumne inscrit en aquesta franja.</p>' : ''}
@@ -526,10 +528,10 @@ class ReservesCalendar {
               </div>
               <div class="res-student-actions">
                 ${r.telefon ? `
-                  <a href="https://wa.me/34${String(r.telefon).replace(/[^0-9]/g, '')}" target="_blank" class="btn-student-whatsapp" title="Obrir WhatsApp">💬</a>
+                  <a href="https://wa.me/34${String(r.telefon).replace(/[^0-9]/g, '')}" target="_blank" class="btn-student-whatsapp" title="Obrir WhatsApp" style="font-size:11px; font-weight:700; text-decoration:none;">WA</a>
                 ` : ''}
-                <button type="button" class="btn-admin-cancel-res" data-res-id="${r.id}" title="Cancel·lar i alliberar plaça">
-                  ✕
+                <button type="button" class="btn-admin-cancel-res" data-res-id="${r.id}" title="Cancel·lar i alliberar plaça" style="font-size:11px; font-weight:700;">
+                  Cancel·lar
                 </button>
               </div>
             </div>
@@ -544,7 +546,7 @@ class ReservesCalendar {
           <div class="res-slot-header">
             <div>
               <div class="res-slot-time">${f.nom}</div>
-              <div class="res-slot-hours">⏰ ${f.inici} - ${f.fi} (${f.hores}h)</div>
+              <div class="res-slot-hours">${f.inici} - ${f.fi} (${f.hores}h)</div>
             </div>
             <span class="res-slot-cap-badge ${badgeClass}">
               ${badgeText}
@@ -734,7 +736,7 @@ class ReservesCalendar {
                 ${s.id} - ${s.nom} ${s.cognoms || ''} ${s.telefon ? `(${s.telefon})` : ''}
               </option>
             `).join('')}
-            <option value="NOU_CLIENT">➕ Nou Client (Introduir manualment)</option>
+            <option value="NOU_CLIENT">+ Nou Client (Introduir manualment)</option>
           </select>
         </div>
 
@@ -807,7 +809,7 @@ class ReservesCalendar {
           <!-- Botó d'acció -->
           <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
             <button type="button" class="btn btn-outline btn-sm" id="btn-modal-booking-cancel">Cancel·lar</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="btn-modal-booking-submit" style="background:#2E7D32; border-color:#2E7D32; font-weight:700;">
+            <button type="submit" class="btn btn-primary btn-sm" id="btn-modal-booking-submit" style="background:var(--color-secondary, #5E7E6F); border-color:var(--color-secondary, #5E7E6F); font-weight:700;">
               Confirmar Reserva
             </button>
           </div>
@@ -992,7 +994,7 @@ class ReservesCalendar {
 
     const startIso = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_inici || '10:00').replace(/:/g, '') + '00';
     const endIso = (r.data || '').replace(/-/g, '') + 'T' + (r.hora_fi || '11:30').replace(/:/g, '') + '00';
-    const calTitle = encodeURIComponent(`🏺 ${r.activitat || 'Ceràmica'} - Taller Roig de Coure`);
+    const calTitle = encodeURIComponent(`${r.activitat || 'Ceràmica'} - Taller Roig de Coure`);
     const calDesc = encodeURIComponent(`Reserva al Taller de Ceràmica Roig de Coure\nAlumne: ${r.student_nom}\nActivitat: ${r.activitat}\nPlaces: ${r.places || 1}\nHorari: ${r.hora_inici} - ${r.hora_fi}\nID: ${r.id}`);
     const calLoc = encodeURIComponent('Taller de Ceràmica Roig de Coure');
     const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calTitle}&dates=${startIso}/${endIso}&details=${calDesc}&location=${calLoc}`;
@@ -1009,48 +1011,47 @@ class ReservesCalendar {
     `;
 
     backdrop.innerHTML = `
-      <div style="background: var(--color-surface, #FFFFFF); border-radius: 20px; max-width: 480px; width: 100%; padding: 26px 22px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); text-align: center; border: 1px solid var(--color-border, #E0D6CE); position: relative;">
-        <div style="font-size: 48px; line-height: 1; margin-bottom: 10px;">🎉</div>
-        <h3 style="font-size: 21px; font-weight: 800; color: var(--color-dark, #2C2523); margin: 0 0 6px;">Reserva Confirmada!</h3>
-        <p style="font-size: 13px; color: var(--color-muted, #766B65); margin: 0 0 16px;">La teva plaça ha quedat degudament reservada al taller.</p>
+      <div style="background: var(--color-surface, #FFFFFF); border-radius: 12px; max-width: 480px; width: 100%; padding: 26px 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); text-align: center; border: 1px solid var(--color-border, #E2EBE5); position: relative;">
+        <h3 style="font-size: 21px; font-weight: 800; color: var(--color-dark, #2E2825); margin: 0 0 6px;">Reserva Confirmada</h3>
+        <p style="font-size: 13px; color: var(--color-muted, #736B66); margin: 0 0 16px;">La teva plaça ha quedat degudament reservada al taller.</p>
 
         <!-- Targeta resum -->
-        <div style="background: var(--color-bg, #F9F6F0); border-radius: 14px; padding: 14px 16px; text-align: left; margin-bottom: 16px; border: 1px solid #E8DFD8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed #DDD2C8; padding-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 700; color: var(--color-primary, #C25E3A);">🏺 ${r.activitat || 'Taller'}</span>
-            <span style="background: #E8F5E9; color: #2E7D32; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px;">${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'}</span>
+        <div style="background: var(--color-bg, #F4F8F5); border-radius: 8px; padding: 14px 16px; text-align: left; margin-bottom: 16px; border: 1px solid var(--color-border, #E2EBE5);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed var(--color-border, #E2EBE5); padding-bottom: 8px;">
+            <span style="font-size: 14px; font-weight: 700; color: var(--color-primary, #7A3026);">${r.activitat || 'Taller'}</span>
+            <span style="background: #EEF5F1; color: #5E7E6F; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'}</span>
           </div>
-          <div style="font-size: 13px; color: #443B38; line-height: 1.6;">
-            <div>📅 <strong>${dataFormatada}</strong></div>
-            <div>⏰ <strong>${r.hora_inici} - ${r.hora_fi}</strong> (${r.hores || 1.5}h)</div>
-            <div>👤 Alumne: <strong>${r.student_nom}</strong></div>
-            <div style="font-size: 11px; color: #8C7F78; margin-top: 4px;">Codi reserva: <code>${r.id}</code></div>
+          <div style="font-size: 13px; color: #2E2825; line-height: 1.6;">
+            <div>Data: <strong>${dataFormatada}</strong></div>
+            <div>Horari: <strong>${r.hora_inici} - ${r.hora_fi}</strong> (${r.hores || 1.5}h)</div>
+            <div>Alumne: <strong>${r.student_nom}</strong></div>
+            <div style="font-size: 11px; color: var(--color-muted, #736B66); margin-top: 4px;">Codi reserva: <code>${r.id}</code></div>
           </div>
         </div>
 
         <!-- Estat Notificació Push -->
-        <div id="push-status-box" style="margin-bottom: 18px; font-size: 12px; padding: 9px 12px; border-radius: 10px; background: ${hasPush ? '#E8F5E9' : '#FFF3E0'}; color: ${hasPush ? '#2E7D32' : '#E65100'}; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <div id="push-status-box" style="margin-bottom: 18px; font-size: 12px; padding: 9px 12px; border-radius: 6px; background: ${hasPush ? '#EEF5F1' : '#FBF4F2'}; color: ${hasPush ? '#5E7E6F' : '#7A3026'}; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--color-border, #E2EBE5);">
           ${hasPush 
-            ? '<span>🔔 Notificació Push enviada al teu telèfon/navegador!</span>' 
-            : '<span id="btn-request-push-cta" style="cursor: pointer; text-decoration: underline;">🔔 Clica aquí per activar notificacions push de confirmació</span>'}
+            ? '<span>Notificació Push enviada al teu telèfon o navegador.</span>' 
+            : '<span id="btn-request-push-cta" style="cursor: pointer; text-decoration: underline;">Activar notificacions push de confirmació</span>'}
         </div>
 
         <!-- Coordinació amb Calendaris -->
         <div style="margin-bottom: 20px;">
-          <p style="font-size: 12px; font-weight: 700; color: var(--color-dark, #2C2523); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px;">Coordinar amb el teu Calendari:</p>
+          <p style="font-size: 12px; font-weight: 700; color: var(--color-dark, #2E2825); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px;">Afegir al calendari:</p>
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background: #4285F4; color: #FFFFFF; font-weight: 700; padding: 11px 14px; border-radius: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 6px rgba(66,133,244,0.3);">
-              <span>📅</span> Afegir al meu Google Calendar
+            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background: #7A3026; color: #FFFFFF; font-weight: 700; padding: 11px 14px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+              Afegir a Google Calendar
             </a>
-            <button type="button" id="btn-download-ics" class="btn" style="background: #FFFFFF; color: #2C2523; border: 1.5px solid #D1C7BD; font-weight: 700; padding: 11px 14px; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;">
-              <span>🍏</span> Afegir a Apple Calendar / Outlook (.ics)
+            <button type="button" id="btn-download-ics" class="btn" style="background: #FFFFFF; color: #2E2825; border: 1px solid var(--color-border, #E2EBE5); font-weight: 700; padding: 11px 14px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+              Afegir a Apple Calendar / Outlook (.ics)
             </button>
           </div>
         </div>
 
         <!-- Tancar -->
-        <button type="button" id="btn-close-success-modal" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 12px;">
-          D'acord, Moltes Gràcies
+        <button type="button" id="btn-close-success-modal" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 6px;">
+          D'acord
         </button>
       </div>
     `;
@@ -1077,9 +1078,9 @@ class ReservesCalendar {
           ReservesCalendar.sendBookingPush(r);
           const box = backdrop.querySelector('#push-status-box');
           if (box) {
-            box.style.background = '#E8F5E9';
-            box.style.color = '#2E7D32';
-            box.innerHTML = '<span>🔔 Notificació Push activada i enviada!</span>';
+            box.style.background = '#EEF5F1';
+            box.style.color = '#5E7E6F';
+            box.innerHTML = '<span>Notificació Push activada i enviada.</span>';
           }
         }
       }
@@ -1090,7 +1091,7 @@ class ReservesCalendar {
     if (!r || !('Notification' in window)) return false;
     if (Notification.permission !== 'granted') return false;
 
-    const title = `🏺 Reserva Confirmada - Roig de Coure`;
+    const title = `Reserva Confirmada - Roig de Coure`;
     const body = `${r.activitat || 'Taller'} el ${r.data} (${r.hora_inici} - ${r.hora_fi})\nAlumne: ${r.student_nom} (${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'})`;
     const options = {
       body: body,
@@ -1142,7 +1143,7 @@ class ReservesCalendar {
       `DTSTAMP:${nowClean}`,
       `DTSTART:${startClean}`,
       `DTEND:${endClean}`,
-      `SUMMARY:🏺 ${act} - Taller Roig de Coure`,
+      `SUMMARY:${act} - Taller Roig de Coure`,
       `DESCRIPTION:Reserva al Taller de Ceràmica Roig de Coure\\nAlumne: ${nom}\\nActivitat: ${act}\\nPlaces: ${places}\\nID: ${r.id}`,
       'LOCATION:Taller de Ceràmica Roig de Coure',
       'STATUS:CONFIRMED',

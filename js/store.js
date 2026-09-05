@@ -688,9 +688,9 @@ const Store = {
     const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
     const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
     return [
-      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "🏺", color: "#C25E3A" },
-      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "🗿", color: "#5E7E6F" },
-      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "🎨", color: "#F59E0B" }
+      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "", color: "#7A3026" },
+      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "", color: "#5E7E6F" },
+      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "", color: "#7A3026" }
     ];
   },
 

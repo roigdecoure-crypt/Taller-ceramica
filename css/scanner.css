@@ -81,7 +81,7 @@
   inset: -4px;
   border: 4px solid var(--color-primary);
   border-radius: 24px;
-  border-color: #C25E3A transparent transparent #C25E3A;
+  border-color: #7A3026 transparent transparent #7A3026;
   animation: rotateCorners 4s linear infinite;
 }
 .scanner-laser {
@@ -89,8 +89,8 @@
   left: 10px;
   right: 10px;
   height: 2px;
-  background: #C25E3A;
-  box-shadow: 0 0 10px #C25E3A, 0 0 20px #C25E3A;
+  background: #7A3026;
+  box-shadow: 0 0 10px #7A3026, 0 0 20px #7A3026;
   animation: laserScan 2s ease-in-out infinite alternate;
 }
 
@@ -147,16 +147,14 @@
 }
 
 .scan-result-box.is-entrada {
-  border-top: 8px solid #2E7D32;
+  border-top: 8px solid #5E7E6F;
 }
 .scan-result-box.is-sortida {
-  border-top: 8px solid #1976D2;
+  border-top: 8px solid #7A3026;
 }
 
 .result-icon {
-  font-size: 56px;
-  line-height: 1;
-  margin-bottom: 12px;
+  display: none !important;
 }
 .result-action-badge {
   display: inline-block;
@@ -169,11 +167,11 @@
   margin-bottom: 12px;
 }
 .is-entrada .result-action-badge {
-  background: #2E7D32;
+  background: #5E7E6F;
   color: #FFF;
 }
 .is-sortida .result-action-badge {
-  background: #1976D2;
+  background: #7A3026;
   color: #FFF;
 }
 
@@ -208,5 +206,5 @@
 }
 .result-detail-row.highlight .val {
   font-size: 18px;
-  color: #F7A889;
+  color: #FFFFFF;
 }
