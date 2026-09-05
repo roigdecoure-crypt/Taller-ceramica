@@ -305,6 +305,36 @@ async function renderReservationsSection(studentId) {
   await loadStudentBookings(studentId);
 }
 
+// Gestió de Finestres Flotants (Modals)
+function openModal(modal) {
+  if (!modal) return;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('active');
+  if (!document.querySelector('.modal-backdrop.active')) {
+    document.body.style.overflow = '';
+  }
+}
+
+async function openReservarModal() {
+  const modalReservar = document.getElementById('modal-reservar-sessio');
+  if (!modalReservar) return;
+  openModal(modalReservar);
+  if (studentReservesCalendar) {
+    await studentReservesCalendar.refresh();
+  }
+}
+
+function openComprarModal() {
+  const modalComprar = document.getElementById('modal-comprar-hores');
+  if (!modalComprar) return;
+  openModal(modalComprar);
+}
+
 async function loadStudentBookings(studentId) {
   const container = document.getElementById('portal-my-bookings-list');
   if (!container) return;
@@ -315,7 +345,15 @@ async function loadStudentBookings(studentId) {
     const upcoming = reserves.filter(r => r.data >= todayStr).sort((a, b) => a.data.localeCompare(b.data) || a.hora_inici.localeCompare(b.hora_inici));
 
     if (upcoming.length === 0) {
-      container.innerHTML = `<p style="font-size: 13px; color: var(--color-muted);">No tens cap reserva activa per als propers dies.</p>`;
+      container.innerHTML = `
+        <div style="padding: 16px; text-align: center; background: #FAF8F5; border-radius: 8px; border: 1px dashed var(--color-border);">
+          <p style="font-size: 13px; color: var(--color-muted); margin: 0 0 10px;">No tens cap reserva activa per als propers dies.</p>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-empty-open-reservar" style="color: var(--brand-secondary, #5E7E6F); border-color: var(--brand-secondary, #5E7E6F); font-weight: 700; font-size: 13px;">
+            + Reservar la teva propera sessió
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-empty-open-reservar')?.addEventListener('click', openReservarModal);
       return;
     }
 
@@ -485,6 +523,10 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
     SoundEngine.playCheckin();
     showToast(`S'han sumat ${hores} hores al teu compte! Nou saldo: ${res.balanc.formatBalance}`, 'success');
     
+    // Tancar modal de compra si estava obert
+    const modalComprar = document.getElementById('modal-comprar-hores');
+    if (modalComprar) closeModal(modalComprar);
+
     // Refrescar dades
     const updated = await Store.getAlumne(studentId);
     currentStudent = updated;
@@ -651,11 +693,40 @@ function setupEventListeners() {
     });
   }
 
-  // Tancar Checkout modal (si fos obert)
-  const btnCloseCheckout = document.getElementById('btn-close-checkout');
-  if (btnCloseCheckout) {
-    btnCloseCheckout.addEventListener('click', () => {
-      document.getElementById('modal-checkout-backdrop').classList.remove('active');
+  // Finestres flotants (Modals): Comprar Hores & Reservar Sessió
+  const btnOpenComprar = document.getElementById('btn-open-modal-comprar');
+  const modalComprar = document.getElementById('modal-comprar-hores');
+  const btnCloseComprar = document.getElementById('btn-close-modal-comprar');
+
+  if (btnOpenComprar) {
+    btnOpenComprar.addEventListener('click', openComprarModal);
+  }
+  if (btnCloseComprar && modalComprar) {
+    btnCloseComprar.addEventListener('click', () => closeModal(modalComprar));
+  }
+  if (modalComprar) {
+    modalComprar.addEventListener('click', (e) => {
+      if (e.target === modalComprar) closeModal(modalComprar);
+    });
+  }
+
+  const btnOpenReservar = document.getElementById('btn-open-modal-reservar');
+  const btnSubOpenReservar = document.getElementById('btn-sub-open-reservar');
+  const modalReservar = document.getElementById('modal-reservar-sessio');
+  const btnCloseReservar = document.getElementById('btn-close-modal-reservar');
+
+  if (btnOpenReservar) {
+    btnOpenReservar.addEventListener('click', openReservarModal);
+  }
+  if (btnSubOpenReservar) {
+    btnSubOpenReservar.addEventListener('click', openReservarModal);
+  }
+  if (btnCloseReservar && modalReservar) {
+    btnCloseReservar.addEventListener('click', () => closeModal(modalReservar));
+  }
+  if (modalReservar) {
+    modalReservar.addEventListener('click', (e) => {
+      if (e.target === modalReservar) closeModal(modalReservar);
     });
   }
 
@@ -673,7 +744,9 @@ function setupEventListeners() {
 
     const closeQrModal = () => {
       modalQrZoom.style.display = 'none';
-      document.body.style.overflow = '';
+      if (!document.querySelector('.modal-backdrop.active')) {
+        document.body.style.overflow = '';
+      }
     };
 
     if (btnCloseQrZoom) btnCloseQrZoom.addEventListener('click', closeQrModal);
@@ -682,11 +755,17 @@ function setupEventListeners() {
     modalQrZoom.addEventListener('click', (e) => {
       if (e.target === modalQrZoom) closeQrModal();
     });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalQrZoom.style.display === 'flex') {
-        closeQrModal();
-      }
-    });
   }
+
+  // Tecla Escape per tancar qualsevol finestra flotant activa
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (modalQrZoom && modalQrZoom.style.display === 'flex') {
+        modalQrZoom.style.display = 'none';
+      }
+      const activeModals = document.querySelectorAll('.modal-backdrop.active');
+      activeModals.forEach(m => closeModal(m));
+      document.body.style.overflow = '';
+    }
+  });
 }
