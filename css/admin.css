@@ -22,7 +22,7 @@
   min-height: 100vh;
   background-color: #F0F2F5;
   color: #2C3338;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--brand-font, Verdana, Geneva, Tahoma, sans-serif);
 }
 
 /* ==================== BARRA LATERAL ESQUERRA (ESTIL WORDPRESS) ==================== */

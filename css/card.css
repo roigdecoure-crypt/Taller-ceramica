@@ -1,5 +1,6 @@
 /**
- * card.css - Disseny del Carnet d'Alumne amb QR i format per a impressió
+ * card.css - Disseny del Carnet d'Alumne amb QR i format per a impressió des d'Admin
+ * Fons verd ceràmic, títol Buffalo oficial i tipografia Verdana
  */
 
 .student-card-container {
@@ -14,23 +15,25 @@
 .ceramic-badge {
   width: 360px;
   height: 226px;
-  background: #FFFFFF;
-  border-radius: 14px;
-  border: 2px solid #E8DFD5;
-  box-shadow: 0 8px 20px rgba(46, 40, 37, 0.12);
+  background: #C7DEC8; /* Fons verd ceràmic artesanal oficial de Roig de Coure */
+  border-radius: 16px;
+  border: 1px solid #B2CEB3;
+  box-shadow: 0 6px 18px rgba(46, 40, 37, 0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  font-family: var(--brand-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
   user-select: none;
+  padding: 16px 18px;
+  box-sizing: border-box;
 }
 
-/* Capçalera de la targeta */
+/* Capçalera del carnet imprès */
 .badge-top {
-  background: #831D1D;
-  color: #FFFFFF;
-  padding: 12px 16px;
+  background: transparent;
+  color: #831D1D;
+  padding: 0 0 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -44,28 +47,21 @@
   display: none;
 }
 .badge-top .workshop-name {
-  font-size: 13px;
+  font-family: var(--font-script, 'Buffalo', cursive);
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.badge-top .badge-type {
-  font-size: 10px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.25);
-  padding: 3px 8px;
-  border-radius: 99px;
-  letter-spacing: 0.5px;
+  color: #831D1D;
+  line-height: 1;
 }
 
-/* Cos de la targeta */
+/* Cos del carnet */
 .badge-content {
   flex: 1;
   display: flex;
-  padding: 14px 16px;
-  gap: 14px;
+  padding: 0;
+  gap: 12px;
   align-items: center;
-  background: #FFF;
+  background: transparent;
 }
 
 .badge-info {
@@ -73,76 +69,49 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 3px;
   min-width: 0;
 }
-.badge-student-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: #2E2825;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.badge-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #831D1D;
+  margin-top: 2px;
 }
+.badge-student-name,
 .badge-student-surnames {
   font-size: 13px;
   font-weight: 600;
-  color: #736B66;
-  margin-bottom: 8px;
+  color: #1A1817;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.badge-id-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #FAF6F0;
-  border: 1px solid #E8DFD5;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+.badge-id-val {
+  font-size: 13px;
   font-weight: 700;
-  color: #831D1D;
-  width: fit-content;
-  margin-bottom: 8px;
-}
-.badge-phone {
-  font-size: 11px;
-  color: #8C847E;
+  color: #1A1817;
 }
 
 /* Contenidor del QR */
 .badge-qr-box {
-  width: 105px;
-  height: 105px;
+  width: 108px;
+  height: 108px;
   background: #FFFFFF;
-  border: 1px solid #E8DFD5;
   border-radius: 8px;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 .badge-qr-box img,
 .badge-qr-box canvas {
   width: 100% !important;
   height: 100% !important;
   display: block;
-}
-
-/* Peu de la targeta */
-.badge-footer {
-  background: #FAF6F0;
-  border-top: 1px solid #E8DFD5;
-  padding: 6px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: #8C847E;
 }
 
 /* Botons d'acció del carnet */
@@ -166,7 +135,7 @@
     top: 50%;
     transform: translate(-50%, -50%);
     box-shadow: none;
-    border: 1px solid #999;
+    border: 1px solid #B2CEB3;
     width: 85.6mm;
     height: 53.98mm;
     -webkit-print-color-adjust: exact;

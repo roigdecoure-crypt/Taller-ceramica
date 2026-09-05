@@ -568,29 +568,22 @@
         <div class="ceramic-badge" id="printable-badge">
           <div class="badge-top">
             <div class="workshop-brand">
-              <img id="badge-ws-logo-img" src="" alt="Logo" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
-              <span class="workshop-icon" id="badge-ws-logo-icon"></span>
               <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
             </div>
-            <span class="badge-type">CARNET DE SOCI</span>
+            <span style="font-size: 11px; font-weight: 700; color: #5E7E6F; text-transform: uppercase; letter-spacing: 0.5px;">Taller de Ceràmica</span>
           </div>
           <div class="badge-content">
             <div class="badge-info">
+              <div class="badge-label">Nom:</div>
               <div class="badge-student-name" id="badge-nom">Nom</div>
+              <div class="badge-label">Cognoms:</div>
               <div class="badge-student-surnames" id="badge-cognoms">Cognoms</div>
-              <div class="badge-id-pill">
-                <span>ID:</span>
-                <strong id="badge-id">TC-100</strong>
-              </div>
-              <div class="badge-phone" id="badge-tel">Tel: -</div>
+              <div class="badge-label">Codi Alumne:</div>
+              <div class="badge-id-val" id="badge-id">TC-100</div>
             </div>
             <div class="badge-qr-box" id="badge-qr-container">
               <!-- QR generat per QREngine -->
             </div>
-          </div>
-          <div class="badge-footer">
-            <span>Passa aquest QR per l'escàner</span>
-            <span id="badge-data-alta">Alta: 2026</span>
           </div>
         </div>
 
@@ -822,14 +815,18 @@
           <!-- Tipografia -->
           <div style="background: #FDFBF7; border: 1px solid var(--color-border); border-radius: 10px; padding: 16px;">
             <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--color-dark);">Estil de Lletra</h4>
-            <div style="display: flex; gap: 16px;">
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
-                <input type="radio" name="brand_font_choice" value="sans" checked>
-                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;">Sans Moderna (Inter)</span>
+                <input type="radio" name="brand_font_choice" value="verdana" checked>
+                <span style="font-family: Verdana, sans-serif; font-size: 14px; font-weight: 600;">Verdana (Oficial)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+                <input type="radio" name="brand_font_choice" value="sans">
+                <span style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;">Inter</span>
               </label>
               <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
                 <input type="radio" name="brand_font_choice" value="serif">
-                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-weight: 700;">Serif Artesanal (Playfair)</span>
+                <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 14px; font-weight: 500;">Playfair</span>
               </label>
             </div>
           </div>
@@ -868,33 +865,18 @@
               <span style="font-size: 10px; background: #EEF5F1; color: #5E7E6F; padding: 2px 6px; border-radius: 4px; font-weight: 700;">App</span>
             </div>
 
-            <!-- Carnet Digital Preview -->
-            <div class="ceramic-badge" id="preview-ceramic-badge" style="width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.12); margin: 0 auto; transform: scale(0.92); transform-origin: top center;">
-              <div class="badge-top" id="preview-badge-top" style="background: #831D1D;">
-                <div class="workshop-brand">
-                  <img id="preview-badge-logo-img" src="" alt="Logo" style="display: none; height: 22px; max-width: 80px; object-fit: contain; margin-right: 6px;">
-                  <span class="workshop-icon" id="preview-badge-logo-icon" style="display: none;"></span>
-                  <span class="workshop-name" id="preview-badge-title" style="font-size: 13px;">Roig de Coure</span>
-                </div>
-                <span class="badge-type" style="font-size: 9px;">CARNET SOCI</span>
+            <!-- Perfil Alumne & QR a Dalt Preview -->
+            <div id="preview-ceramic-badge" style="width: 100%; background: #FFF; border: 1px solid var(--color-border); border-radius: 12px; padding: 12px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; box-sizing: border-box;">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #2C3338;">Maria Garcia Font</div>
+                <div style="font-size: 10px; color: var(--color-muted);">Codi: <strong id="preview-badge-title" style="color: #831D1D;">TC-101</strong></div>
+                <div style="font-size: 9px; color: #5E7E6F; font-weight: 600; margin-top: 4px;">Al taller ara mateix</div>
               </div>
-              <div class="badge-content" style="padding: 10px;">
-                <div class="badge-info">
-                  <div class="badge-student-name" style="font-size: 16px;">Maria</div>
-                  <div class="badge-student-surnames" style="font-size: 12px;">Garcia Font</div>
-                  <div class="badge-id-pill" style="font-size: 11px; padding: 2px 6px;">
-                    <span>ID:</span>
-                    <strong>TC-101</strong>
-                  </div>
-                  <div class="badge-phone" style="font-size: 10px;">Tel: 600 123 456</div>
-                </div>
-                <div class="badge-qr-box" id="preview-badge-qr" style="width: 75px; height: 75px; padding: 4px;">
+              <div style="display: flex; flex-direction: column; align-items: center; text-align: center; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 8px; padding: 4px 6px;">
+                <div id="preview-badge-qr" style="width: 48px; height: 48px; background: #FFF; border: 1px solid #E5DDD5; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                   <!-- QR preview -->
                 </div>
-              </div>
-              <div class="badge-footer" style="padding: 6px 12px; font-size: 9px;">
-                <span>Passa aquest QR per l'escàner</span>
-                <span>Alta: 2026</span>
+                <span style="font-size: 7px; font-weight: 700; color: #831D1D; margin-top: 2px;">AMPLIAR</span>
               </div>
             </div>
 

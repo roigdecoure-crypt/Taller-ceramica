@@ -71,10 +71,12 @@ async function loadConfig() {
     if (cfg.brand_secondary) {
       document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
     }
-    if (cfg.brand_font === 'sans') {
+    if (cfg.brand_font === 'serif') {
+      document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
+    } else if (cfg.brand_font === 'sans') {
       document.documentElement.style.setProperty('--brand-font', "'Inter', -apple-system, sans-serif");
     } else {
-      document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
+      document.documentElement.style.setProperty('--brand-font', "Verdana, Geneva, Tahoma, sans-serif");
     }
     const lblDefecte = document.getElementById('lbl-durada-defecte');
     if (lblDefecte) lblDefecte.textContent = cfg.hores_per_defecte_oblit || '01:30:00';
@@ -349,8 +351,10 @@ async function showStudentBadgeModal(studentId) {
   document.getElementById('badge-nom').textContent = student.nom;
   document.getElementById('badge-cognoms').textContent = student.cognoms || '';
   document.getElementById('badge-id').textContent = student.id;
-  document.getElementById('badge-tel').textContent = student.telefon ? `Tel: ${student.telefon}` : '';
-  document.getElementById('badge-data-alta').textContent = `Alta: ${TimeUtils.formatDate(student.data_alta)}`;
+  const telEl = document.getElementById('badge-tel');
+  if (telEl) telEl.textContent = student.telefon ? `Tel: ${student.telefon}` : '';
+  const altaEl = document.getElementById('badge-data-alta');
+  if (altaEl) altaEl.textContent = `Alta: ${TimeUtils.formatDate(student.data_alta)}`;
 
   // Generar QR
   const qrContainer = document.getElementById('badge-qr-container');
@@ -1179,7 +1183,7 @@ function initBrandStudio() {
       const sub = subInput ? subInput.value.trim() : "Taller d'Art i Ceràmica";
       const prim = primaryHexInput ? primaryHexInput.value.trim() : '#831D1D';
       const sec = secondaryHexInput ? secondaryHexInput.value.trim() : '#5E7E6F';
-      const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'serif';
+      const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'verdana';
       const logoUrl = logoUrlHidden ? logoUrlHidden.value : '';
 
       try {
@@ -1223,7 +1227,7 @@ async function openBrandStudioModal() {
     const sub = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
     const prim = cfg.brand_primary || '#831D1D';
     const sec = cfg.brand_secondary || '#5E7E6F';
-    const font = cfg.brand_font || 'sans';
+    const font = cfg.brand_font || 'verdana';
     const logoUrl = cfg.taller_logo_url || '';
 
     const nomInput = document.getElementById('brand-input-nom');
@@ -1331,10 +1335,12 @@ function updateBrandPreview() {
   // Tipografia al Carnet
   const badgeCard = document.getElementById('preview-ceramic-badge');
   if (badgeCard) {
-    if (fontChoice === 'sans') {
+    if (fontChoice === 'serif') {
+      badgeCard.style.fontFamily = "'Playfair Display', Georgia, serif";
+    } else if (fontChoice === 'sans') {
       badgeCard.style.fontFamily = "'Inter', -apple-system, sans-serif";
     } else {
-      badgeCard.style.fontFamily = "'Playfair Display', Georgia, serif";
+      badgeCard.style.fontFamily = "Verdana, Geneva, Tahoma, sans-serif";
     }
   }
 }

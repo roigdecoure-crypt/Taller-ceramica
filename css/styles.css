@@ -30,7 +30,7 @@
   --color-border: #E5DDD5;
   
   --font-script: 'Buffalo', 'Buffalo Regular', cursive, -apple-system, sans-serif;
-  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-main: Verdana, Geneva, Tahoma, sans-serif;
   
   --color-success: #5E7E6F;
   --color-success-bg: #EEF5F1;
@@ -58,7 +58,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-main, Verdana, Geneva, Tahoma, sans-serif);
   background-color: var(--color-bg);
   color: var(--color-dark);
   line-height: 1.5;

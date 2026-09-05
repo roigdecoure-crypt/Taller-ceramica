@@ -113,9 +113,6 @@ function applyBrandingToPortal(cfg) {
   const studentWsSub = document.getElementById('student-workshop-subtitle');
   if (studentWsSub) studentWsSub.textContent = subtitol;
 
-  const badgeWs = document.getElementById('portal-badge-ws-name');
-  if (badgeWs) badgeWs.textContent = nom;
-
   // Colors personalitzats
   const primaryColor = (cfg.brand_primary && cfg.brand_primary !== '#831D1D' && cfg.brand_primary !== '#831D1D') 
     ? cfg.brand_primary 
@@ -127,12 +124,8 @@ function applyBrandingToPortal(cfg) {
     document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
   }
 
-  // Tipografia
-  if (cfg.brand_font === 'sans') {
-    document.documentElement.style.setProperty('--brand-font', "'Inter', -apple-system, sans-serif");
-  } else {
-    document.documentElement.style.setProperty('--brand-font', "'Playfair Display', Georgia, serif");
-  }
+  // Tipografia - Verdana per defecte oficial
+  document.documentElement.style.setProperty('--brand-font', "Verdana, Geneva, Tahoma, sans-serif");
 
   // Logotip
   const logoUrl = cfg.taller_logo_url;
@@ -148,12 +141,6 @@ function applyBrandingToPortal(cfg) {
     const headIcon = document.getElementById('portal-header-logo-icon');
     if (headImg) { headImg.src = logoUrl; headImg.style.display = 'block'; }
     if (headIcon) headIcon.style.display = 'none';
-
-    // Badge Carnet
-    const badgeImg = document.getElementById('portal-badge-logo-img');
-    const badgeIcon = document.getElementById('portal-badge-logo-icon');
-    if (badgeImg) { badgeImg.src = logoUrl; badgeImg.style.display = 'inline-block'; }
-    if (badgeIcon) badgeIcon.style.display = 'none';
   }
 }
 
@@ -262,15 +249,21 @@ function renderDashboard(details) {
     `;
   }
 
-  // Carnet digital
-  document.getElementById('portal-badge-nom').textContent = a.nom;
-  document.getElementById('portal-badge-cognoms').textContent = a.cognoms || '';
-  document.getElementById('portal-badge-id').textContent = a.id;
-  document.getElementById('portal-badge-tel').textContent = a.telefon ? `Tel: ${a.telefon}` : '';
-  document.getElementById('portal-badge-footer-alta').textContent = `Alta: ${TimeUtils.formatDate(a.data_alta)}`;
+  // Generar QR visible a dalt (compacte: 80px)
+  const topQrContainer = document.getElementById('portal-top-qr');
+  if (topQrContainer) {
+    QREngine.generateQR(topQrContainer, a.id, 80);
+  }
 
-  const qrContainer = document.getElementById('portal-badge-qr');
-  QREngine.generateQR(qrContainer, a.id, 105);
+  // Preparar contingut del modal de zoom
+  const zoomNameEl = document.getElementById('qr-zoom-student-name');
+  if (zoomNameEl) zoomNameEl.textContent = `${a.nom} ${a.cognoms || ''}`.trim();
+  const zoomIdEl = document.getElementById('qr-zoom-student-id');
+  if (zoomIdEl) zoomIdEl.textContent = a.id;
+  const zoomQrBox = document.getElementById('modal-qr-zoom-box');
+  if (zoomQrBox) {
+    QREngine.generateQR(zoomQrBox, a.id, 216);
+  }
 
   // Historial de sessions
   renderSessionsTable(details.sessions);
@@ -631,11 +624,34 @@ function setupEventListeners() {
     });
   }
 
-  // Imprimir carnet
-  const btnPrintBadge = document.getElementById('btn-portal-print-badge');
-  if (btnPrintBadge) {
-    btnPrintBadge.addEventListener('click', () => {
-      window.print();
+  // Modal de zoom del codi QR
+  const btnOpenQrZoom = document.getElementById('btn-open-qr-zoom');
+  const modalQrZoom = document.getElementById('modal-qr-zoom');
+  const btnCloseQrZoom = document.getElementById('btn-close-qr-zoom');
+  const btnCloseQrModal = document.getElementById('btn-close-qr-modal');
+
+  if (btnOpenQrZoom && modalQrZoom) {
+    btnOpenQrZoom.addEventListener('click', () => {
+      modalQrZoom.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    });
+
+    const closeQrModal = () => {
+      modalQrZoom.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    if (btnCloseQrZoom) btnCloseQrZoom.addEventListener('click', closeQrModal);
+    if (btnCloseQrModal) btnCloseQrModal.addEventListener('click', closeQrModal);
+
+    modalQrZoom.addEventListener('click', (e) => {
+      if (e.target === modalQrZoom) closeQrModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalQrZoom.style.display === 'flex') {
+        closeQrModal();
+      }
     });
   }
 }

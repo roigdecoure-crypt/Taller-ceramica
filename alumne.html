@@ -38,11 +38,19 @@
     :root {
       --brand-primary: #831D1D;
       --brand-secondary: #5E7E6F;
-      --brand-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --brand-font: Verdana, Geneva, Tahoma, sans-serif;
       --font-script: 'Buffalo', 'Buffalo Regular', cursive, sans-serif;
     }
     body {
       font-family: var(--brand-font);
+    }
+    #btn-open-qr-zoom:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 12px rgba(131, 29, 29, 0.12);
+      border-color: var(--brand-primary);
+    }
+    #btn-open-qr-zoom:active {
+      transform: scale(0.98);
     }
     .student-portal-wrapper {
       max-width: 800px;
@@ -299,16 +307,26 @@
         </div>
       </div>
 
-      <!-- Targeta de benvinguda i estat -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-        <div>
-          <h1 style="font-size: 24px; font-weight: 800;" id="portal-student-name">Hola, Alumne!</h1>
-          <p style="font-size: 14px; color: var(--color-muted);">
-            ID de soci: <strong id="portal-student-id">TC-101</strong> &bull; Alta: <span id="portal-student-alta">--</span>
-          </p>
+      <!-- Targeta d'Identificació & QR a dalt (ampliable en fer clic) -->
+      <div class="card" style="margin-bottom: 20px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+          <h1 style="font-size: 22px; font-weight: 700; color: var(--color-dark); margin: 0 0 4px;" id="portal-student-name">Hola, Alumne!</h1>
+          <div style="font-size: 13px; color: var(--color-muted); margin-bottom: 12px;">
+            Codi Alumne: <strong id="portal-student-id" style="color: var(--brand-primary); font-size: 15px; letter-spacing: 0.5px;">TC-101</strong> &bull; Alta: <span id="portal-student-alta">--</span>
+          </div>
+          <div id="portal-live-status">
+            <!-- Estat en viu -->
+          </div>
         </div>
-        <div id="portal-live-status">
-          <!-- Estat en viu -->
+
+        <!-- Codi QR a dalt, destacat i ampliable al clic -->
+        <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
+          <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center;">
+            <!-- QR generat per QREngine -->
+          </div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--brand-primary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+            Toca per ampliar
+          </div>
         </div>
       </div>
 
@@ -415,48 +433,6 @@
         </div>
       </section>
 
-      <!-- CARNET DIGITAL D'ALUMNE -->
-      <section class="card" style="margin-bottom: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-          <div>
-            <h2 style="font-size: 18px; font-weight: 800;">El Teu Carnet Digital</h2>
-            <p style="font-size: 13px; color: var(--color-muted);">Porta'l al mòbil i ensenya aquest codi QR a la càmera de la recepció en arribar i en marxar.</p>
-          </div>
-          <button class="btn btn-outline btn-sm" id="btn-portal-print-badge">Descarregar / Imprimir</button>
-        </div>
-
-        <div style="display: flex; justify-content: center;">
-          <div class="ceramic-badge" id="student-portal-badge">
-            <div class="badge-top">
-              <div class="workshop-brand">
-                <img id="portal-badge-logo-img" src="" alt="Logo" class="portal-logo-img" style="display: none; height: 26px; max-width: 90px; object-fit: contain; margin-right: 6px;">
-                <span class="workshop-icon" id="portal-badge-logo-icon" style="display: none;"></span>
-                <span class="workshop-name" id="portal-badge-ws-name">Roig de Coure</span>
-              </div>
-              <span class="badge-type">CARNET DE SOCI</span>
-            </div>
-            <div class="badge-content">
-              <div class="badge-info">
-                <div class="badge-student-name" id="portal-badge-nom">Maria</div>
-                <div class="badge-student-surnames" id="portal-badge-cognoms">Garcia Font</div>
-                <div class="badge-id-pill">
-                  <span>ID:</span>
-                  <strong id="portal-badge-id">TC-101</strong>
-                </div>
-                <div class="badge-phone" id="portal-badge-tel">Tel: -</div>
-              </div>
-              <div class="badge-qr-box" id="portal-badge-qr">
-                <!-- QR renderitzat -->
-              </div>
-            </div>
-            <div class="badge-footer">
-              <span>Passa aquest QR per l'escàner</span>
-              <span id="portal-badge-footer-alta">Alta: 2026</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- HISTORIAL DE SESSIONS I ASSISTÈNCIA -->
       <section class="card" style="margin-bottom: 24px;">
         <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">Historial d'Entrades i Sortides</h2>
@@ -544,6 +520,30 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QR AMPLIAT EN FER CLIC -->
+  <div id="modal-qr-zoom" style="display: none; position: fixed; inset: 0; background: rgba(20, 24, 27, 0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #FFFFFF; border-radius: 18px; padding: 28px 24px 20px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.35); position: relative;" id="modal-qr-zoom-content">
+      <button type="button" id="btn-close-qr-zoom" style="position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 26px; color: var(--color-muted); cursor: pointer; line-height: 1; padding: 4px 8px;" aria-label="Tancar">&times;</button>
+      <div style="font-family: var(--font-script); font-size: 30px; color: var(--brand-primary); margin-bottom: 2px;">Roig de Coure</div>
+      <div style="font-size: 16px; font-weight: 700; color: var(--color-dark); margin-bottom: 2px;" id="qr-zoom-student-name">Alumne</div>
+      <div style="font-size: 13px; color: var(--color-muted); margin-bottom: 16px;">
+        Codi: <strong id="qr-zoom-student-id" style="color: var(--brand-primary); font-size: 16px; letter-spacing: 0.5px;">TC-101</strong>
+      </div>
+      
+      <div id="modal-qr-zoom-box" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 16px; padding: 12px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--color-border); width: 240px; height: 240px; box-sizing: border-box;">
+        <!-- Codi QR gran (216px) generat dinàmicament -->
+      </div>
+      
+      <div style="font-size: 12px; font-weight: 600; color: var(--brand-secondary); margin-bottom: 16px; line-height: 1.4;">
+        Apropa aquest codi a l'escàner del taller per registrar entrada o sortida
+      </div>
+      
+      <button type="button" class="btn btn-outline btn-block" id="btn-close-qr-modal" style="font-size: 13px; padding: 8px 16px; font-weight: 600;">
+        Tancar
+      </button>
     </div>
   </div>
 
