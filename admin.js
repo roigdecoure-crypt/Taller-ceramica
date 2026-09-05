@@ -846,7 +846,7 @@ function setupEventListeners() {
     }
     document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
     if (document.getElementById('cfg-calendar-name')) {
-      const calName = (cfg.google_calendar_name && cfg.google_calendar_name !== 'Roig de Coure') ? cfg.google_calendar_name : 'roigdecoure';
+      const calName = (cfg.google_calendar_name && cfg.google_calendar_name !== 'Roig de Coure' && cfg.google_calendar_name !== 'roigdecoure') ? cfg.google_calendar_name : 'reserves';
       document.getElementById('cfg-calendar-name').value = calName;
     }
     if (document.getElementById('cfg-whatsapp-enabled')) {
@@ -883,7 +883,7 @@ function setupEventListeners() {
       stripe_url_adults: document.getElementById('cfg-stripe-adults') ? document.getElementById('cfg-stripe-adults').value : '',
       stripe_url_infantil: document.getElementById('cfg-stripe-infantil') ? document.getElementById('cfg-stripe-infantil').value : '',
       google_sheets_url: document.getElementById('cfg-sheets-url').value,
-      google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'roigdecoure',
+      google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'reserves',
       whatsapp_enabled: document.getElementById('cfg-whatsapp-enabled')?.checked ? '1' : '0',
       whatsapp_meta_phone_id: document.getElementById('cfg-whatsapp-phone-id')?.value.trim() || '',
       whatsapp_meta_token: document.getElementById('cfg-whatsapp-token')?.value.trim() || '',

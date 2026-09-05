@@ -159,7 +159,7 @@ def init_db():
             'stripe_pack10_url': "",
             'stripe_pack20_url': "",
             'google_sheets_url': "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec",
-            'google_calendar_name': "roigdecoure",
+            'google_calendar_name': "reserves",
             'aforament_maxim_per_franja': "12",
             'capacitat_max_torn': "4",
             'capacitat_max_modelatge': "8",
@@ -182,7 +182,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
-        cursor.execute('UPDATE configuracio SET valor = "roigdecoure" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "Roig de Coure")')
+        cursor.execute('UPDATE configuracio SET valor = "reserves" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "roigdecoure" OR valor = "Roig de Coure")')
         cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
         cursor.execute("DELETE FROM reserves WHERE data LIKE '%GMT%' OR data LIKE '%Central European%' OR data LIKE '%hora de verano%' OR id = 'TEST-DEBUG-1'")
 
@@ -1772,7 +1772,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     conn.commit()
 
                 # Obtenir nom del calendari configurat
-                cal_name = 'roigdecoure'
+                cal_name = 'reserves'
                 with get_db() as conn:
                     c_cursor = conn.cursor()
                     c_cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
@@ -1853,6 +1853,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     conn.commit()
                     reserva_dict = row_to_dict(row)
                     reserva_dict['estat'] = 'cancel·lada'
+
+                    cal_name = 'reserves'
+                    cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
+                    c_row = cursor.fetchone()
+                    if c_row and c_row['valor']:
+                        cal_name = c_row['valor']
+                    reserva_dict['calendar_name'] = cal_name
 
                 # Sincronitzar cancel·lació a Google Sheets
                 sync_to_google_sheets_async('cancel_reserva', reserva_dict)
