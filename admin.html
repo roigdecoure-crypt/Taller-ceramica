@@ -428,20 +428,12 @@
           <input type="text" id="paquet-form-student-name" class="form-control" readonly style="background:#F5F2ED;">
         </div>
         <div class="form-group">
-          <label>Packs ràpids:</label>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="5" data-price="65" data-name="Pack 5 Hores">5 Hores</button>
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="10" data-price="120" data-name="Pack 10 Hores">10 Hores</button>
-            <button type="button" class="btn btn-outline btn-sm quick-pack-btn" data-hours="20" data-price="220" data-name="Pack 20 Hores">20 Hores</button>
-          </div>
+          <label>Quantitat d'Hores a Sumar * (mínim 4h)</label>
+          <input type="number" step="0.5" min="4" value="4" id="paquet-form-hores" class="form-control" required placeholder="ex: 4">
         </div>
         <div class="form-group">
-          <label>Quantitat d'Hores a Sumar *</label>
-          <input type="number" step="0.5" min="0.5" id="paquet-form-hores" class="form-control" required placeholder="ex: 10">
-        </div>
-        <div class="form-group">
-          <label>Concepte / Nom del Pack</label>
-          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: Pack 10 Hores Torn">
+          <label>Concepte</label>
+          <input type="text" id="paquet-form-concepte" class="form-control" placeholder="ex: 4 Hores Taller">
         </div>
         <div class="form-group">
           <label>Preu Cobrat (€)</label>

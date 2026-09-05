@@ -602,9 +602,9 @@ function setupEventListeners() {
     const a = currentViewingStudent.alumne;
     document.getElementById('paquet-form-student-id').value = a.id;
     document.getElementById('paquet-form-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
-    document.getElementById('paquet-form-hores').value = 10;
-    document.getElementById('paquet-form-concepte').value = 'Pack 10 Hores';
-    document.getElementById('paquet-form-preu').value = 120;
+    document.getElementById('paquet-form-hores').value = 4;
+    document.getElementById('paquet-form-concepte').value = '4 Hores';
+    document.getElementById('paquet-form-preu').value = 50;
     document.getElementById('paquet-form-data').value = TimeUtils.toLocalDatetimeInput();
     document.getElementById('modal-paquet-backdrop').classList.add('active');
   });
@@ -739,15 +739,6 @@ function setupEventListeners() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  });
-
-  // Botons de packs ràpids
-  document.querySelectorAll('.quick-pack-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById('paquet-form-hores').value = btn.dataset.hours;
-      document.getElementById('paquet-form-preu').value = btn.dataset.price;
-      document.getElementById('paquet-form-concepte').value = btn.dataset.name;
-    });
   });
 
   // Formulari Paquet Submit

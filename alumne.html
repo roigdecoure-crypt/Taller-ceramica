@@ -379,10 +379,32 @@
           </div>
         </div>
 
+        <!-- Selector d'Hores: mínim 4 hores (com a Stripe) -->
+        <div style="background: #FAF8F5; border: 1px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <label for="portal-input-hores" style="font-size: 14px; font-weight: 700; color: #1A1817; margin: 0; display: block;">
+                Quantitat d'hores a adquirir:
+              </label>
+              <span style="font-size: 12px; color: #736B66;">
+                A partir de <strong>4 hores</strong> com a mínim (com a la passarel·la de Stripe).
+              </span>
+            </div>
+            
+            <!-- Controls d'hores: botons - i + amb input -->
+            <div style="display: flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1px solid #C7DEC8; border-radius: 8px; padding: 3px 6px;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-dec-hores" style="width: 32px; height: 32px; padding: 0; font-size: 18px; font-weight: 700; border-radius: 6px; border-color: #E5DDD5; color: #831D1D; display: flex; align-items: center; justify-content: center;" title="Restar 1 hora">−</button>
+              <input type="number" id="portal-input-hores" min="4" value="4" step="1" style="width: 50px; text-align: center; font-size: 17px; font-weight: 800; border: none; outline: none; color: #1A1817; background: transparent;">
+              <span style="font-size: 13px; font-weight: 700; color: #736B66; padding-right: 4px;">h</span>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-inc-hores" style="width: 32px; height: 32px; padding: 0; font-size: 18px; font-weight: 700; border-radius: 6px; border-color: #E5DDD5; color: #831D1D; display: flex; align-items: center; justify-content: center;" title="Sumar 1 hora">+</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Botó de compra directa Stripe -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-portal-buy-stripe" style="background: var(--color-primary); border-color: var(--color-primary); font-size: 16px; font-weight: 700;">
-            Comprar Hores amb Targeta (Stripe)
+            Comprar <span id="portal-stripe-hours-lbl">4</span> Hores amb Targeta (Stripe)
           </button>
           
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
@@ -391,7 +413,7 @@
             </span>
             <div style="display: flex; gap: 8px;">
               <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-testpay" style="font-size: 12px; color: #5E7E6F; border-color: #5E7E6F;">
-                Provar Pagament (Test)
+                Provar Pagament (<span id="portal-test-btn-hours">4</span>h)
               </button>
               <button type="button" class="btn btn-outline btn-sm" id="btn-portal-show-bizum" style="font-size: 12px;">
                 Pagar per Bizum
@@ -404,25 +426,20 @@
         <div id="portal-testpay-box" style="display: none; margin-top: 14px; background: #F4F8F5; border: 1px solid #C7DEC8; padding: 14px; border-radius: 8px; font-size: 13px;">
           <strong style="color: #5E7E6F;">Mode de Prova (Sense targeta ni diners reals):</strong>
           <p style="margin: 4px 0 10px; font-size: 12px; color: var(--color-muted);">
-            Tria quantes hores de prova vols carregar per comprovar com s'actualitza el teu saldo:
+            S'afegiran <strong id="testpay-hours-summary">4 hores</strong> de prova al teu compte per comprovar com s'actualitza el saldo.
           </p>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <select id="select-test-pack" class="form-control" style="width: auto; font-size: 13px; padding: 6px 12px; border-color: #C7DEC8;">
-              <option value="5">Pack 5 Hores (Prova)</option>
-              <option value="10" selected>Pack 10 Hores (Prova)</option>
-              <option value="20">Pack 20 Hores (Prova)</option>
-            </select>
             <button type="button" class="btn btn-primary btn-sm" id="btn-portal-confirm-testpay" style="background: #5E7E6F; border-color: #5E7E6F; font-size: 13px;">
-              Simular Pagament i Sumar Hores
+              Simular Pagament i Sumar <span id="testpay-confirm-hours-lbl">4</span> Hores
             </button>
           </div>
         </div>
 
         <!-- Bloc Bizum desplegable -->
         <div id="portal-bizum-box" style="display: none; margin-top: 14px; background: #F4F8F5; border: 1px solid var(--color-border); padding: 14px; border-radius: 8px; font-size: 13px;">
-          <strong>Pagament per Bizum:</strong> Envia l'import desitjat al número del taller <strong id="portal-bizum-phone">+34 600 000 000</strong> indicant com a concepte el teu ID d'alumne: <code id="portal-bizum-concept">TC-101 Nom</code>.<br>
+          <strong>Pagament per Bizum:</strong> Envia l'import corresponent a <strong id="bizum-hours-summary">4 hores</strong> al número del taller <strong id="portal-bizum-phone">+34 600 000 000</strong> indicant com a concepte el teu ID d'alumne: <code id="portal-bizum-concept">TC-101 Nom</code>.<br>
           <div style="margin-top: 10px;">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-portal-confirm-bizum">Notificar Pagament Bizum</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-portal-confirm-bizum">Notificar Pagament Bizum (<span id="bizum-btn-hours-lbl">4</span>h)</button>
           </div>
         </div>
       </section>

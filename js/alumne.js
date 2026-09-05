@@ -177,9 +177,12 @@ async function checkUrlParamsOrSession() {
   if (targetId) {
     await loginStudent(targetId);
 
-    // Si retorna d'un pagament de Stripe amb èxit
-    if (paymentStatus === 'success' && packHours && currentStudent) {
-      await processSuccessfulPayment(parseFloat(packHours), 'Pack Stripe (Retorn)', 0, 'Stripe');
+    // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
+    const pendingHours = sessionStorage.getItem('pending_stripe_hours');
+    const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
+    if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
+      sessionStorage.removeItem('pending_stripe_hours');
+      await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
       window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
     }
   }
@@ -546,11 +549,83 @@ function setupEventListeners() {
     });
   }
 
-  // Botó Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
+  // Gestió de la selecció d'hores a partir de 4h (com a Stripe)
+  function getSelectedHours() {
+    const input = document.getElementById('portal-input-hores');
+    let val = parseInt(input ? input.value : 4, 10);
+    if (isNaN(val) || val < 4) val = 4;
+    return val;
+  }
+
+  function setSelectedHours(hours) {
+    let val = parseInt(hours, 10);
+    if (isNaN(val) || val < 4) val = 4;
+
+    const input = document.getElementById('portal-input-hores');
+    if (input) input.value = val;
+
+    // Actualitzar botó Stripe
+    const stripeLbl = document.getElementById('portal-stripe-hours-lbl');
+    if (stripeLbl) stripeLbl.textContent = val;
+
+    // Actualitzar botó de test
+    const testBtnHours = document.getElementById('portal-test-btn-hours');
+    if (testBtnHours) testBtnHours.textContent = val;
+
+    const testSummary = document.getElementById('testpay-hours-summary');
+    if (testSummary) testSummary.textContent = `${val} hores`;
+
+    const testConfirmLbl = document.getElementById('testpay-confirm-hours-lbl');
+    if (testConfirmLbl) testConfirmLbl.textContent = val;
+
+    // Actualitzar Bizum
+    const bizumSummary = document.getElementById('bizum-hours-summary');
+    if (bizumSummary) bizumSummary.textContent = `${val} hores`;
+
+    const bizumBtnLbl = document.getElementById('bizum-btn-hours-lbl');
+    if (bizumBtnLbl) bizumBtnLbl.textContent = val;
+  }
+
+  // Stepper d'hores (− i +)
+  const btnDecHores = document.getElementById('btn-dec-hores');
+  if (btnDecHores) {
+    btnDecHores.addEventListener('click', () => {
+      const current = getSelectedHours();
+      if (current > 4) {
+        setSelectedHours(current - 1);
+      }
+    });
+  }
+
+  const btnIncHores = document.getElementById('btn-inc-hores');
+  if (btnIncHores) {
+    btnIncHores.addEventListener('click', () => {
+      const current = getSelectedHours();
+      setSelectedHours(current + 1);
+    });
+  }
+
+  const inputHores = document.getElementById('portal-input-hores');
+  if (inputHores) {
+    inputHores.addEventListener('change', () => {
+      setSelectedHours(inputHores.value);
+    });
+    inputHores.addEventListener('input', () => {
+      const v = parseInt(inputHores.value, 10);
+      if (!isNaN(v) && v >= 4) {
+        setSelectedHours(v);
+      }
+    });
+  }
+
+  // Botó Compra directa amb Stripe segons Edat i Hores triades (mínim 4h)
   const btnPortalBuyStripe = document.getElementById('btn-portal-buy-stripe');
   if (btnPortalBuyStripe) {
     btnPortalBuyStripe.addEventListener('click', async () => {
       if (!currentStudent) return;
+      const hours = getSelectedHours();
+      sessionStorage.setItem('pending_stripe_hours', hours.toString());
+
       const cfg = await Store.getConfig();
       const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
       const selectCat = document.getElementById('portal-select-categoria');
@@ -570,18 +645,14 @@ function setupEventListeners() {
         const separator = stripeUrl.includes('?') ? '&' : '?';
         const finalUrl = `${stripeUrl}${separator}client_reference_id=${encodeURIComponent(currentStudent.alumne.id)}`;
         window.open(finalUrl, '_blank');
-        showToast(`S'ha obert la passarel·la segura de Stripe per a ${catNom}.`, 'info');
+        showToast(`S'ha obert la passarel·la de Stripe per a ${catNom} (${hours}h).`, 'info');
       } else {
         const confirmSim = confirm(
           `L'enllaç de Stripe per a la categoria "${catNom}" no està configurat a l'Administració.\n\n` +
-          `Vols simular el pagament d'hores de prova per a ${currentStudent.alumne.nom}?`
+          `Vols simular el pagament de ${hours} hores de prova per a ${currentStudent.alumne.nom}?`
         );
         if (confirmSim) {
-          const hStr = prompt('Quantes hores vols carregar de prova?', '5');
-          const h = parseFloat(hStr);
-          if (!isNaN(h) && h > 0) {
-            await processSuccessfulPayment(h, `Adquisició Hores (${catNom})`, 0, 'Stripe (Simulació)');
-          }
+          await processSuccessfulPayment(hours, `Adquisició ${hours} Hores (${catNom})`, 0, 'Stripe (Simulació)');
         }
       }
     });
@@ -602,8 +673,7 @@ function setupEventListeners() {
   if (btnConfirmTestPay) {
     btnConfirmTestPay.addEventListener('click', async () => {
       if (!currentStudent) return;
-      const select = document.getElementById('select-test-pack');
-      const hores = parseFloat(select ? select.value : 10) || 10;
+      const hores = getSelectedHours();
       btnConfirmTestPay.disabled = true;
       btnConfirmTestPay.textContent = 'Sumant hores...';
       try {
@@ -612,12 +682,12 @@ function setupEventListeners() {
         if (box) box.style.display = 'none';
       } finally {
         btnConfirmTestPay.disabled = false;
-        btnConfirmTestPay.textContent = 'Simular Pagament i Sumar Hores';
+        btnConfirmTestPay.textContent = `Simular Pagament i Sumar ${hores} Hores`;
       }
     });
   }
 
-  // Desplegable i confirmació Bizum
+  // Desplegable i confirmació Bizum (mínim 4h)
   const btnPortalShowBizum = document.getElementById('btn-portal-show-bizum');
   if (btnPortalShowBizum) {
     btnPortalShowBizum.addEventListener('click', () => {
@@ -632,15 +702,17 @@ function setupEventListeners() {
   if (btnPortalConfirmBizum) {
     btnPortalConfirmBizum.addEventListener('click', async () => {
       if (!currentStudent) return;
-      const hStr = prompt('Quantes hores has pagat per Bizum?', '5');
+      const currentH = getSelectedHours();
+      const hStr = prompt(`Quantes hores has pagat per Bizum? (Mínim 4 hores)`, currentH.toString());
+      if (hStr === null) return;
       const h = parseFloat(hStr);
-      if (isNaN(h) || h <= 0) {
-        alert('Si us plau, indica un nombre d\'hores vàlid.');
+      if (isNaN(h) || h < 4) {
+        alert('La quantitat mínima permesa és de 4 hores (com a Stripe).');
         return;
       }
       const selectCat = document.getElementById('portal-select-categoria');
       const cat = selectCat ? selectCat.value : 'adults';
-      await processSuccessfulPayment(h, `Pagament Bizum (${cat})`, 0, 'Bizum');
+      await processSuccessfulPayment(h, `Pagament Bizum ${h} Hores (${cat})`, 0, 'Bizum');
       const box = document.getElementById('portal-bizum-box');
       if (box) box.style.display = 'none';
     });
