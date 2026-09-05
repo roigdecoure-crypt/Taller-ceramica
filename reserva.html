@@ -11,8 +11,8 @@
   <link rel="stylesheet" href="css/styles.css">
   <style>
     :root {
-      --primary: #7A3026;
-      --primary-dark: #5C221A;
+      --primary: #831D1D;
+      --primary-dark: #631515;
       --primary-light: #F4EBE9;
       --secondary: #5E7E6F;
       --secondary-light: #EBF1EE;
@@ -539,7 +539,7 @@
             </div>
           </div>
 
-          <div id="booking-error-msg" style="display:none; color: #7A3026; background: #FBF4F2; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
+          <div id="booking-error-msg" style="display:none; color: #831D1D; background: #FDF5F5; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
 
           <button type="submit" class="btn-submit-booking" id="btn-submit">
             Confirmar Reserva ara
@@ -684,7 +684,7 @@
 
         if (data.tancat) {
           slotsContainer.innerHTML = `
-            <div style="grid-column: 1 / -1; background: #FBF4F2; border: 1px solid #E5DDD5; color: #7A3026; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
+            <div style="grid-column: 1 / -1; background: #FDF5F5; border: 1px solid #E5DDD5; color: #831D1D; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
               ${data.motiu || 'Aquest dia el taller està tancat. Obrim de Dimecres a Diumenge.'}
             </div>
           `;
@@ -694,7 +694,7 @@
 
         renderSlots(data.franges || []);
       } catch (e) {
-        slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #7A3026; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
+        slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; color: #831D1D; font-size: 13px; text-align: center;">Error comprovant l'aforament</div>`;
       }
     }
 

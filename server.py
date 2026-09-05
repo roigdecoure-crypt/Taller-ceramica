@@ -147,7 +147,7 @@ def init_db():
             'taller_telefon': "+34 600 000 000",
             'taller_email': "roigdecoure@gmail.com",
             'taller_logo_url': "",
-            'brand_primary': "#C25E3A",
+            'brand_primary': "#831D1D",
             'brand_secondary': "#5E7E6F",
             'brand_font': "serif",
             'brand_palette': "roigdecoure",
@@ -176,6 +176,7 @@ def init_db():
             cursor.execute('INSERT OR IGNORE INTO configuracio (clau, valor) VALUES (?, ?)', (k, v))
 
         # Migració de valors antics a configuració oficial si cal
+        cursor.execute('UPDATE configuracio SET valor = "#831D1D" WHERE clau = "brand_primary" AND (valor = "#C25E3A" OR valor = "#7A3026" OR valor IS NULL OR valor = "")')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND valor = "8"')
         cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND valor LIKE "%mati_1%"', (default_franges_json,))
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
@@ -538,6 +539,17 @@ def format_hms(seconds):
     fmt = f"{h:02d}:{m:02d}:{s:02d}"
     return f"-{fmt}" if is_neg else fmt
 
+def format_hms_human(seconds):
+    if seconds is None:
+        return "0h 0m 0s"
+    is_neg = seconds < 0
+    sec = abs(int(round(seconds)))
+    h = sec // 3600
+    m = (sec % 3600) // 60
+    s = sec % 60
+    prefix = "-" if is_neg else ""
+    return f"{prefix}{h}h {m}m {s}s"
+
 def get_student_balance(student_id):
     with get_db() as conn:
         cursor = conn.cursor()
@@ -557,14 +569,17 @@ def get_student_balance(student_id):
             'formatBought': format_hms(total_bought),
             'formatSpent': format_hms(total_spent),
             'formatBalance': format_hms(balance_sec),
+            'humanBought': format_hms_human(total_bought),
+            'humanSpent': format_hms_human(total_spent),
+            'humanBalance': format_hms_human(balance_sec),
             'isNegative': balance_sec < 0,
             'isLow': 0 <= balance_sec < 7200
         }
 
 DEFAULT_ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "🏺", "color": "#3B82F6"},
-    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "🗿", "color": "#10B981"},
-    {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "🎨", "color": "#F59E0B"}
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#831D1D"},
+    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "", "color": "#5E7E6F"},
+    {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#831D1D"}
 ]
 
 def get_activitats_config():

@@ -117,10 +117,12 @@ function applyBrandingToPortal(cfg) {
   if (badgeWs) badgeWs.textContent = nom;
 
   // Colors personalitzats
-  if (cfg.brand_primary) {
-    document.documentElement.style.setProperty('--brand-primary', cfg.brand_primary);
-    document.documentElement.style.setProperty('--color-primary', cfg.brand_primary);
-  }
+  const primaryColor = (cfg.brand_primary && cfg.brand_primary !== '#831D1D' && cfg.brand_primary !== '#831D1D') 
+    ? cfg.brand_primary 
+    : '#831D1D';
+  document.documentElement.style.setProperty('--brand-primary', primaryColor);
+  document.documentElement.style.setProperty('--color-primary', primaryColor);
+
   if (cfg.brand_secondary) {
     document.documentElement.style.setProperty('--brand-secondary', cfg.brand_secondary);
   }
@@ -229,7 +231,11 @@ function renderDashboard(details) {
   document.getElementById('portal-student-alta').textContent = TimeUtils.formatDate(a.data_alta);
 
   document.getElementById('portal-balance-hms').textContent = bal.formatBalance;
-  document.getElementById('portal-balance-human').textContent = `${bal.humanBalance} restants`;
+  const human = bal.humanBalance || (typeof TimeUtils !== 'undefined' && bal.balanceSeconds !== undefined ? TimeUtils.formatHmsHuman(bal.balanceSeconds) : '');
+  const humanEl = document.getElementById('portal-balance-human');
+  if (humanEl) {
+    humanEl.textContent = human ? `${human} restants` : (bal.formatBalance ? `${bal.formatBalance} restants` : '');
+  }
   document.getElementById('portal-total-bought').textContent = bal.formatBought;
   document.getElementById('portal-total-spent').textContent = bal.formatSpent;
 
@@ -331,7 +337,7 @@ async function loadStudentBookings(studentId) {
           </div>
         </div>
         <div>
-          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: var(--color-primary, #7A3026); border-color: var(--color-border, #E2EBE5); font-size: 12px; font-weight: 600;">
+          <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: var(--color-primary, #831D1D); border-color: var(--color-border, #E2EBE5); font-size: 12px; font-weight: 600;">
             Cancel·lar
           </button>
         </div>

@@ -46,9 +46,9 @@ class ReservesCalendar {
     ];
 
     this.ACTIVITATS = [
-      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#7A3026', capacitatMax: 4, desc: 'Màx. 4 torns' },
+      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#831D1D', capacitatMax: 4, desc: 'Màx. 4 torns' },
       { id: 'modelatge', nom: 'Modelatge i escultura', icon: '', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#7A3026', capacitatMax: 12, desc: 'Fins a 12 places' }
+      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#831D1D', capacitatMax: 12, desc: 'Fins a 12 places' }
     ];
 
     this.modalEl = null;
@@ -106,9 +106,9 @@ class ReservesCalendar {
     }
     await this.refresh();
     this.ACTIVITATS = [
-      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#7A3026', capacitatMax: 4, desc: 'Màx. 4 torns' },
+      { id: 'torn', nom: 'Torn de terrissaire', icon: '', color: '#831D1D', capacitatMax: 4, desc: 'Màx. 4 torns' },
       { id: 'modelatge', nom: 'Modelatge i escultura', icon: '', color: '#5E7E6F', capacitatMax: 8, desc: 'Fins a 8 places' },
-      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#7A3026', capacitatMax: 12, desc: 'Fins a 12 places' }
+      { id: 'pintar', nom: 'Pintar ceràmica', icon: '', color: '#831D1D', capacitatMax: 12, desc: 'Fins a 12 places' }
     ];
 
     this.modalEl = null;
@@ -144,7 +144,7 @@ class ReservesCalendar {
             id: a.id,
             nom: a.nom,
             icon: '',
-            color: a.color || (a.id === 'torn' ? '#7A3026' : a.id === 'modelatge' ? '#5E7E6F' : '#7A3026'),
+            color: a.color || (a.id === 'torn' ? '#831D1D' : a.id === 'modelatge' ? '#5E7E6F' : '#831D1D'),
             capacitatMax: a.capacitatMax,
             desc: a.descripcio || (a.id === 'torn' ? `Màx. ${a.capacitatMax} torns` : `Fins a ${a.capacitatMax} places`)
           }));
@@ -415,7 +415,7 @@ class ReservesCalendar {
             <div class="res-day-detail-date">
               <span>${formattedDate}</span>
             </div>
-            <span class="res-day-global-rule" style="background:#FBF4F2; color:#7A3026;">Taller Tancat</span>
+            <span class="res-day-global-rule" style="background:#FDF5F5; color:#831D1D;">Taller Tancat</span>
           </div>
           <div style="padding: 24px; text-align: center; color: var(--color-muted); background: #FAF9F8; border-radius: var(--radius-md);">
             <h4 style="font-size: 15px; font-weight: 700; color: var(--color-dark);">${day.motiu || 'El taller roman tancat aquest dia.'}</h4>
@@ -1018,7 +1018,7 @@ class ReservesCalendar {
         <!-- Targeta resum -->
         <div style="background: var(--color-bg, #F4F8F5); border-radius: 8px; padding: 14px 16px; text-align: left; margin-bottom: 16px; border: 1px solid var(--color-border, #E2EBE5);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px dashed var(--color-border, #E2EBE5); padding-bottom: 8px;">
-            <span style="font-size: 14px; font-weight: 700; color: var(--color-primary, #7A3026);">${r.activitat || 'Taller'}</span>
+            <span style="font-size: 14px; font-weight: 700; color: var(--color-primary, #831D1D);">${r.activitat || 'Taller'}</span>
             <span style="background: #EEF5F1; color: #5E7E6F; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">${r.places || 1} ${(r.places || 1) === 1 ? 'plaça' : 'places'}</span>
           </div>
           <div style="font-size: 13px; color: #2E2825; line-height: 1.6;">
@@ -1030,7 +1030,7 @@ class ReservesCalendar {
         </div>
 
         <!-- Estat Notificació Push -->
-        <div id="push-status-box" style="margin-bottom: 18px; font-size: 12px; padding: 9px 12px; border-radius: 6px; background: ${hasPush ? '#EEF5F1' : '#FBF4F2'}; color: ${hasPush ? '#5E7E6F' : '#7A3026'}; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--color-border, #E2EBE5);">
+        <div id="push-status-box" style="margin-bottom: 18px; font-size: 12px; padding: 9px 12px; border-radius: 6px; background: ${hasPush ? '#EEF5F1' : '#FDF5F5'}; color: ${hasPush ? '#5E7E6F' : '#831D1D'}; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--color-border, #E2EBE5);">
           ${hasPush 
             ? '<span>Notificació Push enviada al teu telèfon o navegador.</span>' 
             : '<span id="btn-request-push-cta" style="cursor: pointer; text-decoration: underline;">Activar notificacions push de confirmació</span>'}
@@ -1040,7 +1040,7 @@ class ReservesCalendar {
         <div style="margin-bottom: 20px;">
           <p style="font-size: 12px; font-weight: 700; color: var(--color-dark, #2E2825); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.5px;">Afegir al calendari:</p>
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background: #7A3026; color: #FFFFFF; font-weight: 700; padding: 11px 14px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 13px;">
+            <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background: #831D1D; color: #FFFFFF; font-weight: 700; padding: 11px 14px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 13px;">
               Afegir a Google Calendar
             </a>
             <button type="button" id="btn-download-ics" class="btn" style="background: #FFFFFF; color: #2E2825; border: 1px solid var(--color-border, #E2EBE5); font-weight: 700; padding: 11px 14px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px;">

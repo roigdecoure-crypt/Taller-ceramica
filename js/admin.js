@@ -925,14 +925,14 @@ function setupEventListeners() {
         showToast('WhatsApp de prova enviat amb èxit!', 'success');
       } else {
         if (statusDiv) {
-          statusDiv.style.color = '#7A3026';
+          statusDiv.style.color = '#831D1D';
           statusDiv.textContent = 'Error: ' + (res.error || 'No s\'ha pogut enviar');
         }
         showToast('Error: ' + (res.error || 'No s\'ha pogut enviar'), 'error');
       }
     } catch (e) {
       if (statusDiv) {
-        statusDiv.style.color = '#7A3026';
+        statusDiv.style.color = '#831D1D';
         statusDiv.textContent = 'Error: ' + e.message;
       }
       showToast(e.message, 'error');
@@ -1177,7 +1177,7 @@ function initBrandStudio() {
       e.preventDefault();
       const nom = nomInput ? nomInput.value.trim() : 'Roig de Coure';
       const sub = subInput ? subInput.value.trim() : "Taller d'Art i Ceràmica";
-      const prim = primaryHexInput ? primaryHexInput.value.trim() : '#C25E3A';
+      const prim = primaryHexInput ? primaryHexInput.value.trim() : '#831D1D';
       const sec = secondaryHexInput ? secondaryHexInput.value.trim() : '#5E7E6F';
       const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'serif';
       const logoUrl = logoUrlHidden ? logoUrlHidden.value : '';
@@ -1221,7 +1221,7 @@ async function openBrandStudioModal() {
     const cfg = await Store.getConfig();
     const nom = cfg.taller_nom || 'Roig de Coure';
     const sub = cfg.taller_subtitol || "Taller d'Art i Ceràmica";
-    const prim = cfg.brand_primary || '#7A3026';
+    const prim = cfg.brand_primary || '#831D1D';
     const sec = cfg.brand_secondary || '#5E7E6F';
     const font = cfg.brand_font || 'sans';
     const logoUrl = cfg.taller_logo_url || '';
@@ -1283,7 +1283,7 @@ function setLogoPreview(url) {
 function updateBrandPreview() {
   const nom = document.getElementById('brand-input-nom')?.value.trim() || 'Roig de Coure';
   const sub = document.getElementById('brand-input-subtitol')?.value.trim() || "Taller d'Art i Ceràmica";
-  const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#7A3026';
+  const prim = document.getElementById('brand-input-primary-hex')?.value.trim() || '#831D1D';
   const sec = document.getElementById('brand-input-secondary-hex')?.value.trim() || '#5E7E6F';
   const fontChoice = document.querySelector('input[name="brand_font_choice"]:checked')?.value || 'sans';
   const logoUrl = document.getElementById('brand-input-logo-url')?.value || '';
@@ -1676,7 +1676,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td colspan="4" class="app-empty-state">
           <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">No hi ha cap reserva per aquest dia</div>
           <div style="color: #6B7280; font-size: 13px; margin-bottom: 14px;">Totes les places estan disponibles.</div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="openReservesModal('${dateStr}')" style="border-color: #7A3026; color: #7A3026;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="openReservesModal('${dateStr}')" style="border-color: #831D1D; color: #831D1D;">
             + Crear una reserva aquí
           </button>
         </td>
@@ -1732,7 +1732,7 @@ async function renderAdminDayAppointments(dateStr) {
               </a>
             ` : ''}
             ${!isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #7A3026; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 8px; font-size: 12px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
                 Cancel·lar
               </button>
             ` : ''}

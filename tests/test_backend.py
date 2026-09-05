@@ -265,7 +265,7 @@ class TestCeramicsBackend(unittest.TestCase):
         brand_data = {
             'taller_nom': 'Roig de Coure Prova',
             'taller_subtitol': 'Taller d\'Art i Modelat',
-            'brand_primary': '#C25E3A',
+            'brand_primary': '#831D1D',
             'brand_secondary': '#5E7E6F',
             'brand_font': 'serif',
             'brand_palette': 'roigdecoure',
@@ -282,7 +282,7 @@ class TestCeramicsBackend(unittest.TestCase):
 
         self.assertEqual(cfg.get('taller_nom'), 'Roig de Coure Prova')
         self.assertEqual(cfg.get('taller_subtitol'), 'Taller d\'Art i Modelat')
-        self.assertEqual(cfg.get('brand_primary'), '#C25E3A')
+        self.assertEqual(cfg.get('brand_primary'), '#831D1D')
         self.assertEqual(cfg.get('brand_secondary'), '#5E7E6F')
         self.assertEqual(cfg.get('brand_font'), 'serif')
         self.assertEqual(cfg.get('taller_logo_url'), 'data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=')

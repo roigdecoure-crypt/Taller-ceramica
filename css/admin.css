@@ -98,7 +98,7 @@
 }
 
 .sidebar-item.active {
-  background-color: #7A3026; /* Coure Roig de Coure */
+  background-color: #831D1D; /* Coure Roig de Coure */
   color: #FFFFFF;
   border-left-color: #5E7E6F;
   font-weight: 700;
@@ -173,7 +173,7 @@
 }
 
 .btn-roig-coure {
-  background-color: #7A3026 !important;
+  background-color: #831D1D !important;
   color: #FFFFFF !important;
   border: none !important;
   font-weight: 600;
@@ -188,7 +188,7 @@
 }
 
 .btn-roig-coure:hover {
-  background-color: #5C221A !important;
+  background-color: #631515 !important;
 }
 
 /* Pestanyes de contingut */
@@ -244,7 +244,7 @@
 
 .reserves-banner-left .badge-val {
   font-weight: 800;
-  color: #7A3026;
+  color: #831D1D;
 }
 
 .reserves-capacitats-group {
@@ -281,7 +281,7 @@
 }
 
 .cal-header-blue {
-  background: #7A3026; /* Color corporatiu Roig de Coure */
+  background: #831D1D; /* Color corporatiu Roig de Coure */
   color: #FFFFFF;
   padding: 18px 20px;
 }
@@ -316,7 +316,7 @@
 
 .btn-cal-today {
   background: #FFFFFF;
-  color: #7A3026;
+  color: #831D1D;
   border: none;
   border-radius: 20px;
   padding: 4px 14px;
@@ -386,13 +386,13 @@
 }
 
 .cal-day-cell:hover:not(.empty) {
-  border-color: #7A3026;
+  border-color: #831D1D;
   background: #FDF9F8;
 }
 
 .cal-day-cell.selected {
-  border-color: #7A3026;
-  background: #FBF4F2;
+  border-color: #831D1D;
+  background: #FDF5F5;
   box-shadow: 0 0 0 2px rgba(122, 48, 38, 0.2);
 }
 
@@ -420,7 +420,7 @@
   text-align: center;
   white-space: nowrap;
   margin-top: 4px;
-  background: #7A3026;
+  background: #831D1D;
   color: #FFFFFF;
 }
 
@@ -461,7 +461,7 @@
 .app-list-date-title {
   font-size: 24px;
   font-weight: 800;
-  color: #7A3026;
+  color: #831D1D;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -550,7 +550,7 @@
 }
 
 .visited-checkbox-label:hover {
-  border-color: #7A3026;
+  border-color: #831D1D;
   background: #FDF9F8;
 }
 
@@ -706,7 +706,7 @@
   gap: 24px;
 }
 .balance-hero-card {
-  background: #7A3026;
+  background: #831D1D;
   color: #FFF;
   border-radius: 8px;
   padding: 20px;
@@ -718,7 +718,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #FBF4F2;
+  color: #FDF5F5;
 }
 .balance-hero-main .value {
   font-size: 32px;
@@ -729,7 +729,7 @@
 .balance-hero-sub {
   text-align: right;
   font-size: 13px;
-  color: #FBF4F2;
+  color: #FDF5F5;
   line-height: 1.6;
 }
 
@@ -803,7 +803,7 @@
   font-size: 16px;
   font-weight: 700;
   font-family: monospace;
-  color: #7A3026;
+  color: #831D1D;
 }
 .active-card-actions {
   display: flex;

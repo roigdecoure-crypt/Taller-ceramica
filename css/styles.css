@@ -5,9 +5,9 @@
  */
 
 :root {
-  --color-primary: #7A3026;       /* Coure profund oficial Roig de Coure */
-  --color-primary-dark: #5C221A;
-  --color-primary-light: #FBF4F2;
+  --color-primary: #831D1D;       /* Coure profund oficial Roig de Coure */
+  --color-primary-dark: #631515;
+  --color-primary-light: #FDF5F5;
   --color-secondary: #5E7E6F;     /* Sàlvia ceràmic */
   --color-secondary-light: #EEF5F1;
   --color-dark: #2E2825;          /* Argila fosca */
@@ -23,8 +23,8 @@
   --color-success-bg: #EEF5F1;
   --color-warning: #736B66;
   --color-warning-bg: #F4F8F5;
-  --color-danger: #7A3026;
-  --color-danger-bg: #FBF4F2;
+  --color-danger: #831D1D;
+  --color-danger-bg: #FDF5F5;
   --color-info: #5E7E6F;
   --color-info-bg: #EEF5F1;
 
@@ -335,7 +335,7 @@ table.data-table tr:hover td {
   animation: slideIn 0.3s ease;
 }
 .toast.success { background: #5E7E6F; }
-.toast.error { background: #7A3026; }
+.toast.error { background: #831D1D; }
 .toast.info { background: #2E2825; }
 
 @keyframes slideIn {
@@ -576,9 +576,9 @@ table.data-table tr:hover td {
   opacity: 0.7;
 }
 .res-cal-day.closed-holiday {
-  background: #FBF4F2;
+  background: #FDF5F5;
   border-color: #E2EBE5;
-  color: var(--color-primary, #7A3026);
+  color: var(--color-primary, #831D1D);
   cursor: not-allowed;
 }
 .res-cal-day.open-day {
@@ -637,12 +637,12 @@ table.data-table tr:hover td {
   color: #5E7E6F;
 }
 .res-cal-day .badge-ultimes {
-  background: #FBF4F2;
-  color: #7A3026;
+  background: #FDF5F5;
+  color: #831D1D;
 }
 .res-cal-day .badge-complet {
-  background: #FBF4F2;
-  color: #7A3026;
+  background: #FDF5F5;
+  color: #831D1D;
 }
 .res-cal-day .badge-tancat {
   background: #F4F8F5;
@@ -734,12 +734,12 @@ table.data-table tr:hover td {
   color: #5E7E6F;
 }
 .res-slot-cap-badge.warning {
-  background: #FBF4F2;
-  color: #7A3026;
+  background: #FDF5F5;
+  color: #831D1D;
 }
 .res-slot-cap-badge.full {
-  background: #FBF4F2;
-  color: #7A3026;
+  background: #FDF5F5;
+  color: #831D1D;
 }
 
 /* Barra de Progrés d'Aforament Franja (Màx 12) */
@@ -759,7 +759,7 @@ table.data-table tr:hover td {
   transition: width 0.3s ease;
 }
 .res-slot-progress-fill.warning { background: #736B66; }
-.res-slot-progress-fill.full { background: #7A3026; }
+.res-slot-progress-fill.full { background: #831D1D; }
 .res-slot-progress-label {
   display: flex;
   justify-content: space-between;
@@ -806,7 +806,7 @@ table.data-table tr:hover td {
   color: #5E7E6F;
 }
 .res-slot-act-row.is-full .res-slot-act-spots {
-  color: #7A3026;
+  color: #831D1D;
 }
 .btn-book-act {
   padding: 4px 10px;
@@ -865,14 +865,14 @@ table.data-table tr:hover td {
 .btn-admin-cancel-res {
   padding: 2px 8px;
   font-size: 11px;
-  color: #7A3026;
+  color: #831D1D;
   border: 1px solid #E5DDD5;
   border-radius: 4px;
   background: #FFF;
   cursor: pointer;
 }
 .btn-admin-cancel-res:hover {
-  background: #FBF4F2;
+  background: #FDF5F5;
 }
 
 /* Modal de Confirmació de Reserva Net */
