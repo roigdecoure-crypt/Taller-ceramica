@@ -338,6 +338,7 @@ async function renderReservationsSection(studentId) {
 // Gestió de Finestres Flotants (Modals)
 function openModal(modal) {
   if (!modal) return;
+  modal.style.removeProperty('display');
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -345,6 +346,7 @@ function openModal(modal) {
 function closeModal(modal) {
   if (!modal) return;
   modal.classList.remove('active');
+  modal.style.removeProperty('display');
   if (!document.querySelector('.modal-backdrop.active')) {
     document.body.style.overflow = '';
   }
@@ -795,6 +797,21 @@ function setupEventListeners() {
   const btnCloseWalletOptionsFooter = document.getElementById('btn-close-wallet-options-footer');
 
   const openWalletModal = () => {
+    if (modalQrZoom && modalQrZoom.style.display === 'flex') {
+      modalQrZoom.style.display = 'none';
+    }
+    const raw = currentStudent;
+    const s = (raw && raw.alumne) ? raw.alumne : raw;
+    if (s && s.id) {
+      const btnLinkPkpass = document.getElementById('btn-link-download-pkpass');
+      if (btnLinkPkpass) {
+        btnLinkPkpass.href = `/api/wallet/pass?id=${encodeURIComponent(s.id)}`;
+      }
+      const btnCarnetWeb = document.getElementById('btn-wallet-modal-carnet-link');
+      if (btnCarnetWeb) {
+        btnCarnetWeb.href = `carnet.html?id=${encodeURIComponent(s.id)}`;
+      }
+    }
     if (modalWalletOptions) openModal(modalWalletOptions);
   };
   const closeWalletModal = () => {
@@ -827,6 +844,7 @@ function setupEventListeners() {
       if (modalQrZoom && modalQrZoom.style.display === 'flex') {
         modalQrZoom.style.display = 'none';
       }
+      if (modalWalletOptions) closeModal(modalWalletOptions);
       const activeModals = document.querySelectorAll('.modal-backdrop.active');
       activeModals.forEach(m => closeModal(m));
       document.body.style.overflow = '';
@@ -839,7 +857,8 @@ function setupEventListeners() {
  * optimitzada exclusivament per a pantalles de rellotges intel·ligents (Apple Watch i Wear OS).
  */
 async function downloadWatchQrImage(student) {
-  const s = student || currentStudent;
+  const raw = student || currentStudent;
+  const s = (raw && raw.alumne) ? raw.alumne : raw;
   if (!s || !s.id) {
     showToast('No s\'ha pogut identificar l\'alumne/a.', 'error');
     return;
