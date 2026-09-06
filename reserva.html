@@ -207,29 +207,14 @@
     }
     .date-control {
       flex: 1;
-      min-width: 220px;
+      width: 100%;
     }
     .date-control label {
       font-size: 13px;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       display: block;
       color: var(--dark);
-    }
-    .date-control input[type="date"] {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 15px;
-      font-family: inherit;
-      color: var(--dark);
-      background: #FFFFFF;
-      outline: none;
-    }
-    .date-control input[type="date"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(194, 94, 58, 0.15);
     }
     .schedule-info {
       font-size: 12px;
@@ -237,10 +222,238 @@
       background: var(--secondary-light);
       padding: 8px 12px;
       border-radius: 8px;
-      margin-top: 6px;
+      margin-top: 10px;
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    /* Calendari visual incrustat */
+    .inline-cal-card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .inline-cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 8px;
+    }
+    .inline-cal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+      letter-spacing: -0.2px;
+    }
+    .inline-cal-nav {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .inline-cal-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--border);
+      color: var(--dark);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .inline-cal-btn:hover:not(:disabled) {
+      background: #FDF7F4;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .inline-cal-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .inline-cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .inline-cal-weekday {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .inline-cal-weekday.closed {
+      color: #B0A39B;
+    }
+    .inline-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+    .inline-cal-day {
+      min-height: 52px;
+      border: 1.5px solid #EDE5DD;
+      border-radius: 8px;
+      padding: 6px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #FFFFFF;
+      transition: all 0.15s ease;
+      position: relative;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    .inline-cal-day.empty {
+      border: none;
+      background: transparent;
+      cursor: default;
+    }
+    .inline-cal-day .day-num {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--dark);
+    }
+    .inline-cal-day .day-status {
+      font-size: 9.5px;
+      margin-top: 4px;
+      line-height: 1;
+      font-weight: 600;
+      color: #6B7280;
+    }
+    /* Dies de descans setmanal (Dl i Dt) */
+    .inline-cal-day.closed-rest {
+      background: #F7F5F3;
+      border-color: #EAE3DC;
+      color: #A89B92;
+      cursor: not-allowed;
+    }
+    .inline-cal-day.closed-rest .day-num {
+      color: #B5A89E;
+    }
+    .inline-cal-day.closed-rest .day-status {
+      color: #B5A89E;
+    }
+    /* Dies anteriors a avui */
+    .inline-cal-day.disabled {
+      background: #FAFAFA;
+      border-color: #EEEEEE;
+      cursor: not-allowed;
+    }
+    .inline-cal-day.disabled .day-num {
+      color: #D1D5DB;
+    }
+    .inline-cal-day.disabled .day-status {
+      display: none;
+    }
+    /* Festius o dies tancats especials */
+    .inline-cal-day.closed-special {
+      background: #FDF5F5;
+      border-color: #F8D7DA;
+      cursor: not-allowed;
+    }
+    .inline-cal-day.closed-special .day-num {
+      color: #831D1D;
+    }
+    .inline-cal-day.closed-special .day-status {
+      color: #831D1D;
+    }
+    /* Dies oberts (Dc-Dg) */
+    .inline-cal-day.open-day {
+      border-color: #E2D7CE;
+    }
+    .inline-cal-day.open-day:hover {
+      border-color: var(--primary);
+      background: #FFF8F5;
+      transform: translateY(-1px);
+    }
+    .inline-cal-day.open-day .day-status {
+      color: var(--secondary);
+    }
+    .inline-cal-day.is-today {
+      border-color: #C25E3A;
+      box-shadow: inset 0 0 0 1px #C25E3A;
+    }
+    .inline-cal-day.is-today .day-status {
+      color: #C25E3A;
+      font-weight: 700;
+    }
+    /* Dia seleccionat */
+    .inline-cal-day.selected {
+      background: var(--primary) !important;
+      border-color: var(--primary) !important;
+      box-shadow: 0 3px 8px rgba(131, 29, 29, 0.35) !important;
+      transform: scale(1.02);
+    }
+    .inline-cal-day.selected .day-num {
+      color: #FFFFFF !important;
+      font-weight: 800;
+    }
+    .inline-cal-day.selected .day-status {
+      color: #FFFFFF !important;
+      font-weight: 700;
+    }
+    /* Banner data seleccionada */
+    .selected-date-banner {
+      background: #FAF7F5;
+      border: 1px solid #EFE4DC;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .selected-date-text {
+      font-size: 13.5px;
+      color: var(--dark);
+    }
+    .selected-date-highlight {
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .selected-date-status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: #EEF5F1;
+      color: #5E7E6F;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    @media (max-width: 480px) {
+      .inline-cal-card {
+        padding: 12px 8px;
+      }
+      .inline-cal-grid {
+        gap: 3px;
+      }
+      .inline-cal-day {
+        min-height: 44px;
+        padding: 4px 1px;
+      }
+      .inline-cal-day .day-num {
+        font-size: 13px;
+      }
+      .inline-cal-day .day-status {
+        font-size: 8.5px;
+      }
+      .inline-cal-weekday {
+        font-size: 10px;
+      }
     }
 
     /* Selector de Franges */
@@ -602,8 +815,42 @@
           </div>
           <div class="date-row">
             <div class="date-control">
-              <label for="booking-date">Data de la sessió</label>
-              <input type="date" id="booking-date" required>
+              <label for="booking-date">Data de la sessió: Selecciona el dia al calendari</label>
+              <input type="hidden" id="booking-date" name="booking-date" required>
+
+              <!-- Calendari visual incrustat -->
+              <div class="inline-cal-card" id="inline-calendar-container">
+                <div class="inline-cal-header">
+                  <div class="inline-cal-title" id="inline-cal-title">Carregant calendari...</div>
+                  <div class="inline-cal-nav">
+                    <button type="button" class="inline-cal-btn" id="btn-cal-prev" title="Mes anterior">‹</button>
+                    <button type="button" class="inline-cal-btn" id="btn-cal-today" title="Anar a avui">Avui</button>
+                    <button type="button" class="inline-cal-btn" id="btn-cal-next" title="Mes següent">›</button>
+                  </div>
+                </div>
+
+                <div class="inline-cal-weekdays">
+                  <div class="inline-cal-weekday closed" title="Dilluns tancat">Dl</div>
+                  <div class="inline-cal-weekday closed" title="Dimarts tancat">Dt</div>
+                  <div class="inline-cal-weekday">Dc</div>
+                  <div class="inline-cal-weekday">Dj</div>
+                  <div class="inline-cal-weekday">Dv</div>
+                  <div class="inline-cal-weekday">Ds</div>
+                  <div class="inline-cal-weekday">Dg</div>
+                </div>
+
+                <div class="inline-cal-grid" id="inline-cal-days">
+                  <!-- Generat per JavaScript -->
+                </div>
+
+                <div class="selected-date-banner" id="selected-date-banner">
+                  <div class="selected-date-text">
+                    Data seleccionada: <span class="selected-date-highlight" id="selected-date-text">--</span>
+                  </div>
+                  <span class="selected-date-status-badge" id="selected-date-status-badge">Dia obert</span>
+                </div>
+              </div>
+
               <div class="schedule-info">
                 Obrim de <strong>Dimecres a Diumenge</strong> (Dilluns i Dimarts descans)
               </div>
@@ -986,15 +1233,212 @@
       return `${dies[d.getDay()]}, ${d.getDate()} de ${mesos[d.getMonth()]} de ${d.getFullYear()}`;
     }
 
+    // Calendari Visual Incrustat
+    const CAL_MESOS = [
+      'Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
+      'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'
+    ];
+    let calCurrentYear = new Date().getFullYear();
+    let calCurrentMonth = new Date().getMonth() + 1;
+    const calMonthCache = {};
+
+    function updateSelectedDateDisplay(isoStr) {
+      const textEl = document.getElementById('selected-date-text');
+      const badgeEl = document.getElementById('selected-date-status-badge');
+      if (textEl) {
+        textEl.textContent = formatCatalanDate(isoStr);
+      }
+      if (badgeEl) {
+        badgeEl.textContent = 'Dia seleccionat';
+      }
+    }
+
+    function selectCalendarDate(isoStr) {
+      state.data = isoStr;
+      const dateInput = document.getElementById('booking-date');
+      if (dateInput) {
+        dateInput.value = isoStr;
+      }
+      updateSelectedDateDisplay(isoStr);
+
+      const today = new Date();
+      const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      document.querySelectorAll('.inline-cal-day.open-day').forEach(cell => {
+        const cDate = cell.getAttribute('data-date');
+        const isSel = cDate === isoStr;
+        cell.classList.toggle('selected', isSel);
+        const stEl = cell.querySelector('.day-status');
+        if (stEl) {
+          if (isSel) {
+            stEl.textContent = 'Triat';
+          } else if (cDate === todayISO) {
+            stEl.textContent = 'Avui';
+          } else {
+            stEl.textContent = 'Obert';
+          }
+        }
+      });
+
+      checkAvailability();
+    }
+
+    async function renderInlineCalendar(year, month) {
+      const titleEl = document.getElementById('inline-cal-title');
+      const daysContainer = document.getElementById('inline-cal-days');
+      const btnPrev = document.getElementById('btn-cal-prev');
+      if (!titleEl || !daysContainer) return;
+
+      titleEl.textContent = `${CAL_MESOS[month - 1]} ${year}`;
+
+      const today = new Date();
+      const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const thisYear = today.getFullYear();
+      const thisMonth = today.getMonth() + 1;
+
+      if (btnPrev) {
+        btnPrev.disabled = (year < thisYear) || (year === thisYear && month <= thisMonth);
+      }
+
+      // Consulta de dades de mes en segon pla per detectar festius i tancaments especials
+      const cacheKey = `${year}-${month}`;
+      const monthInfo = calMonthCache[cacheKey] || null;
+      if (!monthInfo) {
+        fetch(`/api/reserves/mes?any=${year}&mes=${month}&t=${Date.now()}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok) {
+              calMonthCache[cacheKey] = data;
+              if (calCurrentYear === year && calCurrentMonth === month) {
+                renderInlineCalendar(year, month);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+
+      const daysInMonth = new Date(year, month, 0).getDate();
+      // Dia 1 del mes: getDay() 0=Dg, 1=Dl... -> Convertir a 0=Dl ... 6=Dg
+      const firstCol = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+
+      let html = '';
+      for (let i = 0; i < firstCol; i++) {
+        html += '<div class="inline-cal-day empty"></div>';
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dObj = new Date(year, month - 1, d);
+        const dayOfWeek = (dObj.getDay() + 6) % 7; // 0=Dl, 1=Dt, 2=Dc, 3=Dj, 4=Dv, 5=Ds, 6=Dg
+        const isPast = dayStr < todayISO;
+        const isToday = dayStr === todayISO;
+        const isRest = (dayOfWeek === 0 || dayOfWeek === 1); // Dilluns o Dimarts
+        const isSelected = (dayStr === state.data);
+
+        let dData = (monthInfo && monthInfo.dies) ? monthInfo.dies[dayStr] : null;
+        let isSpecialClosed = !isRest && dData && dData.tancat;
+        let specialMotiu = dData && dData.motiu ? dData.motiu : 'Tancat';
+
+        if (isPast) {
+          html += `
+            <div class="inline-cal-day disabled" title="Data anterior">
+              <span class="day-num">${d}</span>
+            </div>
+          `;
+        } else if (isRest) {
+          html += `
+            <div class="inline-cal-day closed-rest" title="Tancat per descans setmanal (Dilluns i Dimarts)">
+              <span class="day-num">${d}</span>
+              <span class="day-status">Tancat</span>
+            </div>
+          `;
+        } else if (isSpecialClosed) {
+          html += `
+            <div class="inline-cal-day closed-special" title="${specialMotiu}">
+              <span class="day-num">${d}</span>
+              <span class="day-status">Festiu</span>
+            </div>
+          `;
+        } else {
+          const statusText = isSelected ? 'Triat' : (isToday ? 'Avui' : 'Obert');
+          const selClass = isSelected ? 'selected' : '';
+          const todayClass = isToday ? 'is-today' : '';
+          html += `
+            <div class="inline-cal-day open-day ${todayClass} ${selClass}" data-date="${dayStr}" title="Fer clic per seleccionar">
+              <span class="day-num">${d}</span>
+              <span class="day-status">${statusText}</span>
+            </div>
+          `;
+        }
+      }
+
+      daysContainer.innerHTML = html;
+
+      // Assignar esdeveniment de clic a cada dia obert
+      daysContainer.querySelectorAll('.inline-cal-day.open-day').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const date = cell.getAttribute('data-date');
+          selectCalendarDate(date);
+        });
+      });
+    }
+
     // Gestió d'esdeveniments
     document.addEventListener('DOMContentLoaded', async () => {
       await loadActivitatsConfig();
 
       const dateInput = document.getElementById('booking-date');
       const todayISO = getNextOpenDate();
-      dateInput.min = new Date().toISOString().slice(0, 10);
-      dateInput.value = todayISO;
+      if (dateInput) {
+        dateInput.min = new Date().toISOString().slice(0, 10);
+        dateInput.value = todayISO;
+      }
       state.data = todayISO;
+
+      const dateParts = todayISO.split('-').map(Number);
+      calCurrentYear = dateParts[0];
+      calCurrentMonth = dateParts[1];
+
+      // Navegació de mesos del calendari
+      const btnCalPrev = document.getElementById('btn-cal-prev');
+      const btnCalNext = document.getElementById('btn-cal-next');
+      const btnCalToday = document.getElementById('btn-cal-today');
+
+      if (btnCalPrev) {
+        btnCalPrev.addEventListener('click', () => {
+          calCurrentMonth--;
+          if (calCurrentMonth < 1) {
+            calCurrentMonth = 12;
+            calCurrentYear--;
+          }
+          renderInlineCalendar(calCurrentYear, calCurrentMonth);
+        });
+      }
+
+      if (btnCalNext) {
+        btnCalNext.addEventListener('click', () => {
+          calCurrentMonth++;
+          if (calCurrentMonth > 12) {
+            calCurrentMonth = 1;
+            calCurrentYear++;
+          }
+          renderInlineCalendar(calCurrentYear, calCurrentMonth);
+        });
+      }
+
+      if (btnCalToday) {
+        btnCalToday.addEventListener('click', () => {
+          const now = new Date();
+          calCurrentYear = now.getFullYear();
+          calCurrentMonth = now.getMonth() + 1;
+          const openDate = getNextOpenDate();
+          selectCalendarDate(openDate);
+          renderInlineCalendar(calCurrentYear, calCurrentMonth);
+        });
+      }
+
+      updateSelectedDateDisplay(todayISO);
+      renderInlineCalendar(calCurrentYear, calCurrentMonth);
 
       // Selecció d'activitats
       document.querySelectorAll('.act-card').forEach(card => {
@@ -1015,10 +1459,13 @@
         });
       });
 
-      dateInput.addEventListener('change', () => {
-        state.data = dateInput.value;
-        checkAvailability();
-      });
+      if (dateInput) {
+        dateInput.addEventListener('change', () => {
+          state.data = dateInput.value;
+          updateSelectedDateDisplay(dateInput.value);
+          checkAvailability();
+        });
+      }
 
       // Comprovar disponibilitat inicial
       checkAvailability();
