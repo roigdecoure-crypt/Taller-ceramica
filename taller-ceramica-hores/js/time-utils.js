@@ -135,6 +135,18 @@ const TimeUtils = {
    */
   formatTime(iso) {
     if (!iso) return '-';
+    if (typeof iso === 'string') {
+      const s = iso.trim();
+      // Si ja és directament HH:mm o HH:mm:ss
+      if (/^\d{2}:\d{2}(:\d{2})?$/.test(s)) {
+        return s.length === 5 ? `${s}:00` : s;
+      }
+      // Si és un format ISO local sense sufix de zona (YYYY-MM-DDTHH:mm:ss)
+      if (s.includes('T') && !s.includes('Z') && !s.includes('+') && !s.slice(10).includes('-')) {
+        const timePart = s.split('T')[1].split('.')[0];
+        return timePart.length === 5 ? `${timePart}:00` : timePart;
+      }
+    }
     const d = new Date(iso);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleTimeString('ca-ES', {
@@ -142,6 +154,24 @@ const TimeUtils = {
       minute: '2-digit',
       second: '2-digit'
     });
+  },
+
+  /**
+   * Retorna la data i hora local en cadena ISO "YYYY-MM-DDTHH:mm:ss"
+   */
+  toLocalIsoString(date = new Date()) {
+    const d = new Date(date);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  },
+
+  /**
+   * Retorna la data local en format "YYYY-MM-DD"
+   */
+  toLocalDateString(date = new Date()) {
+    const d = new Date(date);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   },
 
   /**

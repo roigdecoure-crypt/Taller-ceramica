@@ -15,7 +15,64 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+    LOCAL_TZ = ZoneInfo("Europe/Madrid")
+except Exception:
+    LOCAL_TZ = None
+
+def get_now():
+    """
+    Retorna la data i hora actual a la zona horària oficial del taller (Europe/Madrid).
+    Evita el desplaçament d'1 o 2 hores quan el servidor s'executa a plataformes al núvol (Render, Docker, etc.) en UTC.
+    Retorna un datetime naive que conté exactament l'hora local de Catalunya.
+    """
+    if LOCAL_TZ is not None:
+        try:
+            return datetime.now(LOCAL_TZ).replace(tzinfo=None)
+        except Exception:
+            pass
+
+    utcnow = datetime.now(timezone.utc)
+    year = utcnow.year
+    d_mar = datetime(year, 3, 31, 1, 0, tzinfo=timezone.utc)
+    start_dst = d_mar - timedelta(days=(d_mar.weekday() + 1) % 7)
+    d_oct = datetime(year, 10, 31, 1, 0, tzinfo=timezone.utc)
+    end_dst = d_oct - timedelta(days=(d_oct.weekday() + 1) % 7)
+    is_dst = start_dst <= utcnow < end_dst
+    offset = timedelta(hours=2 if is_dst else 1)
+    return (utcnow + offset).replace(tzinfo=None)
+
+def parse_to_local_dt(dt_str):
+    """
+    Converteix qualsevol cadena de data/hora (amb o sense Z, amb o sense offset)
+    a datetime local naive a Europe/Madrid.
+    """
+    if not dt_str:
+        return get_now()
+    s = str(dt_str).strip()
+    if s.endswith('Z'):
+        s = s[:-1] + '+00:00'
+    try:
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is not None:
+            if LOCAL_TZ:
+                return dt.astimezone(LOCAL_TZ).replace(tzinfo=None)
+            else:
+                dt_utc = dt.astimezone(timezone.utc)
+                year = dt_utc.year
+                d_mar = datetime(year, 3, 31, 1, 0, tzinfo=timezone.utc)
+                start_dst = d_mar - timedelta(days=(d_mar.weekday() + 1) % 7)
+                d_oct = datetime(year, 10, 31, 1, 0, tzinfo=timezone.utc)
+                end_dst = d_oct - timedelta(days=(d_oct.weekday() + 1) % 7)
+                is_dst = start_dst <= dt_utc < end_dst
+                offset = timedelta(hours=2 if is_dst else 1)
+                return (dt_utc + offset).replace(tzinfo=None)
+        return dt
+    except Exception:
+        return get_now()
 
 PORT = int(os.environ.get('PORT', 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1259,13 +1316,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/reserves/disponibilitat':
-                data_str = params.get('data', [datetime.now().strftime('%Y-%m-%d')])[0]
+                data_str = params.get('data', [get_now().strftime('%Y-%m-%d')])[0]
                 disp = get_disponibilitat(data_str)
                 self.send_json({'ok': True, **disp})
                 return
 
             elif path == '/api/reserves/mes':
-                now = datetime.now()
+                now = get_now()
                 try:
                     any_val = int(params.get('any', [now.year])[0])
                     mes_val = int(params.get('mes', [now.month])[0])
@@ -1304,7 +1361,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     config = {r['clau']: r['valor'] for r in cursor.fetchall()}
                 self.send_json({
                     'versio': '1.0',
-                    'timestamp': datetime.now().isoformat(),
+                    'timestamp': get_now().strftime('%Y-%m-%dT%H:%M:%S'),
                     'alumnes': alumnes,
                     'paquets': paquets,
                     'sessions': sessions,
@@ -1377,7 +1434,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if not pin:
                             pin = str(max_num + 1)
 
-                    data_alta = data.get('data_alta') or datetime.now().isoformat()
+                    data_alta = data.get('data_alta') or get_now().strftime('%Y-%m-%dT%H:%M:%S')
 
                     cursor.execute('''
                         INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
@@ -1431,14 +1488,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     tipus = data.get('tipus') or ('manual' if requested_action in ('entrada', 'sortida') else 'qr')
 
                     if custom_time:
-                        try:
-                            now = datetime.fromisoformat(custom_time)
-                        except Exception:
-                            now = datetime.now()
+                        now = parse_to_local_dt(custom_time)
                     else:
-                        now = datetime.now()
+                        now = get_now()
 
-                    now_iso = now.isoformat()
+                    now_iso = now.strftime('%Y-%m-%dT%H:%M:%S')
                     today = now.strftime('%Y-%m-%d')
 
                     # Comprovar si té una sessió oberta
@@ -1459,7 +1513,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if open_session:
                             cursor.execute('UPDATE sessions SET estat = "tancada_forçada", notes = "Reemplaçada per nova entrada manual" WHERE id = ?', (open_session['id'],))
 
-                        session_id = f"SES-{datetime.now().strftime('%Y%m%d%H%M%S')}-{student_id}"
+                        session_id = f"SES-{now.strftime('%Y%m%d%H%M%S')}-{student_id}"
                         cursor.execute('''
                             INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
                             VALUES (?, ?, ?, ?, NULL, 0, '00:00:00', ?, 'oberta', '')
@@ -1501,7 +1555,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             }, 400)
                             return
 
-                        entrada_dt = datetime.fromisoformat(open_session['entrada'])
+                        entrada_dt = parse_to_local_dt(open_session['entrada'])
                         diff = now - entrada_dt
                         durada_segons = max(0, int(diff.total_seconds()))
                         durada_hms = format_hms(durada_segons)
@@ -1564,7 +1618,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_json({'ok': False, 'error': 'No s\'ha trobat cap sessió oberta'}, 404)
                         return
 
-                    entrada_dt = datetime.fromisoformat(sess['entrada'])
+                    entrada_dt = parse_to_local_dt(sess['entrada'])
 
                     # Determinar sortida i durada
                     if durada_manual:
@@ -1580,11 +1634,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             else:
                                 durada_segons = parts[0]*3600
                         sortida_dt = datetime.fromtimestamp(entrada_dt.timestamp() + durada_segons)
-                        sortida_iso = sortida_dt.isoformat()
+                        sortida_iso = sortida_dt.strftime('%Y-%m-%dT%H:%M:%S')
                     elif sortida_manual:
-                        sortida_dt = datetime.fromisoformat(sortida_manual)
+                        sortida_dt = parse_to_local_dt(sortida_manual)
                         durada_segons = max(0, int((sortida_dt - entrada_dt).total_seconds()))
-                        sortida_iso = sortida_manual
+                        sortida_iso = sortida_dt.strftime('%Y-%m-%dT%H:%M:%S')
                     else:
                         # Per defecte: durada configurada al taller (1h 30m = 5400 segons)
                         cursor.execute('SELECT valor FROM configuracio WHERE clau = "hores_per_defecte_oblit"')
@@ -1593,7 +1647,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         parts = [int(p) for p in def_dur.split(':')]
                         durada_segons = parts[0]*3600 + parts[1]*60 + (parts[2] if len(parts) > 2 else 0)
                         sortida_dt = datetime.fromtimestamp(entrada_dt.timestamp() + durada_segons)
-                        sortida_iso = sortida_dt.isoformat()
+                        sortida_iso = sortida_dt.strftime('%Y-%m-%dT%H:%M:%S')
 
                     durada_hms = format_hms(durada_segons)
 
@@ -1637,14 +1691,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 metode = data.get('metodePagament') or 'Efectiu'
                 stripe_session_id = data.get('stripeSessionId') or ''
                 notes = data.get('notes') or ''
-                data_compra = data.get('data') or datetime.now().isoformat()
+                data_compra = data.get('data') or get_now().strftime('%Y-%m-%dT%H:%M:%S')
 
                 if not student_id or hores <= 0:
                     self.send_json({'ok': False, 'error': 'Cal indicar alumne i hores superiors a 0'}, 400)
                     return
 
                 segons = int(round(hores * 3600))
-                pack_id = f"PK-{datetime.now().strftime('%Y%m%d%H%M%S')}-{student_id}"
+                pack_id = f"PK-{get_now().strftime('%Y%m%d%H%M%S')}-{student_id}"
 
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -1681,7 +1735,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Creació o edició manual de sessió
                 sess_id = data.get('id')
                 student_id = data.get('studentId')
-                data_sess = data.get('data') or datetime.now().strftime('%Y-%m-%d')
+                data_sess = data.get('data') or get_now().strftime('%Y-%m-%d')
                 entrada = data.get('entrada')
                 sortida = data.get('sortida')
                 notes = data.get('notes') or ''
@@ -1690,8 +1744,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': 'Cal indicar alumne, hora d\'entrada i hora de sortida'}, 400)
                     return
 
-                entrada_dt = datetime.fromisoformat(entrada)
-                sortida_dt = datetime.fromisoformat(sortida)
+                entrada_dt = parse_to_local_dt(entrada)
+                sortida_dt = parse_to_local_dt(sortida)
                 durada_segons = max(0, int((sortida_dt - entrada_dt).total_seconds()))
                 durada_hms = format_hms(durada_segons)
 
@@ -1704,7 +1758,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             WHERE id = ?
                         ''', (data_sess, entrada, sortida, durada_segons, durada_hms, notes, sess_id))
                     else:
-                        sess_id = f"SES-MANUAL-{datetime.now().strftime('%Y%m%d%H%M%S')}-{student_id}"
+                        sess_id = f"SES-MANUAL-{get_now().strftime('%Y%m%d%H%M%S')}-{student_id}"
                         cursor.execute('''
                             INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
                             VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', 'tancada', ?)
@@ -1772,14 +1826,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             if not email and al_found.get('email'):
                                 email = str(al_found['email']).strip()
                         elif is_soc_alumne and not student_id:
-                            student_id = f"ALU-{int(datetime.now().timestamp())}"
+                            student_id = f"ALU-{int(get_now().timestamp())}"
 
                 # Si és un client no alumne (reserva des de la web pública reserva.html)
                 if not student_id:
                     if not student_nom or not telefon:
                         self.send_json({'ok': False, 'error': 'Cal indicar el teu nom complet i telèfon de contacte per a la reserva'}, 400)
                         return
-                    student_id = f"CLI-{int(datetime.now().timestamp())}"
+                    student_id = f"CLI-{int(get_now().timestamp())}"
 
                 # Validar dia tancat (dilluns/dimarts descans, festiu o vacances)
                 estat_dia = is_dia_tancat(data_res)
@@ -1866,8 +1920,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom}. Queden {lliures_act} places d'aquesta activitat (Màx. {act_obj['capacitatMax']})."}, 400)
                         return
 
-                    res_id = f"RES-{int(datetime.now().timestamp())}-{student_id}"
-                    now_iso = datetime.now().isoformat()
+                    res_id = f"RES-{int(get_now().timestamp())}-{student_id}"
+                    now_iso = get_now().strftime('%Y-%m-%dT%H:%M:%S')
                     cal_event_id = (data.get('calendar_event_id') or '').strip() or None
                     cursor.execute('''
                         INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at, calendar_event_id, val_regal, codi_val_regal)

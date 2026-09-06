@@ -268,8 +268,8 @@ const Store = {
     }
 
     const now = payload.customTime ? new Date(payload.customTime) : new Date();
-    const nowIso = now.toISOString();
-    const today = nowIso.slice(0, 10);
+    const nowIso = TimeUtils.toLocalIsoString ? TimeUtils.toLocalIsoString(now) : now.toISOString();
+    const today = TimeUtils.toLocalDateString ? TimeUtils.toLocalDateString(now) : nowIso.slice(0, 10);
     const requestedAction = payload.action;
 
     // Buscar sessió oberta
