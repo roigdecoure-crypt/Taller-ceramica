@@ -1130,6 +1130,32 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'data': rows})
                 return
 
+            elif path == '/api/alumnes/verificar':
+                # Verificació privada d'alumne per a la reserva pública (sense exposar la llista d'alumnes)
+                query_str = urllib.parse.parse_qs(url.query).get('q', [''])[0].strip()
+                if not query_str:
+                    self.send_json({'ok': True, 'found': False, 'message': 'Cal indicar un nom o codi'})
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, query_str, actiu_only=True)
+                    if student:
+                        self.send_json({
+                            'ok': True,
+                            'found': True,
+                            'alumne': {
+                                'id': student['id'],
+                                'nom': student['nom'],
+                                'cognoms': student['cognoms'] or '',
+                                'telefon': student['telefon'] or '',
+                                'email': student['email'] or ''
+                            }
+                        })
+                    else:
+                        self.send_json({'ok': True, 'found': False, 'message': 'No s\'ha trobat cap alumne actiu amb aquest nom o número'})
+                return
+
             elif path.startswith('/api/alumnes/'):
                 student_code = urllib.parse.unquote(path.replace('/api/alumnes/', '').strip())
                 with get_db() as conn:

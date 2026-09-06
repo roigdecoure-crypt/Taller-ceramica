@@ -521,15 +521,16 @@
 
                 <!-- Panell 1: Identificació per Nom -->
                 <div id="panel-alumne-nom">
-                  <label for="select-student-name" style="font-size: 12px; font-weight: 600; color: var(--dark); display: block; margin-bottom: 5px;">
-                    Tria el teu nom de la llista d'alumnes del taller:
+                  <label for="input-student-name" style="font-size: 12px; font-weight: 600; color: var(--dark); display: block; margin-bottom: 5px;">
+                    Escriu el teu nom i cognoms:
                   </label>
-                  <select id="select-student-name" class="pax-select" style="width: 100%; height: 46px; font-size: 14px; margin-bottom: 6px;">
-                    <option value="">-- Carregant llista d'alumnes... --</option>
-                  </select>
-                  <div style="font-size: 11.5px; color: var(--muted);">
-                    Selecciona el teu nom per vincular la teva plaça a la teva fitxa d'alumne.
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-student-name" placeholder="Ex: Maria Garcia" class="form-control" style="flex: 1; font-size: 14px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; outline: none;">
+                    <button type="button" id="btn-cercar-nom" class="btn" style="background: var(--primary); color: #FFF; border: none; border-radius: 8px; padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer;">
+                      Verificar
+                    </button>
                   </div>
+                  <div id="student-name-error" style="display: none; color: #831D1D; font-size: 12px; margin-top: 6px;"></div>
                 </div>
 
                 <!-- Panell 2: Identificació per Número / Codi -->
@@ -1022,41 +1023,7 @@
       // Comprovar disponibilitat inicial
       checkAvailability();
 
-      // Gestió Sóc Alumne
-      let allStudentsList = [];
-
-      async function loadStudentsForSelector() {
-        if (allStudentsList.length > 0) return;
-        try {
-          const res = await fetch('/api/alumnes?t=' + Date.now());
-          const json = await res.json();
-          if (json.ok && Array.isArray(json.data)) {
-            allStudentsList = json.data;
-            populateStudentDropdown();
-          }
-        } catch (err) {
-          console.warn('Error carregant alumnes:', err);
-          const sel = document.getElementById('select-student-name');
-          if (sel) sel.innerHTML = '<option value="">-- Introdueix el teu nom directament --</option>';
-        }
-      }
-
-      function populateStudentDropdown() {
-        const selectEl = document.getElementById('select-student-name');
-        if (!selectEl) return;
-        selectEl.innerHTML = '<option value="">-- Tria el teu nom de la llista --</option>';
-        allStudentsList.forEach(s => {
-          const opt = document.createElement('option');
-          opt.value = s.id;
-          const fullNom = `${s.nom} ${s.cognoms || ''}`.trim();
-          opt.textContent = `${fullNom} (${s.id})`;
-          opt.dataset.nom = fullNom;
-          opt.dataset.tel = s.telefon || '';
-          opt.dataset.email = s.email || '';
-          selectEl.appendChild(opt);
-        });
-      }
-
+      // Gestió Sóc Alumne (verificació privada sense llista pública d'alumnes)
       function setAlumneIdMode(mode) {
         const btnNom = document.getElementById('btn-mode-nom');
         const btnNum = document.getElementById('btn-mode-num');
@@ -1134,49 +1101,45 @@
         if (alertBox) alertBox.style.display = 'none';
         const step4Banner = document.getElementById('step4-alumne-banner');
         if (step4Banner) step4Banner.style.display = 'none';
-        const selectEl = document.getElementById('select-student-name');
-        if (selectEl) selectEl.value = '';
+        const inputNom = document.getElementById('input-student-name');
+        if (inputNom) inputNom.value = '';
         const inputNum = document.getElementById('input-student-num');
         if (inputNum) inputNum.value = '';
+        const nameErr = document.getElementById('student-name-error');
+        if (nameErr) nameErr.style.display = 'none';
         const numErr = document.getElementById('student-num-error');
         if (numErr) numErr.style.display = 'none';
       }
 
-      async function verifyStudentByNumber() {
-        const inputNum = document.getElementById('input-student-num');
-        const errEl = document.getElementById('student-num-error');
-        const val = (inputNum.value || '').trim();
-        if (!val) {
-          errEl.textContent = 'Escriu el teu número o codi d\'alumne (ex: TC-101).';
-          errEl.style.display = 'block';
+      async function verifyStudent(query, errorEl) {
+        if (!query) {
+          if (errorEl) {
+            errorEl.textContent = 'Si us plau, escriu una dada per verificar.';
+            errorEl.style.display = 'block';
+          }
           return;
         }
 
-        const cleanVal = val.toUpperCase().replace(/\s+/g, '');
-        let found = allStudentsList.find(s => 
-          s.id.toUpperCase().replace(/\s+/g, '') === cleanVal ||
-          (s.pin && s.pin.trim() === cleanVal) ||
-          (s.telefon && s.telefon.replace(/[^0-9]/g, '').endsWith(cleanVal))
-        );
+        if (errorEl) errorEl.style.display = 'none';
 
-        if (!found) {
-          try {
-            const res = await fetch(`/api/alumnes/${encodeURIComponent(val)}`);
-            const data = await res.json();
-            if (data.ok && (data.alumne || data.data)) {
-              found = data.alumne || data.data;
+        try {
+          const res = await fetch(`/api/alumnes/verificar?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          if (data.ok && data.found && data.alumne) {
+            if (errorEl) errorEl.style.display = 'none';
+            applyIdentifiedStudent(data.alumne);
+          } else {
+            if (errorEl) {
+              errorEl.textContent = 'No hem trobat cap alumne actiu amb aquest nom o número. Revisa com està escrit o omple les dades directament a sota.';
+              errorEl.style.display = 'block';
             }
-          } catch (e) {
-            console.warn('Error verificant alumne per codi:', e);
           }
-        }
-
-        if (found) {
-          errEl.style.display = 'none';
-          applyIdentifiedStudent(found);
-        } else {
-          errEl.textContent = 'No s\'ha trobat cap alumne amb aquest número o codi. Revisa el codi o tria l\'opció "Pel meu nom".';
-          errEl.style.display = 'block';
+        } catch (e) {
+          console.warn('Error verificant alumne:', e);
+          if (errorEl) {
+            errorEl.textContent = 'Error de connexió en comprovar. Pots continuar omplint les dades a sota.';
+            errorEl.style.display = 'block';
+          }
         }
       }
 
@@ -1193,7 +1156,6 @@
             socAlumneCard.style.borderColor = 'var(--primary)';
             socAlumneCard.style.background = '#FFF8F6';
           }
-          loadStudentsForSelector();
         } else {
           if (socAlumneFields) socAlumneFields.style.display = 'none';
           if (socAlumneCard) {
@@ -1222,23 +1184,33 @@
       document.getElementById('btn-mode-nom')?.addEventListener('click', () => setAlumneIdMode('nom'));
       document.getElementById('btn-mode-num')?.addEventListener('click', () => setAlumneIdMode('num'));
 
-      document.getElementById('select-student-name')?.addEventListener('change', (e) => {
-        const studentId = e.target.value;
-        if (!studentId) {
-          clearIdentifiedStudent();
-          return;
-        }
-        const student = allStudentsList.find(s => s.id === studentId);
-        if (student) {
-          applyIdentifiedStudent(student);
+      // Verificació per nom
+      const btnCercarNom = document.getElementById('btn-cercar-nom');
+      const inputStudentName = document.getElementById('input-student-name');
+      const errStudentName = document.getElementById('student-name-error');
+
+      btnCercarNom?.addEventListener('click', () => {
+        verifyStudent((inputStudentName?.value || '').trim(), errStudentName);
+      });
+      inputStudentName?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyStudent((inputStudentName?.value || '').trim(), errStudentName);
         }
       });
 
-      document.getElementById('btn-cercar-num')?.addEventListener('click', verifyStudentByNumber);
-      document.getElementById('input-student-num')?.addEventListener('keypress', (e) => {
+      // Verificació per número
+      const btnCercarNum = document.getElementById('btn-cercar-num');
+      const inputStudentNum = document.getElementById('input-student-num');
+      const errStudentNum = document.getElementById('student-num-error');
+
+      btnCercarNum?.addEventListener('click', () => {
+        verifyStudent((inputStudentNum?.value || '').trim(), errStudentNum);
+      });
+      inputStudentNum?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          verifyStudentByNumber();
+          verifyStudent((inputStudentNum?.value || '').trim(), errStudentNum);
         }
       });
 
