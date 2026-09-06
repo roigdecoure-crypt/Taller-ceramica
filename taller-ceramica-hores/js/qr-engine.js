@@ -71,12 +71,17 @@ const QREngine = {
     // Aturar i netejar qualsevol instància prèvia
     await this.stopScanner();
 
-    this.html5QrScanner = new Html5Qrcode(elementId);
+    // Restringir exclusivament a codis QR per estalviar CPU i accelerar la lectura
+    const qrFormat = typeof Html5QrcodeSupportedFormats !== 'undefined' ? Html5QrcodeSupportedFormats.QR_CODE : 0;
+    this.html5QrScanner = new Html5Qrcode(elementId, {
+      formatsToSupport: [ qrFormat ],
+      verbose: false
+    });
 
     const wantFront = cameraChoice === 'user' || (typeof cameraChoice === 'string' && /front|user|selfie/i.test(cameraChoice));
 
     const config = {
-      fps: 25,
+      fps: 30,
       videoConstraints: {
         facingMode: wantFront ? 'user' : 'environment',
         width: { min: 640, ideal: 1280, max: 1920 },
@@ -115,6 +120,7 @@ const QREngine = {
         handleSuccess,
         handleError
       );
+      this._startNativeHardwareDetection(elementId, handleSuccess);
       return true;
     }
 
@@ -130,6 +136,7 @@ const QREngine = {
         handleSuccess,
         handleError
       );
+      this._startNativeHardwareDetection(elementId, handleSuccess);
       return true;
     } catch (errFacing) {
       console.warn(`Error iniciant amb facingMode directament:`, errFacing);
@@ -157,6 +164,7 @@ const QREngine = {
           handleSuccess,
           handleError
         );
+        this._startNativeHardwareDetection(elementId, handleSuccess);
         return true;
       }
     } catch (errDevices) {
@@ -170,13 +178,51 @@ const QREngine = {
       handleSuccess,
       handleError
     );
+    this._startNativeHardwareDetection(elementId, handleSuccess);
     return true;
+  },
+
+  /**
+   * Detector natiu d'alta velocitat accelerat per maquinari (Google Play Services / Chromium C++)
+   * Executa a 60 FPS sense càrrega de CPU suplementària i detecta codis en pantalles petites a l'instant
+   */
+  _startNativeHardwareDetection(elementId, handleSuccess) {
+    this._stopNativeDetector = false;
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const checkFrame = async () => {
+          if (this._stopNativeDetector || !this.html5QrScanner) return;
+          const videoEl = document.querySelector(`#${elementId} video`);
+          if (videoEl && videoEl.readyState >= 2 && !videoEl.paused) {
+            try {
+              const barcodes = await detector.detect(videoEl);
+              if (barcodes && barcodes.length > 0) {
+                const found = barcodes.find(b => b.format === 'qr_code') || barcodes[0];
+                if (found && found.rawValue) {
+                  handleSuccess(found.rawValue, { rawValue: found.rawValue });
+                }
+              }
+            } catch (err) {
+              // Frame en trànsit, continuar
+            }
+          }
+          if (!this._stopNativeDetector) {
+            requestAnimationFrame(checkFrame);
+          }
+        };
+        requestAnimationFrame(checkFrame);
+      } catch (e) {
+        console.warn('BarcodeDetector natiu no disponible:', e);
+      }
+    }
   },
 
   /**
    * Atura la càmera i allibera els recursos
    */
   async stopScanner() {
+    this._stopNativeDetector = true;
     if (this.html5QrScanner) {
       try {
         if (this.html5QrScanner.isScanning) {
