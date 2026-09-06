@@ -8,12 +8,6 @@ let resultAutoCloseTimer = null;
 let isProcessingScan = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Previsualització de càmera activa per defecte per garantir visibilitat i evitar limitacions de FPS
-  const showCameraFeedPref = localStorage.getItem('scanner_show_camera') !== '0';
-  if (showCameraFeedPref) {
-    document.body.classList.add('show-camera-feed');
-  }
-
   await Store.init();
   await loadScannerConfig();
   await loadStudentSelector();
@@ -27,10 +21,7 @@ async function loadScannerConfig() {
   try {
     const cfg = await Store.getConfig();
     if (cfg.taller_nom) {
-      const el = document.getElementById('scanner-ws-name');
-      if (el) el.textContent = cfg.taller_nom;
-      const liveEl = document.getElementById('scanner-live-ws-name');
-      if (liveEl) liveEl.textContent = cfg.taller_nom;
+      document.getElementById('scanner-ws-name').textContent = cfg.taller_nom;
     }
   } catch (err) {
     console.warn('Error configuració:', err);
@@ -229,28 +220,14 @@ function setupScannerEvents() {
   const openOptionsBtn = document.getElementById('btn-open-scanner-options');
   const closeOptionsBtn = document.getElementById('btn-close-scanner-options');
   const toggleFeedBtn = document.getElementById('btn-toggle-camera-feed');
-  const quickToggleBtn = document.getElementById('btn-quick-toggle-feed');
-
-  function updateViewButtons(isShowing) {
-    if (quickToggleBtn) {
-      quickToggleBtn.textContent = isShowing ? 'Vista Ambient' : 'Vista Càmera';
-    }
-    if (toggleFeedBtn) {
-      toggleFeedBtn.textContent = isShowing ? 'Amagar previsualització de càmera' : 'Mostrar previsualització de càmera';
-    }
-  }
-  updateViewButtons(document.body.classList.contains('show-camera-feed'));
-
-  if (quickToggleBtn) {
-    quickToggleBtn.addEventListener('click', () => {
-      const isShowing = document.body.classList.toggle('show-camera-feed');
-      localStorage.setItem('scanner_show_camera', isShowing ? '1' : '0');
-      updateViewButtons(isShowing);
-    });
-  }
 
   if (openOptionsBtn) {
     openOptionsBtn.addEventListener('click', () => {
+      if (document.body.classList.contains('show-camera-feed')) {
+        document.body.classList.remove('show-camera-feed');
+        if (toggleFeedBtn) toggleFeedBtn.textContent = 'Mostrar previsualització de càmera';
+        return;
+      }
       if (optionsModal) optionsModal.classList.add('active');
     });
   }
@@ -272,8 +249,7 @@ function setupScannerEvents() {
   if (toggleFeedBtn) {
     toggleFeedBtn.addEventListener('click', () => {
       const isShowing = document.body.classList.toggle('show-camera-feed');
-      localStorage.setItem('scanner_show_camera', isShowing ? '1' : '0');
-      updateViewButtons(isShowing);
+      toggleFeedBtn.textContent = isShowing ? 'Amagar previsualització de càmera' : 'Mostrar previsualització de càmera';
       if (isShowing && optionsModal) {
         optionsModal.classList.remove('active');
       }

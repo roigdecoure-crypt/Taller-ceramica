@@ -34,23 +34,13 @@
   <!-- Càmera en segon pla (activa decodificant a 20 FPS a pantalla completa) -->
   <div id="qr-video-container"></div>
   
-  <!-- Marc d'enfocament i guia per al rellotge o carnet -->
+  <!-- Marc d'enfocament (només visible quan s'activa el mode previsualització des d'Opcions) -->
   <div class="scanner-overlay-guide" id="scanner-preview-guide">
     <div class="scanner-laser"></div>
   </div>
 
-  <!-- Capçalera persistent sobre el flux de càmera -->
-  <div class="scanner-live-header">
-    <h2 class="scanner-live-title" id="scanner-live-ws-name">Roig de Coure</h2>
-    <p class="scanner-live-subtitle">Apropa el teu carnet o rellotge al centre</p>
-  </div>
-  <div class="scanner-live-hint">Mantingues el rellotge a 12 - 18 cm • Evita reflexos</div>
-
-  <!-- Botons discrets a la cantonada superior dreta -->
+  <!-- Botó discret a la cantonada superior dreta per accedir a opcions i admin -->
   <div class="scanner-top-actions">
-    <button type="button" class="scanner-discreet-btn" id="btn-quick-toggle-feed" title="Canviar vista">
-      Vista Càmera
-    </button>
     <button type="button" class="scanner-discreet-btn" id="btn-open-scanner-options" title="Opcions de l'escàner">
       Opcions
     </button>
