@@ -247,6 +247,12 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
         cursor.execute("DELETE FROM reserves WHERE data LIKE '%GMT%' OR data LIKE '%Central European%' OR data LIKE '%hora de verano%' OR id = 'TEST-DEBUG-1'")
 
+        # Assegurar persistència de l'alumne 231F (Ferran Picornell) de l'export oficial
+        cursor.execute('''
+            INSERT OR IGNORE INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
+            VALUES ('231F', 'Ferran', 'Picornell', '+34683633880', '', '3880', '2026-01-01', 'Debe Recargar', 1)
+        ''')
+
         # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
         if cursor.fetchone()['count'] == 0:
@@ -1112,23 +1118,67 @@ def find_student_by_code(cursor, code, actiu_only=False):
     if not code:
         return None
     clean_code = str(code).strip()
+    if not clean_code:
+        return None
+    no_spaces = re.sub(r'[\s\-_]', '', clean_code)
     clean_digits = re.sub(r'[^0-9]', '', clean_code)
+    no_tc = re.sub(r'^TC[-_\s]*', '', clean_code, flags=re.IGNORECASE).strip()
+    no_tc_clean = re.sub(r'[\s\-_]', '', no_tc)
     phone_suffix = clean_digits[-9:] if len(clean_digits) >= 9 else (clean_digits if len(clean_digits) >= 6 else None)
     
     actiu_clause = "actiu = 1 AND " if actiu_only else ""
     query = f'''
         SELECT * FROM alumnes 
         WHERE {actiu_clause}(
-            UPPER(TRIM(id)) = UPPER(TRIM(?))
-            OR TRIM(pin) = TRIM(?)
-            OR TRIM(telefon) = TRIM(?)
-            OR (? IS NOT NULL AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, '+', ''), ' ', ''), '-', ''), '.', '') LIKE '%' || ?)
-            OR UPPER(TRIM(nom || ' ' || COALESCE(cognoms, ''))) = UPPER(TRIM(?))
-            OR UPPER(TRIM(nom)) = UPPER(TRIM(?))
+            UPPER(TRIM(id)) = UPPER(TRIM(:clean_code))
+            OR UPPER(TRIM(id)) = UPPER(TRIM(:no_tc))
+            OR REPLACE(REPLACE(REPLACE(UPPER(TRIM(id)), '-', ''), ' ', ''), '_', '') = UPPER(:no_spaces)
+            OR REPLACE(REPLACE(REPLACE(UPPER(TRIM(id)), '-', ''), ' ', ''), '_', '') = UPPER(:no_tc_clean)
+            OR (LENGTH(:clean_code) >= 2 AND UPPER(TRIM(id)) = 'TC-' || UPPER(:clean_code))
+            OR (LENGTH(:no_tc) >= 2 AND UPPER(TRIM(id)) = 'TC-' || UPPER(:no_tc))
+            OR (LENGTH(:clean_code) >= 2 AND UPPER(TRIM(id)) = 'TC' || UPPER(:clean_code))
+            OR (LENGTH(:clean_code) >= 3 AND UPPER(TRIM(id)) LIKE :clean_code || '%')
+            OR (LENGTH(:no_tc) >= 3 AND UPPER(TRIM(id)) LIKE :no_tc || '%')
+            OR (LENGTH(:clean_code) >= 2 AND REPLACE(UPPER(TRIM(id)), 'TC-', '') = UPPER(:clean_code))
+            OR (LENGTH(:no_tc) >= 2 AND REPLACE(UPPER(TRIM(id)), 'TC-', '') = UPPER(:no_tc))
+            OR (LENGTH(:clean_code) >= 3 AND REPLACE(UPPER(TRIM(id)), 'TC-', '') LIKE :clean_code || '%')
+            OR (LENGTH(:no_tc) >= 3 AND REPLACE(UPPER(TRIM(id)), 'TC-', '') LIKE :no_tc || '%')
+            OR TRIM(pin) = TRIM(:clean_code)
+            OR TRIM(telefon) = TRIM(:clean_code)
+            OR (:phone_suffix IS NOT NULL AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, '+', ''), ' ', ''), '-', ''), '.', '') LIKE '%' || :phone_suffix)
+            OR UPPER(TRIM(nom || ' ' || COALESCE(cognoms, ''))) = UPPER(TRIM(:clean_code))
+            OR (LENGTH(:clean_code) >= 4 AND UPPER(TRIM(nom || ' ' || COALESCE(cognoms, ''))) LIKE UPPER(TRIM(:clean_code)) || '%')
+            OR UPPER(TRIM(nom)) = UPPER(TRIM(:clean_code))
+            OR UPPER(TRIM(cognoms)) = UPPER(TRIM(:clean_code))
+            OR (LENGTH(:clean_code) >= 4 AND UPPER(TRIM(cognoms)) LIKE UPPER(TRIM(:clean_code)) || '%')
         )
+        ORDER BY 
+            CASE 
+                WHEN UPPER(TRIM(id)) = UPPER(TRIM(:clean_code)) THEN 1
+                WHEN UPPER(TRIM(id)) = UPPER(TRIM(:no_tc)) THEN 2
+                WHEN UPPER(TRIM(id)) = UPPER(:no_spaces) THEN 3
+                WHEN UPPER(TRIM(id)) = 'TC-' || UPPER(:clean_code) THEN 4
+                WHEN UPPER(TRIM(id)) = 'TC-' || UPPER(:no_tc) THEN 5
+                WHEN REPLACE(UPPER(TRIM(id)), 'TC-', '') = UPPER(:clean_code) THEN 6
+                WHEN REPLACE(UPPER(TRIM(id)), 'TC-', '') = UPPER(:no_tc) THEN 7
+                WHEN UPPER(TRIM(id)) LIKE :clean_code || '%' THEN 8
+                WHEN UPPER(TRIM(id)) LIKE :no_tc || '%' THEN 9
+                WHEN UPPER(TRIM(nom || ' ' || COALESCE(cognoms, ''))) = UPPER(TRIM(:clean_code)) THEN 10
+                WHEN UPPER(TRIM(nom)) = UPPER(TRIM(:clean_code)) THEN 11
+                WHEN UPPER(TRIM(cognoms)) = UPPER(TRIM(:clean_code)) THEN 12
+                ELSE 13
+            END
         LIMIT 1
     '''
-    cursor.execute(query, (clean_code, clean_code, clean_code, phone_suffix, phone_suffix if phone_suffix else '###', clean_code, clean_code))
+    params = {
+        'clean_code': clean_code,
+        'no_spaces': no_spaces,
+        'clean_digits': clean_digits,
+        'no_tc': no_tc,
+        'no_tc_clean': no_tc_clean,
+        'phone_suffix': phone_suffix
+    }
+    cursor.execute(query, params)
     return row_to_dict(cursor.fetchone())
 
 def generate_pkpass(student, balance=None):

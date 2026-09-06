@@ -129,11 +129,30 @@ const Store = {
 
     const data = this._getLocalData();
     const cleanDigits = cleanId.replace(/[^0-9]/g, '');
-    const student = (data.alumnes || []).find(a => 
-      (a.id && a.id.trim().toUpperCase() === cleanId.toUpperCase()) ||
-      (a.pin && String(a.pin).trim() === cleanId) ||
-      (cleanDigits.length >= 6 && a.telefon && String(a.telefon).replace(/[^0-9]/g, '').endsWith(cleanDigits))
-    );
+    const cleanUpper = cleanId.toUpperCase();
+    const noTcUpper = cleanUpper.replace(/^TC[-\s_]*/, '');
+    const noSpacesUpper = cleanUpper.replace(/[\s\-_]/g, '');
+    const student = (data.alumnes || []).find(a => {
+      if (!a) return false;
+      const aId = (a.id || '').trim().toUpperCase();
+      const aIdNoSpaces = aId.replace(/[\s\-_]/g, '');
+      const aIdNoTc = aId.replace(/^TC[-\s_]*/, '');
+      const aPin = String(a.pin || '').trim();
+      const aTel = String(a.telefon || '').replace(/[^0-9]/g, '');
+      const aFullName = `${a.nom || ''} ${a.cognoms || ''}`.trim().toUpperCase();
+      
+      return (
+        aId === cleanUpper ||
+        aId === noTcUpper ||
+        aIdNoSpaces === noSpacesUpper ||
+        aIdNoTc === noTcUpper ||
+        (cleanUpper.length >= 3 && (aId.startsWith(cleanUpper) || aIdNoTc.startsWith(noTcUpper))) ||
+        (aPin && aPin === cleanId) ||
+        (cleanDigits.length >= 6 && aTel && aTel.endsWith(cleanDigits)) ||
+        aFullName === cleanUpper ||
+        (cleanUpper.length >= 4 && aFullName.startsWith(cleanUpper))
+      );
+    });
     if (!student) return null;
 
     const packs = (data.paquets || []).filter(p => p.student_id === student.id).sort((a,b) => new Date(b.data) - new Date(a.data));

@@ -666,6 +666,42 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
         self.conn.commit()
 
+    def test_19_student_search_flexibility_and_231f(self):
+        """
+        Comprova que l'alumne 231F (Ferran Picornell) es troba correctament
+        mitjançant múltiples variants de cerca (majúscules/minúscules, sense lletra, espais, guions, nom, telèfon, pin).
+        """
+        with server.get_db() as conn:
+            cur = conn.cursor()
+
+            # 1. Comprovació de cerca per codi i variants de 231F
+            variants_231f = [
+                '231f', '231F', '231', '231 f', '231-f',
+                'TC-231', 'TC-231F', 'Picornell', 'Ferran Picornell',
+                '683633880', '3880'
+            ]
+            for query in variants_231f:
+                student = server.find_student_by_code(cur, query)
+                self.assertIsNotNone(student, f"Hauria de trobar 231F amb la cerca: '{query}'")
+                self.assertEqual(student['id'], '231F', f"El resultat per '{query}' ha de ser '231F'")
+                self.assertEqual(student['nom'], 'Ferran')
+                self.assertEqual(student['cognoms'], 'Picornell')
+
+            # 2. Comprovació amb altres alumnes estàndard
+            res_101 = server.find_student_by_code(cur, '101')
+            self.assertIsNotNone(res_101)
+            self.assertEqual(res_101['id'], 'TC-101')
+
+            res_tc_101 = server.find_student_by_code(cur, 'tc-101')
+            self.assertIsNotNone(res_tc_101)
+            self.assertEqual(res_tc_101['id'], 'TC-101')
+
+            # 3. Casos buits o no coincidents
+            self.assertIsNone(server.find_student_by_code(cur, ''))
+            self.assertIsNone(server.find_student_by_code(cur, '   '))
+            self.assertIsNone(server.find_student_by_code(cur, 'a'))
+            self.assertIsNone(server.find_student_by_code(cur, '999999999999'))
+
 if __name__ == '__main__':
     unittest.main()
 
