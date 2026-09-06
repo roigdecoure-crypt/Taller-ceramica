@@ -284,6 +284,20 @@ function renderDashboard(details) {
     QREngine.generateQR(zoomQrBox, a.id, 216);
   }
 
+  // Actualitzar enllaços del Wallet i Carnet Digital
+  const btnLinkPkpass = document.getElementById('btn-link-download-pkpass');
+  if (btnLinkPkpass) {
+    btnLinkPkpass.href = `/api/wallet/pass?id=${encodeURIComponent(a.id)}`;
+  }
+  const btnOpenCarnetWeb = document.getElementById('btn-open-carnet-web');
+  if (btnOpenCarnetWeb) {
+    btnOpenCarnetWeb.href = `carnet.html?id=${encodeURIComponent(a.id)}`;
+  }
+  const btnWalletModalCarnetLink = document.getElementById('btn-wallet-modal-carnet-link');
+  if (btnWalletModalCarnetLink) {
+    btnWalletModalCarnetLink.href = `carnet.html?id=${encodeURIComponent(a.id)}`;
+  }
+
   // Historial de sessions
   renderSessionsTable(details.sessions);
 
@@ -773,6 +787,40 @@ function setupEventListeners() {
     });
   }
 
+  // Modal d'Opcions de Wallet i Rellotge
+  const modalWalletOptions = document.getElementById('modal-wallet-options');
+  const btnOpenWalletOptions = document.getElementById('btn-open-wallet-options');
+  const btnPortalOpenWallet = document.getElementById('btn-portal-open-wallet');
+  const btnCloseWalletOptions = document.getElementById('btn-close-wallet-options');
+  const btnCloseWalletOptionsFooter = document.getElementById('btn-close-wallet-options-footer');
+
+  const openWalletModal = () => {
+    if (modalWalletOptions) openModal(modalWalletOptions);
+  };
+  const closeWalletModal = () => {
+    if (modalWalletOptions) closeModal(modalWalletOptions);
+  };
+
+  if (btnOpenWalletOptions) btnOpenWalletOptions.addEventListener('click', openWalletModal);
+  if (btnPortalOpenWallet) btnPortalOpenWallet.addEventListener('click', openWalletModal);
+  if (btnCloseWalletOptions) btnCloseWalletOptions.addEventListener('click', closeWalletModal);
+  if (btnCloseWalletOptionsFooter) btnCloseWalletOptionsFooter.addEventListener('click', closeWalletModal);
+  if (modalWalletOptions) {
+    modalWalletOptions.addEventListener('click', (e) => {
+      if (e.target === modalWalletOptions) closeWalletModal();
+    });
+  }
+
+  // Botons de descàrrega QR per al Rellotge Intel·ligent
+  const btnDownloadWatchQr = document.getElementById('btn-download-watch-qr');
+  const btnWalletModalWatchQr = document.getElementById('btn-wallet-modal-watch-qr');
+  if (btnDownloadWatchQr) {
+    btnDownloadWatchQr.addEventListener('click', () => downloadWatchQrImage(currentStudent));
+  }
+  if (btnWalletModalWatchQr) {
+    btnWalletModalWatchQr.addEventListener('click', () => downloadWatchQrImage(currentStudent));
+  }
+
   // Tecla Escape per tancar qualsevol finestra flotant activa
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -785,3 +833,106 @@ function setupEventListeners() {
     }
   });
 }
+
+/**
+ * Genera i descarrega una imatge d'alta definició (600x600 px) del codi QR
+ * optimitzada exclusivament per a pantalles de rellotges intel·ligents (Apple Watch i Wear OS).
+ */
+async function downloadWatchQrImage(student) {
+  const s = student || currentStudent;
+  if (!s || !s.id) {
+    showToast('No s\'ha pogut identificar l\'alumne/a.', 'error');
+    return;
+  }
+
+  const id = s.id;
+  const name = `${s.nom || ''} ${s.cognoms || ''}`.trim() || 'Alumne/a';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 600;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Fons blanc pur per a màxima reflectància òptica
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, 600, 600);
+
+  // 2. Capçalera
+  ctx.fillStyle = '#831D1D';
+  ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('ROIG DE COURE', 300, 56);
+
+  ctx.fillStyle = '#5E7E6F';
+  ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText('CARNET D\'ALUMNE', 300, 82);
+
+  // 3. Generar codi QR en contenidor temporal
+  const tempContainer = document.createElement('div');
+  tempContainer.style.display = 'none';
+  document.body.appendChild(tempContainer);
+
+  const qrObj = new QRCode(tempContainer, {
+    text: id,
+    width: 380,
+    height: 380,
+    colorDark: '#1A1817',
+    colorLight: '#FFFFFF',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  setTimeout(async () => {
+    const qrCanvas = tempContainer.querySelector('canvas');
+    const qrImg = tempContainer.querySelector('img');
+    const source = qrCanvas || qrImg;
+
+    if (source) {
+      ctx.drawImage(source, 110, 105, 380, 380);
+    }
+    document.body.removeChild(tempContainer);
+
+    // 4. Peu amb nom i codi
+    ctx.fillStyle = '#2C221E';
+    ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(name, 300, 526);
+
+    ctx.fillStyle = '#831D1D';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText(`COD: ${id}`, 300, 560);
+
+    // 5. Exportar i descarregar / compartir
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const filename = `RoigDeCoure_${id}_Rellotge.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: `Carnet Rellotge - ${id}`,
+            text: `Codi QR de Roig de Coure per al teu rellotge intel·ligent`,
+            files: [file]
+          });
+          showToast('QR desat correctament per al teu rellotge!', 'success');
+          return;
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.warn('navigator.share no ha reeixit, usant descàrrega:', err);
+          } else {
+            return;
+          }
+        }
+      }
+
+      // Descàrrega directa
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Imatge descarregada! Guarda-la a la fototeca del teu rellotge.', 'success');
+    }, 'image/png');
+  }, 150);
+}
+

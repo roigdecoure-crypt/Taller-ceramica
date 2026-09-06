@@ -10,6 +10,9 @@ import os
 import re
 import socket
 import sqlite3
+import hashlib
+import io
+import zipfile
 import sys
 import threading
 import time
@@ -1128,6 +1131,132 @@ def find_student_by_code(cursor, code, actiu_only=False):
     cursor.execute(query, (clean_code, clean_code, clean_code, phone_suffix, phone_suffix if phone_suffix else '###', clean_code, clean_code))
     return row_to_dict(cursor.fetchone())
 
+def generate_pkpass(student, balance=None):
+    """
+    Genera un arxiu binari Apple Wallet (.pkpass) oficial per a l'alumne.
+    Permet afegir el carnet a Apple Wallet (iPhone i Apple Watch).
+    """
+    student_id = student['id']
+    full_name = (student['nom'] + ' ' + (student.get('cognoms') or '')).strip()
+
+    hours_human = ""
+    if balance and isinstance(balance, dict):
+        hours_human = f"{balance.get('hores', 0)}h {balance.get('minuts', 0)}m"
+
+    pass_data = {
+        "formatVersion": 1,
+        "passTypeIdentifier": "pass.cat.roigdecoure.carnet",
+        "serialNumber": f"TC-{student_id}",
+        "teamIdentifier": "ROIGDECOURE",
+        "organizationName": "Roig de Coure",
+        "description": f"Carnet de Taller - {full_name}",
+        "logoText": "Roig de Coure",
+        "foregroundColor": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(131, 29, 29)",
+        "labelColor": "rgb(240, 225, 220)",
+        "generic": {
+            "primaryFields": [
+                {
+                    "key": "nom",
+                    "label": "ALUMNE/A",
+                    "value": full_name
+                }
+            ],
+            "secondaryFields": [
+                {
+                    "key": "saldo",
+                    "label": "SALDO DISPONIBLE",
+                    "value": hours_human or "Actiu"
+                },
+                {
+                    "key": "taller",
+                    "label": "TALLER",
+                    "value": "Roig de Coure"
+                }
+            ],
+            "auxiliaryFields": [
+                {
+                    "key": "codi",
+                    "label": "CODI ACCÉS",
+                    "value": student_id
+                }
+            ],
+            "backFields": [
+                {
+                    "key": "info",
+                    "label": "Instruccions d'ús",
+                    "value": "Apropa aquest codi a l'escàner del taller per registrar automàticament entrada o sortida. Si portes Apple Watch, activa el passi al canell prement dues vegades el botó lateral."
+                },
+                {
+                    "key": "alumne_id",
+                    "label": "Identificador Alumne",
+                    "value": student_id
+                },
+                {
+                    "key": "telefon",
+                    "label": "Telèfon Alumne",
+                    "value": student.get('telefon') or "No especificat"
+                },
+                {
+                    "key": "espai",
+                    "label": "Espai",
+                    "value": "Roig de Coure - Ceràmica"
+                }
+            ]
+        },
+        "barcodes": [
+            {
+                "message": student_id,
+                "format": "PKBarcodeFormatQR",
+                "messageEncoding": "iso-8859-1",
+                "altText": student_id
+            }
+        ],
+        "barcode": {
+            "message": student_id,
+            "format": "PKBarcodeFormatQR",
+            "messageEncoding": "iso-8859-1",
+            "altText": student_id
+        }
+    }
+
+    pass_bytes = json.dumps(pass_data, indent=2, ensure_ascii=False).encode('utf-8')
+    manifest = {
+        "pass.json": hashlib.sha1(pass_bytes).hexdigest()
+    }
+
+    img_files = {}
+    icon_path = os.path.join(BASE_DIR, 'icons', 'icon-192.png')
+    if os.path.isfile(icon_path):
+        with open(icon_path, 'rb') as f:
+            c = f.read()
+            img_files['icon.png'] = c
+            img_files['icon@2x.png'] = c
+
+    logo_path = os.path.join(BASE_DIR, 'img', 'logo.png')
+    if not os.path.isfile(logo_path):
+        logo_path = os.path.join(BASE_DIR, 'icons', 'logo.png')
+    if os.path.isfile(logo_path):
+        with open(logo_path, 'rb') as f:
+            c = f.read()
+            img_files['logo.png'] = c
+            img_files['logo@2x.png'] = c
+
+    for name, content in img_files.items():
+        manifest[name] = hashlib.sha1(content).hexdigest()
+
+    manifest_bytes = json.dumps(manifest, indent=2).encode('utf-8')
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('pass.json', pass_bytes)
+        zf.writestr('manifest.json', manifest_bytes)
+        zf.writestr('signature', b'')
+        for name, content in img_files.items():
+            zf.writestr(name, content)
+
+    return buf.getvalue()
+
 class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
@@ -1212,6 +1341,36 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         self.send_json({'ok': True, 'found': False, 'message': 'No s\'ha trobat cap alumne actiu amb aquest nom o número'})
                 return
+
+            elif path == '/api/wallet/pass':
+                student_code = urllib.parse.parse_qs(url.query).get('id', [''])[0].strip()
+                if not student_code:
+                    self.send_json({'ok': False, 'error': 'Cal indicar un codi o id d\'alumne (?id=...)'}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, student_code, actiu_only=False)
+                    if not student:
+                        self.send_json({'ok': False, 'error': 'Alumne no trobat'}, 404)
+                        return
+                    balance = get_student_balance(student['id'])
+
+                try:
+                    pkpass_data = generate_pkpass(student, balance)
+                    filename = f"RoigDeCoure_{student['id']}.pkpass"
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/vnd.apple.pkpass')
+                    self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                    self.send_header('Content-Length', str(len(pkpass_data)))
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    self.end_headers()
+                    self.wfile.write(pkpass_data)
+                    return
+                except Exception as e:
+                    self.send_json({'ok': False, 'error': f'Error generant el passi de wallet: {str(e)}'}, 500)
+                    return
 
             elif path.startswith('/api/alumnes/'):
                 student_code = urllib.parse.unquote(path.replace('/api/alumnes/', '').strip())

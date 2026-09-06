@@ -622,6 +622,50 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
         self.conn.commit()
 
+    def test_18_wallet_pass_generation(self):
+        c = self.conn.cursor()
+        test_student_id = "TC-WALLET-TEST"
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
+            VALUES (?, 'Maria Wallet', 'Test Puig', '+34655443322', 'wallet@test.cat', '9988', ?, '', 1)
+        ''', (test_student_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            student = server.find_student_by_code(cur, test_student_id)
+            self.assertIsNotNone(student)
+
+            # Provar generació de pass.json i manifest
+            pkpass_bytes = server.generate_pkpass(student, {'hores': 10, 'minuts': 30})
+            self.assertIsInstance(pkpass_bytes, bytes)
+            self.assertGreater(len(pkpass_bytes), 100)
+
+            # Comprovar que és un ZIP vàlid
+            import zipfile
+            import io
+            with zipfile.ZipFile(io.BytesIO(pkpass_bytes), 'r') as zf:
+                namelist = zf.namelist()
+                self.assertIn('pass.json', namelist)
+                self.assertIn('manifest.json', namelist)
+                self.assertIn('signature', namelist)
+
+                pass_json_str = zf.read('pass.json').decode('utf-8')
+                pass_obj = json.loads(pass_json_str)
+                self.assertEqual(pass_obj['organizationName'], 'Roig de Coure')
+                self.assertEqual(pass_obj['barcode']['message'], test_student_id)
+                self.assertEqual(pass_obj['generic']['primaryFields'][0]['value'], 'Maria Wallet Test Puig')
+
+                manifest_obj = json.loads(zf.read('manifest.json').decode('utf-8'))
+                import hashlib
+                expected_hash = hashlib.sha1(pass_json_str.encode('utf-8')).hexdigest()
+                self.assertEqual(manifest_obj['pass.json'], expected_hash)
+
+        # Neteja
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
 

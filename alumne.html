@@ -357,6 +357,9 @@
           <div id="student-workshop-name" style="font-family: var(--font-script); font-size: clamp(48px, 9.5vw, 62px); font-weight: 700; color: var(--brand-primary); line-height: 1.05; letter-spacing: -0.5px;">Roig de Coure</div>
         </div>
         <div class="portal-top-actions">
+          <button class="btn btn-outline btn-sm" id="btn-portal-open-wallet" title="Guardar Carnet al Wallet o Rellotge">
+            <span>Carnet &bull; Wallet</span>
+          </button>
           <button class="btn btn-outline btn-sm" id="btn-portal-install-app" title="Instal·lar l'App al mòbil" style="display: inline-flex; align-items: center; gap: 4px;">
             <span>Instal·lar App</span>
           </button>
@@ -377,12 +380,15 @@
         </div>
 
         <!-- Codi QR a dalt, destacat i ampliable al clic -->
-        <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
+        <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR o desar-lo al Wallet" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
           <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center;">
             <!-- QR generat per QREngine -->
           </div>
           <div style="font-size: 11px; font-weight: 700; color: var(--brand-primary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
             Toca per ampliar
+          </div>
+          <div style="font-size: 10px; color: var(--color-muted); margin-top: 2px;">
+            Wallet &bull; Rellotge
           </div>
         </div>
       </div>
@@ -584,13 +590,84 @@
         <!-- Codi QR gran (216px) generat dinàmicament -->
       </div>
       
-      <div style="font-size: 12px; font-weight: 600; color: var(--brand-secondary); margin-bottom: 16px; line-height: 1.4;">
+      <div style="font-size: 12px; font-weight: 600; color: var(--brand-secondary); margin-bottom: 14px; line-height: 1.4;">
         Apropa aquest codi a l'escàner del taller per registrar entrada o sortida
       </div>
-      
-      <button type="button" class="btn btn-outline btn-block" id="btn-close-qr-modal" style="font-size: 13px; padding: 8px 16px; font-weight: 600;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+        <button type="button" class="btn btn-primary btn-block" id="btn-open-wallet-options" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #000000; color: #FFFFFF; border: none; border-radius: 10px;">
+          Afegir a Apple / Google Wallet
+        </button>
+        <button type="button" class="btn btn-block" id="btn-download-watch-qr" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: var(--brand-primary, #831D1D); color: #FFFFFF; border: none; border-radius: 10px;">
+          Desar QR per al Rellotge (Smartwatch)
+        </button>
+        <a href="carnet.html" target="_blank" class="btn btn-outline btn-block" id="btn-open-carnet-web" style="font-size: 12px; padding: 8px 12px; text-decoration: none; font-weight: 600; border-radius: 10px;">
+          Veure Carnet Digital Complet
+        </a>
+      </div>
+
+      <button type="button" class="btn btn-outline btn-block" id="btn-close-qr-modal" style="font-size: 12px; padding: 6px 14px; color: var(--color-muted); border-color: var(--color-border);">
         Tancar
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL: OPCIONS DE WALLET I RELLOTGE INTEL·LIGENT -->
+  <div class="modal-backdrop" id="modal-wallet-options" style="display: none; z-index: 10000;">
+    <div class="modal-dialog" style="max-width: 440px; text-align: left; padding: 22px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--color-border); padding-bottom: 10px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 800; color: var(--color-dark);">Carnet al Wallet i Rellotge</h3>
+        <button type="button" class="modal-close" id="btn-close-wallet-options" aria-label="Tancar">&times;</button>
+      </div>
+      
+      <p style="font-size: 13px; color: var(--color-muted); margin-bottom: 16px; line-height: 1.5;">
+        Porta sempre a sobre el teu carnet de Roig de Coure i fes check-in al taller amb un sol gest:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Opció 1: Apple Wallet -->
+        <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
+          <div style="font-size: 14px; font-weight: 800; color: var(--color-dark); margin-bottom: 4px;">
+            Apple Wallet (iPhone i Apple Watch)
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px; line-height: 1.4;">
+            En afegir-lo al teu iPhone, apareixerà automàticament al teu <strong>Apple Watch</strong>. Prem dues vegades el botó lateral del rellotge per mostrar el codi directament a l'escàner.
+          </div>
+          <a href="#" class="btn btn-block" id="btn-link-download-pkpass" style="background: #000000; color: #FFFFFF; font-size: 13px; font-weight: 700; text-decoration: none; padding: 9px 14px; border-radius: 8px; text-align: center; display: block;">
+            Descarregar Passi Apple Wallet (.pkpass)
+          </a>
+        </div>
+
+        <!-- Opció 2: Rellotge Intel·ligent universal -->
+        <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
+          <div style="font-size: 14px; font-weight: 800; color: var(--color-dark); margin-bottom: 4px;">
+            Rellotge Intel·ligent (Apple Watch, Wear OS, Garmin)
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px; line-height: 1.4;">
+            Descarrega la imatge d'alta definició centrada i afegeix-la a la galeria de fotos o a l'esfera de fotos del teu rellotge per fer check-in sense portar el mòbil.
+          </div>
+          <button type="button" class="btn btn-block" id="btn-wallet-modal-watch-qr" style="background: var(--brand-primary, #831D1D); color: #FFFFFF; font-size: 13px; font-weight: 700; border: none; padding: 9px 14px; border-radius: 8px; cursor: pointer;">
+            Desar Imatge QR per al Rellotge
+          </button>
+        </div>
+
+        <!-- Opció 3: Carnet Digital Web -->
+        <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
+          <div style="font-size: 14px; font-weight: 800; color: var(--color-dark); margin-bottom: 4px;">
+            Carnet Digital Web
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px; line-height: 1.4;">
+            Visualitza el carnet a pantalla completa al teu navegador per desar-lo com a favorit o imprimir-lo en format targeta física.
+          </div>
+          <a href="carnet.html" target="_blank" class="btn btn-outline btn-block" id="btn-wallet-modal-carnet-link" style="font-size: 13px; font-weight: 600; text-decoration: none; padding: 9px 14px; text-align: center; display: block;">
+            Obrir Carnet Digital Complet
+          </a>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; text-align: right;">
+        <button type="button" class="btn btn-outline" id="btn-close-wallet-options-footer" style="font-size: 13px; padding: 7px 18px;">Tancar</button>
+      </div>
     </div>
   </div>
 

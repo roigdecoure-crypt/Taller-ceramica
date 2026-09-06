@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#831D1D">
+  <title>Carnet Digital d'Alumne - Roig de Coure</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/styles.css?v=6.0">
+  <link rel="stylesheet" href="css/card.css?v=6.0">
+  <style>
+    body {
+      background: #FAF7F5;
+      color: #2C221E;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      margin: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .carnet-wrapper {
+      width: 100%;
+      max-width: 390px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    /* Targeta Digital estil Wallet de Roig de Coure */
+    .wallet-card {
+      width: 100%;
+      background: linear-gradient(145deg, #831D1D 0%, #5E1414 100%);
+      color: #FFFFFF;
+      border-radius: 20px;
+      box-shadow: 0 14px 32px rgba(94, 20, 20, 0.28), 0 2px 6px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .wallet-card-header {
+      padding: 20px 22px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-title {
+      font-family: var(--font-script, 'Buffalo', cursive);
+      font-size: 32px;
+      line-height: 1;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .card-type-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 4px;
+    }
+
+    .wallet-badge-id {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #FFFFFF;
+    }
+
+    .wallet-card-body {
+      padding: 16px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .student-name-box {
+      flex: 1;
+    }
+
+    .student-meta-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.65);
+      margin-bottom: 2px;
+    }
+
+    .student-name-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .student-balance-val {
+      font-size: 13px;
+      color: #F8E5DF;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* Zona QR d'alta visibilitat */
+    .wallet-card-qr-section {
+      background: #FFFFFF;
+      padding: 22px 20px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #2C221E;
+    }
+
+    .qr-container-box {
+      width: 220px;
+      height: 220px;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+    }
+
+    .qr-container-box img,
+    .qr-container-box canvas {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .qr-instruction {
+      font-size: 12px;
+      font-weight: 600;
+      color: #5E7E6F;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .qr-code-footer-text {
+      font-size: 11px;
+      color: #8C827A;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+
+    /* Botons d'acció */
+    .actions-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-action-pass {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
+
+    .btn-action-pass:active {
+      transform: scale(0.98);
+    }
+
+    .btn-apple-wallet {
+      background: #000000;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-watch-download {
+      background: #831D1D;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(131, 29, 29, 0.2);
+    }
+
+    .btn-outline-action {
+      background: #FFFFFF;
+      color: #2C221E;
+      border: 1px solid #E5DDD5;
+    }
+
+    .btn-outline-action:hover {
+      background: #F4EFEB;
+    }
+
+    /* Modal / Toast */
+    .toast-notice {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2C221E;
+      color: #FFFFFF;
+      padding: 12px 20px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      z-index: 10000;
+      display: none;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    @media print {
+      body {
+        background: #FFFFFF;
+        padding: 0;
+      }
+      .actions-list, .brand-top-nav, .qr-instruction {
+        display: none !important;
+      }
+      .wallet-card {
+        box-shadow: none;
+        border: 1px solid #831D1D;
+        max-width: 340px;
+        page-break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="carnet-wrapper">
+    
+    <!-- Enllaç de tornada -->
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;" class="brand-top-nav">
+      <a href="alumne.html" style="color: #831D1D; font-size: 13px; font-weight: 700; text-decoration: none;">
+        &larr; Portal de l'Alumne
+      </a>
+      <span style="font-size: 12px; color: #8C827A;">Carnet Oficial</span>
+    </div>
+
+    <!-- TARGETA DEL CARNET -->
+    <div class="wallet-card" id="wallet-card">
+      <div class="wallet-card-header">
+        <div>
+          <h1 class="brand-title">Roig de Coure</h1>
+          <div class="card-type-label">Taller de Ceràmica &bull; Carnet d'Alumne</div>
+        </div>
+        <div class="wallet-badge-id" id="badge-student-id">TC-101</div>
+      </div>
+
+      <div class="wallet-card-body">
+        <div class="student-name-box">
+          <div class="student-meta-label">Alumne/a</div>
+          <div class="student-name-val" id="badge-student-name">Carregant carnet...</div>
+          <div class="student-balance-val" id="badge-student-balance">Saldo d'hores: --</div>
+        </div>
+      </div>
+
+      <div class="wallet-card-qr-section">
+        <div class="qr-container-box" id="carnet-qr-mount">
+          <!-- Codi QR generat aquí -->
+        </div>
+        <div class="qr-instruction">
+          Apropa el QR a l'escàner del taller per fer entrada o sortida
+        </div>
+        <div class="qr-code-footer-text" id="badge-qr-footer">TC-101 &bull; ROIG DE COURE</div>
+      </div>
+    </div>
+
+    <!-- BOTONS D'ACCIÓ -->
+    <div class="actions-list">
+      <!-- Botó Apple Wallet -->
+      <a href="#" class="btn-action-pass btn-apple-wallet" id="btn-wallet-download">
+        Afegir a Apple Wallet (.pkpass)
+      </a>
+
+      <!-- Botó Descarregar per al Rellotge -->
+      <button type="button" class="btn-action-pass btn-watch-download" id="btn-watch-download">
+        Desar QR per al Rellotge (Smartwatch)
+      </button>
+
+      <!-- Botó Imprimir Carnet -->
+      <button type="button" class="btn-action-pass btn-outline-action" id="btn-print-carnet">
+        Imprimir Carnet Físic
+      </button>
+
+      <!-- Botó Anar a l'App de l'Alumne -->
+      <a href="alumne.html" class="btn-action-pass btn-outline-action" style="font-size: 13px;">
+        Gestionar Reserves i Saldo
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Toast notificació -->
+  <div class="toast-notice" id="toast-notice"></div>
+
+  <!-- Scripts -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="js/qr-engine.js?v=6.0"></script>
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      let studentId = urlParams.get('id');
+
+      if (!studentId) {
+        try {
+          const stored = localStorage.getItem('roig_student_user');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.id) studentId = parsed.id;
+          }
+        } catch (e) {
+          console.warn('Error llegint localStorage:', e);
+        }
+      }
+
+      const badgeNameEl = document.getElementById('badge-student-name');
+      const badgeIdEl = document.getElementById('badge-student-id');
+      const badgeBalanceEl = document.getElementById('badge-student-balance');
+      const badgeQrFooterEl = document.getElementById('badge-qr-footer');
+      const qrMountEl = document.getElementById('carnet-qr-mount');
+      const btnWallet = document.getElementById('btn-wallet-download');
+      const btnWatch = document.getElementById('btn-watch-download');
+      const btnPrint = document.getElementById('btn-print-carnet');
+      const toastEl = document.getElementById('toast-notice');
+
+      function showToast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.style.display = 'block';
+        setTimeout(() => {
+          toastEl.style.display = 'none';
+        }, 4000);
+      }
+
+      let currentStudent = null;
+
+      async function loadStudentData(id) {
+        if (!id) {
+          badgeNameEl.textContent = 'Alumne no especificat';
+          return;
+        }
+
+        badgeIdEl.textContent = id;
+        badgeQrFooterEl.textContent = `${id} • ROIG DE COURE`;
+
+        // Generar QR immediatament
+        QREngine.generateQR(qrMountEl, id, 220);
+
+        // Actualitzar enllaç .pkpass
+        btnWallet.href = `/api/wallet/pass?id=${encodeURIComponent(id)}`;
+
+        try {
+          const res = await fetch(`/api/alumnes/${encodeURIComponent(id)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.ok && data.alumne) {
+              currentStudent = data.alumne;
+              const nomComplet = `${data.alumne.nom} ${data.alumne.cognoms || ''}`.trim();
+              badgeNameEl.textContent = nomComplet;
+              badgeIdEl.textContent = data.alumne.id;
+              badgeQrFooterEl.textContent = `${data.alumne.id} • ROIG DE COURE`;
+
+              if (data.balanc) {
+                badgeBalanceEl.textContent = `Saldo d'hores: ${data.balanc.hores || 0}h ${data.balanc.minuts || 0}m disponibles`;
+              } else {
+                badgeBalanceEl.textContent = `Alumne/a oficial`;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('No s\'han pogut obtenir dades detallades:', e);
+        }
+      }
+
+      // Descarregar QR optimitzat per a rellotge intel·ligent (Apple Watch, Wear OS, Garmin)
+      async function downloadWatchQrImage() {
+        const id = (currentStudent && currentStudent.id) || studentId || 'TC-ALUMNE';
+        const name = (currentStudent && currentStudent.nom) ? `${currentStudent.nom} ${currentStudent.cognoms || ''}`.trim() : 'Alumne/a';
+
+        // Crear canvas 600x600 px d'alta resolució
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+
+        // 1. Fons blanc pur (màxima reflexió òptica per a l'escàner)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, 600, 600);
+
+        // 2. Capçalera corporativa
+        ctx.fillStyle = '#831D1D';
+        ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ROIG DE COURE', 300, 56);
+
+        ctx.fillStyle = '#5E7E6F';
+        ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText('CARNET D\'ALUMNE', 300, 82);
+
+        // 3. Generar codi QR en contenidor temporal d'alta resolució
+        const tempContainer = document.createElement('div');
+        tempContainer.style.display = 'none';
+        document.body.appendChild(tempContainer);
+
+        const qrObj = new QRCode(tempContainer, {
+          text: id,
+          width: 380,
+          height: 380,
+          colorDark: '#1A1817',
+          colorLight: '#FFFFFF',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Esperar que el canvas o imatge del QR estigui disponible
+        setTimeout(async () => {
+          const qrCanvas = tempContainer.querySelector('canvas');
+          const qrImg = tempContainer.querySelector('img');
+
+          const source = qrCanvas || qrImg;
+          if (source) {
+            ctx.drawImage(source, 110, 105, 380, 380);
+          }
+
+          document.body.removeChild(tempContainer);
+
+          // 4. Peu amb nom i codi
+          ctx.fillStyle = '#2C221E';
+          ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText(name, 300, 526);
+
+          ctx.fillStyle = '#831D1D';
+          ctx.font = 'bold 24px monospace';
+          ctx.fillText(`COD: ${id}`, 300, 560);
+
+          // 5. Compartir / Desar
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const filename = `RoigDeCoure_${id}_Rellotge.png`;
+            const file = new File([blob], filename, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              try {
+                await navigator.share({
+                  title: `Carnet Rellotge - ${id}`,
+                  text: `Codi QR de Roig de Coure per al teu rellotge intel·ligent`,
+                  files: [file]
+                });
+                showToast('QR desat correctament per al teu rellotge!');
+                return;
+              } catch (err) {
+                if (err.name !== 'AbortError') {
+                  console.warn('Share fallat, utilitzant descàrrega:', err);
+                } else {
+                  return;
+                }
+              }
+            }
+
+            // Descàrrega directa
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Imatge descarregada! Afegeix-la a la galeria del teu rellotge.');
+          }, 'image/png');
+        }, 150);
+      }
+
+      if (btnWatch) {
+        btnWatch.addEventListener('click', downloadWatchQrImage);
+      }
+
+      if (btnPrint) {
+        btnPrint.addEventListener('click', () => {
+          window.print();
+        });
+      }
+
+      loadStudentData(studentId);
+    })();
+  </script>
+</body>
+</html>
