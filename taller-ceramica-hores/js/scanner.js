@@ -36,9 +36,11 @@ async function startCamera(cameraModeOrId = 'user') {
   const statusEl = document.getElementById('camera-status-text');
   const errorContainer = document.getElementById('camera-error-container');
   const container = document.getElementById('qr-video-container');
+  const pulseDot = document.getElementById('scanner-pulse-dot');
 
   const isFront = currentFacingMode === 'user' || currentFacingMode.toLowerCase().includes('front') || currentFacingMode.toLowerCase().includes('selfie');
-  statusEl.textContent = `Iniciant càmera ${isFront ? 'frontal' : 'posterior'}...`;
+  if (statusEl) statusEl.textContent = 'Iniciant escàner...';
+  if (pulseDot) pulseDot.classList.remove('error');
 
   if (isFront) {
     container.classList.add('mirror-camera');
@@ -49,16 +51,18 @@ async function startCamera(cameraModeOrId = 'user') {
   try {
     errorContainer.style.display = 'none';
     await QREngine.startScanner('qr-video-container', onQrScanned, onScanError, currentFacingMode);
-    statusEl.textContent = `Càmera ${isFront ? 'frontal' : 'posterior'} activa • Enfoca el codi QR`;
+    if (statusEl) statusEl.textContent = 'Escàner a punt';
+    if (pulseDot) pulseDot.classList.remove('error');
     
     // Un cop la càmera és activa, poblem el desplegable amb totes les càmeres detectades
     await populateCameraDropdown();
   } catch (err) {
     console.error('Error iniciant càmera:', err);
-    statusEl.textContent = 'Càmera desactivada o sense permís';
+    if (statusEl) statusEl.textContent = 'Càmera desactivada';
+    if (pulseDot) pulseDot.classList.add('error');
     errorContainer.style.display = 'block';
     document.getElementById('camera-error-message').textContent = 
-      `No s'ha pogut obrir la càmera (${err.message || err}). Prem el botó per activar-la o tria una altra càmera a dalt.`;
+      `No s'ha pogut obrir la càmera (${err.message || err}). Concedeix permís al navegador o tria una altra càmera des d'Opcions.`;
   }
 }
 
@@ -211,6 +215,47 @@ function setupScannerEvents() {
     }
   });
 
+  // Modal d'opcions de l'escàner
+  const optionsModal = document.getElementById('modal-scanner-options');
+  const openOptionsBtn = document.getElementById('btn-open-scanner-options');
+  const closeOptionsBtn = document.getElementById('btn-close-scanner-options');
+  const toggleFeedBtn = document.getElementById('btn-toggle-camera-feed');
+
+  if (openOptionsBtn) {
+    openOptionsBtn.addEventListener('click', () => {
+      if (document.body.classList.contains('show-camera-feed')) {
+        document.body.classList.remove('show-camera-feed');
+        if (toggleFeedBtn) toggleFeedBtn.textContent = 'Mostrar previsualització de càmera';
+        return;
+      }
+      if (optionsModal) optionsModal.classList.add('active');
+    });
+  }
+
+  if (closeOptionsBtn && optionsModal) {
+    closeOptionsBtn.addEventListener('click', () => {
+      optionsModal.classList.remove('active');
+    });
+  }
+
+  if (optionsModal) {
+    optionsModal.addEventListener('click', (e) => {
+      if (e.target === optionsModal) {
+        optionsModal.classList.remove('active');
+      }
+    });
+  }
+
+  if (toggleFeedBtn) {
+    toggleFeedBtn.addEventListener('click', () => {
+      const isShowing = document.body.classList.toggle('show-camera-feed');
+      toggleFeedBtn.textContent = isShowing ? 'Amagar previsualització de càmera' : 'Mostrar previsualització de càmera';
+      if (isShowing && optionsModal) {
+        optionsModal.classList.remove('active');
+      }
+    });
+  }
+
   // Selector desplegable de càmera
   const camSelect = document.getElementById('select-camera-device');
   if (camSelect) {
@@ -242,25 +287,31 @@ function setupScannerEvents() {
   const manualModal = document.getElementById('modal-manual-entry-backdrop');
   const customTimeInput = document.getElementById('manual-custom-time-input');
 
-  document.getElementById('btn-manual-entry').addEventListener('click', () => {
-    document.getElementById('manual-code-input').value = '';
-    document.getElementById('select-student-quick').value = '';
-    
-    // Posar hora actual per defecte a l'input de temps
-    const nowLocal = new Date();
-    nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-    customTimeInput.value = nowLocal.toISOString().slice(0, 16);
-    customTimeInput.style.display = 'none';
-    
-    const radioNow = document.querySelector('input[name="manual_time_option"][value="now"]');
-    if (radioNow) radioNow.checked = true;
+  const manualEntryBtn = document.getElementById('btn-manual-entry');
+  if (manualEntryBtn) {
+    manualEntryBtn.addEventListener('click', () => {
+      if (optionsModal) optionsModal.classList.remove('active');
+      document.getElementById('manual-code-input').value = '';
+      document.getElementById('select-student-quick').value = '';
+      
+      // Posar hora actual per defecte a l'input de temps
+      const nowLocal = new Date();
+      nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
+      customTimeInput.value = nowLocal.toISOString().slice(0, 16);
+      customTimeInput.style.display = 'none';
+      
+      const radioNow = document.querySelector('input[name="manual_time_option"][value="now"]');
+      if (radioNow) radioNow.checked = true;
 
-    manualModal.classList.add('active');
-  });
+      manualModal.classList.add('active');
+    });
+  }
 
-  document.getElementById('btn-close-manual-modal').addEventListener('click', () => {
-    manualModal.classList.remove('active');
-  });
+  if (document.getElementById('btn-close-manual-modal')) {
+    document.getElementById('btn-close-manual-modal').addEventListener('click', () => {
+      manualModal.classList.remove('active');
+    });
+  }
 
   // Alternar opció d'hora actual o manual
   document.querySelectorAll('input[name="manual_time_option"]').forEach(radio => {

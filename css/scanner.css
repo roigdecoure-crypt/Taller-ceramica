@@ -1,89 +1,96 @@
 /**
- * scanner.css - Estils per a l'escàner mòbil Android i tauleta de recepció
+ * scanner.css - Estils per a l'escàner d'accés (quiòsc tauleta / mòbil)
+ * Mode ambient: pantalla neta i elegant en standby, càmera activa en segon pla
  */
 
 .scanner-body {
-  background-color: #1A1817;
+  background-color: #12100E;
   color: #FFFFFF;
   margin: 0;
   padding: 0;
   height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
-}
-
-.scanner-header {
-  padding: 14px 20px;
-  background: rgba(26, 24, 23, 0.95);
-  border-bottom: 1px solid #332F2C;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-.scanner-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.scanner-title h2 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #FFF;
-}
-.scanner-title p {
-  font-size: 11px;
-  color: #A89F98;
-}
-
-.scanner-viewport {
-  flex: 1;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  overflow: hidden;
 }
 
+/* ==========================================================================
+   CÀMERA EN SEGON PLA
+   Es manté en el DOM amb opacitat quasi nul·la per mantenir actiu el flux de
+   vídeo per maquinari a 20 FPS sense que l'usuari vegi la imatge de la sala.
+   ========================================================================== */
 #qr-video-container {
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
   object-fit: cover;
+  opacity: 0.001; /* Invisible per a l'ull humà, però actiu per al navegador */
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.35s ease;
 }
+
 #qr-video-container video {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
 }
+
 #qr-video-container.mirror-camera video {
   transform: scaleX(-1);
 }
 
-/* Guia d'enfocament / marc d'escaneig */
+/* Quan s'activa expressament la previsualització de la càmera des d'Opcions */
+body.show-camera-feed #qr-video-container {
+  opacity: 1 !important;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+body.show-camera-feed .scanner-overlay-guide {
+  display: block;
+}
+
+body.show-camera-feed .scanner-standby-screen {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Guia d'enfocament (només visible quan s'activa el mode de previsualització) */
 .scanner-overlay-guide {
-  position: absolute;
-  width: 250px;
-  height: 250px;
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 270px;
+  height: 270px;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 20px;
   pointer-events: none;
-  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.65);
+  z-index: 15;
 }
+
 .scanner-overlay-guide::before {
   content: '';
   position: absolute;
   inset: -4px;
-  border: 4px solid var(--color-primary);
+  border: 4px solid #831D1D;
   border-radius: 24px;
   border-color: #831D1D transparent transparent #831D1D;
   animation: rotateCorners 4s linear infinite;
 }
+
+@keyframes rotateCorners {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .scanner-laser {
   position: absolute;
   left: 10px;
@@ -97,21 +104,188 @@
 @keyframes laserScan {
   0% { top: 15px; opacity: 0.2; }
   50% { opacity: 1; }
-  100% { top: 235px; opacity: 0.2; }
+  100% { top: 250px; opacity: 0.2; }
 }
 
-/* Barra d'accions inferiors */
-.scanner-bottom-bar {
-  padding: 16px 20px;
-  background: rgba(26, 24, 23, 0.95);
-  border-top: 1px solid #332F2C;
+/* ==========================================================================
+   BOTÓ DISCRET A LA CANTONADA SUPERIOR
+   ========================================================================== */
+.scanner-top-actions {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 60;
   display: flex;
-  gap: 12px;
-  justify-content: center;
-  z-index: 10;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Modal gran de Feedback (Entrada / Sortida) */
+.scanner-discreet-btn {
+  background: rgba(30, 26, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #A89F98;
+  border-radius: 99px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0.4;
+  transition: opacity 0.25s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.scanner-discreet-btn:hover,
+.scanner-discreet-btn:focus {
+  opacity: 1;
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(46, 40, 37, 0.95);
+}
+
+body.show-camera-feed .scanner-discreet-btn {
+  opacity: 0.95;
+  background: rgba(18, 16, 14, 0.9);
+  border-color: #831D1D;
+  color: #FFF;
+}
+
+/* ==========================================================================
+   PANTALLA AMBIENT EN STANDBY (NETA I SENSE DISTRACCIONS)
+   ========================================================================== */
+.scanner-standby-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at center, #1C1917 0%, #12100E 75%);
+  user-select: none;
+  transition: opacity 0.35s ease;
+}
+
+.standby-brand-wrap {
+  text-align: center;
+  max-width: 520px;
+  padding: 24px;
+}
+
+.standby-brand-title {
+  font-family: 'Buffalo', 'Buffalo Regular', cursive, sans-serif;
+  font-size: 52px;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  color: #C89D7C;
+  letter-spacing: 0.5px;
+  font-weight: normal;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 480px) {
+  .standby-brand-title {
+    font-size: 40px;
+  }
+}
+
+.standby-subtitle {
+  font-size: 19px;
+  color: #E6E1DC;
+  font-weight: 400;
+  margin: 0 0 28px;
+  letter-spacing: 0.3px;
+  opacity: 0.9;
+}
+
+/* Indicador de pols suau */
+.standby-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 18px;
+  border-radius: 99px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.standby-pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #5E7E6F;
+  box-shadow: 0 0 8px #5E7E6F;
+  animation: standbyPulse 2.5s infinite ease-in-out;
+}
+
+.standby-pulse-dot.error {
+  background-color: #831D1D;
+  box-shadow: 0 0 8px #831D1D;
+  animation: none;
+}
+
+@keyframes standbyPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.55;
+    box-shadow: 0 0 4px #5E7E6F;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+    box-shadow: 0 0 14px #5E7E6F;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.55;
+    box-shadow: 0 0 4px #5E7E6F;
+  }
+}
+
+.standby-status-label {
+  font-size: 13px;
+  color: #A89F98;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   PANELL D'ERROR O PERMÍS DE CÀMERA
+   ========================================================================== */
+.scanner-error-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  text-align: center;
+  padding: 28px 24px;
+  width: 90%;
+  max-width: 340px;
+  background: rgba(30, 26, 24, 0.98);
+  border-radius: 16px;
+  border: 2px solid #831D1D;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8);
+}
+
+.scanner-error-panel h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FFF;
+  margin-bottom: 10px;
+}
+
+.scanner-error-panel p {
+  font-size: 13px;
+  color: #D3CBC4;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   MODAL DE CONFIRMACIÓ DE RESULTAT D'ESCANEIG (ENTRADA / SORTIDA)
+   ========================================================================== */
 .scan-result-overlay {
   position: fixed;
   inset: 0;
@@ -121,11 +295,13 @@
   justify-content: center;
   padding: 24px;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
+
 .scan-result-overlay.active {
   opacity: 1;
   pointer-events: auto;
@@ -134,14 +310,16 @@
 .scan-result-box {
   width: 100%;
   max-width: 440px;
-  background: #2E2825;
+  background: #231F1C;
+  border: 1px solid #3E3733;
   border-radius: 20px;
   padding: 32px 24px;
   text-align: center;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  transform: scale(0.9);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7);
+  transform: scale(0.92);
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
 .scan-result-overlay.active .scan-result-box {
   transform: scale(1);
 }
@@ -149,6 +327,7 @@
 .scan-result-box.is-entrada {
   border-top: 8px solid #5E7E6F;
 }
+
 .scan-result-box.is-sortida {
   border-top: 8px solid #831D1D;
 }
@@ -156,54 +335,63 @@
 .result-icon {
   display: none !important;
 }
+
 .result-action-badge {
   display: inline-block;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 4px 14px;
+  letter-spacing: 1.2px;
+  padding: 6px 16px;
   border-radius: 99px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
+
 .is-entrada .result-action-badge {
   background: #5E7E6F;
-  color: #FFF;
+  color: #FFFFFF;
 }
+
 .is-sortida .result-action-badge {
   background: #831D1D;
-  color: #FFF;
+  color: #FFFFFF;
 }
 
 .result-student-name {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  color: #FFF;
-  margin-bottom: 16px;
+  color: #FFFFFF;
+  margin-bottom: 18px;
+  line-height: 1.2;
 }
 
 .result-details {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
+
 .result-detail-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 14px;
 }
+
 .result-detail-row .lbl {
   color: #A89F98;
 }
+
 .result-detail-row .val {
   font-weight: 700;
-  color: #FFF;
+  color: #FFFFFF;
   font-family: monospace;
 }
+
 .result-detail-row.highlight .val {
   font-size: 18px;
   color: #FFFFFF;

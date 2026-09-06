@@ -74,9 +74,7 @@ const QREngine = {
     this.html5QrScanner = new Html5Qrcode(elementId);
 
     const config = {
-      fps: 15,
-      qrbox: { width: 260, height: 260 },
-      aspectRatio: 1.0,
+      fps: 20,
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }

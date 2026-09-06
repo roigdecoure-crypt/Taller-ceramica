@@ -13,7 +13,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/scanner.css">
+  <link rel="stylesheet" href="css/scanner.css?v=3.2">
   <style>
     @font-face {
       font-family: 'Buffalo';
@@ -31,64 +31,43 @@
 </head>
 <body class="scanner-body">
 
-  <!-- Capçalera de l'escàner -->
-  <header class="scanner-header">
-    <div class="scanner-title">
-      <div>
-        <h2 id="scanner-ws-name" style="font-family: 'Buffalo', 'Buffalo Regular', cursive, sans-serif; font-size: 32px; line-height: 1; margin: 0 0 2px;">Roig de Coure</h2>
-        <p>Apropa el teu carnet QR per entrar o sortir</p>
+  <!-- Càmera en segon pla (activa decodificant a 20 FPS a pantalla completa) -->
+  <div id="qr-video-container"></div>
+  
+  <!-- Marc d'enfocament (només visible quan s'activa el mode previsualització des d'Opcions) -->
+  <div class="scanner-overlay-guide" id="scanner-preview-guide">
+    <div class="scanner-laser"></div>
+  </div>
+
+  <!-- Botó discret a la cantonada superior dreta per accedir a opcions i admin -->
+  <div class="scanner-top-actions">
+    <button type="button" class="scanner-discreet-btn" id="btn-open-scanner-options" title="Opcions de l'escàner">
+      Opcions
+    </button>
+  </div>
+
+  <!-- Pantalla principal ambient en Standby (sense distraccions) -->
+  <main class="scanner-standby-screen" id="scanner-standby-screen">
+    <div class="standby-brand-wrap">
+      <h1 class="standby-brand-title" id="scanner-ws-name">Roig de Coure</h1>
+      <p class="standby-subtitle">Apropa el teu carnet QR</p>
+      <div class="standby-status-pill">
+        <span class="standby-pulse-dot" id="scanner-pulse-dot"></span>
+        <span class="standby-status-label" id="camera-status-text">Escàner a punt</span>
       </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 6px;">
-      <select id="select-camera-device" class="form-control" style="background:#2E2825; color:#FFF; border-color:#554F4B; font-size:12px; padding:6px 8px; max-width:150px;">
-        <option value="user">Frontal</option>
-        <option value="environment">Darrere</option>
-      </select>
-      <button class="btn btn-outline btn-sm" id="btn-switch-camera" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Canviar càmera">
-        Canviar
-      </button>
-      <a href="admin.html" class="btn btn-outline btn-sm" style="border-color:#4A4440; color:#FFF; padding:6px 10px;" title="Panell d'administració">
-        Admin
-      </a>
-    </div>
-  </header>
-
-  <!-- Visor de la Càmera -->
-  <main class="scanner-viewport">
-    <div id="qr-video-container"></div>
-    
-    <!-- Marc d'enfocament interactiu -->
-    <div class="scanner-overlay-guide">
-      <div class="scanner-laser"></div>
-    </div>
-
-    <!-- Indicador d'estat a la part superior del visor -->
-    <div style="position: absolute; top: 16px; background: rgba(0,0,0,0.7); padding: 6px 14px; border-radius: 99px; font-size: 13px; z-index: 5; display: flex; align-items: center; gap: 8px;">
-      <span class="live-pulse"></span>
-      <span id="camera-status-text">Iniciant càmera frontal...</span>
-    </div>
-
-    <!-- Panell d'activació si la càmera no s'inicia sola -->
-    <div id="camera-error-container" style="display:none; position:absolute; z-index:25; text-align:center; padding:24px 20px; max-width:320px; background:rgba(30,26,24,0.95); border-radius:16px; border:2px solid #831D1D; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
-      <h3 style="font-size:16px; font-weight:700; color:#FFF; margin-bottom:8px;">Activar Càmera Frontal</h3>
-      <p id="camera-error-message" style="font-size:13px; color:#D3CBC4; margin-bottom:16px;">
-        Fes clic al botó inferior per concedir permís o activar la càmera frontal.
-      </p>
-      <button class="btn btn-primary btn-block" id="btn-retry-camera">
-        Activar Càmera Ara
-      </button>
     </div>
   </main>
 
-  <!-- Barra inferior d'accions -->
-  <footer class="scanner-bottom-bar">
-    <button class="btn btn-primary" id="btn-manual-entry" style="flex: 1; max-width: 240px;">
-      Introduir Codi Manual
+  <!-- Panell d'activació si cal concedir permís a la càmera -->
+  <div id="camera-error-container" class="scanner-error-panel" style="display:none;">
+    <h3>Activar Càmera</h3>
+    <p id="camera-error-message">
+      Fes clic al botó per concedir permís d'accés a la càmera.
+    </p>
+    <button type="button" class="btn btn-primary btn-block" id="btn-retry-camera">
+      Activar Càmera
     </button>
-    <button class="btn btn-outline" id="btn-install-pwa" style="border-color:#4A4440; color:#FFF; display: none;">
-      Instal·lar App
-    </button>
-  </footer>
+  </div>
 
   <!-- MODAL DE RESULTAT D'ESCANEIG (ENTRADA / SORTIDA) -->
   <div class="scan-result-overlay" id="scan-result-modal">
@@ -119,6 +98,45 @@
       <button class="btn btn-outline btn-block" id="btn-dismiss-result" style="border-color: rgba(255,255,255,0.3); color:#FFF;">
         D'acord (o toca per continuar)
       </button>
+    </div>
+  </div>
+
+  <!-- MODAL D'OPCIONS DE L'ESCÀNER -->
+  <div class="modal-backdrop" id="modal-scanner-options">
+    <div class="modal-dialog" style="max-width: 380px;">
+      <div class="modal-header">
+        <h3>Opcions de l'escàner</h3>
+        <button type="button" class="modal-close" id="btn-close-scanner-options">&times;</button>
+      </div>
+      <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="font-size: 13px; font-weight: 600; color: #D3CBC4; display: block; margin-bottom: 6px;">Càmera en ús:</label>
+          <select id="select-camera-device" class="form-control" style="background:#2E2825; color:#FFF; border-color:#554F4B; font-size: 14px; width: 100%;">
+            <option value="user">Frontal</option>
+            <option value="environment">Darrere</option>
+          </select>
+        </div>
+
+        <button type="button" class="btn btn-outline btn-block" id="btn-switch-camera" style="border-color:#554F4B; color:#FFF;">
+          Canviar càmera
+        </button>
+
+        <button type="button" class="btn btn-outline btn-block" id="btn-toggle-camera-feed" style="border-color:#554F4B; color:#FFF;">
+          Mostrar previsualització de càmera
+        </button>
+
+        <button type="button" class="btn btn-primary btn-block" id="btn-manual-entry">
+          Introduir Codi Manual
+        </button>
+
+        <a href="admin.html" class="btn btn-outline btn-block" style="text-align: center; text-decoration: none; border-color:#554F4B; color:#FFF;">
+          Panell d'administració
+        </a>
+
+        <button type="button" class="btn btn-outline btn-block" id="btn-install-pwa" style="border-color:#554F4B; color:#FFF; display: none;">
+          Instal·lar App
+        </button>
+      </div>
     </div>
   </div>
 
@@ -178,8 +196,8 @@
   <script src="lib/html5-qrcode.min.js"></script>
   <script src="js/time-utils.js?v=3.1"></script>
   <script src="js/sound.js?v=3.1"></script>
-  <script src="js/qr-engine.js?v=3.1"></script>
+  <script src="js/qr-engine.js?v=3.2"></script>
   <script src="js/store.js?v=3.1"></script>
-  <script src="js/scanner.js?v=3.1"></script>
+  <script src="js/scanner.js?v=3.2"></script>
 </body>
 </html>
