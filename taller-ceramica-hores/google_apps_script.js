@@ -63,8 +63,8 @@ function doPost(e) {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
     } else if (action === "add_reserva" || action === "update_reserva") {
-      upsertReservaRow(ss, data.payload || data.reserva);
-      return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets" });
+      var resCalId = upsertReservaRow(ss, data.payload || data.reserva);
+      return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets", calendar_event_id: resCalId });
     } else if (action === "cancel_reserva") {
       cancelReservaRow(ss, data.payload || data.reserva);
       return jsonResponse({ status: "success", message: "Reserva cancel·lada a Google Sheets" });
@@ -127,6 +127,16 @@ function getOrCreateSheet(ss, name, headers, color) {
       headerRange.setBackground(color || "#C25E3A");
       headerRange.setFontColor("#FFFFFF");
       headerRange.setFontWeight("bold");
+      sheet.setFrozenRows(1);
+    }
+  } else if (headers && headers.length > 0) {
+    var lastCol = sheet.getLastColumn();
+    if (lastCol < headers.length) {
+      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      var hr = sheet.getRange(1, 1, 1, headers.length);
+      hr.setBackground(color || "#C25E3A");
+      hr.setFontColor("#FFFFFF");
+      hr.setFontWeight("bold");
       sheet.setFrozenRows(1);
     }
   }
@@ -449,7 +459,7 @@ function upsertConfigKey(ss, key, val) {
 
 /* ==================== RESERVES & AFORAMENT ==================== */
 
-var HEADERS_RESERVES = ["ID Reserva", "ID Alumne", "Nom Alumne", "Data", "Hora Inici", "Hora Fi", "Franja", "Estat", "Hores", "Notes", "Creat El"];
+var HEADERS_RESERVES = ["ID Reserva", "ID Alumne", "Nom Alumne", "Telèfon", "Data", "Hora Inici", "Hora Fi", "Franja", "Activitat", "Places", "Estat", "Hores", "Notes", "Creat El", "Calendar Event ID"];
 
 function syncReserves(ss, reserves) {
   var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
@@ -464,14 +474,18 @@ function syncReserves(ss, reserves) {
         r.id || "",
         r.student_id || "",
         r.student_nom || "",
+        r.telefon || "",
         r.data || "",
         r.hora_inici || "",
         r.hora_fi || "",
         r.franja || "",
+        r.activitat || "Torn",
+        parseInt(r.places || 1, 10),
         r.estat || "confirmada",
-        (r.hores !== undefined && r.hores !== null ? r.hores : 2.0),
+        (r.hores !== undefined && r.hores !== null ? r.hores : 1.5),
         r.notes || "",
-        r.created_at || ""
+        r.created_at || "",
+        r.calendar_event_id || ""
       ];
     });
     sheet.getRange(2, 1, rows.length, HEADERS_RESERVES.length).setValues(rows);
@@ -492,44 +506,297 @@ function readReserves(ss) {
       id: String(row[0]).trim(),
       student_id: String(row[1] || "").trim(),
       student_nom: String(row[2] || "").trim(),
-      data: String(row[3] || "").trim(),
-      hora_inici: String(row[4] || "10:00").trim(),
-      hora_fi: String(row[5] || "12:00").trim(),
-      franja: String(row[6] || "mati_1").trim(),
-      estat: String(row[7] || "confirmada").trim(),
-      hores: Number(row[8]) || 2.0,
-      notes: String(row[9] || "").trim(),
-      created_at: String(row[10] || "").trim()
+      telefon: String(row[3] || "").trim(),
+      data: String(row[4] || "").trim(),
+      hora_inici: String(row[5] || "10:00").trim(),
+      hora_fi: String(row[6] || "11:30").trim(),
+      franja: String(row[7] || "F1").trim(),
+      activitat: String(row[8] || "Torn").trim(),
+      activitat_id: String(row[8] || "torn").toLowerCase().replace(/[^a-z]/g, ''),
+      places: parseInt(row[9] || 1, 10),
+      estat: String(row[10] || "confirmada").trim(),
+      hores: Number(row[11]) || 1.5,
+      notes: String(row[12] || "").trim(),
+      created_at: String(row[13] || "").trim(),
+      calendar_event_id: String(row[14] || "").trim()
     });
   }
   return result;
+}
+
+// Cerca el calendari "reserves" (o el configurat) amb màxima precisió
+function getRoigDeCoureCalendar(preferredName) {
+  if (typeof CalendarApp === "undefined") return null;
+  try {
+    var rawPreferred = (preferredName || "reserves").trim();
+    var targetClean = rawPreferred.toLowerCase().replace(/[\s_\-]+/g, ""); // "reserves"
+
+    // 1. Si s'ha passat un ID directe de calendari (ex: xxx@group.calendar.google.com o email)
+    if (rawPreferred.indexOf("@") !== -1) {
+      try {
+        var calById = CalendarApp.getCalendarById(rawPreferred);
+        if (calById) {
+          Logger.log("✅ Calendari trobat directament per ID: " + calById.getName() + " (" + rawPreferred + ")");
+          return calById;
+        }
+      } catch (eId) {}
+    }
+
+    // 2. Cerca per nom exacte (ignorant majúscules/minúscules i espais) a tots els calendaris de l'usuari
+    var cals = CalendarApp.getAllCalendars();
+    for (var i = 0; i < cals.length; i++) {
+      var cName = (cals[i].getName() || "").trim();
+      var cNameClean = cName.toLowerCase().replace(/[\s_\-]+/g, "");
+
+      if (cNameClean === targetClean) {
+        Logger.log("✅ Calendari trobat per nom exacte: " + cals[i].getName() + " (ID: " + cals[i].getId() + ")");
+        return cals[i];
+      }
+    }
+
+    // 3. Provar cerca mitjançant getCalendarsByName amb variacions comunes
+    var directNames = [rawPreferred, "reserves", "Reserves", "RESERVES", "reserva", "Reserva", "Reserves Taller", "reserves taller"];
+    for (var k = 0; k < directNames.length; k++) {
+      try {
+        var named = CalendarApp.getCalendarsByName(directNames[k]);
+        if (named && named.length > 0) {
+          Logger.log("✅ Calendari trobat per getCalendarsByName('" + directNames[k] + "'): " + named[0].getName());
+          return named[0];
+        }
+      } catch (eNamed) {}
+    }
+
+    // 4. Cerca per coincidència parcial (que contingui "reserv" al nom del calendari)
+    for (var j = 0; j < cals.length; j++) {
+      var cNamePart = (cals[j].getName() || "").trim().toLowerCase();
+      if (cNamePart.indexOf("reserv") !== -1) {
+        Logger.log("✅ Calendari trobat per coincidència parcial 'reserv': " + cals[j].getName() + " (ID: " + cals[j].getId() + ")");
+        return cals[j];
+      }
+    }
+
+    // 5. Fallback d'últim recurs: calendari principal
+    var defCal = CalendarApp.getDefaultCalendar();
+    Logger.log("⚠️ No s'ha trobat cap calendari anomenat '" + rawPreferred + "'. Si us plau, crea un calendari anomenat 'reserves' a Google Calendar. Mentrestant s'utilitza el principal: " + (defCal ? defCal.getName() : "cap"));
+    return defCal;
+  } catch (err) {
+    Logger.log("Avís obtenint calendari: " + err.toString());
+    try {
+      return CalendarApp.getDefaultCalendar();
+    } catch (e2) {
+      return null;
+    }
+  }
 }
 
 function upsertReservaRow(ss, r) {
   if (!r || !r.id) return;
   var sheet = getOrCreateSheet(ss, "Reserves", HEADERS_RESERVES, "#2E7D32");
   var values = sheet.getDataRange().getValues();
+
+  var calEventId = r.calendar_event_id || "";
+  // Sincronització amb Google Calendar si la reserva és confirmada
+  if (r.estat !== "cancel·lada") {
+    var createdId = syncCalendarEvent(r);
+    if (createdId) calEventId = createdId;
+  } else {
+    deleteCalendarEvent(r);
+  }
+
   var rowData = [
     r.id,
     r.student_id || "",
     r.student_nom || "",
+    r.telefon || "",
     r.data || "",
     r.hora_inici || "",
     r.hora_fi || "",
     r.franja || "",
+    r.activitat || "Torn",
+    parseInt(r.places || 1, 10),
     r.estat || "confirmada",
-    (r.hores !== undefined && r.hores !== null ? r.hores : 2.0),
+    (r.hores !== undefined && r.hores !== null ? r.hores : 1.5),
     r.notes || "",
-    r.created_at || new Date().toISOString()
+    r.created_at || new Date().toISOString(),
+    calEventId
   ];
 
+  var updated = false;
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(r.id).trim()) {
       sheet.getRange(i + 1, 1, 1, rowData.length).setValues([rowData]);
-      return;
+      updated = true;
+      break;
     }
   }
-  sheet.appendRow(rowData);
+  if (!updated) {
+    sheet.appendRow(rowData);
+  }
+  return calEventId;
+}
+
+function parseDateTimeRobust(dateVal, timeVal) {
+  var year = 2026, month = 8, day = 5, hours = 10, minutes = 0;
+
+  if (dateVal instanceof Date) {
+    year = dateVal.getFullYear();
+    month = dateVal.getMonth();
+    day = dateVal.getDate();
+  } else if (dateVal) {
+    var str = String(dateVal).trim();
+    var isoMatch = str.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (isoMatch) {
+      year = parseInt(isoMatch[1], 10);
+      month = parseInt(isoMatch[2], 10) - 1;
+      day = parseInt(isoMatch[3], 10);
+    } else {
+      var dObj = new Date(str);
+      if (!isNaN(dObj.getTime())) {
+        year = dObj.getFullYear();
+        month = dObj.getMonth();
+        day = dObj.getDate();
+      }
+    }
+  }
+
+  if (timeVal instanceof Date) {
+    hours = timeVal.getHours();
+    minutes = timeVal.getMinutes();
+  } else if (timeVal) {
+    var timeStr = String(timeVal).trim();
+    var timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      hours = parseInt(timeMatch[1], 10);
+      minutes = parseInt(timeMatch[2], 10);
+    }
+  }
+
+  return new Date(year, month, day, hours, minutes, 0);
+}
+
+function syncCalendarEvent(r) {
+  try {
+    if (!r || !r.data || !r.hora_inici || !r.hora_fi) return null;
+    var targetCalName = r.calendar_name || "reserves";
+    var cal = getRoigDeCoureCalendar(targetCalName);
+    if (!cal) {
+      Logger.log("❌ No s'ha pogut obtenir cap calendari.");
+      return "ERR: No s'ha trobat el calendari " + targetCalName;
+    }
+
+    var nom = r.student_nom || r.student_id || "Alumne";
+    var act = r.activitat || "Torn";
+    var tel = r.telefon || "";
+    var title = act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
+
+    var startTime = parseDateTimeRobust(r.data, r.hora_inici);
+    var endTime = parseDateTimeRobust(r.data, r.hora_fi);
+
+    var desc = "Reserva Taller Roig de Coure\n" +
+               "Alumne: " + nom + "\n" +
+               "Activitat: " + act + "\n" +
+               "Places: " + places + "\n" +
+               (tel ? "Telèfon: " + tel + "\n" : "") +
+               (r.notes ? "Notes: " + r.notes + "\n" : "") +
+               "ID Reserva: " + r.id;
+
+    var location = "Taller de Ceràmica Roig de Coure";
+
+    // Si l'esdeveniment era prèviament al calendari principal per defecte, esborrar-lo d'allà per evitar duplicats
+    try {
+      var defCal = CalendarApp.getDefaultCalendar();
+      if (defCal && cal && defCal.getId() !== cal.getId()) {
+        if (r.calendar_event_id) {
+          try {
+            var oldDefEv = defCal.getEventById(r.calendar_event_id);
+            if (oldDefEv) {
+              oldDefEv.deleteEvent();
+              Logger.log("🧹 Esdeveniment anterior eliminat del calendari principal per moure'l a: " + cal.getName());
+            }
+          } catch (eOld) {}
+        }
+      }
+    } catch (eDefCheck) {}
+
+    var event = null;
+    if (r.calendar_event_id) {
+      try {
+        event = cal.getEventById(r.calendar_event_id);
+      } catch (e) {}
+    }
+
+    if (!event) {
+      var existingEvents = cal.getEvents(startTime, endTime);
+      for (var j = 0; j < existingEvents.length; j++) {
+        var d = existingEvents[j].getDescription() || "";
+        if (d.indexOf("ID Reserva: " + r.id) !== -1) {
+          event = existingEvents[j];
+          break;
+        }
+      }
+    }
+
+    if (event) {
+      event.setTitle(title);
+      event.setTime(startTime, endTime);
+      event.setDescription(desc);
+      event.setLocation(location);
+      return event.getId();
+    } else {
+      var newEvent = cal.createEvent(title, startTime, endTime, {
+        description: desc,
+        location: location
+      });
+      return newEvent.getId();
+    }
+  } catch (err) {
+    Logger.log("Avís Google Calendar: " + err.toString());
+    return null;
+  }
+}
+
+function deleteCalendarEvent(r) {
+  try {
+    if (!r) return;
+    var targetCalName = r.calendar_name || "reserves";
+    var cal = getRoigDeCoureCalendar(targetCalName);
+    if (!cal) return;
+
+    var event = null;
+    if (r.calendar_event_id) {
+      try {
+        event = cal.getEventById(r.calendar_event_id);
+      } catch (e) {}
+    }
+
+    // També comprovar el calendari per defecte per si s'havia creat allà inicialment
+    try {
+      var defCal = CalendarApp.getDefaultCalendar();
+      if (defCal && defCal.getId() !== cal.getId() && r.calendar_event_id) {
+        var defEvent = defCal.getEventById(r.calendar_event_id);
+        if (defEvent) defEvent.deleteEvent();
+      }
+    } catch (eDef) {}
+
+    if (!event && r.data && r.hora_inici && r.hora_fi) {
+      var startTime = parseDateTimeRobust(r.data, r.hora_inici);
+      var endTime = parseDateTimeRobust(r.data, r.hora_fi);
+      var existingEvents = cal.getEvents(startTime, endTime);
+      for (var j = 0; j < existingEvents.length; j++) {
+        var d = existingEvents[j].getDescription() || "";
+        if (d.indexOf("ID Reserva: " + r.id) !== -1) {
+          event = existingEvents[j];
+          break;
+        }
+      }
+    }
+
+    if (event) {
+      event.deleteEvent();
+    }
+  } catch (err) {
+    Logger.log("Avís cancel·lant esdeveniment a Google Calendar: " + err.toString());
+  }
 }
 
 function cancelReservaRow(ss, r) {
@@ -539,10 +806,11 @@ function cancelReservaRow(ss, r) {
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(r.id).trim()) {
-      sheet.getRange(i + 1, 8).setValue("cancel·lada");
-      return;
+      sheet.getRange(i + 1, 11).setValue("cancel·lada");
+      break;
     }
   }
+  deleteCalendarEvent(r);
 }
 
 function deleteReservaRow(ss, resId) {
@@ -552,10 +820,114 @@ function deleteReservaRow(ss, resId) {
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(resId).trim()) {
+      var rObj = {
+        id: resId,
+        data: values[i][4],
+        hora_inici: values[i][5],
+        hora_fi: values[i][6],
+        calendar_event_id: values[i][14] || "",
+        calendar_name: "reserves"
+      };
       sheet.deleteRow(i + 1);
+      deleteCalendarEvent(rObj);
       return;
     }
   }
 }
 
+/**
+ * Funció de prova directa des de l'editor d'Apps Script.
+ * Executa aquesta funció a l'editor fent clic a "Executa":
+ * 1. Mostra tots els calendaris que té el compte de Google al registre d'execució.
+ * 2. Cerca el teu calendari "reserves" (o similar).
+ * 3. Crea un esdeveniment de prova a "reserves" per verificar que funciona al 100%.
+ */
+function provarSincronitzacioCalendari() {
+  var usuariActiu = Session.getEffectiveUser().getEmail();
+  Logger.log("👤 Compte de Google que executa aquest script: " + usuariActiu);
 
+  var cals = CalendarApp.getAllCalendars();
+  Logger.log("📅 Calendaris que té aquest compte (" + cals.length + "):");
+  for (var i = 0; i < cals.length; i++) {
+    Logger.log("   - \"" + cals[i].getName() + "\" | ID: " + cals[i].getId());
+  }
+
+  var cal = getRoigDeCoureCalendar("reserves");
+  if (!cal) {
+    Logger.log("❌ No s'ha trobat cap calendari.");
+    return;
+  }
+
+  Logger.log("🎯 CALENDARI TRIAT PER A LES RESERVES: \"" + cal.getName() + "\" (ID: " + cal.getId() + ")");
+
+  var ara = new Date();
+  var fi = new Date(ara.getTime() + 60 * 60 * 1000);
+  var ev = cal.createEvent("Prova Sincronització Roig de Coure", ara, fi, {
+    description: "Esdeveniment de prova per comprovar que el calendari 'reserves' rep les reserves.",
+    location: "Taller de Ceràmica Roig de Coure"
+  });
+
+  Logger.log("🎉 ESDEVENIMENT CREAT CORRECTAMENT AL CALENDARI 'reserves'!");
+  Logger.log("Títol: " + ev.getTitle());
+  Logger.log("ID de l'esdeveniment: " + ev.getId());
+  Logger.log("Comprova ara el teu calendari 'reserves' a Google Calendar.");
+}
+
+/**
+ * Funció per migrar totes les reserves existents del Google Sheet
+ * directament al calendari secundari "reserves".
+ * Es pot executar directament des de l'editor d'Apps Script fent clic a "Executa".
+ */
+function sincronitzarTotesLesReservesAlCalendariReserves() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Reserves");
+  if (!sheet) {
+    Logger.log("❌ No s'ha trobat la pestanya 'Reserves'.");
+    return;
+  }
+
+  var cal = getRoigDeCoureCalendar("reserves");
+  if (!cal) {
+    Logger.log("❌ No s'ha trobat el calendari 'reserves'.");
+    return;
+  }
+
+  Logger.log("🎯 Sincronitzant totes les reserves al calendari: \"" + cal.getName() + "\" (ID: " + cal.getId() + ")");
+
+  var values = sheet.getDataRange().getValues();
+  var sincronitzades = 0;
+
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var resId = String(row[0] || "").trim();
+    var estat = String(row[10] || "confirmada").trim();
+    if (!resId || estat === "cancel·lada") continue;
+
+    var rObj = {
+      id: resId,
+      student_id: String(row[1] || "").trim(),
+      student_nom: String(row[2] || "").trim(),
+      telefon: String(row[3] || "").trim(),
+      data: String(row[4] || "").trim(),
+      hora_inici: String(row[5] || "10:00").trim(),
+      hora_fi: String(row[6] || "11:30").trim(),
+      franja: String(row[7] || "F1").trim(),
+      activitat: String(row[8] || "Torn").trim(),
+      places: parseInt(row[9] || 1, 10),
+      estat: estat,
+      hores: Number(row[11]) || 1.5,
+      notes: String(row[12] || "").trim(),
+      calendar_event_id: String(row[14] || "").trim(),
+      calendar_name: "reserves"
+    };
+
+    var newCalId = syncCalendarEvent(rObj);
+    if (newCalId && newCalId.indexOf("ERR:") === -1) {
+      sheet.getRange(i + 1, 15).setValue(newCalId);
+      sincronitzades++;
+      Logger.log("✅ Reserva " + resId + " sincronitzada al calendari 'reserves'.");
+    }
+  }
+
+  Logger.log("🎉 Sincronització completada! Total reserves sincronitzades a 'reserves': " + sincronitzades);
+}

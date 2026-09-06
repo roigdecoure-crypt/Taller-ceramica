@@ -81,7 +81,7 @@ self.addEventListener("push", (event) => {
       data = { title: "Taller de Ceràmica Roig de Coure", body: event.data.text() };
     }
   }
-  const title = data.title || "🏺 Reserva Confirmada - Taller Roig de Coure";
+  const title = data.title || "Reserva Confirmada - Taller Roig de Coure";
   const options = {
     body: data.body || "La teva reserva al taller s'ha completat amb èxit!",
     icon: data.icon || "./icons/icon-192.png",

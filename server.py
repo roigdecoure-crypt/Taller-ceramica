@@ -278,7 +278,7 @@ def hydrate_from_google_sheets(target_url=None):
         print("[Google Sheets] Cap URL configurat. S'utilitza la base de dades local SQLite.")
         return {'ok': False, 'message': 'Cap URL de Google Sheets configurat.'}
 
-    print(f"[Google Sheets] ⏳ Iniciant hidratació des de Google Sheets...")
+    print(f"[Google Sheets] Iniciant hidratació des de Google Sheets...")
     try:
         req_url = url
         if 'action=' not in req_url:
@@ -296,7 +296,7 @@ def hydrate_from_google_sheets(target_url=None):
             res = json.loads(raw)
 
         if res.get('status') != 'success' or 'data' not in res:
-            print(f"[Google Sheets] ⚠️ Resposta inesperada: {res}")
+            print(f"[Google Sheets] Resposta inesperada: {res}")
             return {'ok': False, 'error': 'Resposta no reconeguda de Google Sheets', 'raw': res}
 
         data = res['data']
@@ -465,7 +465,7 @@ def hydrate_from_google_sheets(target_url=None):
             conn.commit()
 
         msg = f"Hidratació completada: {len(alumnes)} alumnes, {len(paquets)} paquets, {len(sessions)} sessions, {len(reserves)} reserves sincronitzades des de Google Sheets."
-        print(f"[Google Sheets] ✅ {msg}")
+        print(f"[Google Sheets] {msg}")
         return {
             'ok': True,
             'message': msg,
@@ -478,7 +478,7 @@ def hydrate_from_google_sheets(target_url=None):
         }
     except Exception as e:
         err_msg = f"Error durant la hidratació: {str(e)}"
-        print(f"[Google Sheets] ⚠️ {err_msg}")
+        print(f"[Google Sheets] {err_msg}")
         return {'ok': False, 'error': err_msg}
 
 def sync_to_google_sheets_async(action, payload):
@@ -607,9 +607,9 @@ def get_activitats_config():
         pass
 
     return [
-        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "🏺", "color": "#3B82F6"},
-        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "🗿", "color": "#10B981"},
-        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "🎨", "color": "#F59E0B"}
+        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "", "color": "#3B82F6"},
+        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "", "color": "#10B981"},
+        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "", "color": "#F59E0B"}
     ]
 
 # Propietat retrocompatible
@@ -2182,14 +2182,14 @@ def run_server():
         pass
 
     print("=" * 65)
-    print("🏺 SERVIDOR DEL TALLER DE CERÀMICA ACTIU (SQLite + REST API)")
+    print("SERVIDOR DEL TALLER DE CERÀMICA ACTIU (SQLite + REST API)")
     print("=" * 65)
-    print(f"📍 Local (aquest ordinador):   http://localhost:{PORT}")
-    print(f"📱 Mòbil / Tauleta (mateixa WiFi): http://{local_ip}:{PORT}")
-    print(f"🛠️  Panell Administració:       http://localhost:{PORT}/admin.html")
-    print(f"📷 Escàner QR (Android/Tauleta): http://localhost:{PORT}/scanner.html")
-    print(f"👤 Portal de l'Alumne:         http://localhost:{PORT}/alumne.html")
-    print(f"🗄️  Base de Dades SQLite:        {DB_PATH}")
+    print(f"Local (aquest ordinador):   http://localhost:{PORT}")
+    print(f"Mòbil / Tauleta (mateixa WiFi): http://{local_ip}:{PORT}")
+    print(f"Panell Administració:       http://localhost:{PORT}/admin.html")
+    print(f"Escàner QR (Android/Tauleta): http://localhost:{PORT}/scanner.html")
+    print(f"Portal de l'Alumne:         http://localhost:{PORT}/alumne.html")
+    print(f"Base de Dades SQLite:        {DB_PATH}")
     print("=" * 65)
     print("Prem Ctrl+C per aturar el servidor.")
 

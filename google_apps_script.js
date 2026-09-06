@@ -687,8 +687,7 @@ function syncCalendarEvent(r) {
     var nom = r.student_nom || r.student_id || "Alumne";
     var act = r.activitat || "Torn";
     var tel = r.telefon || "";
-    var places = parseInt(r.places || 1, 10);
-    var title = "🏺 " + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
+    var title = act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
     var startTime = parseDateTimeRobust(r.data, r.hora_inici);
     var endTime = parseDateTimeRobust(r.data, r.hora_fi);
@@ -863,7 +862,7 @@ function provarSincronitzacioCalendari() {
 
   var ara = new Date();
   var fi = new Date(ara.getTime() + 60 * 60 * 1000);
-  var ev = cal.createEvent("🏺 Prova Sincronització Roig de Coure", ara, fi, {
+  var ev = cal.createEvent("Prova Sincronització Roig de Coure", ara, fi, {
     description: "Esdeveniment de prova per comprovar que el calendari 'reserves' rep les reserves.",
     location: "Taller de Ceràmica Roig de Coure"
   });

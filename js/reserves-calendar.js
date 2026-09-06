@@ -357,12 +357,9 @@ class ReservesCalendar {
       <div class="res-calendar-card">
         <!-- Indicador clar del Pas 1 -->
         <div class="res-step-banner-p1" style="background: #FDF9F7; border: 1.5px solid #EFE4DC; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">📅</span>
-            <div>
-              <div style="font-size: 13px; font-weight: 800; color: var(--color-primary);">Pas 1: Tria el dia que vols venir al taller</div>
-              <div style="font-size: 12px; color: var(--color-muted);">Toca qualsevol dia disponible del calendari per veure'n els horaris i reservar.</div>
-            </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--color-primary);">Pas 1: Tria el dia que vols venir al taller</div>
+            <div style="font-size: 12px; color: var(--color-muted);">Toca qualsevol dia disponible del calendari per veure'n els horaris i reservar.</div>
           </div>
           <div style="font-size: 11px; background: #FFF; border: 1px solid #E5DDD5; padding: 4px 8px; border-radius: 6px; color: var(--color-dark); font-weight: 600;">
             Obrim Dc a Dg (10h - 13h)
@@ -452,7 +449,7 @@ class ReservesCalendar {
           <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
             <div>
               <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--color-primary); margin-bottom:3px;">
-                ✓ Pas 2: Has triat aquest dia
+                Pas 2: Has triat aquest dia
               </div>
               <div class="res-day-detail-date" style="font-size:18px; font-weight:800; color:var(--color-dark); margin:0;">
                 <span>${formattedDate}</span>
@@ -460,7 +457,7 @@ class ReservesCalendar {
               </div>
             </div>
             <div style="font-size:12px; color:var(--color-muted); text-align:right;">
-              👆 Toca una altra data al calendari superior si vols canviar de dia
+              Toca una altra data al calendari superior si vols canviar de dia
             </div>
           </div>
           <div style="font-size:13px; color:var(--color-muted); margin-top:8px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
