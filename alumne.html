@@ -598,8 +598,8 @@
         <button type="button" class="btn btn-primary btn-block" id="btn-open-wallet-options" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #000000; color: #FFFFFF; border: none; border-radius: 10px;">
           Afegir a Apple / Google Wallet
         </button>
-        <button type="button" class="btn btn-block" id="btn-download-watch-qr" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: var(--brand-primary, #831D1D); color: #FFFFFF; border: none; border-radius: 10px;">
-          Desar QR per al Rellotge (Smartwatch)
+        <button type="button" class="btn btn-block" id="btn-download-watch-qr" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #2C221E; color: #FFFFFF; border: none; border-radius: 10px;">
+          Desar QR Ceràmic Mat (per a Rellotge)
         </button>
         <a href="carnet.html" target="_blank" class="btn btn-outline btn-block" id="btn-open-carnet-web" style="font-size: 12px; padding: 8px 12px; text-decoration: none; font-weight: 600; border-radius: 10px;">
           Veure Carnet Digital Complet
@@ -671,14 +671,19 @@
         <!-- Opció 3: Rellotge Intel·ligent universal -->
         <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
           <div style="font-size: 14px; font-weight: 800; color: var(--color-dark); margin-bottom: 4px;">
-            Rellotge Intel·ligent (Apple Watch, Wear OS, Garmin)
+            Rellotge Intel·ligent (Pixel Watch, Apple Watch, Wear OS, Garmin)
           </div>
           <div style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px; line-height: 1.4;">
-            Descarrega la imatge d'alta definició centrada i afegeix-la a la galeria de fotos o a l'esfera de fotos del teu rellotge per fer check-in sense portar el mòbil.
+            Descarrega la imatge per al teu rellotge. L'opció <strong>Ceràmic Mat</strong> està especialment dissenyada per a pantalles OLED: redueix la brillantor excessiva i elimina els reflexos del vidre corbat:
           </div>
-          <button type="button" class="btn btn-block" id="btn-wallet-modal-watch-qr" style="background: var(--brand-primary, #831D1D); color: #FFFFFF; font-size: 13px; font-weight: 700; border: none; padding: 9px 14px; border-radius: 8px; cursor: pointer;">
-            Desar Imatge QR per al Rellotge
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" class="btn btn-block" id="btn-wallet-modal-watch-qr-matte" style="background: #2C221E; color: #FFFFFF; font-size: 13px; font-weight: 700; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer;">
+              Desar QR Ceràmic Mat (Antirreflex recomanat)
+            </button>
+            <button type="button" class="btn btn-outline btn-block" id="btn-wallet-modal-watch-qr" style="font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer;">
+              Desar QR Fons Blanc Clàssic
+            </button>
+          </div>
         </div>
 
         <!-- Opció 3: Carnet Digital Web -->

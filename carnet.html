@@ -305,9 +305,14 @@
         Afegir a Google Wallet (Android)
       </button>
 
-      <!-- Botó Descarregar per al Rellotge -->
-      <button type="button" class="btn-action-pass btn-watch-download" id="btn-watch-download">
-        Desar QR per al Rellotge (Smartwatch)
+      <!-- Botó Descarregar per al Rellotge Ceràmic Mat (Antirreflex) -->
+      <button type="button" class="btn-action-pass" id="btn-watch-download-matte" style="background: #2C221E; color: #FFFFFF; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);">
+        Desar QR Ceràmic Mat per al Rellotge (Antirreflex)
+      </button>
+
+      <!-- Botó Descarregar per al Rellotge Clàssic -->
+      <button type="button" class="btn-action-pass btn-outline-action" id="btn-watch-download" style="font-size: 13px;">
+        Desar QR Fons Blanc Clàssic
       </button>
 
       <!-- Botó Imprimir Carnet -->
@@ -405,8 +410,29 @@
         }
       }
 
-      // Descarregar QR optimitzat per a rellotge intel·ligent (Apple Watch, Wear OS, Garmin)
-      async function downloadWatchQrImage() {
+      function drawRoundRect(c, x, y, w, h, r) {
+        if (c.roundRect) {
+          c.beginPath();
+          c.roundRect(x, y, w, h, r);
+          c.fill();
+        } else {
+          c.beginPath();
+          c.moveTo(x + r, y);
+          c.lineTo(x + w - r, y);
+          c.quadraticCurveTo(x + w, y, x + w, y + r);
+          c.lineTo(x + w, y + h - r);
+          c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+          c.lineTo(x + r, y + h);
+          c.quadraticCurveTo(x, y + h, x, y + h - r);
+          c.lineTo(x, y + r);
+          c.quadraticCurveTo(x, y, x + r, y);
+          c.closePath();
+          c.fill();
+        }
+      }
+
+      // Descarregar QR optimitzat per a rellotge intel·ligent (Pixel Watch, Apple Watch, Wear OS, Garmin)
+      async function downloadWatchQrImage(isMatte = true) {
         const id = (currentStudent && currentStudent.id) || studentId || 'TC-ALUMNE';
         const name = (currentStudent && currentStudent.nom) ? `${currentStudent.nom} ${currentStudent.cognoms || ''}`.trim() : 'Alumne/a';
 
@@ -416,51 +442,93 @@
         canvas.height = 600;
         const ctx = canvas.getContext('2d');
 
-        // 1. Fons blanc pur per a màxima reflectància òptica
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, 600, 600);
-
-        // 2. Capçalera compacta que s'ajusta a la vora circular del rellotge
-        ctx.fillStyle = '#831D1D';
-        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('ROIG DE COURE', 300, 52);
-
-        // 3. Generar codi QR centrat d'alta visibilitat (420x420 px a nivell M per a mòduls el doble de grans)
         const tempContainer = document.createElement('div');
         tempContainer.style.display = 'none';
         document.body.appendChild(tempContainer);
 
-        const qrObj = new QRCode(tempContainer, {
-          text: id,
-          width: 420,
-          height: 420,
-          colorDark: '#000000',
-          colorLight: '#FFFFFF',
-          correctLevel: QRCode.CorrectLevel.M
-        });
+        if (isMatte) {
+          // 1. Fons fosc AMOLED: els píxels perimetrals estan apagats (0 nits)
+          ctx.fillStyle = '#181514';
+          ctx.fillRect(0, 0, 600, 600);
 
-        // Esperar que el canvas o imatge del QR estigui disponible
-        setTimeout(async () => {
-          const qrCanvas = tempContainer.querySelector('canvas');
-          const qrImg = tempContainer.querySelector('img');
+          // 2. Capçalera en to terracota càlid corporatiu
+          ctx.fillStyle = '#D28C74';
+          ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('ROIG DE COURE', 300, 48);
 
-          const source = qrCanvas || qrImg;
-          if (source) {
-            ctx.drawImage(source, 90, 85, 420, 420);
-          }
+          // 3. Targeta central mat ceràmica (porcellana càlida antirreflex #DDD7CE)
+          ctx.fillStyle = '#DDD7CE';
+          drawRoundRect(ctx, 75, 70, 450, 450, 24);
 
-          document.body.removeChild(tempContainer);
+          // 4. QR amb mòduls negres purs sobre el to ceràmic mat
+          const qrObj = new QRCode(tempContainer, {
+            text: id,
+            width: 390,
+            height: 390,
+            colorDark: '#000000',
+            colorLight: '#DDD7CE',
+            correctLevel: QRCode.CorrectLevel.M
+          });
 
-          // 4. Peu compacte amb identificació de l'alumne
-          ctx.fillStyle = '#2C221E';
-          ctx.font = 'bold 22px monospace';
-          ctx.fillText(`${id} • ${name}`, 300, 545);
+          setTimeout(async () => {
+            const qrCanvas = tempContainer.querySelector('canvas');
+            const qrImg = tempContainer.querySelector('img');
+            const source = qrCanvas || qrImg;
 
-          // 5. Compartir / Desar
-          canvas.toBlob(async (blob) => {
+            if (source) {
+              ctx.drawImage(source, 105, 100, 390, 390);
+            }
+            document.body.removeChild(tempContainer);
+
+            // 5. Peu d'alumne en to suau sobre fosc
+            ctx.fillStyle = '#C8C1B6';
+            ctx.font = 'bold 20px monospace';
+            ctx.fillText(`${id} • ${name}`, 300, 562);
+
+            saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Mat_Rellotge.png`, 'QR ceràmic mat desat correctament!');
+          }, 150);
+
+        } else {
+          // Fons blanc clàssic
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, 600, 600);
+
+          ctx.fillStyle = '#831D1D';
+          ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('ROIG DE COURE', 300, 52);
+
+          const qrObj = new QRCode(tempContainer, {
+            text: id,
+            width: 420,
+            height: 420,
+            colorDark: '#000000',
+            colorLight: '#FFFFFF',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+
+          setTimeout(async () => {
+            const qrCanvas = tempContainer.querySelector('canvas');
+            const qrImg = tempContainer.querySelector('img');
+            const source = qrCanvas || qrImg;
+
+            if (source) {
+              ctx.drawImage(source, 90, 85, 420, 420);
+            }
+            document.body.removeChild(tempContainer);
+
+            ctx.fillStyle = '#2C221E';
+            ctx.font = 'bold 22px monospace';
+            ctx.fillText(`${id} • ${name}`, 300, 545);
+
+            saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Rellotge.png`, 'QR fons blanc desat correctament!');
+          }, 150);
+        }
+
+        function saveCanvasAsFile(canvasEl, filename, successMsg) {
+          canvasEl.toBlob(async (blob) => {
             if (!blob) return;
-            const filename = `RoigDeCoure_${id}_Rellotge.png`;
             const file = new File([blob], filename, { type: 'image/png' });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -470,7 +538,7 @@
                   text: `Codi QR de Roig de Coure per al teu rellotge intel·ligent`,
                   files: [file]
                 });
-                showToast('QR desat correctament per al teu rellotge!');
+                showToast(successMsg);
                 return;
               } catch (err) {
                 if (err.name !== 'AbortError') {
@@ -488,19 +556,24 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            showToast('Imatge descarregada! Afegeix-la a la galeria del teu rellotge.');
+            showToast(successMsg);
           }, 'image/png');
-        }, 150);
+        }
+      }
+
+      const btnWatchMatte = document.getElementById('btn-watch-download-matte');
+      if (btnWatchMatte) {
+        btnWatchMatte.addEventListener('click', () => downloadWatchQrImage(true));
       }
 
       if (btnWatch) {
-        btnWatch.addEventListener('click', downloadWatchQrImage);
+        btnWatch.addEventListener('click', () => downloadWatchQrImage(false));
       }
 
       const btnGoogleWallet = document.getElementById('btn-google-wallet-download');
       if (btnGoogleWallet) {
         btnGoogleWallet.addEventListener('click', async () => {
-          await downloadWatchQrImage();
+          await downloadWatchQrImage(true);
           showToast("Imatge descarregada! A Google Wallet, toca '+ Afegeix a Wallet' > 'Foto' i tria la foto.");
         });
       }
