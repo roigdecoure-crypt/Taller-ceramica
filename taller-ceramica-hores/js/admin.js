@@ -1744,7 +1744,7 @@ async function renderAdminDayAppointments(dateStr) {
 
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
     const isValRegal = r.val_regal === 1 || (r.notes && r.notes.includes('VAL REGAL'));
-    const valRegalBadge = isValRegal ? `<span class="badge" style="background: #FDE8E8; color: #831D1D; border: 1px solid #F8B4B4; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">🎁 Val regal${r.codi_val_regal ? ': ' + r.codi_val_regal : ''}</span>` : '';
+    const valRegalBadge = isValRegal ? `<span class="badge" style="background: #FDE8E8; color: #831D1D; border: 1px solid #F8B4B4; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">🎁 Val regal (${actNom})</span>` : '';
 
     return `
       <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">

@@ -1720,9 +1720,6 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 notes = (data.get('notes') or '').strip()
                 val_regal = 1 if (data.get('val_regal') or data.get('valRegal')) else 0
                 codi_val_regal = (data.get('codi_val_regal') or data.get('codiValRegal') or '').strip()
-                if val_regal and 'VAL REGAL' not in notes.upper():
-                    val_str = f"[VAL REGAL: {codi_val_regal}]" if codi_val_regal else "[VAL REGAL]"
-                    notes = f"{notes} {val_str}".strip()
                 student_nom = (data.get('student_nom') or data.get('studentNom') or data.get('nom') or '').strip()
                 telefon = (data.get('telefon') or '').strip()
                 email = (data.get('email') or '').strip()
@@ -1751,18 +1748,26 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 activitat_id = act_obj['id']
                 activitat_nom = act_obj['nom']
 
-                hora_inici_req = (data.get('hora_inici') or data.get('horaInici') or '').strip()
-                if not hora_inici_req:
-                    if franja_id in INTERVALS_INICI_2H:
-                        hora_inici_req = franja_id
-                    elif ':' in franja_id and len(franja_id) == 5:
-                        hora_inici_req = franja_id
-                    else:
-                        hora_inici_req = '10:00'
+                if val_regal and 'VAL REGAL' not in notes.upper():
+                    val_str = f"[VAL REGAL: {codi_val_regal}]" if codi_val_regal else f"[VAL REGAL: {activitat_nom.upper()}]"
+                    notes = f"{notes} {val_str}".strip()
 
-                hora_fi_req = (data.get('hora_fi') or data.get('horaFi') or '').strip()
-                if not hora_fi_req:
-                    hora_fi_req = calcular_hora_fi_2h(hora_inici_req)
+                hora_inici_req = (data.get('hora_inici') or data.get('horaInici') or '').strip()
+                if val_regal:
+                    hora_inici_req = '10:00'
+                    hora_fi_req = '12:00'
+                else:
+                    if not hora_inici_req:
+                        if franja_id in INTERVALS_INICI_2H:
+                            hora_inici_req = franja_id
+                        elif ':' in franja_id and len(franja_id) == 5:
+                            hora_inici_req = franja_id
+                        else:
+                            hora_inici_req = '10:00'
+
+                    hora_fi_req = (data.get('hora_fi') or data.get('horaFi') or '').strip()
+                    if not hora_fi_req:
+                        hora_fi_req = calcular_hora_fi_2h(hora_inici_req)
 
                 hores_req = float(data.get('hores') or 2.0)
 

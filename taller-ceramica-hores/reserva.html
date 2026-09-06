@@ -491,25 +491,37 @@
 
           <!-- OPCIONS DE LA RESERVA (VAL REGAL) -->
           <div class="booking-options-wrapper" style="margin-top: 14px; margin-bottom: 22px;">
-            <div class="val-regal-card" id="val-regal-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; cursor: pointer; transition: all 0.2s ease;">
+            <div class="val-regal-card" id="val-regal-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <label for="check-val-regal" style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin: 0; flex: 1;">
-                  <span style="font-size: 22px; line-height: 1;">🎁</span>
+                  <span style="font-size: 24px; line-height: 1;">🎁</span>
                   <div>
-                    <div style="font-weight: 700; font-size: 14px; color: var(--dark);">Tinc un val regal</div>
-                    <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Vens amb un val que t'han regalat? Marca aquesta opció.</div>
+                    <div style="font-weight: 700; font-size: 15px; color: var(--dark);">Tinc un val regal</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Vens amb un val regal? Marca aquí i tria la teva activitat.</div>
                   </div>
                 </label>
-                <input type="checkbox" id="check-val-regal" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
+                <input type="checkbox" id="check-val-regal" style="width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
               </div>
 
-              <div id="val-regal-fields" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #D6C7BC;">
-                <label for="val-regal-codi" style="font-size: 12px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 5px;">
-                  Codi o número del teu val regal:
+              <!-- Selector d'activitat del val (Torn, Modelatge o Pintar ceràmica) -->
+              <div id="val-regal-fields" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #D6C7BC;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 8px;">
+                  De què és el teu val regal?
                 </label>
-                <input type="text" id="val-regal-codi" placeholder="Ex: VR-2026-042 o el nom de qui te l'ha regalat" style="width: 100%; padding: 10px 12px; border: 1px solid #D6C7BC; border-radius: 8px; font-size: 13px; background: #FFFFFF; box-sizing: border-box;">
-                <div style="font-size: 11px; color: var(--muted); margin-top: 5px;">
-                  ℹ️ El dia de la sessió només caldrà que mostris el teu val regal físic o digital al taller.
+                <div class="val-act-selector" id="val-act-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+                  <button type="button" class="btn-val-act active" data-act="torn" style="padding: 10px 6px; border: 2px solid var(--primary); background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
+                    🏺 Torn
+                  </button>
+                  <button type="button" class="btn-val-act" data-act="modelatge" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                    👐 Modelatge
+                  </button>
+                  <button type="button" class="btn-val-act" data-act="pintar" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                    🎨 Pintar
+                  </button>
+                </div>
+
+                <div style="background: #FDF5F5; border: 1px solid #F8B4B4; color: #831D1D; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.4;">
+                  ⏰ <strong>Horari obligatori per a val regal:</strong> Les sessions amb val regal es realitzen exclusivament a <strong>primera hora (10:00 h - 12:00 h)</strong>. El dia de la sessió només caldrà que mostris el teu val físic o digital al taller.
                 </div>
               </div>
             </div>
@@ -762,6 +774,13 @@
       const lliuresAct = actObj ? actObj.placesDisponibles : (franja.placesLliures !== undefined ? franja.placesLliures : 12);
       const isComplet = lliuresAct <= 0;
 
+      if (state.isValRegal) {
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'grid-column: 1 / -1; background: #FFF8F6; border: 1.5px solid #F8B4B4; color: #831D1D; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; font-weight: 700;';
+        infoDiv.innerHTML = `<span>⏰</span> <span>Horari obligatori per a val regal: primera hora (10:00 h - 12:00 h).</span>`;
+        slotsContainer.appendChild(infoDiv);
+      }
+
       const intervals = data.intervals || (franja.intervals) || [
         { id: '10:00', inici: '10:00', fi: '12:00', nom: '10:00 - 12:00 (2h)' },
         { id: '10:15', inici: '10:15', fi: '12:15', nom: '10:15 - 12:15 (2h)' },
@@ -773,24 +792,32 @@
       let firstValidSlot = null;
 
       intervals.forEach(item => {
+        const isNotFirstSlot = state.isValRegal && item.id !== '10:00' && item.inici !== '10:00';
+        const isSlotDisabled = isComplet || isNotFirstSlot;
+
         const div = document.createElement('div');
-        div.className = `slot-item ${isComplet ? 'disabled' : ''}`;
+        div.className = `slot-item ${isSlotDisabled ? 'disabled' : ''}`;
         div.dataset.id = item.id;
         div.dataset.inici = item.inici;
         div.dataset.fi = item.fi;
         div.dataset.nom = item.nom || `${item.inici} - ${item.fi} (2h)`;
         div.dataset.places = lliuresAct;
 
+        let availText = isComplet ? 'Complet' : `${lliuresAct} lliures (2h)`;
+        if (isNotFirstSlot) {
+          availText = 'Només 10:00h per a vals';
+        }
+
         div.innerHTML = `
           <div class="slot-time">${item.inici} - ${item.fi}</div>
-          <div class="slot-avail">${isComplet ? 'Complet' : `${lliuresAct} lliures (2h)`}</div>
+          <div class="slot-avail">${availText}</div>
         `;
 
-        if (!isComplet && !firstValidSlot) {
+        if (!isSlotDisabled && !firstValidSlot) {
           firstValidSlot = { id: item.id, inici: item.inici, fi: item.fi, nom: item.nom, places: lliuresAct };
         }
 
-        if (!isComplet) {
+        if (!isSlotDisabled) {
           div.addEventListener('click', () => {
             document.querySelectorAll('.slot-item').forEach(s => s.classList.remove('active'));
             div.classList.add('active');
@@ -894,6 +921,14 @@
           card.classList.add('active');
           state.activitatId = card.dataset.id;
           state.activitatNom = card.querySelector('.act-title').textContent.trim();
+          document.querySelectorAll('.btn-val-act').forEach(b => {
+            const isSelected = b.dataset.act === state.activitatId;
+            b.classList.toggle('active', isSelected);
+            b.style.border = isSelected ? '2px solid var(--primary)' : '1.5px solid #D6C7BC';
+            b.style.color = isSelected ? 'var(--primary)' : 'var(--dark)';
+            b.style.fontWeight = isSelected ? '700' : '600';
+            b.style.background = isSelected ? '#FFF8F6' : '#FFF';
+          });
           checkAvailability();
         });
       });
@@ -910,7 +945,29 @@
       const checkValRegal = document.getElementById('check-val-regal');
       const valRegalCard = document.getElementById('val-regal-card');
       const valRegalFields = document.getElementById('val-regal-fields');
-      const valRegalCodi = document.getElementById('val-regal-codi');
+
+      function syncValButtons() {
+        document.querySelectorAll('.btn-val-act').forEach(b => {
+          const isSelected = b.dataset.act === state.activitatId;
+          b.classList.toggle('active', isSelected);
+          b.style.border = isSelected ? '2px solid var(--primary)' : '1.5px solid #D6C7BC';
+          b.style.color = isSelected ? 'var(--primary)' : 'var(--dark)';
+          b.style.fontWeight = isSelected ? '700' : '600';
+          b.style.background = isSelected ? '#FFF8F6' : '#FFF';
+        });
+      }
+
+      // Botons d'activitat del val regal
+      document.querySelectorAll('.btn-val-act').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const actId = btn.dataset.act;
+          const targetCard = document.querySelector(`.act-card[data-id="${actId}"]`);
+          if (targetCard) {
+            targetCard.click();
+          }
+        });
+      });
 
       function toggleValRegal(checked) {
         checkValRegal.checked = checked;
@@ -919,12 +976,13 @@
           valRegalFields.style.display = 'block';
           valRegalCard.style.borderColor = 'var(--primary)';
           valRegalCard.style.background = '#FFF8F6';
-          if (valRegalCodi) valRegalCodi.focus();
+          syncValButtons();
         } else {
           valRegalFields.style.display = 'none';
           valRegalCard.style.borderColor = '#E5DDD5';
           valRegalCard.style.background = '#FAF7F5';
         }
+        checkAvailability();
       }
 
       if (checkValRegal && valRegalCard) {
@@ -933,7 +991,7 @@
         });
 
         valRegalCard.addEventListener('click', (e) => {
-          if (e.target === checkValRegal || e.target === valRegalCodi || (valRegalFields && valRegalFields.contains(e.target))) return;
+          if (e.target === checkValRegal || (valRegalFields && valRegalFields.contains(e.target))) return;
           toggleValRegal(!checkValRegal.checked);
         });
       }
@@ -960,7 +1018,15 @@
         submitBtn.innerHTML = 'Confirmant reserva...';
 
         const isVal = checkValRegal ? checkValRegal.checked : false;
-        const codiVal = valRegalCodi ? valRegalCodi.value.trim() : '';
+        const horaInici = isVal ? '10:00' : (state.horaInici || '10:00');
+        const horaFi = isVal ? '12:00' : (state.horaFi || '12:00');
+        const actNom = state.activitatNom || (state.activitatId === 'torn' ? 'Torn' : (state.activitatId === 'modelatge' ? 'Modelatge' : 'Pintar ceràmica'));
+
+        let finalNotes = notes;
+        if (isVal) {
+          const valTag = `[VAL REGAL: ${actNom.toUpperCase()}]`;
+          finalNotes = finalNotes ? `${valTag} ${finalNotes}` : valTag;
+        }
 
         const payload = {
           student_nom: nom,
@@ -968,15 +1034,14 @@
           email: email,
           data: state.data,
           franja: state.franja || 'M1',
-          hora_inici: state.horaInici || '10:00',
-          hora_fi: state.horaFi || '12:00',
+          hora_inici: horaInici,
+          hora_fi: horaFi,
           hores: 2.0,
           activitat_id: state.activitatId,
-          activitat: state.activitatNom,
+          activitat: actNom,
           places: state.places,
           val_regal: isVal,
-          codi_val_regal: codiVal,
-          notes: notes
+          notes: finalNotes
         };
 
         try {
@@ -1009,7 +1074,6 @@
         document.getElementById('btn-submit').disabled = false;
         document.getElementById('btn-submit').innerHTML = 'Confirmar Reserva ara';
         if (checkValRegal) toggleValRegal(false);
-        if (valRegalCodi) valRegalCodi.value = '';
         checkAvailability();
       });
     });
@@ -1028,7 +1092,7 @@
       const sumVal = document.getElementById('sum-val-regal');
       if (reserva.val_regal) {
         if (sumValRow) sumValRow.style.display = 'flex';
-        if (sumVal) sumVal.textContent = reserva.codi_val_regal ? `Sí (Codi: ${reserva.codi_val_regal})` : 'Sí';
+        if (sumVal) sumVal.textContent = `Sí (${reserva.activitat || state.activitatNom} - Primera hora 10:00h)`;
       } else {
         if (sumValRow) sumValRow.style.display = 'none';
       }
