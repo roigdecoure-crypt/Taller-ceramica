@@ -489,8 +489,77 @@
             </div>
           </div>
 
-          <!-- OPCIONS DE LA RESERVA (VAL REGAL) -->
-          <div class="booking-options-wrapper" style="margin-top: 14px; margin-bottom: 22px;">
+          <!-- OPCIONS DE LA RESERVA (SÓC ALUMNE I VAL REGAL) -->
+          <div class="booking-options-wrapper" style="margin-top: 14px; margin-bottom: 22px; display: flex; flex-direction: column; gap: 12px;">
+
+            <!-- Opció SÓC ALUMNE -->
+            <div class="soc-alumne-card" id="soc-alumne-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                <label for="check-soc-alumne" style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin: 0; flex: 1;">
+                  <div>
+                    <div style="font-weight: 700; font-size: 15px; color: var(--dark);">Sóc un alumne / Sóc alumne</div>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 2px;">Ja fas classes al taller? Identifica't pel teu nom o número per vincular la reserva.</div>
+                  </div>
+                </label>
+                <input type="checkbox" id="check-soc-alumne" style="width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
+              </div>
+
+              <!-- Selector i camps d'identificació d'alumne -->
+              <div id="soc-alumne-fields" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #D6C7BC;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 8px;">
+                  Com et vols identificar? (a escollir)
+                </label>
+
+                <div class="alumne-id-mode-selector" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                  <button type="button" class="btn-alumne-mode active" id="btn-mode-nom" data-mode="nom" style="padding: 10px 8px; border: 2px solid var(--primary); background: #FFF8F6; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
+                    Pel meu nom
+                  </button>
+                  <button type="button" class="btn-alumne-mode" id="btn-mode-num" data-mode="num" style="padding: 10px 8px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                    Pel meu número / codi
+                  </button>
+                </div>
+
+                <!-- Panell 1: Identificació per Nom -->
+                <div id="panel-alumne-nom">
+                  <label for="select-student-name" style="font-size: 12px; font-weight: 600; color: var(--dark); display: block; margin-bottom: 5px;">
+                    Tria el teu nom de la llista d'alumnes del taller:
+                  </label>
+                  <select id="select-student-name" class="pax-select" style="width: 100%; height: 46px; font-size: 14px; margin-bottom: 6px;">
+                    <option value="">-- Carregant llista d'alumnes... --</option>
+                  </select>
+                  <div style="font-size: 11.5px; color: var(--muted);">
+                    Selecciona el teu nom per vincular la teva plaça a la teva fitxa d'alumne.
+                  </div>
+                </div>
+
+                <!-- Panell 2: Identificació per Número / Codi -->
+                <div id="panel-alumne-num" style="display: none;">
+                  <label for="input-student-num" style="font-size: 12px; font-weight: 600; color: var(--dark); display: block; margin-bottom: 5px;">
+                    Escriu el teu número o codi d'alumne:
+                  </label>
+                  <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-student-num" placeholder="Ex: TC-101 o 101" class="form-control" style="flex: 1; text-transform: uppercase; font-size: 14px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; outline: none;">
+                    <button type="button" id="btn-cercar-num" class="btn" style="background: var(--primary); color: #FFF; border: none; border-radius: 8px; padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer;">
+                      Cercar
+                    </button>
+                  </div>
+                  <div id="student-num-error" style="display: none; color: #831D1D; font-size: 12px; margin-top: 6px;"></div>
+                </div>
+
+                <!-- Notificació d'alumne confirmat -->
+                <div id="alumne-identificat-alert" style="display: none; margin-top: 12px; background: #EEF5F1; border: 1.5px solid #5E7E6F; color: #2E4B3E; padding: 10px 14px; border-radius: 8px; font-size: 13px; align-items: center; justify-content: space-between;">
+                  <div>
+                    Alumne/a confirmat/da: <strong id="alumne-nom-display">Maria Garcia</strong> (<span id="alumne-id-display">TC-101</span>)
+                  </div>
+                  <button type="button" id="btn-desfer-alumne" style="background: none; border: none; color: #831D1D; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline;">
+                    Canviar
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Opció TINC UN VAL REGAL -->
             <div class="val-regal-card" id="val-regal-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
                 <label for="check-val-regal" style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin: 0; flex: 1;">
@@ -570,6 +639,11 @@
             <span class="step-badge">4</span> Les teves dades de contacte
           </div>
 
+          <!-- Banner informatiu si és alumne -->
+          <div id="step4-alumne-banner" style="display: none; background: #EEF5F1; border: 1.5px solid #C8DDD0; color: #2E4B3E; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px;">
+            Reserva vinculada a la teva fitxa d'alumne: <strong id="step4-alumne-nom">Maria Garcia</strong>.
+          </div>
+
           <div class="contact-grid">
             <div class="form-field">
               <label for="client-name">Nom i Cognoms *</label>
@@ -636,6 +710,10 @@
             <span class="label">Val regal:</span>
             <span class="val" id="sum-val-regal" style="color: var(--primary); font-weight: 700;">Sí</span>
           </div>
+          <div class="summary-row" id="sum-alumne-row" style="display: none;">
+            <span class="label">Alumne del taller:</span>
+            <span class="val" id="sum-alumne-nom" style="color: var(--secondary); font-weight: 700;">Sí</span>
+          </div>
           <div class="summary-row">
             <span class="label">Referència:</span>
             <span class="val" id="sum-ref" style="font-family: monospace; font-size: 13px;">RES-...</span>
@@ -697,6 +775,10 @@
       hores: 2.0,
       places: 1,
       maxPlacesDisponibles: 4,
+      isValRegal: false,
+      isSocAlumne: false,
+      studentId: null,
+      studentData: null,
       lastConfirmed: null
     };
 
@@ -940,6 +1022,230 @@
       // Comprovar disponibilitat inicial
       checkAvailability();
 
+      // Gestió Sóc Alumne
+      let allStudentsList = [];
+
+      async function loadStudentsForSelector() {
+        if (allStudentsList.length > 0) return;
+        try {
+          const res = await fetch('/api/alumnes?t=' + Date.now());
+          const json = await res.json();
+          if (json.ok && Array.isArray(json.data)) {
+            allStudentsList = json.data;
+            populateStudentDropdown();
+          }
+        } catch (err) {
+          console.warn('Error carregant alumnes:', err);
+          const sel = document.getElementById('select-student-name');
+          if (sel) sel.innerHTML = '<option value="">-- Introdueix el teu nom directament --</option>';
+        }
+      }
+
+      function populateStudentDropdown() {
+        const selectEl = document.getElementById('select-student-name');
+        if (!selectEl) return;
+        selectEl.innerHTML = '<option value="">-- Tria el teu nom de la llista --</option>';
+        allStudentsList.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          const fullNom = `${s.nom} ${s.cognoms || ''}`.trim();
+          opt.textContent = `${fullNom} (${s.id})`;
+          opt.dataset.nom = fullNom;
+          opt.dataset.tel = s.telefon || '';
+          opt.dataset.email = s.email || '';
+          selectEl.appendChild(opt);
+        });
+      }
+
+      function setAlumneIdMode(mode) {
+        const btnNom = document.getElementById('btn-mode-nom');
+        const btnNum = document.getElementById('btn-mode-num');
+        const panelNom = document.getElementById('panel-alumne-nom');
+        const panelNum = document.getElementById('panel-alumne-num');
+
+        if (mode === 'nom') {
+          btnNom.classList.add('active');
+          btnNom.style.border = '2px solid var(--primary)';
+          btnNom.style.color = 'var(--primary)';
+          btnNom.style.fontWeight = '700';
+          btnNom.style.background = '#FFF8F6';
+
+          btnNum.classList.remove('active');
+          btnNum.style.border = '1.5px solid #D6C7BC';
+          btnNum.style.color = 'var(--dark)';
+          btnNum.style.fontWeight = '600';
+          btnNum.style.background = '#FFF';
+
+          panelNom.style.display = 'block';
+          panelNum.style.display = 'none';
+        } else {
+          btnNum.classList.add('active');
+          btnNum.style.border = '2px solid var(--primary)';
+          btnNum.style.color = 'var(--primary)';
+          btnNum.style.fontWeight = '700';
+          btnNum.style.background = '#FFF8F6';
+
+          btnNom.classList.remove('active');
+          btnNom.style.border = '1.5px solid #D6C7BC';
+          btnNom.style.color = 'var(--dark)';
+          btnNom.style.fontWeight = '600';
+          btnNom.style.background = '#FFF';
+
+          panelNom.style.display = 'none';
+          panelNum.style.display = 'block';
+        }
+      }
+
+      function applyIdentifiedStudent(student) {
+        state.studentId = student.id;
+        state.studentData = student;
+        const fullNom = `${student.nom} ${student.cognoms || ''}`.trim();
+
+        const alertBox = document.getElementById('alumne-identificat-alert');
+        const nomDisp = document.getElementById('alumne-nom-display');
+        const idDisp = document.getElementById('alumne-id-display');
+        if (alertBox && nomDisp && idDisp) {
+          nomDisp.textContent = fullNom;
+          idDisp.textContent = student.id;
+          alertBox.style.display = 'flex';
+        }
+
+        // Omplir automàticament camps de contacte a Pas 4
+        const inputName = document.getElementById('client-name');
+        const inputTel = document.getElementById('client-tel');
+        const inputEmail = document.getElementById('client-email');
+        if (inputName) inputName.value = fullNom;
+        if (inputTel && student.telefon) inputTel.value = student.telefon;
+        if (inputEmail && student.email) inputEmail.value = student.email;
+
+        // Mostrar banner a Pas 4
+        const step4Banner = document.getElementById('step4-alumne-banner');
+        const step4Nom = document.getElementById('step4-alumne-nom');
+        if (step4Banner && step4Nom) {
+          step4Nom.textContent = `${fullNom} (${student.id})`;
+          step4Banner.style.display = 'block';
+        }
+      }
+
+      function clearIdentifiedStudent() {
+        state.studentId = null;
+        state.studentData = null;
+        const alertBox = document.getElementById('alumne-identificat-alert');
+        if (alertBox) alertBox.style.display = 'none';
+        const step4Banner = document.getElementById('step4-alumne-banner');
+        if (step4Banner) step4Banner.style.display = 'none';
+        const selectEl = document.getElementById('select-student-name');
+        if (selectEl) selectEl.value = '';
+        const inputNum = document.getElementById('input-student-num');
+        if (inputNum) inputNum.value = '';
+        const numErr = document.getElementById('student-num-error');
+        if (numErr) numErr.style.display = 'none';
+      }
+
+      async function verifyStudentByNumber() {
+        const inputNum = document.getElementById('input-student-num');
+        const errEl = document.getElementById('student-num-error');
+        const val = (inputNum.value || '').trim();
+        if (!val) {
+          errEl.textContent = 'Escriu el teu número o codi d\'alumne (ex: TC-101).';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        const cleanVal = val.toUpperCase().replace(/\s+/g, '');
+        let found = allStudentsList.find(s => 
+          s.id.toUpperCase().replace(/\s+/g, '') === cleanVal ||
+          (s.pin && s.pin.trim() === cleanVal) ||
+          (s.telefon && s.telefon.replace(/[^0-9]/g, '').endsWith(cleanVal))
+        );
+
+        if (!found) {
+          try {
+            const res = await fetch(`/api/alumnes/${encodeURIComponent(val)}`);
+            const data = await res.json();
+            if (data.ok && (data.alumne || data.data)) {
+              found = data.alumne || data.data;
+            }
+          } catch (e) {
+            console.warn('Error verificant alumne per codi:', e);
+          }
+        }
+
+        if (found) {
+          errEl.style.display = 'none';
+          applyIdentifiedStudent(found);
+        } else {
+          errEl.textContent = 'No s\'ha trobat cap alumne amb aquest número o codi. Revisa el codi o tria l\'opció "Pel meu nom".';
+          errEl.style.display = 'block';
+        }
+      }
+
+      function toggleSocAlumne(checked) {
+        const checkSocAlumne = document.getElementById('check-soc-alumne');
+        const socAlumneCard = document.getElementById('soc-alumne-card');
+        const socAlumneFields = document.getElementById('soc-alumne-fields');
+        if (checkSocAlumne) checkSocAlumne.checked = checked;
+        state.isSocAlumne = checked;
+
+        if (checked) {
+          if (socAlumneFields) socAlumneFields.style.display = 'block';
+          if (socAlumneCard) {
+            socAlumneCard.style.borderColor = 'var(--primary)';
+            socAlumneCard.style.background = '#FFF8F6';
+          }
+          loadStudentsForSelector();
+        } else {
+          if (socAlumneFields) socAlumneFields.style.display = 'none';
+          if (socAlumneCard) {
+            socAlumneCard.style.borderColor = '#E5DDD5';
+            socAlumneCard.style.background = '#FAF7F5';
+          }
+          clearIdentifiedStudent();
+        }
+      }
+
+      const checkSocAlumne = document.getElementById('check-soc-alumne');
+      const socAlumneCard = document.getElementById('soc-alumne-card');
+      const socAlumneFields = document.getElementById('soc-alumne-fields');
+
+      if (checkSocAlumne && socAlumneCard) {
+        checkSocAlumne.addEventListener('change', (e) => {
+          toggleSocAlumne(e.target.checked);
+        });
+
+        socAlumneCard.addEventListener('click', (e) => {
+          if (e.target === checkSocAlumne || (socAlumneFields && socAlumneFields.contains(e.target))) return;
+          toggleSocAlumne(!checkSocAlumne.checked);
+        });
+      }
+
+      document.getElementById('btn-mode-nom')?.addEventListener('click', () => setAlumneIdMode('nom'));
+      document.getElementById('btn-mode-num')?.addEventListener('click', () => setAlumneIdMode('num'));
+
+      document.getElementById('select-student-name')?.addEventListener('change', (e) => {
+        const studentId = e.target.value;
+        if (!studentId) {
+          clearIdentifiedStudent();
+          return;
+        }
+        const student = allStudentsList.find(s => s.id === studentId);
+        if (student) {
+          applyIdentifiedStudent(student);
+        }
+      });
+
+      document.getElementById('btn-cercar-num')?.addEventListener('click', verifyStudentByNumber);
+      document.getElementById('input-student-num')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyStudentByNumber();
+        }
+      });
+
+      document.getElementById('btn-desfer-alumne')?.addEventListener('click', () => {
+        clearIdentifiedStudent();
+      });
+
       // Gestió Val Regal
       const checkValRegal = document.getElementById('check-val-regal');
       const valRegalCard = document.getElementById('val-regal-card');
@@ -1017,6 +1323,7 @@
         submitBtn.innerHTML = 'Confirmant reserva...';
 
         const isVal = checkValRegal ? checkValRegal.checked : false;
+        const isAlumne = checkSocAlumne ? checkSocAlumne.checked : false;
         const horaInici = isVal ? '10:00' : (state.horaInici || '10:00');
         const horaFi = isVal ? '12:00' : (state.horaFi || '12:00');
         const actNom = state.activitatNom || (state.activitatId === 'torn' ? 'Torn' : (state.activitatId === 'modelatge' ? 'Modelatge' : 'Pintar ceràmica'));
@@ -1026,9 +1333,15 @@
           const valTag = `[VAL REGAL: ${actNom.toUpperCase()}]`;
           finalNotes = finalNotes ? `${valTag} ${finalNotes}` : valTag;
         }
+        if (isAlumne) {
+          const alTag = `[ALUMNE TALLER: ${state.studentId || nom}]`;
+          finalNotes = finalNotes ? `${alTag} ${finalNotes}` : alTag;
+        }
 
         const payload = {
           student_nom: nom,
+          student_id: (isAlumne && state.studentId) ? state.studentId : undefined,
+          soc_alumne: isAlumne,
           telefon: tel,
           email: email,
           data: state.data,
@@ -1073,6 +1386,7 @@
         document.getElementById('btn-submit').disabled = false;
         document.getElementById('btn-submit').innerHTML = 'Confirmar Reserva ara';
         if (checkValRegal) toggleValRegal(false);
+        if (checkSocAlumne) toggleSocAlumne(false);
         checkAvailability();
       });
     });
@@ -1094,6 +1408,18 @@
         if (sumVal) sumVal.textContent = `Sí (${reserva.activitat || state.activitatNom} - Primera hora 10:00h)`;
       } else {
         if (sumValRow) sumValRow.style.display = 'none';
+      }
+
+      const sumAlumneRow = document.getElementById('sum-alumne-row');
+      const sumAlumneNom = document.getElementById('sum-alumne-nom');
+      if (reserva.soc_alumne || state.isSocAlumne) {
+        if (sumAlumneRow) sumAlumneRow.style.display = 'flex';
+        if (sumAlumneNom) {
+          const codiText = state.studentId ? ` (${state.studentId})` : (reserva.student_id && !reserva.student_id.startsWith('CLI-') ? ` (${reserva.student_id})` : '');
+          sumAlumneNom.textContent = `Sí${codiText}`;
+        }
+      } else {
+        if (sumAlumneRow) sumAlumneRow.style.display = 'none';
       }
       document.getElementById('sum-ref').textContent = reserva.id || 'CONFIRMADA';
 

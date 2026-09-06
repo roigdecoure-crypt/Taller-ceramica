@@ -1063,10 +1063,12 @@ def find_student_by_code(cursor, code, actiu_only=False):
             OR TRIM(pin) = TRIM(?)
             OR TRIM(telefon) = TRIM(?)
             OR (? IS NOT NULL AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, '+', ''), ' ', ''), '-', ''), '.', '') LIKE '%' || ?)
+            OR UPPER(TRIM(nom || ' ' || COALESCE(cognoms, ''))) = UPPER(TRIM(?))
+            OR UPPER(TRIM(nom)) = UPPER(TRIM(?))
         )
         LIMIT 1
     '''
-    cursor.execute(query, (clean_code, clean_code, clean_code, phone_suffix, phone_suffix if phone_suffix else '###'))
+    cursor.execute(query, (clean_code, clean_code, clean_code, phone_suffix, phone_suffix if phone_suffix else '###', clean_code, clean_code))
     return row_to_dict(cursor.fetchone())
 
 class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -1728,6 +1730,24 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': 'Cal indicar data i franja horària'}, 400)
                     return
 
+                # Si han marcat l'opció "Sóc alumne" o han indicat un student_id / codi d'alumne
+                is_soc_alumne = bool(data.get('soc_alumne') or data.get('is_student') or data.get('isStudent'))
+                if is_soc_alumne or (student_id and not student_id.startswith('CLI-')):
+                    with get_db() as conn_check:
+                        cur_check = conn_check.cursor()
+                        query_code = student_id or student_nom
+                        al_found = find_student_by_code(cur_check, query_code, actiu_only=False)
+                        if al_found:
+                            student_id = al_found['id']
+                            if not student_nom:
+                                student_nom = f"{al_found['nom']} {al_found['cognoms'] or ''}".strip()
+                            if not telefon and al_found.get('telefon'):
+                                telefon = str(al_found['telefon']).strip()
+                            if not email and al_found.get('email'):
+                                email = str(al_found['email']).strip()
+                        elif is_soc_alumne and not student_id:
+                            student_id = f"ALU-{int(datetime.now().timestamp())}"
+
                 # Si és un client no alumne (reserva des de la web pública reserva.html)
                 if not student_id:
                     if not student_nom or not telefon:
@@ -1751,6 +1771,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if val_regal and 'VAL REGAL' not in notes.upper():
                     val_str = f"[VAL REGAL: {codi_val_regal}]" if codi_val_regal else f"[VAL REGAL: {activitat_nom.upper()}]"
                     notes = f"{notes} {val_str}".strip()
+
+                if is_soc_alumne and 'ALUMNE' not in notes.upper():
+                    notes = f"[ALUMNE: {student_id}] {notes}".strip()
 
                 hora_inici_req = (data.get('hora_inici') or data.get('horaInici') or '').strip()
                 if val_regal:
@@ -1856,6 +1879,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'places': places_demanades,
                     'val_regal': val_regal,
                     'codi_val_regal': codi_val_regal,
+                    'soc_alumne': 1 if (is_soc_alumne or (student_id and not student_id.startswith('CLI-'))) else 0,
                     'estat': 'confirmada',
                     'hores': hores_req,
                     'notes': notes,

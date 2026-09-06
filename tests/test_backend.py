@@ -577,6 +577,51 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
         self.conn.commit()
 
+    def test_17_soc_alumne_lookup_and_booking(self):
+        c = self.conn.cursor()
+        test_student_id = "TC-ALUMNE-TEST"
+        test_res_id = "RES-ALUMNE-BOOK-TEST"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, actiu, data_alta)
+            VALUES (?, 'LauraTestUnica', 'Vila Puig', '+34622334455', 'laura@test.cat', '1234', 1, '2026-09-01')
+        ''', (test_student_id,))
+        self.conn.commit()
+
+        # 1. Comprovar cerca per codi i per nom
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            found_by_id = server.find_student_by_code(cur, "TC-ALUMNE-TEST", actiu_only=True)
+            self.assertIsNotNone(found_by_id)
+            self.assertEqual(found_by_id['id'], test_student_id)
+
+            found_by_fullname = server.find_student_by_code(cur, "LauraTestUnica Vila Puig", actiu_only=True)
+            self.assertIsNotNone(found_by_fullname)
+            self.assertEqual(found_by_fullname['id'], test_student_id)
+
+            found_by_firstname = server.find_student_by_code(cur, "LauraTestUnica", actiu_only=True)
+            self.assertIsNotNone(found_by_firstname)
+            self.assertEqual(found_by_firstname['id'], test_student_id)
+
+        # 2. Simular inserció de reserva amb soc_alumne
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at)
+            VALUES (?, ?, 'LauraTestUnica Vila Puig', '2026-09-24', '10:15', '12:15', 'M1', 'Torn', 'torn', 1, '+34622334455', 'laura@test.cat', 'confirmada', 2.0, '[ALUMNE: TC-ALUMNE-TEST]', ?)
+        ''', (test_res_id, test_student_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT * FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['student_id'], test_student_id)
+        self.assertIn('[ALUMNE: TC-ALUMNE-TEST]', row['notes'])
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
 
