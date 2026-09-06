@@ -456,10 +456,29 @@ function setupEventListeners() {
     });
   });
 
-  // Plegar / desplegar barra lateral
+  // Plegar / desplegar barra lateral (escriptori)
   document.getElementById('btn-collapse-sidebar')?.addEventListener('click', () => {
     document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
   });
+
+  // Plegar / desplegar menú en versió mòbil (hamburguesa)
+  document.getElementById('btn-sidebar-hamburger')?.addEventListener('click', () => {
+    document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
+  });
+
+  // Tancar menú en mòbil quan es clica un element del menú
+  document.querySelectorAll('.admin-sidebar .sidebar-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        document.getElementById('admin-sidebar')?.classList.add('collapsed');
+      }
+    });
+  });
+
+  // En mòbil arrenca per defecte plegat en hamburguesa
+  if (window.innerWidth <= 768) {
+    document.getElementById('admin-sidebar')?.classList.add('collapsed');
+  }
 
   // Botons modals des de la barra lateral
   document.getElementById('btn-sidebar-branding')?.addEventListener('click', () => {

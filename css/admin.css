@@ -47,6 +47,14 @@
   width: 64px;
 }
 
+.sidebar-header-wrapper {
+  width: 100%;
+}
+
+.btn-sidebar-hamburger {
+  display: none !important;
+}
+
 /* Capçalera del Logo a la barra lateral (sense caixes ni fons blanc) */
 .sidebar-brand {
   padding: 18px 14px;
@@ -958,10 +966,144 @@
     flex-direction: column;
   }
   .admin-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
+    width: 100% !important;
+    height: auto !important;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    overflow: visible;
+    background: #FFF;
+    border-right: none;
+    border-bottom: 1px solid #DCE1E7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
+
+  .sidebar-header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    min-height: 56px;
+    background: #FFF;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sidebar-brand {
+    padding: 0 !important;
+    min-height: unset !important;
+    border-bottom: none !important;
+    justify-content: flex-start !important;
+  }
+
+  .sidebar-logo-img {
+    max-height: 40px !important;
+    max-width: 130px !important;
+    margin: 0 !important;
+  }
+
+  /* Botó Hamburguesa en mòbil */
+  .btn-sidebar-hamburger {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 10px 8px;
+    background: #FAF7F5;
+    border: 1.5px solid #E5DDD5;
+    border-radius: 8px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+  }
+
+  .btn-sidebar-hamburger:hover,
+  .btn-sidebar-hamburger:focus {
+    background: #F4EFEB;
+    border-color: var(--color-primary, #831D1D);
+  }
+
+  .hamburger-line {
+    display: block;
+    width: 22px;
+    height: 2.5px;
+    background-color: var(--color-primary, #831D1D);
+    border-radius: 2px;
+    transition: all 0.25s ease-in-out;
+  }
+
+  /* Estat obert (desplegat): les línies formen una X */
+  .admin-sidebar:not(.collapsed) .btn-sidebar-hamburger .hamburger-line:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .admin-sidebar:not(.collapsed) .btn-sidebar-hamburger .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+  .admin-sidebar:not(.collapsed) .btn-sidebar-hamburger .hamburger-line:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* QUAN EL MENÚ ESTÀ PLEGAT EN MÒBIL (.admin-sidebar.collapsed):
+     Amagar el llistat d'opcions del menú perquè quedi reduït únicament a l'hamburguesa a la barra superior */
+  .admin-sidebar.collapsed {
+    width: 100% !important;
+  }
+  .admin-sidebar.collapsed .sidebar-brand {
+    padding: 0 !important;
+    min-height: unset !important;
+  }
+  .admin-sidebar.collapsed .sidebar-logo-img {
+    max-height: 40px !important;
+    max-width: 130px !important;
+  }
+  .admin-sidebar.collapsed .sidebar-menu,
+  .admin-sidebar.collapsed .sidebar-footer-btn,
+  .admin-sidebar.collapsed .sidebar-divider {
+    display: none !important;
+  }
+
+  /* QUAN EL MENÚ ESTÀ DESPLEGAT EN MÒBIL (.admin-sidebar:not(.collapsed)): */
+  .admin-sidebar:not(.collapsed) .sidebar-menu {
+    display: flex !important;
+    flex-direction: column;
+    background: #FAF9F8;
+    border-top: 1px solid #E5DDD5;
+    padding: 8px 0;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  .admin-sidebar:not(.collapsed) .nav-text {
+    display: inline !important;
+  }
+
+  .admin-sidebar:not(.collapsed) .sidebar-item {
+    justify-content: flex-start !important;
+    padding: 13px 20px !important;
+    border-radius: 0;
+    text-align: left !important;
+    border-bottom: 1px solid #F0EAE5;
+  }
+
+  .admin-sidebar:not(.collapsed) .sidebar-item a {
+    justify-content: flex-start !important;
+    width: 100%;
+  }
+
+  .admin-sidebar:not(.collapsed) .sidebar-item.active {
+    background: #FFF !important;
+    border-left: 4px solid var(--color-primary, #831D1D) !important;
+    color: var(--color-primary, #831D1D) !important;
+    font-weight: 700;
+  }
+
+  .admin-sidebar:not(.collapsed) .sidebar-footer-btn {
+    display: none !important;
+  }
+
   .admin-top-bar {
     flex-direction: column;
     align-items: flex-start;

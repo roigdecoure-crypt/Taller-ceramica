@@ -19,11 +19,17 @@
 </head>
 <body class="admin-app-layout">
 
-  <!-- ==================== BARRA LATERAL ESQUERRA ==================== -->
   <aside class="admin-sidebar" id="admin-sidebar">
-    <a href="#" class="sidebar-brand" title="Roig de Coure">
-      <img src="img/logo.png" alt="Roig de Coure" class="sidebar-logo-img" id="sidebar-logo-img">
-    </a>
+    <div class="sidebar-header-wrapper">
+      <a href="#" class="sidebar-brand" title="Roig de Coure">
+        <img src="img/logo.png" alt="Roig de Coure" class="sidebar-logo-img" id="sidebar-logo-img">
+      </a>
+      <button type="button" class="btn-sidebar-hamburger" id="btn-sidebar-hamburger" aria-label="Menú" title="Menú">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
 
     <ul class="sidebar-menu">
       <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari">
