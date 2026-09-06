@@ -894,28 +894,24 @@ async function downloadWatchQrImage(student) {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, 600, 600);
 
-  // 2. Capçalera
+  // 2. Capçalera compacta que s'ajusta a la vora circular del rellotge
   ctx.fillStyle = '#831D1D';
-  ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('ROIG DE COURE', 300, 56);
+  ctx.fillText('ROIG DE COURE', 300, 52);
 
-  ctx.fillStyle = '#5E7E6F';
-  ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('CARNET D\'ALUMNE', 300, 82);
-
-  // 3. Generar codi QR en contenidor temporal
+  // 3. Generar codi QR centrat d'alta visibilitat (420x420 px a nivell M per a mòduls el doble de grans)
   const tempContainer = document.createElement('div');
   tempContainer.style.display = 'none';
   document.body.appendChild(tempContainer);
 
   const qrObj = new QRCode(tempContainer, {
     text: id,
-    width: 380,
-    height: 380,
-    colorDark: '#1A1817',
+    width: 420,
+    height: 420,
+    colorDark: '#000000',
     colorLight: '#FFFFFF',
-    correctLevel: QRCode.CorrectLevel.H
+    correctLevel: QRCode.CorrectLevel.M
   });
 
   setTimeout(async () => {
@@ -924,18 +920,14 @@ async function downloadWatchQrImage(student) {
     const source = qrCanvas || qrImg;
 
     if (source) {
-      ctx.drawImage(source, 110, 105, 380, 380);
+      ctx.drawImage(source, 90, 85, 420, 420);
     }
     document.body.removeChild(tempContainer);
 
-    // 4. Peu amb nom i codi
+    // 4. Peu compacte amb identificació de l'alumne
     ctx.fillStyle = '#2C221E';
-    ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText(name, 300, 526);
-
-    ctx.fillStyle = '#831D1D';
-    ctx.font = 'bold 24px monospace';
-    ctx.fillText(`COD: ${id}`, 300, 560);
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText(`${id} • ${name}`, 300, 545);
 
     // 5. Exportar i descarregar / compartir
     canvas.toBlob(async (blob) => {

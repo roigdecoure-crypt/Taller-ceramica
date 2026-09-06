@@ -31,9 +31,9 @@ const QREngine = {
         text: textText,
         width: size,
         height: size,
-        colorDark: '#1E1D1B',
+        colorDark: '#000000',
         colorLight: '#FFFFFF',
-        correctLevel: QRCode.CorrectLevel.H
+        correctLevel: QRCode.CorrectLevel.M
       });
       return qrcode;
     } catch (err) {
@@ -73,8 +73,15 @@ const QREngine = {
 
     this.html5QrScanner = new Html5Qrcode(elementId);
 
+    const wantFront = cameraChoice === 'user' || (typeof cameraChoice === 'string' && /front|user|selfie/i.test(cameraChoice));
+
     const config = {
-      fps: 20,
+      fps: 25,
+      videoConstraints: {
+        facingMode: wantFront ? 'user' : 'environment',
+        width: { min: 640, ideal: 1280, max: 1920 },
+        height: { min: 480, ideal: 720, max: 1080 }
+      },
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }
@@ -111,13 +118,14 @@ const QREngine = {
       return true;
     }
 
-    const wantFront = cameraChoice === 'user';
-
-    // Cas 2: Intentar seleccionar la càmera frontal o posterior
-    // Intentem primer amb la configuració estàndard de WebRTC
+    // Cas 2: Intentar seleccionar la càmera frontal o posterior amb resolució HD
     try {
       await this.html5QrScanner.start(
-        { facingMode: wantFront ? 'user' : 'environment' },
+        { 
+          facingMode: wantFront ? 'user' : 'environment',
+          width: { min: 640, ideal: 1280, max: 1920 },
+          height: { min: 480, ideal: 720, max: 1080 }
+        },
         config,
         handleSuccess,
         handleError
