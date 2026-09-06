@@ -1722,12 +1722,9 @@ async function renderAdminDayAppointments(dateStr) {
   if (reserves.length === 0) {
     tableBody.innerHTML = `
       <tr>
-        <td colspan="4" class="app-empty-state">
-          <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">No hi ha cap reserva per aquest dia</div>
-          <div style="color: #6B7280; font-size: 13px; margin-bottom: 14px;">Totes les places estan disponibles.</div>
-          <button type="button" class="btn btn-outline btn-sm" onclick="openAdminNovaReservaModal('${dateStr}')" style="border-color: #831D1D; color: #831D1D;">
-            + Crear una reserva aquí
-          </button>
+        <td colspan="4" class="app-empty-state" style="padding: 32px 16px; text-align: center;">
+          <div style="font-weight: 700; color: #374151; margin-bottom: 4px; font-size: 14px;">No hi ha cap reserva per aquest dia</div>
+          <div style="color: #6B7280; font-size: 13px;">Totes les places estan disponibles (12 places).</div>
         </td>
       </tr>
     `;
@@ -1746,6 +1743,8 @@ async function renderAdminDayAppointments(dateStr) {
     else if (r.activitat_id === 'pintar') { actNom = 'Pintar ceràmica'; }
 
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
+    const isValRegal = r.val_regal === 1 || (r.notes && r.notes.includes('VAL REGAL'));
+    const valRegalBadge = isValRegal ? `<span class="badge" style="background: #FDE8E8; color: #831D1D; border: 1px solid #F8B4B4; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">🎁 Val regal${r.codi_val_regal ? ': ' + r.codi_val_regal : ''}</span>` : '';
 
     return `
       <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">
@@ -1753,7 +1752,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actNom} ${placesBadge}
+            ${slotDesc} &bull; ${actNom} ${placesBadge} ${valRegalBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>

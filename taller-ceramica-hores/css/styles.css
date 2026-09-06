@@ -1,27 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+
+@font-face {
+  font-family: 'Buffalo';
+  src: url('../fonts/buffalo.woff2') format('woff2'),
+       url('/fonts/buffalo.woff2') format('woff2'),
+       url('../fonts/buffalo.woff') format('woff'),
+       url('/fonts/buffalo.woff') format('woff'),
+       url('../fonts/buffalo.ttf') format('truetype'),
+       url('https://db.onlinewebfonts.com/t/d65cf77ad028b823f585bfa44b3307c6.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /**
- * styles.css - Estètica general i paleta artesanal per al Taller de Ceràmica
+ * styles.css - Identitat corporativa oficial de Roig de Coure (roigdecoure.cat)
  */
 
 :root {
-  --color-primary: #C25E3A;       /* Terracota */
-  --color-primary-dark: #9E4626;
-  --color-primary-light: #F7EAE5;
-  --color-secondary: #5E7E6F;     /* Sàlvia / Esmalt verd */
-  --color-secondary-light: #EBF1EE;
+  --color-primary: #831D1D;       /* Coure profund oficial Roig de Coure */
+  --color-primary-dark: #631515;
+  --color-primary-light: #FDF5F5;
+  --color-secondary: #5E7E6F;     /* Sàlvia ceràmic */
+  --color-secondary-light: #EEF5F1;
   --color-dark: #2E2825;          /* Argila fosca */
   --color-muted: #736B66;
-  --color-bg: #FAF6F0;            /* Fons crema artesanal */
+  --color-bg: #F4F8F5;            /* Fons sàlvia suau de roigdecoure.cat */
   --color-card: #FFFFFF;
-  --color-border: #E8DFD5;
+  --color-border: #E5DDD5;
   
-  --color-success: #2E7D32;
-  --color-success-bg: #E8F5E9;
-  --color-warning: #EF6C00;
-  --color-warning-bg: #FFF3E0;
-  --color-danger: #C62828;
-  --color-danger-bg: #FFEBEE;
-  --color-info: #1976D2;
-  --color-info-bg: #E3F2FD;
+  --font-script: 'Buffalo', 'Buffalo Regular', cursive, -apple-system, sans-serif;
+  --font-main: Verdana, Geneva, Tahoma, sans-serif;
+  
+  --color-success: #5E7E6F;
+  --color-success-bg: #EEF5F1;
+  --color-warning: #736B66;
+  --color-warning-bg: #F4F8F5;
+  --color-danger: #831D1D;
+  --color-danger-bg: #FDF5F5;
+  --color-info: #5E7E6F;
+  --color-info-bg: #EEF5F1;
 
   --shadow-sm: 0 2px 4px rgba(46, 40, 37, 0.05);
   --shadow-md: 0 4px 12px rgba(46, 40, 37, 0.08);
@@ -40,7 +58,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-main, Verdana, Geneva, Tahoma, sans-serif);
   background-color: var(--color-bg);
   color: var(--color-dark);
   line-height: 1.5;
@@ -111,15 +129,15 @@ button {
   color: #fff;
 }
 .btn-danger:hover {
-  background-color: #A01B1B;
+  background-color: var(--color-primary-dark);
 }
 
 .btn-success {
-  background-color: var(--color-success);
+  background-color: var(--color-secondary);
   color: #fff;
 }
 .btn-success:hover {
-  background-color: #236327;
+  background-color: #4B675A;
 }
 
 .btn-sm {
@@ -137,6 +155,7 @@ button {
 .btn-block {
   width: 100%;
 }
+
 
 /* Targetes i contenidors */
 .card {
@@ -329,11 +348,640 @@ table.data-table tr:hover td {
   gap: 10px;
   animation: slideIn 0.3s ease;
 }
-.toast.success { background: #2E7D32; }
-.toast.error { background: #C62828; }
-.toast.info { background: #1976D2; }
+.toast.success { background: #5E7E6F; }
+.toast.error { background: #831D1D; }
+.toast.info { background: #2E2825; }
 
 @keyframes slideIn {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
+}
+
+/* ==========================================================================
+   SISTEMA DE RESERVES VISUAL & ELS 2 CAMINS (ROIG DE COURE)
+   ========================================================================== */
+
+/* Toggle dels 2 Camins */
+.res-paths-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .res-paths-nav {
+    grid-template-columns: 1fr;
+  }
+}
+.res-path-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #FFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition);
+}
+.res-path-btn:hover {
+  border-color: var(--color-primary);
+  background: rgba(194, 94, 58, 0.03);
+}
+.res-path-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 4px 12px rgba(194, 94, 58, 0.15);
+}
+.res-path-btn .path-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.res-path-btn .path-text strong {
+  display: block;
+  font-size: 14px;
+  color: var(--color-dark);
+}
+.res-path-btn.active .path-text strong {
+  color: var(--color-primary-dark);
+}
+.res-path-btn .path-text small {
+  display: block;
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+/* Selector d'Activitats (Camí 2) */
+.res-activities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.res-activity-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #FFF;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: left;
+  position: relative;
+}
+.res-activity-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+.res-activity-card.active {
+  border-color: var(--color-primary);
+  background: #FFF9F6;
+  box-shadow: 0 4px 10px rgba(194, 94, 58, 0.12);
+}
+.res-activity-card .act-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.res-activity-card .act-info {
+  flex: 1;
+  min-width: 0;
+}
+.res-activity-card .act-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.res-activity-card .act-cap {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 1px;
+}
+.res-activity-card .act-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: #EFEBE9;
+  color: var(--color-dark);
+}
+.res-activity-card.active .act-badge {
+  background: var(--color-primary);
+  color: #FFF;
+}
+
+/* Contenidor del Calendari Mensual */
+.res-calendar-card {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.res-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.res-calendar-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-dark);
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.res-calendar-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-calendar-nav-btn {
+  background: #F4EBE2;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.res-calendar-nav-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* Capçalera de Dies de la Setmana */
+.res-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.res-calendar-weekday {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-muted);
+  padding: 6px 2px;
+}
+.res-calendar-weekday.closed {
+  color: #B0BEC5;
+}
+
+/* Graella de Cel·les del Calendari */
+.res-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+@media (max-width: 500px) {
+  .res-calendar-grid {
+    gap: 3px;
+  }
+}
+.res-cal-day {
+  min-height: 72px;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #ECE7E1;
+  background: #FAFAFA;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  text-align: left;
+}
+@media (max-width: 500px) {
+  .res-cal-day {
+    min-height: 60px;
+    padding: 4px;
+  }
+}
+.res-cal-day.empty {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+.res-cal-day.closed-rest {
+  background: #F5F5F5;
+  border-color: #EEEEEE;
+  color: #9E9E9E;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.res-cal-day.closed-holiday {
+  background: #FDF5F5;
+  border-color: #E2EBE5;
+  color: var(--color-primary, #831D1D);
+  cursor: not-allowed;
+}
+.res-cal-day.open-day {
+  background: #FFF;
+  border-color: #E2DDD6;
+  cursor: pointer;
+}
+.res-cal-day.open-day:hover {
+  border-color: var(--color-primary);
+  background: #FFFDF9;
+  transform: translateY(-1px);
+}
+.res-cal-day.selected {
+  border: 2.5px solid var(--color-primary, #831D1D) !important;
+  background: #FFF5F2 !important;
+  box-shadow: 0 0 0 3px rgba(131, 29, 29, 0.25) !important;
+  transform: scale(1.02);
+  z-index: 2;
+}
+.res-cal-day.is-today .day-num {
+  background: var(--color-dark);
+  color: #FFF;
+  border-radius: 99px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.res-cal-day.selected.is-today .day-num {
+  background: var(--color-primary);
+}
+
+.res-cal-day .day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.res-cal-day .day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+.res-cal-day.closed-rest .day-num {
+  color: #9E9E9E;
+}
+.res-cal-day .day-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+.res-cal-day .badge-lliure {
+  background: #EEF5F1;
+  color: #5E7E6F;
+}
+.res-cal-day .badge-ultimes {
+  background: #FDF5F5;
+  color: #831D1D;
+}
+.res-cal-day .badge-complet {
+  background: #FDF5F5;
+  color: #831D1D;
+}
+.res-cal-day .badge-tancat {
+  background: #F4F8F5;
+  color: #736B66;
+}
+.res-cal-day .badge-triat {
+  background: var(--color-primary, #831D1D) !important;
+  color: #FFFFFF !important;
+  font-weight: 800;
+}
+
+/* Detall de Franges del Dia Seleccionat */
+.res-day-detail-card {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+.res-day-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 18px;
+}
+.res-day-detail-date {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.res-day-global-rule {
+  font-size: 12px;
+  color: #555;
+  background: #F4F1EA;
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-weight: 600;
+}
+
+/* Graella de Franges Horàries */
+.res-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.res-slot-box {
+  background: #FAFAFA;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: var(--transition);
+}
+.res-slot-box.is-full {
+  background: #FFFDFD;
+  border-color: #E5DDD5;
+}
+.res-slot-box.is-open {
+  border-color: #5E7E6F;
+}
+.res-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.res-slot-time {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-dark);
+}
+.res-slot-hours {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.res-slot-cap-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.res-slot-cap-badge.open {
+  background: #EEF5F1;
+  color: #5E7E6F;
+}
+.res-slot-cap-badge.warning {
+  background: #FDF5F5;
+  color: #831D1D;
+}
+.res-slot-cap-badge.full {
+  background: #FDF5F5;
+  color: #831D1D;
+}
+
+/* Barra de Progrés d'Aforament Franja (Màx 12) */
+.res-slot-progress-wrap {
+  margin: 6px 0;
+}
+.res-slot-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #ECE7E1;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.res-slot-progress-fill {
+  height: 100%;
+  background: #5E7E6F;
+  transition: width 0.3s ease;
+}
+.res-slot-progress-fill.warning { background: #736B66; }
+.res-slot-progress-fill.full { background: #831D1D; }
+.res-slot-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 3px;
+}
+
+/* Llistat d'Activitats dins la Franja */
+.res-slot-acts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.res-slot-act-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background: #FFF;
+  border: 1px solid #ECE7E1;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  transition: var(--transition);
+}
+.res-slot-act-row.is-highlighted {
+  border-color: var(--color-primary);
+  background: #FFF7F3;
+}
+.res-slot-act-row.is-full {
+  opacity: 0.55;
+  background: #FAFAFA;
+}
+.res-slot-act-name {
+  font-weight: 700;
+  color: var(--color-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-slot-act-spots {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5E7E6F;
+}
+.res-slot-act-row.is-full .res-slot-act-spots {
+  color: #831D1D;
+}
+.btn-book-act {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: var(--color-primary);
+  color: #FFF;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+.btn-book-act:hover {
+  background: var(--color-primary-dark);
+}
+.btn-book-act:disabled {
+  background: #E0E0E0;
+  color: #9E9E9E;
+  cursor: not-allowed;
+}
+
+/* Llistat de Reserves d'Alumnes dins Franja (Mode Admin) */
+.res-slot-students-list {
+  border-top: 1px dashed var(--color-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.res-student-item {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.res-student-info strong {
+  color: var(--color-primary-dark);
+}
+.res-student-info span {
+  margin-left: 4px;
+}
+.res-student-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-student-whatsapp {
+  text-decoration: none;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+.btn-admin-cancel-res {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #831D1D;
+  border: 1px solid #E5DDD5;
+  border-radius: 4px;
+  background: #FFF;
+  cursor: pointer;
+}
+.btn-admin-cancel-res:hover {
+  background: #FDF5F5;
+}
+
+/* Modal de Confirmació de Reserva Net */
+.res-booking-dialog {
+  max-width: 480px;
+  width: 92%;
+  background: #FFF;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  margin: auto;
+  border: 1px solid var(--color-border);
+}
+.res-pax-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.res-pax-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: #F5EFEB;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+.res-pax-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+.res-pax-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.res-pax-input {
+  width: 60px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+
+/* Llistat de properes sessions (Camí 2) */
+.res-upcoming-sessions-box {
+  background: #FFF9F6;
+  border: 1.5px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.res-upcoming-sessions-box h4 {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-upcoming-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.res-upcoming-chip {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-dark);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.res-upcoming-chip:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
 }

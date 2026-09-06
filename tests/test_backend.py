@@ -550,6 +550,30 @@ class TestCeramicsBackend(unittest.TestCase):
         c.execute("DELETE FROM alumnes WHERE id = ?", (test_student_id,))
         self.conn.commit()
 
+    def test_16_val_regal_and_aforament_oficial(self):
+        c = self.conn.cursor()
+        test_res_id = "RES-VAL-REGAL-TEST"
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at, val_regal, codi_val_regal)
+            VALUES (?, 'CLI-VAL-1', 'Client Val', '2026-09-23', '10:00', '12:00', 'M1', 'Torn', 'torn', 1, '+34611223344', 'val@test.com', 'confirmada', 2.0, 'Reserva regal', ?, 1, 'REGAL-2026-XYZ')
+        ''', (test_res_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        c.execute("SELECT val_regal, codi_val_regal FROM reserves WHERE id = ?", (test_res_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['val_regal'], 1)
+        self.assertEqual(row['codi_val_regal'], 'REGAL-2026-XYZ')
+
+        # Comprovar que l'aforament oficial màxim és 12
+        max_cap = server.get_aforament_maxim()
+        self.assertEqual(max_cap, 12)
+
+        # Neteja
+        c.execute("DELETE FROM reserves WHERE id = ?", (test_res_id,))
+        self.conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
 
