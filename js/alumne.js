@@ -838,6 +838,24 @@ function setupEventListeners() {
     btnWalletModalWatchQr.addEventListener('click', () => downloadWatchQrImage(currentStudent));
   }
 
+  // Google Wallet (Android)
+  const btnWalletModalGoogleQr = document.getElementById('btn-wallet-modal-google-qr');
+  if (btnWalletModalGoogleQr) {
+    btnWalletModalGoogleQr.addEventListener('click', async () => {
+      await downloadWatchQrImage(currentStudent);
+      showToast("Imatge descarregada! A Google Wallet, toca '+ Afegeix a Wallet' > 'Foto' i tria la foto.", 'success');
+    });
+  }
+
+  const btnOpenGoogleWalletApp = document.getElementById('btn-open-google-wallet-app');
+  if (btnOpenGoogleWalletApp) {
+    btnOpenGoogleWalletApp.addEventListener('click', () => {
+      setTimeout(() => {
+        window.open('https://wallet.google.com', '_blank');
+      }, 600);
+    });
+  }
+
   // Tecla Escape per tancar qualsevol finestra flotant activa
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {

@@ -638,7 +638,37 @@
           </a>
         </div>
 
-        <!-- Opció 2: Rellotge Intel·ligent universal -->
+        <!-- Opció 2: Google Wallet (Android i Wear OS) -->
+        <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-size: 14px; font-weight: 800; color: var(--color-dark);">
+              Google Wallet (Android i Wear OS)
+            </div>
+            <span style="font-size: 10px; font-weight: 700; background: #E8F0FE; color: #1A73E8; padding: 2px 8px; border-radius: 99px;">Android</span>
+          </div>
+          <div style="font-size: 12px; color: var(--color-muted); margin-bottom: 8px; line-height: 1.4;">
+            Guarda el carnet oficial a l'aplicació <strong>Google Wallet</strong> del teu telèfon Android i al teu rellotge (Samsung Galaxy Watch, Pixel Watch, etc.):
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 8px; padding: 9px 11px; font-size: 11.5px; line-height: 1.45; margin-bottom: 10px; color: var(--color-dark);">
+            1. Prem el botó blau per <strong>Desar la imatge oficial</strong> del carnet.<br>
+            2. Obre l'aplicació <strong>Google Wallet</strong> al teu Android.<br>
+            3. Toca <strong>"+ Afegeix a Wallet"</strong> &rarr; tria <strong>"Foto"</strong> (o "Tot el demés / Codi QR") i selecciona la foto descarregada.<br>
+            4. Google Wallet crearà la targeta oficial al mòbil i al rellotge a l'instant!
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn" id="btn-wallet-modal-google-qr" style="background: #1A73E8; color: #FFFFFF; font-size: 13px; font-weight: 700; border: none; padding: 9px 14px; border-radius: 8px; cursor: pointer; flex: 1; min-width: 160px;">
+              Desar Imatge per a Google Wallet
+            </button>
+            <a href="intent://wallet#Intent;package=com.google.android.apps.walletnfcrel;scheme=https;end" class="btn btn-outline" id="btn-open-google-wallet-app" style="font-size: 13px; font-weight: 600; text-decoration: none; padding: 9px 14px; text-align: center; white-space: nowrap;">
+              Obrir Google Wallet
+            </a>
+          </div>
+          <div style="font-size: 11px; color: var(--color-muted); margin-top: 8px;">
+            També pots obrir el fitxer <strong>.pkpass</strong> directament si fas servir <em>WalletPasses</em> o <em>Pass2U</em> a Android.
+          </div>
+        </div>
+
+        <!-- Opció 3: Rellotge Intel·ligent universal -->
         <div style="background: #FDFBF9; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px;">
           <div style="font-size: 14px; font-weight: 800; color: var(--color-dark); margin-bottom: 4px;">
             Rellotge Intel·ligent (Apple Watch, Wear OS, Garmin)

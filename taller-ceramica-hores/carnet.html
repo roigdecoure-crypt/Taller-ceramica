@@ -300,6 +300,11 @@
         Afegir a Apple Wallet (.pkpass)
       </a>
 
+      <!-- Botó Google Wallet (Android) -->
+      <button type="button" class="btn-action-pass" id="btn-google-wallet-download" style="background: #1A73E8; color: #FFFFFF; box-shadow: 0 4px 14px rgba(26, 115, 232, 0.25);">
+        Afegir a Google Wallet (Android)
+      </button>
+
       <!-- Botó Descarregar per al Rellotge -->
       <button type="button" class="btn-action-pass btn-watch-download" id="btn-watch-download">
         Desar QR per al Rellotge (Smartwatch)
@@ -498,6 +503,14 @@
 
       if (btnWatch) {
         btnWatch.addEventListener('click', downloadWatchQrImage);
+      }
+
+      const btnGoogleWallet = document.getElementById('btn-google-wallet-download');
+      if (btnGoogleWallet) {
+        btnGoogleWallet.addEventListener('click', async () => {
+          await downloadWatchQrImage();
+          showToast("Imatge descarregada! A Google Wallet, toca '+ Afegeix a Wallet' > 'Foto' i tria la foto.");
+        });
       }
 
       if (btnPrint) {
