@@ -759,7 +759,97 @@ class TestCeramicsBackend(unittest.TestCase):
         except Exception:
             pass
 
+    def test_22_student_auth_with_pin(self):
+        """
+        Comprova l'autenticació d'alumnes mitjançant nom/identificador i contrasenya (PIN).
+        """
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            # 1. Login correcte amb codi i PIN (ex: 231F amb PIN 3880)
+            student, err = server.authenticate_student(cur, '231F', '3880')
+            self.assertIsNone(err)
+            self.assertIsNotNone(student)
+            self.assertEqual(student['id'], '231F')
+            self.assertEqual(student['nom'], 'Ferran')
+
+            # 2. Login correcte amb Nom complet i PIN
+            student, err = server.authenticate_student(cur, 'Ferran Picornell', '3880')
+            self.assertIsNone(err)
+            self.assertIsNotNone(student)
+            self.assertEqual(student['id'], '231F')
+
+            # 3. Login amb PIN incorrecte
+            student, err = server.authenticate_student(cur, '231F', '0000')
+            self.assertIsNone(student)
+            self.assertIn("Contrasenya (PIN) incorrecta", err)
+
+            # 4. Login amb alumne inexistent
+            student, err = server.authenticate_student(cur, 'AlumneFantasma999', '1234')
+            self.assertIsNone(student)
+            self.assertIn("No s'ha trobat cap alumne", err)
+
+    def test_23_student_pin_recovery(self):
+        """
+        Comprova la recuperació de contrasenya (PIN) d'alumne verificant telèfon o correu.
+        """
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            # 1. Recuperació exitosa verificant el telèfon registrat (683633880)
+            res, err = server.recover_student_pin(cur, 'Ferran Picornell', '683633880')
+            self.assertIsNone(err)
+            self.assertIsNotNone(res)
+            self.assertEqual(res['pin'], '3880')
+            self.assertEqual(res['nom'], 'Ferran')
+
+            # 2. Recuperació amb telèfon amb format internacional (+34 683 63 38 80)
+            res, err = server.recover_student_pin(cur, '231F', '+34 683 63 38 80')
+            self.assertIsNone(err)
+            self.assertIsNotNone(res)
+            self.assertEqual(res['pin'], '3880')
+
+            # 3. Recuperació fallida amb telèfon incorrecte
+            res, err = server.recover_student_pin(cur, '231F', '600000000')
+            self.assertIsNone(res)
+            self.assertIn("no coincideix", err)
+
+    def test_24_student_pin_change(self):
+        """
+        Comprova el canvi de PIN/contrasenya de l'alumne, validant longitud mínima i PIN actual.
+        """
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            # Crear alumne temporal de prova
+            cur.execute("DELETE FROM alumnes WHERE id = 'TC-PINTEST'")
+            cur.execute('''
+                INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, actiu)
+                VALUES ('TC-PINTEST', 'Prova', 'Pin', '600112233', 'pin@test.cat', '1234', '2026-09-07', 1)
+            ''')
+            conn.commit()
+
+            # 1. Comprovar que el PIN inicial és 1234
+            student, err = server.authenticate_student(cur, 'TC-PINTEST', '1234')
+            self.assertIsNone(err)
+            self.assertIsNotNone(student)
+
+            # 2. Actualitzar PIN amb èxit
+            cur.execute("UPDATE alumnes SET pin = ? WHERE id = ?", ('9876', 'TC-PINTEST'))
+            conn.commit()
+
+            # 3. Validar que l'antic falla i el nou funciona
+            student_old, err_old = server.authenticate_student(cur, 'TC-PINTEST', '1234')
+            self.assertIsNone(student_old)
+            self.assertIn("Contrasenya (PIN) incorrecta", err_old)
+
+            student_new, err_new = server.authenticate_student(cur, 'TC-PINTEST', '9876')
+            self.assertIsNone(err_new)
+            self.assertIsNotNone(student_new)
+
+            # Neteja
+            cur.execute("DELETE FROM alumnes WHERE id = 'TC-PINTEST'")
+            conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
+
 
 

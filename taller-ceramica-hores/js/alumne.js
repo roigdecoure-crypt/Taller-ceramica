@@ -172,58 +172,122 @@ async function triggerPwaInstall() {
   }
 }
 
-// Comprovar si hi ha paràmetres URL (ex: alumne.html?id=TC-101 o retorn de Stripe) o sessió guardada a localStorage
+// Comprovar si hi ha paràmetres URL (ex: alumne.html?id=TC-101) o sessió guardada a localStorage
 async function checkUrlParamsOrSession() {
   const params = new URLSearchParams(window.location.search);
   const idParam = params.get('id');
+  const pinParam = params.get('pin');
   const paymentStatus = params.get('payment');
   const packHours = params.get('pack');
 
-  // Prioritat: Paràmetre URL > Sessió persistent a localStorage > sessionStorage antic
   const savedId = localStorage.getItem('logged_student_id') || sessionStorage.getItem('logged_student_id');
+  const savedPin = localStorage.getItem('logged_student_pin') || sessionStorage.getItem('logged_student_pin');
+
   const targetId = idParam || savedId;
+  const targetPin = pinParam || savedPin;
 
-  if (targetId) {
-    await loginStudent(targetId);
-
-    // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
-    const pendingHours = sessionStorage.getItem('pending_stripe_hours');
-    const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
-    if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
-      sessionStorage.removeItem('pending_stripe_hours');
-      await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
-      window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
+  // Si disposem d'identificador i PIN, intentem iniciar sessió automàticament
+  if (targetId && targetPin) {
+    const success = await loginStudent(targetId, targetPin, true);
+    if (success) {
+      // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
+      const pendingHours = sessionStorage.getItem('pending_stripe_hours');
+      const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
+      if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
+        sessionStorage.removeItem('pending_stripe_hours');
+        await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
+        window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
+      }
+      return;
     }
+  }
+
+  // Si només disposem de l'identificador (ex: enllaç desat anteriorment)
+  if (targetId) {
+    const inputId = document.getElementById('login-student-id');
+    if (inputId) inputId.value = targetId;
+    const inputPwd = document.getElementById('login-student-password');
+    if (inputPwd) inputPwd.focus();
   }
 }
 
-// Identificació de l'alumne
-async function loginStudent(code) {
+// Identificació de l'alumne amb nom/codi i contrasenya (PIN)
+async function loginStudent(identifier, password, isAutoLogin = false) {
+  const errBox = document.getElementById('login-error-msg');
+  if (errBox) errBox.style.display = 'none';
+
+  const cleanId = (identifier || '').trim();
+  const cleanPin = (password || '').trim();
+
+  if (!cleanId || !cleanPin) {
+    if (!isAutoLogin) {
+      const msg = 'Cal introduir tant el nom o codi d\'alumne com la contrasenya (PIN).';
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.style.display = 'block';
+      }
+      showToast(msg, 'error');
+    }
+    return false;
+  }
+
+  const btnSubmit = document.getElementById('btn-submit-login');
+  const originalBtnText = btnSubmit ? btnSubmit.textContent : '';
+  if (btnSubmit && !isAutoLogin) {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Verificant credencials...';
+  }
+
   try {
-    const cleanCode = (code || '').trim();
-    if (!cleanCode) return;
+    const res = await Store.loginAlumne(cleanId, cleanPin);
 
-    let details = await Store.getAlumne(cleanCode);
-    if ((!details || !details.alumne) && cleanCode !== cleanCode.toUpperCase()) {
-      details = await Store.getAlumne(cleanCode.toUpperCase());
+    if (!res.ok) {
+      if (!isAutoLogin) {
+        const errorText = res.error || 'Credencials incorrectes.';
+        if (errBox) {
+          errBox.textContent = errorText;
+          errBox.style.display = 'block';
+        }
+        showToast(errorText, 'error');
+      } else {
+        localStorage.removeItem('logged_student_pin');
+        sessionStorage.removeItem('logged_student_pin');
+      }
+      return false;
     }
 
-    if (!details || !details.alumne) {
-      showToast(`No s'ha trobat cap alumne amb "${cleanCode}". Revisa el codi o demana'l al taller.`, 'error');
-      return;
-    }
+    currentStudent = res;
 
-    currentStudent = details;
-    // Guardar a localStorage per a persistència total a l'App mòbil
-    localStorage.setItem('logged_student_id', details.alumne.id);
-    sessionStorage.setItem('logged_student_id', details.alumne.id);
+    // Guardar a localStorage i sessionStorage per a persistència total
+    localStorage.setItem('logged_student_id', res.alumne.id);
+    sessionStorage.setItem('logged_student_id', res.alumne.id);
+    localStorage.setItem('logged_student_pin', cleanPin);
+    sessionStorage.setItem('logged_student_pin', cleanPin);
 
-    renderDashboard(details);
+    renderDashboard(res);
 
     document.getElementById('section-login').style.display = 'none';
     document.getElementById('section-dashboard').style.display = 'block';
+
+    const pwdInput = document.getElementById('login-student-password');
+    if (pwdInput) pwdInput.value = '';
+
+    return true;
   } catch (err) {
-    showToast('Error iniciant sessió: ' + err.message, 'error');
+    if (!isAutoLogin) {
+      const msg = 'Error iniciant sessió: ' + err.message;
+      if (errBox) {
+        errBox.textContent = msg;
+        errBox.style.display = 'block';
+      }
+      showToast(msg, 'error');
+    }
+    return false;
+  } finally {
+    if (btnSubmit && !isAutoLogin) {
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = originalBtnText;
+    }
   }
 }
 
@@ -570,22 +634,269 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
 
 // Configuració d'Esdeveniments
 function setupEventListeners() {
-  // Login submit
-  document.getElementById('form-student-login').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const code = document.getElementById('login-student-id').value.trim();
-    if (code) await loginStudent(code);
-  });
+  // Commutar visibilitat de la contrasenya (PIN)
+  const btnTogglePwd = document.getElementById('btn-toggle-login-pwd');
+  const inputPwd = document.getElementById('login-student-password');
+  if (btnTogglePwd && inputPwd) {
+    btnTogglePwd.addEventListener('click', () => {
+      const isPwd = inputPwd.type === 'password';
+      inputPwd.type = isPwd ? 'text' : 'password';
+      btnTogglePwd.textContent = isPwd ? 'Ocultar' : 'Mostrar';
+    });
+  }
 
-  // Tancar sessió (Logout net)
-  document.getElementById('btn-logout').addEventListener('click', () => {
-    localStorage.removeItem('logged_student_id');
-    sessionStorage.removeItem('logged_student_id');
-    currentStudent = null;
-    if (liveSessionInterval) clearInterval(liveSessionInterval);
-    document.getElementById('section-dashboard').style.display = 'none';
-    document.getElementById('section-login').style.display = 'block';
-  });
+  // Formulari d'Accés d'Alumnes (Nom o Codi + Contrasenya)
+  const formLogin = document.getElementById('form-student-login');
+  if (formLogin) {
+    formLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('login-student-id').value.trim();
+      const pwd = document.getElementById('login-student-password').value.trim();
+      if (id && pwd) {
+        await loginStudent(id, pwd, false);
+      }
+    });
+  }
+
+  // Tancar sessió (Logout net de credencials i estat)
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      localStorage.removeItem('logged_student_id');
+      sessionStorage.removeItem('logged_student_id');
+      localStorage.removeItem('logged_student_pin');
+      sessionStorage.removeItem('logged_student_pin');
+      currentStudent = null;
+      if (liveSessionInterval) clearInterval(liveSessionInterval);
+      document.getElementById('section-dashboard').style.display = 'none';
+      document.getElementById('section-login').style.display = 'block';
+      const pwdInput = document.getElementById('login-student-password');
+      if (pwdInput) pwdInput.value = '';
+    });
+  }
+
+  // Obertura i gestió del modal de Recuperació de Contrasenya / PIN
+  const btnOpenRecovery = document.getElementById('btn-open-recovery');
+  const modalRecovery = document.getElementById('modal-recuperar-pwd');
+  const btnCloseRecovery = document.getElementById('btn-close-recovery-modal');
+
+  if (btnOpenRecovery && modalRecovery) {
+    btnOpenRecovery.addEventListener('click', () => {
+      const typedId = (document.getElementById('login-student-id')?.value || '').trim();
+      const recIdInput = document.getElementById('recovery-identifier');
+      if (recIdInput && typedId) {
+        recIdInput.value = typedId;
+      }
+      const errBox = document.getElementById('recovery-error-msg');
+      if (errBox) errBox.style.display = 'none';
+      const resBox = document.getElementById('recovery-result-box');
+      if (resBox) resBox.style.display = 'none';
+      const chgBox = document.getElementById('recovery-change-box');
+      if (chgBox) chgBox.style.display = 'none';
+
+      openModal(modalRecovery);
+    });
+  }
+
+  if (btnCloseRecovery && modalRecovery) {
+    btnCloseRecovery.addEventListener('click', () => closeModal(modalRecovery));
+  }
+  if (modalRecovery) {
+    modalRecovery.addEventListener('click', (e) => {
+      if (e.target === modalRecovery) closeModal(modalRecovery);
+    });
+  }
+
+  // Submit recuperació (verificació d'identitat per telèfon o correu)
+  const formRecovery = document.getElementById('form-recovery-verify');
+  if (formRecovery) {
+    formRecovery.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const identifier = document.getElementById('recovery-identifier').value.trim();
+      const contact = document.getElementById('recovery-contact').value.trim();
+      const errBox = document.getElementById('recovery-error-msg');
+      const resBox = document.getElementById('recovery-result-box');
+      const btnSubmit = document.getElementById('btn-submit-recovery');
+
+      if (errBox) errBox.style.display = 'none';
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Verificant identitat...';
+      }
+
+      try {
+        const res = await Store.recuperarPinAlumne(identifier, contact);
+        if (!res.ok) {
+          if (errBox) {
+            errBox.textContent = res.error || 'No s\'han pogut verificar les dades.';
+            errBox.style.display = 'block';
+          }
+          if (resBox) resBox.style.display = 'none';
+          return;
+        }
+
+        // Èxit de verificació
+        if (resBox) {
+          const greetingEl = document.getElementById('recovery-result-greeting');
+          if (greetingEl) greetingEl.textContent = `Identitat verificada: ${res.nom} (Codi ${res.id})`;
+          const pinEl = document.getElementById('recovery-result-pin');
+          if (pinEl) pinEl.textContent = res.pin;
+          resBox.style.display = 'block';
+        }
+
+        // Botó per accedir ara directament amb el PIN recuperat
+        const btnLoginNow = document.getElementById('btn-recovery-login-now');
+        if (btnLoginNow) {
+          btnLoginNow.onclick = async () => {
+            closeModal(modalRecovery);
+            document.getElementById('login-student-id').value = res.id;
+            document.getElementById('login-student-password').value = res.pin;
+            await loginStudent(res.id, res.pin, false);
+          };
+        }
+
+        // Toggle per desplegar formulari d'assignació de nova contrasenya
+        const btnToggleChg = document.getElementById('btn-recovery-toggle-change');
+        const chgBox = document.getElementById('recovery-change-box');
+        if (btnToggleChg && chgBox) {
+          btnToggleChg.onclick = () => {
+            chgBox.style.display = chgBox.style.display === 'none' ? 'block' : 'none';
+          };
+        }
+
+        // Botó per desar nova contrasenya directament des de la recuperació
+        const btnSaveNew = document.getElementById('btn-recovery-save-new-pin');
+        if (btnSaveNew) {
+          btnSaveNew.onclick = async () => {
+            const newPin = (document.getElementById('recovery-new-pin-input')?.value || '').trim();
+            if (!newPin || newPin.length < 4) {
+              alert('La nova contrasenya ha de tenir com a mínim 4 caràcters.');
+              return;
+            }
+            btnSaveNew.disabled = true;
+            btnSaveNew.textContent = 'Guardant...';
+            try {
+              const chgRes = await Store.canviarPinAlumne(res.id, newPin);
+              if (chgRes.ok) {
+                showToast('Nova contrasenya desada amb èxit!', 'success');
+                closeModal(modalRecovery);
+                document.getElementById('login-student-id').value = res.id;
+                document.getElementById('login-student-password').value = newPin;
+                await loginStudent(res.id, newPin, false);
+              } else {
+                alert(chgRes.error || 'Error canviant la contrasenya');
+              }
+            } finally {
+              btnSaveNew.disabled = false;
+              btnSaveNew.textContent = 'Desar Nova Contrasenya i Accedir';
+            }
+          };
+        }
+
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Error: ' + err.message;
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Verificar Identitat i Recuperar PIN';
+        }
+      }
+    });
+  }
+
+  // Modal de Canvi de PIN dins del portal
+  const btnPortalChangePin = document.getElementById('btn-portal-change-pin');
+  const modalChangePin = document.getElementById('modal-canviar-pin');
+  const btnCloseChangePin = document.getElementById('btn-close-change-pin-modal');
+
+  if (btnPortalChangePin && modalChangePin) {
+    btnPortalChangePin.addEventListener('click', () => {
+      const errBox = document.getElementById('change-pin-error-msg');
+      if (errBox) errBox.style.display = 'none';
+      const form = document.getElementById('form-change-pin');
+      if (form) form.reset();
+      openModal(modalChangePin);
+    });
+  }
+
+  if (btnCloseChangePin && modalChangePin) {
+    btnCloseChangePin.addEventListener('click', () => closeModal(modalChangePin));
+  }
+  if (modalChangePin) {
+    modalChangePin.addEventListener('click', (e) => {
+      if (e.target === modalChangePin) closeModal(modalChangePin);
+    });
+  }
+
+  const formChangePin = document.getElementById('form-change-pin');
+  if (formChangePin) {
+    formChangePin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentStudent || !currentStudent.alumne) return;
+
+      const currentPin = document.getElementById('input-current-pin').value.trim();
+      const newPin = document.getElementById('input-new-pin').value.trim();
+      const confirmPin = document.getElementById('input-confirm-pin').value.trim();
+      const errBox = document.getElementById('change-pin-error-msg');
+      const btnSubmit = document.getElementById('btn-submit-change-pin');
+
+      if (errBox) errBox.style.display = 'none';
+
+      if (newPin !== confirmPin) {
+        if (errBox) {
+          errBox.textContent = 'La nova contrasenya i la confirmació no coincideixen.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (newPin.length < 4) {
+        if (errBox) {
+          errBox.textContent = 'La contrasenya ha de tenir un mínim de 4 caràcters.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Desant...';
+      }
+
+      try {
+        const studentId = currentStudent.alumne.id;
+        const res = await Store.canviarPinAlumne(studentId, newPin, currentPin);
+        if (!res.ok) {
+          if (errBox) {
+            errBox.textContent = res.error || 'Error actualitzant la contrasenya.';
+            errBox.style.display = 'block';
+          }
+          return;
+        }
+
+        // Actualitzar credencial guardada
+        localStorage.setItem('logged_student_pin', newPin);
+        sessionStorage.setItem('logged_student_pin', newPin);
+        if (currentStudent.alumne) currentStudent.alumne.pin = newPin;
+
+        closeModal(modalChangePin);
+        showToast('Contrasenya (PIN) actualitzada amb èxit!', 'success');
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Error: ' + err.message;
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Desar Nova Contrasenya';
+        }
+      }
+    });
+  }
 
   // Botons d'instal·lació de PWA
   const btnInstallBanner = document.getElementById('btn-pwa-install-action');

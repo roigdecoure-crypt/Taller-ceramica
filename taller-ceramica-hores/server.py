@@ -1222,6 +1222,7 @@ def find_student_by_code(cursor, code, actiu_only=False):
             OR UPPER(TRIM(nom)) = UPPER(TRIM(:clean_code))
             OR UPPER(TRIM(cognoms)) = UPPER(TRIM(:clean_code))
             OR (LENGTH(:clean_code) >= 4 AND UPPER(TRIM(cognoms)) LIKE UPPER(TRIM(:clean_code)) || '%')
+            OR (LENGTH(:clean_code) >= 3 AND LOWER(TRIM(email)) = LOWER(TRIM(:clean_code)))
         )
         ORDER BY 
             CASE 
@@ -1251,6 +1252,49 @@ def find_student_by_code(cursor, code, actiu_only=False):
     }
     cursor.execute(query, params)
     return row_to_dict(cursor.fetchone())
+
+def authenticate_student(cursor, identifier, pin):
+    student = find_student_by_code(cursor, identifier, actiu_only=False)
+    if not student:
+        return None, "No s'ha trobat cap alumne amb aquest nom o identificador"
+    
+    stored_pin = str(student['pin'] or '').strip()
+    input_pin = str(pin or '').strip()
+    
+    # Si l'alumne encara no té cap PIN definit, s'inicialitza amb el que introdueix
+    if not stored_pin and input_pin:
+        cursor.execute("UPDATE alumnes SET pin = ? WHERE id = ?", (input_pin, student['id']))
+        student['pin'] = input_pin
+        stored_pin = input_pin
+        
+    if stored_pin != input_pin:
+        return None, "Contrasenya (PIN) incorrecta. Revisa el teu PIN o fes servir les opcions de recuperació."
+        
+    return student, None
+
+def recover_student_pin(cursor, identifier, contact):
+    student = find_student_by_code(cursor, identifier, actiu_only=False)
+    if not student:
+        return None, "No s'ha trobat cap alumne amb aquest nom o identificador"
+        
+    clean_contact = re.sub(r'[\s\-_]', '', str(contact or '').strip().lower())
+    clean_digits = re.sub(r'[^0-9]', '', clean_contact)
+    
+    stored_tel = re.sub(r'[^0-9]', '', str(student['telefon'] or ''))
+    stored_email = str(student['email'] or '').strip().lower()
+    
+    matched = False
+    if clean_digits and stored_tel:
+        if stored_tel.endswith(clean_digits[-9:]) or clean_digits.endswith(stored_tel[-9:]):
+            matched = True
+    if clean_contact and stored_email and clean_contact == stored_email:
+        matched = True
+        
+    if not matched:
+        return None, "El telèfon o correu electrònic no coincideix amb el registrat a la fitxa de l'alumne."
+        
+    pin = student['pin'] or '1234'
+    return {'id': student['id'], 'nom': student['nom'], 'pin': pin}, None
 
 def generate_pkpass(student, balance=None):
     """
@@ -1789,6 +1833,81 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': True, 'message': f'Base de dades restaurada amb èxit des de {safe_name}'})
                 except Exception as e:
                     self.send_json({'ok': False, 'error': f'Error restaurant còpia: {str(e)}'}, 500)
+            elif path == '/api/alumnes/auth':
+                identifier = str(data.get('identifier', '')).strip()
+                pin = str(data.get('pin', '')).strip()
+                if not identifier or not pin:
+                    self.send_json({'ok': False, 'error': "Cal introduir el nom o codi d'alumne i la contrasenya"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student, err = authenticate_student(cursor, identifier, pin)
+                    if err:
+                        status_code = 404 if "No s'ha trobat" in err else 401
+                        self.send_json({'ok': False, 'error': err}, status_code)
+                        return
+                    conn.commit()
+                    real_id = student['id']
+                    cursor.execute('SELECT * FROM paquets_hores WHERE student_id = ? ORDER BY data DESC', (real_id,))
+                    packs = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? ORDER BY entrada DESC', (real_id,))
+                    sessions = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM sessions WHERE student_id = ? AND estat = "oberta" ORDER BY entrada DESC LIMIT 1', (real_id,))
+                    active_session = row_to_dict(cursor.fetchone())
+                    balance = get_student_balance(real_id)
+                self.send_json({
+                    'ok': True,
+                    'alumne': student,
+                    'paquets': packs,
+                    'sessions': sessions,
+                    'sessioActiva': active_session,
+                    'balanc': balance
+                })
+                return
+
+            elif path == '/api/alumnes/recuperar-pin':
+                identifier = str(data.get('identifier', '')).strip()
+                contact = str(data.get('contact', '')).strip()
+                if not identifier or not contact:
+                    self.send_json({'ok': False, 'error': "Cal indicar el nom o codi d'alumne i el telèfon o correu de contacte"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    res, err = recover_student_pin(cursor, identifier, contact)
+                    if err:
+                        self.send_json({'ok': False, 'error': err}, 400)
+                        return
+                self.send_json({
+                    'ok': True,
+                    'nom': res['nom'],
+                    'id': res['id'],
+                    'pin': res['pin'],
+                    'message': f"Identitat verificada correctament per a {res['nom']}."
+                })
+                return
+
+            elif path == '/api/alumnes/canviar-pin':
+                student_id = str(data.get('student_id', '')).strip()
+                new_pin = str(data.get('new_pin', '')).strip()
+                current_pin = str(data.get('current_pin', '')).strip() if data.get('current_pin') else None
+                if not student_id or not new_pin:
+                    self.send_json({'ok': False, 'error': "Dades incompletes"}, 400)
+                    return
+                if len(new_pin) < 4:
+                    self.send_json({'ok': False, 'error': "La nova contrasenya ha de tenir com a mínim 4 caràcters"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, student_id)
+                    if not student:
+                        self.send_json({'ok': False, 'error': "Alumne no trobat"}, 404)
+                        return
+                    if current_pin is not None and student['pin'] and str(student['pin']).strip() != current_pin:
+                        self.send_json({'ok': False, 'error': "La contrasenya actual no és correcta"}, 401)
+                        return
+                    cursor.execute("UPDATE alumnes SET pin = ? WHERE id = ?", (new_pin, student['id']))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': "Contrasenya actualitzada correctament"})
                 return
 
             elif path == '/api/alumnes':

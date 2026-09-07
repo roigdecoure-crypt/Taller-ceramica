@@ -170,6 +170,81 @@ const Store = {
     };
   },
 
+  async loginAlumne(identifier, password) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, pin: password })
+        });
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        console.warn('API error, fallback local');
+      }
+    }
+    // Fallback local
+    const details = await this.getAlumne(identifier);
+    if (!details || !details.alumne) {
+      return { ok: false, error: 'No s\'ha trobat cap alumne amb aquest nom o identificador' };
+    }
+    const storedPin = String(details.alumne.pin || '').trim();
+    const inputPin = String(password || '').trim();
+    if (storedPin && storedPin !== inputPin) {
+      return { ok: false, error: 'Contrasenya (PIN) incorrecta. Revisa el teu PIN o fes servir les opcions de recuperació.' };
+    }
+    return { ok: true, ...details };
+  },
+
+  async recuperarPinAlumne(identifier, contact) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/recuperar-pin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, contact })
+        });
+        return await res.json();
+      } catch (err) {
+        return { ok: false, error: 'Error de connexió: ' + err.message };
+      }
+    }
+    // Fallback local
+    const details = await this.getAlumne(identifier);
+    if (!details || !details.alumne) {
+      return { ok: false, error: 'No s\'ha trobat cap alumne amb aquest identificador' };
+    }
+    const a = details.alumne;
+    const cleanContact = String(contact || '').replace(/[\s\-_]/g, '').toLowerCase();
+    const cleanDigits = cleanContact.replace(/[^0-9]/g, '');
+    const storedTel = String(a.telefon || '').replace(/[^0-9]/g, '');
+    const storedEmail = String(a.email || '').trim().toLowerCase();
+
+    const matched = (cleanDigits && storedTel && (storedTel.endsWith(cleanDigits.slice(-9)) || cleanDigits.endsWith(storedTel.slice(-9)))) ||
+                    (cleanContact && storedEmail && cleanContact === storedEmail);
+    if (!matched) {
+      return { ok: false, error: 'El telèfon o correu electrònic no coincideix amb el registrat a la fitxa de l\'alumne.' };
+    }
+    return { ok: true, nom: a.nom, id: a.id, pin: a.pin || '1234' };
+  },
+
+  async canviarPinAlumne(studentId, newPin, currentPin = null) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/canviar-pin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ student_id: studentId, new_pin: newPin, current_pin: currentPin })
+        });
+        return await res.json();
+      } catch (err) {
+        return { ok: false, error: 'Error de connexió: ' + err.message };
+      }
+    }
+    return { ok: true, message: 'Contrasenya actualitzada correctament' };
+  },
+
   async saveAlumne(studentData) {
     if (this.mode === 'api') {
       try {
