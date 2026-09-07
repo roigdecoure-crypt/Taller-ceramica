@@ -205,6 +205,9 @@ function renderStudentsTable(students) {
     else saldoBadgeClass = 'badge-success';
 
     const tr = document.createElement('tr');
+    tr.className = 'student-clickable-row';
+    tr.dataset.id = s.id;
+    tr.title = "Fes clic a qualsevol lloc de la fila per veure la informació i historial complet";
     const edatLabel = s.edat !== null && s.edat !== undefined ? `<div style="font-size:11px; color:var(--color-muted);">${s.edat} anys (${s.edat >= 12 ? 'Adult' : 'Infantil'})</div>` : '';
     tr.innerHTML = `
       <td><strong>${s.id}</strong></td>
@@ -223,7 +226,7 @@ function renderStudentsTable(students) {
         </span>
       </td>
       <td style="text-align: right; white-space: nowrap;">
-        <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}" title="Veure fitxa 360°">
+        <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}" title="Veure fitxa completa de l'alumne">
           Fitxa
         </button>
         <button class="btn btn-outline btn-sm btn-action-carnet" data-id="${s.id}" title="Veure carnet amb QR">
@@ -239,62 +242,207 @@ function renderStudentsTable(students) {
     `;
     tbody.appendChild(tr);
   });
+
+  // Listener de clic a la fila de la taula d'alumnes
+  if (!tbody.dataset.rowClickListener) {
+    tbody.dataset.rowClickListener = 'true';
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button, a');
+      if (btn && !btn.classList.contains('btn-action-view')) {
+        return;
+      }
+      const row = e.target.closest('tr.student-clickable-row');
+      if (row && row.dataset.id) {
+        openStudentInlineDetail(row.dataset.id);
+      }
+    });
+  }
 }
 
-// OBRIR DRAWER FITXA 360°
-async function openStudentDrawer(studentId) {
+// OBRIR FITXA COMPLETA D'ALUMNE (INLINE A LA MATEIXA PÀGINA, SENSE FINESTRA)
+async function openStudentInlineDetail(studentId) {
   try {
     const details = await Store.getAlumne(studentId);
     if (!details) return;
 
     currentViewingStudent = details;
     const a = details.alumne;
-    const bal = details.balanc;
+    const bal = details.balanc || { formatBalance: '00:00:00', humanBalance: '0h 0m 0s', formatBought: '00:00:00', formatSpent: '00:00:00' };
 
-    document.getElementById('drawer-student-id').textContent = a.id;
-    document.getElementById('drawer-student-fullname').textContent = `${a.nom} ${a.cognoms || ''}`;
-    document.getElementById('drawer-balance-value').textContent = bal.formatBalance;
-    document.getElementById('drawer-balance-human').textContent = bal.humanBalance;
-    document.getElementById('drawer-total-bought').textContent = bal.formatBought;
-    document.getElementById('drawer-total-spent').textContent = bal.formatSpent;
-
-    const contactEl = document.getElementById('drawer-student-contact');
-    const edatText = a.edat !== null && a.edat !== undefined ? ` | Edat: ${a.edat} anys (${a.edat >= 12 ? 'Adult' : 'Infantil'})` : '';
-    contactEl.textContent = `Tel: ${a.telefon || '-'} | Email: ${a.email || '-'}${edatText}`;
-
-    const waBtn = document.getElementById('drawer-btn-whatsapp');
-    if (a.telefon) {
-      const cleanPhone = a.telefon.replace(/\D/g, '');
-      waBtn.href = `https://wa.me/34${cleanPhone}`;
-      waBtn.style.display = 'inline-flex';
-    } else {
-      waBtn.style.display = 'none';
+    // Assegurar pestanya d'alumnes activa
+    const targetView = document.getElementById('view-alumnes');
+    if (targetView && !targetView.classList.contains('active')) {
+      document.querySelectorAll('.admin-tab-view').forEach(view => view.classList.remove('active'));
+      targetView.classList.add('active');
+      document.querySelectorAll('.sidebar-item').forEach(i => {
+        i.classList.toggle('active', i.dataset.tab === 'alumnes');
+      });
     }
 
-    const sessBadge = document.getElementById('drawer-session-status-badge');
-    if (details.sessioActiva) {
-      sessBadge.innerHTML = `<span class="badge badge-success">Actiu des de les ${TimeUtils.formatTime(details.sessioActiva.entrada)}</span>`;
-    } else {
-      sessBadge.innerHTML = `<span class="badge badge-neutral">Sessió tancada</span>`;
+    // Commutar contenidors: ocultar taula i mostrar fitxa
+    const listCont = document.getElementById('alumnes-list-container');
+    const detailCont = document.getElementById('alumnes-detail-container');
+    if (listCont) listCont.style.display = 'none';
+    if (detailCont) detailCont.style.display = 'block';
+
+    // Capçalera
+    const idEl = document.getElementById('inline-student-id');
+    const nameEl = document.getElementById('inline-student-fullname');
+    if (idEl) idEl.textContent = a.id;
+    if (nameEl) nameEl.textContent = `${a.nom} ${a.cognoms || ''}`;
+
+    // Estat de presència
+    const isActiu = details.sessioActiva && details.sessioActiva.estat === 'oberta';
+    const presenceBadge = document.getElementById('inline-student-presence-badge');
+    const statusHtml = isActiu
+      ? `<span class="badge badge-success" style="font-size:13px; padding:6px 12px;">Al Taller des de les ${TimeUtils.formatTime(details.sessioActiva.entrada)}</span>`
+      : `<span class="badge badge-neutral" style="font-size:13px; padding:6px 12px;">Fora del taller</span>`;
+    if (presenceBadge) presenceBadge.innerHTML = statusHtml;
+
+    // Perfil i contacte
+    const phoneEl = document.getElementById('inline-student-phone');
+    if (phoneEl) {
+      if (a.telefon) {
+        phoneEl.innerHTML = `<a href="tel:${a.telefon}" style="color:inherit; text-decoration:underline;">${a.telefon}</a>`;
+      } else {
+        phoneEl.textContent = '-';
+      }
     }
 
-    document.getElementById('drawer-count-sessions').textContent = details.sessions.length;
-    document.getElementById('drawer-count-paquets').textContent = details.paquets.length;
+    const emailEl = document.getElementById('inline-student-email');
+    if (emailEl) {
+      if (a.email) {
+        emailEl.innerHTML = `<a href="mailto:${a.email}" style="color:inherit; text-decoration:underline;">${a.email}</a>`;
+      } else {
+        emailEl.textContent = '-';
+      }
+    }
 
-    renderDrawerSessions(details.sessions);
-    renderDrawerPaquets(details.paquets);
+    const pinEl = document.getElementById('inline-student-pin');
+    if (pinEl) pinEl.textContent = a.pin || '-';
 
-    document.getElementById('student-drawer-backdrop').classList.add('active');
+    const edatEl = document.getElementById('inline-student-edat');
+    if (edatEl) {
+      edatEl.textContent = (a.edat !== null && a.edat !== undefined) ? `${a.edat} anys (${a.edat >= 12 ? 'Adult' : 'Infantil'})` : '-';
+    }
+
+    const altaEl = document.getElementById('inline-student-alta');
+    if (altaEl) altaEl.textContent = a.data_alta ? TimeUtils.formatDate(a.data_alta) : '-';
+
+    const notesCont = document.getElementById('inline-student-notes-container');
+    const notesEl = document.getElementById('inline-student-notes');
+    if (notesCont && notesEl) {
+      if (a.notes && a.notes.trim()) {
+        notesEl.textContent = a.notes;
+        notesCont.style.display = 'block';
+      } else {
+        notesCont.style.display = 'none';
+      }
+    }
+
+    // Botó WhatsApp
+    const waBtn = document.getElementById('inline-btn-whatsapp');
+    if (waBtn) {
+      if (a.telefon) {
+        const cleanPhone = a.telefon.replace(/\D/g, '');
+        waBtn.href = `https://wa.me/34${cleanPhone}`;
+        waBtn.style.display = 'inline-flex';
+      } else {
+        waBtn.style.display = 'none';
+      }
+    }
+
+    // Hero de Saldo
+    const balVal = document.getElementById('inline-student-balance-val');
+    const balHuman = document.getElementById('inline-student-balance-human');
+    const boughtEl = document.getElementById('inline-student-total-bought');
+    const spentEl = document.getElementById('inline-student-total-spent');
+    const sessStatusEl = document.getElementById('inline-student-session-status');
+
+    if (balVal) balVal.textContent = bal.formatBalance;
+    if (balHuman) balHuman.textContent = bal.humanBalance;
+    if (boughtEl) boughtEl.textContent = bal.formatBought;
+    if (spentEl) spentEl.textContent = bal.formatSpent;
+    if (sessStatusEl) sessStatusEl.innerHTML = statusHtml;
+
+    // Comptadors
+    const reservesList = details.reserves || [];
+    const sessionsList = details.sessions || [];
+    const paquetsList = details.paquets || [];
+
+    const countRes = document.getElementById('inline-count-reserves');
+    const countSess = document.getElementById('inline-count-sessions');
+    const countPacks = document.getElementById('inline-count-paquets');
+    if (countRes) countRes.textContent = reservesList.length;
+    if (countSess) countSess.textContent = sessionsList.length;
+    if (countPacks) countPacks.textContent = paquetsList.length;
+
+    // Renderitzar taules d'historial
+    renderInlineStudentReserves(reservesList);
+    renderInlineStudentSessions(sessionsList);
+    renderInlineStudentPaquets(paquetsList);
+
+    // Scroll cap a dalt de la pàgina
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (err) {
-    showToast('Error obrint la fitxa: ' + err.message, 'error');
+    showToast('Error obrint la fitxa de l\'alumne: ' + err.message, 'error');
   }
 }
 
-function renderDrawerSessions(sessions) {
-  const tbody = document.getElementById('drawer-sessions-tbody');
+// TANCAR FITXA D'ALUMNE I TORNAR AL LLISTAT
+function closeStudentInlineDetail() {
+  const detailCont = document.getElementById('alumnes-detail-container');
+  const listCont = document.getElementById('alumnes-list-container');
+  if (detailCont) detailCont.style.display = 'none';
+  if (listCont) listCont.style.display = 'block';
+  currentViewingStudent = null;
+  const heading = document.getElementById('admin-view-heading');
+  if (heading) heading.textContent = 'Alumnes & Clients';
+}
+
+// RENDERITZAR TAULA DE RESERVES DE L'ALUMNE
+function renderInlineStudentReserves(reserves) {
+  const tbody = document.getElementById('inline-reserves-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  if (sessions.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no hi ha cap sessió registrada.</td></tr>`;
+  if (!reserves || reserves.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">No hi ha cap reserva registrada per a aquest alumne.</td></tr>`;
+    return;
+  }
+
+  reserves.forEach(r => {
+    const isCancelada = r.estat === 'cancel·lada';
+    let estatBadge = '<span class="badge badge-success">Confirmada</span>';
+    if (isCancelada) estatBadge = '<span class="badge badge-danger">Cancel·lada</span>';
+    else if (r.estat === 'pendent') estatBadge = '<span class="badge badge-warning">Pendent</span>';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${TimeUtils.formatDate(r.data)}</td>
+      <td><strong>${r.hora_inici || '-'} - ${r.hora_fi || '-'}</strong></td>
+      <td><span class="badge badge-neutral">${r.torn || 'Franja'}</span></td>
+      <td><strong>${r.activitat || 'Ceràmica'}</strong></td>
+      <td><span class="badge badge-info">${r.places || 1} plaça</span></td>
+      <td>${estatBadge}</td>
+      <td style="font-size:12px; color:var(--color-muted); max-width:180px;">${r.notes || '-'}</td>
+      <td style="text-align: right; white-space: nowrap;">
+        ${!isCancelada 
+          ? `<button type="button" class="btn btn-outline btn-sm btn-inline-cancel-reserva" data-id="${r.id}" style="color:var(--color-danger); border-color:var(--color-danger); padding:3px 8px;" title="Cancel·lar aquesta reserva i alliberar la plaça">Cancel·lar</button>`
+          : `<span style="color:var(--color-muted); font-size:12px;">Cancel·lada</span>`
+        }
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// RENDERITZAR TAULA DE SESSIONS DE L'ALUMNE
+function renderInlineStudentSessions(sessions) {
+  const tbody = document.getElementById('inline-sessions-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!sessions || sessions.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">Encara no hi ha cap sessió registrada.</td></tr>`;
     return;
   }
 
@@ -309,21 +457,25 @@ function renderDrawerSessions(sessions) {
       <td><strong>${s.format_hms || '00:00:00'}</strong></td>
       <td>
         <span class="badge ${s.tipus === 'qr' ? 'badge-info' : 'badge-neutral'}">${s.tipus || 'qr'}</span>
-        ${isForcada ? '<span class="badge badge-warning" title="Tancat per oblit">Oblit</span>' : ''}
       </td>
       <td>
-        <button class="btn btn-outline btn-sm btn-delete-sessio" data-id="${s.id}" style="color:var(--color-danger);" title="Eliminar sessió">Eliminar</button>
+        ${isOberta ? '<span class="badge badge-success">Oberta</span>' : (isForcada ? '<span class="badge badge-warning" title="Tancat per oblit">Oblit</span>' : '<span class="badge badge-neutral">Tancada</span>')}
+      </td>
+      <td style="text-align: right; white-space: nowrap;">
+        <button type="button" class="btn btn-outline btn-sm btn-delete-sessio" data-id="${s.id}" style="color:var(--color-danger); border-color:var(--color-danger); padding:3px 8px;" title="Eliminar sessió">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function renderDrawerPaquets(paquets) {
-  const tbody = document.getElementById('drawer-paquets-tbody');
+// RENDERITZAR TAULA DE COMPRES DE PAQUETS DE L'ALUMNE
+function renderInlineStudentPaquets(paquets) {
+  const tbody = document.getElementById('inline-paquets-tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  if (paquets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no s'ha comprat cap paquet d'hores.</td></tr>`;
+  if (!paquets || paquets.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">Encara no s'ha comprat cap paquet d'hores.</td></tr>`;
     return;
   }
 
@@ -335,12 +487,17 @@ function renderDrawerPaquets(paquets) {
       <td><span class="badge badge-success">+${p.hores}h (${TimeUtils.secondsToHms(p.segons)})</span></td>
       <td>${p.preu ? p.preu + '€' : '-'}</td>
       <td><span class="badge badge-neutral">${p.metode_pagament || 'Efectiu'}</span></td>
-      <td>
-        <button class="btn btn-outline btn-sm btn-delete-paquet" data-id="${p.id}" style="color:var(--color-danger);" title="Eliminar compra">Eliminar</button>
+      <td style="text-align: right; white-space: nowrap;">
+        <button type="button" class="btn btn-outline btn-sm btn-delete-paquet" data-id="${p.id}" style="color:var(--color-danger); border-color:var(--color-danger); padding:3px 8px;" title="Eliminar compra">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+// Compatibilitat retroactiva: redirigir qualsevol crida de Drawer cap a la nova fitxa inline a la mateixa pàgina
+async function openStudentDrawer(studentId) {
+  return openStudentInlineDetail(studentId);
 }
 
 // MOSTRAR CARNET AMB QR
@@ -612,50 +769,62 @@ function setupEventListeners() {
       document.getElementById('modal-tancar-cicle-backdrop').classList.add('active');
     }
 
-    // Eliminar sessió des del drawer
+    // Cancel·lar reserva des de la fitxa inline d'alumne
+    if (target.classList.contains('btn-inline-cancel-reserva')) {
+      const resId = target.dataset.id;
+      if (confirm('Segur que vols cancel·lar aquesta reserva i alliberar la plaça?')) {
+        try {
+          const res = await Store.cancelarReserva(resId);
+          if (res.ok) {
+            showToast('Reserva cancel·lada correctament.', 'info');
+            if (currentViewingStudent && currentViewingStudent.alumne) {
+              openStudentInlineDetail(currentViewingStudent.alumne.id);
+            }
+          } else {
+            showToast(res.error || 'No s\'ha pogut cancel·lar la reserva', 'error');
+          }
+        } catch (err) {
+          showToast('Error cancel·lant reserva: ' + err.message, 'error');
+        }
+      }
+    }
+
+    // Eliminar sessió des del drawer o fitxa
     if (target.classList.contains('btn-delete-sessio')) {
       if (confirm('Segur que vols eliminar aquesta sessió?')) {
         const sessId = target.dataset.id;
         await Store.deleteSession(sessId);
         showToast('Sessió eliminada correctament', 'info');
         await refreshStudentsList();
-        if (currentViewingStudent) openStudentDrawer(currentViewingStudent.alumne.id);
+        if (currentViewingStudent && currentViewingStudent.alumne) openStudentInlineDetail(currentViewingStudent.alumne.id);
       }
     }
 
-    // Eliminar paquet des del drawer
+    // Eliminar paquet des del drawer o fitxa
     if (target.classList.contains('btn-delete-paquet')) {
       if (confirm('Segur que vols eliminar aquesta compra de paquet?')) {
         const packId = target.dataset.id;
         await Store.deletePackage(packId);
         showToast('Paquet eliminat correctament', 'info');
         await refreshStudentsList();
-        if (currentViewingStudent) openStudentDrawer(currentViewingStudent.alumne.id);
+        if (currentViewingStudent && currentViewingStudent.alumne) openStudentInlineDetail(currentViewingStudent.alumne.id);
       }
     }
   });
 
-  // Botons ràpids del Drawer
-  document.getElementById('drawer-btn-carnet').addEventListener('click', () => {
-    if (currentViewingStudent) showStudentBadgeModal(currentViewingStudent.alumne.id);
+  // Botons de la Fitxa Inline d'Alumne (A la mateixa pàgina)
+  document.getElementById('btn-back-to-alumnes-list')?.addEventListener('click', () => {
+    closeStudentInlineDetail();
   });
 
-  const btnCheckin = document.getElementById('drawer-btn-checkin');
-  if (btnCheckin) {
-    btnCheckin.addEventListener('click', () => {
-      if (currentViewingStudent) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'entrada');
-    });
-  }
+  document.getElementById('inline-btn-nova-reserva')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      openAdminNovaReservaModal(null, currentViewingStudent.alumne.id);
+    }
+  });
 
-  const btnCheckout = document.getElementById('drawer-btn-checkout');
-  if (btnCheckout) {
-    btnCheckout.addEventListener('click', () => {
-      if (currentViewingStudent) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'sortida');
-    });
-  }
-
-  document.getElementById('drawer-btn-add-hours').addEventListener('click', () => {
-    if (!currentViewingStudent) return;
+  document.getElementById('inline-btn-add-hours')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
     document.getElementById('paquet-form-student-id').value = a.id;
     document.getElementById('paquet-form-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
@@ -666,8 +835,20 @@ function setupEventListeners() {
     document.getElementById('modal-paquet-backdrop').classList.add('active');
   });
 
-  document.getElementById('drawer-btn-add-manual-session').addEventListener('click', () => {
-    if (!currentViewingStudent) return;
+  document.getElementById('inline-btn-checkin')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'entrada');
+    }
+  });
+
+  document.getElementById('inline-btn-checkout')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'sortida');
+    }
+  });
+
+  document.getElementById('inline-btn-manual-session')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
     document.getElementById('manual-sessio-id').value = '';
     document.getElementById('manual-sessio-student-id').value = a.id;
@@ -681,8 +862,14 @@ function setupEventListeners() {
     document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
   });
 
-  document.getElementById('drawer-btn-edit-student').addEventListener('click', () => {
-    if (!currentViewingStudent) return;
+  document.getElementById('inline-btn-carnet')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      showStudentBadgeModal(currentViewingStudent.alumne.id);
+    }
+  });
+
+  document.getElementById('inline-btn-edit-student')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
     document.getElementById('modal-alumne-title').textContent = 'Editar Alumne';
     document.getElementById('alumne-form-id').value = a.id;
@@ -696,14 +883,88 @@ function setupEventListeners() {
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
-  // Pestanyes del Drawer
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  // Pestanyes d'Historial Inline
+  document.querySelectorAll('.inline-history-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.inline-history-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const targetTab = btn.dataset.historyTab;
+      document.querySelectorAll('.inline-history-pane').forEach(p => p.style.display = 'none');
+      const targetEl = document.getElementById(targetTab);
+      if (targetEl) targetEl.style.display = 'block';
+    });
+  });
+
+  // Botons ràpids del Drawer (Compatibilitat)
+  document.getElementById('drawer-btn-carnet')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) showStudentBadgeModal(currentViewingStudent.alumne.id);
+  });
+
+  const btnCheckin = document.getElementById('drawer-btn-checkin');
+  if (btnCheckin) {
+    btnCheckin.addEventListener('click', () => {
+      if (currentViewingStudent && currentViewingStudent.alumne) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'entrada');
+    });
+  }
+
+  const btnCheckout = document.getElementById('drawer-btn-checkout');
+  if (btnCheckout) {
+    btnCheckout.addEventListener('click', () => {
+      if (currentViewingStudent && currentViewingStudent.alumne) openAdminManualCheckinModal(currentViewingStudent.alumne.id, 'sortida');
+    });
+  }
+
+  document.getElementById('drawer-btn-add-hours')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
+    const a = currentViewingStudent.alumne;
+    document.getElementById('paquet-form-student-id').value = a.id;
+    document.getElementById('paquet-form-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
+    document.getElementById('paquet-form-hores').value = 4;
+    document.getElementById('paquet-form-concepte').value = '4 Hores';
+    document.getElementById('paquet-form-preu').value = 50;
+    document.getElementById('paquet-form-data').value = TimeUtils.toLocalDatetimeInput();
+    document.getElementById('modal-paquet-backdrop').classList.add('active');
+  });
+
+  document.getElementById('drawer-btn-add-manual-session')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
+    const a = currentViewingStudent.alumne;
+    document.getElementById('manual-sessio-id').value = '';
+    document.getElementById('manual-sessio-student-id').value = a.id;
+    document.getElementById('manual-sessio-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
+
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 3600000);
+    document.getElementById('manual-sessio-entrada').value = TimeUtils.toLocalDatetimeInput(oneHourAgo);
+    document.getElementById('manual-sessio-sortida').value = TimeUtils.toLocalDatetimeInput(now);
+    document.getElementById('manual-sessio-preview').textContent = '01:00:00';
+    document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
+  });
+
+  document.getElementById('drawer-btn-edit-student')?.addEventListener('click', () => {
+    if (!currentViewingStudent || !currentViewingStudent.alumne) return;
+    const a = currentViewingStudent.alumne;
+    document.getElementById('modal-alumne-title').textContent = 'Editar Alumne';
+    document.getElementById('alumne-form-id').value = a.id;
+    document.getElementById('alumne-form-nom').value = a.nom;
+    document.getElementById('alumne-form-cognoms').value = a.cognoms || '';
+    document.getElementById('alumne-form-telefon').value = a.telefon || '';
+    document.getElementById('alumne-form-email').value = a.email || '';
+    document.getElementById('alumne-form-pin').value = a.pin || '';
+    document.getElementById('alumne-form-notes').value = a.notes || '';
+    document.getElementById('alumne-form-edat').value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
+    document.getElementById('modal-alumne-backdrop').classList.add('active');
+  });
+
+  // Pestanyes del Drawer (Compatibilitat)
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const targetTab = btn.dataset.tab;
       document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-      document.getElementById(targetTab).style.display = 'block';
+      const pane = document.getElementById(targetTab);
+      if (pane) pane.style.display = 'block';
     });
   });
 
@@ -2313,6 +2574,10 @@ async function handleAdminSubmitNovaReserva(e) {
           adminReservesCalendar.selectedDate = dataRes;
           await adminReservesCalendar.refresh();
         }
+
+        if (currentViewingStudent && currentViewingStudent.alumne) {
+          openStudentInlineDetail(currentViewingStudent.alumne.id);
+        }
       } else {
         alert(`No s'ha pogut crear la sèrie recurrent: ${(res && res.error) || 'Aforament complet o error en les dates'}`);
       }
@@ -2347,6 +2612,10 @@ async function handleAdminSubmitNovaReserva(e) {
         if (adminReservesCalendar) {
           adminReservesCalendar.selectedDate = dataRes;
           await adminReservesCalendar.refresh();
+        }
+
+        if (currentViewingStudent && currentViewingStudent.alumne) {
+          openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
       } else {
         alert(`No s'ha pogut crear la reserva: ${(res && res.error) || 'Aforament complet o dia no disponible'}`);
@@ -3034,6 +3303,13 @@ function downloadCardAsPNG(student, config) {
     finishDownload();
   }
 }
+
+if (typeof window !== 'undefined') {
+  window.openStudentInlineDetail = openStudentInlineDetail;
+  window.closeStudentInlineDetail = closeStudentInlineDetail;
+  window.openStudentDrawer = openStudentDrawer;
+}
+
 
 
 

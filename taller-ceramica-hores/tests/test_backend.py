@@ -1076,8 +1076,59 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertIn('Ferran', svg_content)
         self.assertIn('Roig de Coure', svg_content)
 
+    def test_30_student_detail_includes_reserves(self):
+        """
+        Comprova que l'endpoint GET /api/alumnes/{id} retorna la llista de reserves
+        de l'alumne a més dels paquets, sessions i balanç, per a la fitxa 360° inline.
+        """
+        import io
+
+        c = self.conn.cursor()
+        test_id = "TC-TEST-360"
+        c.execute("DELETE FROM reserves WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM sessions WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM paquets_hores WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
+
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, actiu)
+            VALUES (?, 'Alumne Detall', 'Inline Test', '611222333', 'detall@test.com', '1234', ?, 1)
+        ''', (test_id, datetime.now().isoformat()))
+
+        # Inserir reserva per a aquest alumne
+        c.execute('''
+            INSERT INTO reserves (id, student_id, student_nom, telefon, email, data, franja, activitat, activitat_id, places, hora_inici, hora_fi, hores, estat, notes, created_at)
+            VALUES ('RES-TEST-360', ?, 'Alumne Detall', '611222333', 'detall@test.com', '2026-09-10', 'Matí (10:00 - 12:00)', 'Modelatge', 'modelatge', 1, '10:00', '12:00', 2.0, 'confirmada', 'Notes prova inline', ?)
+        ''', (test_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler.path = f'/api/alumnes/{test_id}'
+        handler.headers = {}
+        handler.wfile = io.BytesIO()
+        status_box = []
+        def mock_send_response(code, msg=None):
+            status_box.append(code)
+        handler.send_response = mock_send_response
+        handler.send_header = lambda k, v: None
+        handler.end_headers = lambda: None
+        handler.do_GET()
+
+        self.assertEqual(status_box[0] if status_box else 200, 200)
+        raw = handler.wfile.getvalue().decode('utf-8')
+        res = json.loads(raw)
+        self.assertTrue(res.get('ok'))
+        self.assertEqual(res['alumne']['id'], test_id)
+        self.assertIn('reserves', res)
+        self.assertIsInstance(res['reserves'], list)
+        self.assertEqual(len(res['reserves']), 1)
+        self.assertEqual(res['reserves'][0]['id'], 'RES-TEST-360')
+        self.assertEqual(res['reserves'][0]['activitat'], 'Modelatge')
+        self.assertEqual(res['reserves'][0]['estat'], 'confirmada')
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

@@ -314,43 +314,230 @@
 
     <!-- PESTANYA 2: LLISTA D'ALUMNES & CLIENTS -->
     <section class="admin-tab-view" id="view-alumnes">
-      <div class="admin-card-box">
-        <div class="table-toolbar">
-          <div class="search-box">
-            <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+      <!-- CONTENIDOR 1: LLISTAT D'ALUMNES (TAULA) -->
+      <div id="alumnes-list-container">
+        <div class="admin-card-box">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <input type="text" id="search-students-input" placeholder="Cercar alumne per nom, cognom, telèfon o ID (ex: TC-101)...">
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
+                Hidratar des de Sheets
+              </button>
+              <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
+                Sincronitzar amb Sheets
+              </button>
+            </div>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn btn-outline btn-sm" id="btn-hydrate-sheets" title="Llegir i carregar totes les dades del full de Google Sheets (Hidratació)">
-              Hidratar des de Sheets
+
+          <div class="table-responsive">
+            <table class="data-table" id="students-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Alumne</th>
+                  <th>Telèfon</th>
+                  <th>Email</th>
+                  <th>Estat</th>
+                  <th>Saldo Hores (H:m:s)</th>
+                  <th style="text-align: right;">Accions</th>
+                </tr>
+              </thead>
+              <tbody id="students-table-body">
+                <tr>
+                  <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
+                    Carregant llista d'alumnes del taller...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENIDOR 2: FITXA COMPLETA 360° D'ALUMNE (A LA MATEIXA PÀGINA, SENSE FINESTRA) -->
+      <div id="alumnes-detail-container" style="display: none;">
+        <!-- Barra de navegació i retorn -->
+        <div class="inline-detail-topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" id="btn-back-to-alumnes-list" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600;">
+              &larr; Tornar al llistat d'alumnes
             </button>
-            <button class="btn btn-outline btn-sm" id="btn-sync-sheets" title="Enviar canvis locals a Google Sheets">
-              Sincronitzar amb Sheets
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+              <span class="badge badge-neutral" id="inline-student-id" style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">TC-100</span>
+              <h2 id="inline-student-fullname" style="font-size: 24px; font-weight: 800; color: #2C221E; margin: 0;">Nom de l'Alumne</h2>
+            </div>
+          </div>
+          <div id="inline-student-presence-badge">
+            <span class="badge badge-neutral">Fora del taller</span>
+          </div>
+        </div>
+
+        <!-- Targeta de Perfil i Dades de Contacte -->
+        <div class="card" style="padding: 20px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 260px;">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--color-muted);">Dades de Contacte i Identificació</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-top: 4px; font-size: 14px;">
+                <div>
+                  <span style="color: var(--color-muted);">Telèfon:</span> 
+                  <strong id="inline-student-phone">-</strong>
+                </div>
+                <div>
+                  <span style="color: var(--color-muted);">Email:</span> 
+                  <strong id="inline-student-email">-</strong>
+                </div>
+                <div>
+                  <span style="color: var(--color-muted);">PIN d'Accés:</span> 
+                  <strong id="inline-student-pin" style="font-family: monospace; font-size: 15px; letter-spacing: 1px; color: #831D1D;">-</strong>
+                </div>
+                <div>
+                  <span style="color: var(--color-muted);">Edat:</span> 
+                  <span id="inline-student-edat">-</span>
+                </div>
+                <div>
+                  <span style="color: var(--color-muted);">Data d'Alta:</span> 
+                  <span id="inline-student-alta">-</span>
+                </div>
+              </div>
+              <div id="inline-student-notes-container" style="margin-top: 6px; font-size: 13px; color: #555; display: none;">
+                <span style="color: var(--color-muted); font-weight: 600;">Notes:</span> <span id="inline-student-notes" style="font-style: italic;"></span>
+              </div>
+            </div>
+
+            <!-- Accions de Perfil -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <a href="#" class="btn btn-outline btn-sm" id="inline-btn-whatsapp" target="_blank" style="border-color: #25D366; color: #25D366; font-weight: 600;">
+                WhatsApp
+              </a>
+              <button type="button" class="btn btn-outline btn-sm" id="inline-btn-carnet" title="Veure el carnet oficial de l'alumne">
+                Veure Carnet Oficial
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="inline-btn-edit-student" title="Editar les dades de l'alumne">
+                Editar Dades
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero de Saldo d'Hores -->
+        <div class="balance-hero-card" style="margin-bottom: 20px;">
+          <div class="balance-hero-main">
+            <div class="label">Saldo d'Hores Restant</div>
+            <div class="value" id="inline-student-balance-val">00:00:00</div>
+            <div style="font-size: 13px; color: #E8DFD5;" id="inline-student-balance-human">0h 0m 0s</div>
+          </div>
+          <div class="balance-hero-sub">
+            <div>Comprades: <strong id="inline-student-total-bought">00:00:00</strong></div>
+            <div>Gastades: <strong id="inline-student-total-spent">00:00:00</strong></div>
+            <div id="inline-student-session-status" style="margin-top: 6px;"></div>
+          </div>
+        </div>
+
+        <!-- Barra d'Accions Operatives -->
+        <div class="card" style="padding: 16px; margin-bottom: 20px; background: #FAF7F5; border-color: #E8DDD1;">
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #831D1D; margin-bottom: 10px;">Accions Operatives de l'Alumne</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary" id="inline-btn-nova-reserva" style="background: #831D1D; border-color: #831D1D; font-weight: 700;">
+              + Nova Reserva
+            </button>
+            <button type="button" class="btn btn-primary" id="inline-btn-add-hours">
+              + Afegir Compra d'Hores
+            </button>
+            <button type="button" class="btn btn-success" id="inline-btn-checkin" style="background: #5E7E6F; border-color: #5E7E6F;">
+              Marcar Entrada
+            </button>
+            <button type="button" class="btn btn-primary" id="inline-btn-checkout" style="background: #831D1D; border-color: #831D1D;">
+              Marcar Sortida
+            </button>
+            <button type="button" class="btn btn-outline" id="inline-btn-manual-session">
+              + Sessió Manual
             </button>
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="data-table" id="students-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Alumne</th>
-                <th>Telèfon</th>
-                <th>Email</th>
-                <th>Estat</th>
-                <th>Saldo Hores (H:m:s)</th>
-                <th style="text-align: right;">Accions</th>
-              </tr>
-            </thead>
-            <tbody id="students-table-body">
-              <tr>
-                <td colspan="7" style="text-align:center; color:var(--color-muted); padding:28px; font-size:14px;">
-                  Carregant llista d'alumnes del taller...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Historial Complet Organitzat en Pestanyes -->
+        <div class="admin-card-box">
+          <div class="admin-tabs-nav" style="border-bottom: 1px solid #E8DDD1; margin-bottom: 16px; display: flex; gap: 8px;">
+            <button type="button" class="tab-btn active inline-history-tab-btn" data-history-tab="inline-history-reserves">
+              Reserves (<span id="inline-count-reserves">0</span>)
+            </button>
+            <button type="button" class="tab-btn inline-history-tab-btn" data-history-tab="inline-history-sessions">
+              Sessions i Assistència (<span id="inline-count-sessions">0</span>)
+            </button>
+            <button type="button" class="tab-btn inline-history-tab-btn" data-history-tab="inline-history-paquets">
+              Compres de Paquets d'Hores (<span id="inline-count-paquets">0</span>)
+            </button>
+          </div>
+
+          <!-- Pestanya 1: Reserves -->
+          <div id="inline-history-reserves" class="inline-history-pane">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Horari</th>
+                    <th>Franja</th>
+                    <th>Activitat</th>
+                    <th>Places</th>
+                    <th>Estat</th>
+                    <th>Notes</th>
+                    <th style="text-align: right;">Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="inline-reserves-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pestanya 2: Sessions i Assistència -->
+          <div id="inline-history-sessions" class="inline-history-pane" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Sortida</th>
+                    <th>Durada (H:m:s)</th>
+                    <th>Tipus</th>
+                    <th>Estat</th>
+                    <th style="text-align: right;">Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="inline-sessions-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pestanya 3: Compres de Paquets d'Hores -->
+          <div id="inline-history-paquets" class="inline-history-pane" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data Compra</th>
+                    <th>Concepte</th>
+                    <th>Hores</th>
+                    <th>Preu</th>
+                    <th>Mètode</th>
+                    <th style="text-align: right;">Acció</th>
+                  </tr>
+                </thead>
+                <tbody id="inline-paquets-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+
       </div>
     </section>
 

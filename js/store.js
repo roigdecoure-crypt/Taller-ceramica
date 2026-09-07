@@ -157,6 +157,7 @@ const Store = {
 
     const packs = (data.paquets || []).filter(p => p.student_id === student.id).sort((a,b) => new Date(b.data) - new Date(a.data));
     const sessions = (data.sessions || []).filter(s => s.student_id === student.id).sort((a,b) => new Date(b.entrada) - new Date(a.entrada));
+    const reserves = (data.reserves || []).filter(r => r.student_id === student.id).sort((a,b) => new Date((b.data || '') + 'T' + (b.hora_inici || '00:00')) - new Date((a.data || '') + 'T' + (a.hora_inici || '00:00')));
     const openSess = sessions.find(s => s.estat === 'oberta');
     const balanc = TimeUtils.calculateStudentBalance(student.id, packs, sessions);
 
@@ -165,6 +166,7 @@ const Store = {
       alumne: student,
       paquets: packs,
       sessions: sessions,
+      reserves: reserves,
       sessioActiva: openSess || null,
       balanc: balanc
     };

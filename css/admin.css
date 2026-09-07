@@ -1319,3 +1319,54 @@
     font-size: 7px;
   }
 }
+
+/* Fila clicable d'alumne a la taula d'alumnes & clients */
+.student-clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.student-clickable-row:hover {
+  background-color: rgba(131, 29, 29, 0.05) !important;
+}
+.student-clickable-row:active {
+  background-color: rgba(131, 29, 29, 0.09) !important;
+}
+
+/* Fitxa d'alumne inline integrada a la mateixa pàgina */
+#alumnes-detail-container {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.inline-detail-topbar {
+  border-bottom: 1px solid #E8DDD1;
+  padding-bottom: 14px;
+}
+
+.inline-history-tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inline-history-tab-btn:hover {
+  color: #831D1D;
+}
+.inline-history-tab-btn.active {
+  color: #831D1D;
+  border-bottom-color: #831D1D;
+  font-weight: 700;
+}
+
+.inline-history-pane {
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}

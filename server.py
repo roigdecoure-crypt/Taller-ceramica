@@ -1804,6 +1804,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('SELECT * FROM sessions WHERE student_id = ? ORDER BY entrada DESC', (real_id,))
                     sessions = [row_to_dict(r) for r in cursor.fetchall()]
 
+                    cursor.execute('SELECT * FROM reserves WHERE student_id = ? ORDER BY data DESC, hora_inici DESC', (real_id,))
+                    reserves = [row_to_dict(r) for r in cursor.fetchall()]
+
                     cursor.execute('SELECT * FROM sessions WHERE student_id = ? AND estat = "oberta" ORDER BY entrada DESC LIMIT 1', (real_id,))
                     active_session = row_to_dict(cursor.fetchone())
 
@@ -1814,6 +1817,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'alumne': student,
                     'paquets': packs,
                     'sessions': sessions,
+                    'reserves': reserves,
                     'sessioActiva': active_session,
                     'balanc': balance
                 })
