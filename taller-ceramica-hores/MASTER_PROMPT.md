@@ -116,11 +116,21 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
 
 ---
 
-### 8. PANELL D'ADMINISTRACIÓ I RESERVES RECURRENTS (`admin.html`)
-1. **Gestió d'alumnes i compres**:
-   - Alta, edició, baixa i consulta de la fitxa completa d'alumnes.
-   - Inserció manual de paquets d'hores (efectiu, Stripe o transferència) i sessions presencials manuals.
-2. **Reserves Recurrents (Sèries periòdiques)**:
+### 8. PANELL D'ADMINISTRACIÓ I GESTIÓ INTEGRADA (`admin.html`)
+1. **Gestió d'alumnes i fitxa 360° integrada a la mateixa pàgina (sense finestra)**:
+   - **Navegació directa per clic a la fila**: En fer clic a qualsevol lloc de la línia de l'alumne a la taula d'alumnes es navega directament a la seva fitxa completa, sense diàlegs modals ni calaixos, mantenint el menú lateral visible i operatiu.
+   - **Dades de perfil i contacte**: Nom, cognoms, telèfon (trucada directa i WhatsApp), email, PIN visible per a recuperació, data de naixement i edat calculada, data d'alta i notes.
+   - **Sol·licitud de data de naixement**: Al formulari d'alta o modificació es demana la data de naixement mitjançant un selector (`input type="date"`), calculant en temps real l'edat i la tarifa d'aplicació (Adults o Infantil) de forma automàtica.
+   - **Historial complet en 3 pestanyes**:
+     - *Reserves*: Taula cronològica de reserves passades i futures amb estat i opció de cancel·lació.
+     - *Sessions i assistència*: Registre d'entrades i sortides amb durada en format `HH:MM:SS` i tipus (QR o manual).
+     - *Compres d'hores*: Paquets adquirits, import, mètode de pagament i saldo acumulat.
+   - **Botons d'acció directa a la fitxa**: Nova reserva per a l'alumne, afegir compra d'hores, marcar entrada/sortida i veure carnet.
+   - **Botó de tornada**: "← Tornar al llistat d'alumnes" per tornar a la taula sense recarregar ni perdre cap filtre.
+2. **Dissenyador de carnets i plantilla artesanal CR80**:
+   - Configurador visual de paràmetres del carnet (colors corporatius, capçalera, subtítol, text de peu i visualització d'elements).
+   - Generació i exportació del carnet en format vectorial SVG i imatge PNG d'alta resolució.
+3. **Reserves Recurrents (Sèries periòdiques)**:
    - Creació de reserves individuals o recurrents des del modal d'administració.
    - Freqüències admeses: **Setmanal** (+7 dies), **Quinzenal** (+14 dies) o **Mensual** (+1 mes).
    - Presets de sessions: **4s (1 mes)**, **8s (2 mesos)**, **12s (3 mesos)** o selecció lliure (de 2 a 26 sessions).
@@ -130,7 +140,7 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
    - **Gestió diària i cancel·lació flexible**:
      - Cada cita mostra la insígnia `Recurrent`.
      - L'administrador pot cancel·lar una sessió concreta o prémer `"Cancel·lar Sèrie"` per cancel·lar atòmicament totes les sessions futures de la sèrie (`POST /api/reserves/cancel-serie`).
-3. **Control d'assistència presencial (`Visited`)**:
+4. **Control d'assistència presencial (`Visited`)**:
    - Casella de verificació directa a la llista del dia per marcar alumnes i clients que han assistit a classe.
 
 ---
@@ -184,33 +194,37 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
    - Desenvolupat sobre `http.server.HTTPServer` i `BaseHTTPRequestHandler`.
    - Manipulació de concurrència i connexió a SQLite amb `threading` i connexions tancades de forma neta.
 2. **Esquema principal de taules SQLite**:
-   - `alumnes`: `id`, `nom`, `cognoms`, `telefon`, `email`, `pin`, `edat`, `data_alta`, `actiu`.
-   - `paquets_hores`: `id`, `student_id`, `data`, `hores`, `segons`, `concepte`, `preu`, `metode_pagament`.
-   - `sessions`: `id`, `student_id`, `data`, `entrada`, `sortida`, `durada_segons`, `format_hms`, `tipus`, `estat`, `notes`.
-   - `reserves`: `id`, `student_id`, `student_nom`, `data`, `hora_inici`, `hora_fi`, `franja`, `activitat`, `activitat_id`, `places`, `telefon`, `email`, `estat`, `hores`, `notes`, `recurrent_id`, `calendar_event_id`, `created_at`.
-   - `configuracio`: `clau`, `valor`.
-   - `dies_tancats`: `data`, `motiu`.
+    - `alumnes`: `id`, `nom`, `cognoms`, `telefon`, `email`, `pin`, `edat`, `data_naixement`, `data_alta`, `actiu`.
+    - `paquets_hores`: `id`, `student_id`, `data`, `hores`, `segons`, `concepte`, `preu`, `metode_pagament`.
+    - `sessions`: `id`, `student_id`, `data`, `entrada`, `sortida`, `durada_segons`, `format_hms`, `tipus`, `estat`, `notes`.
+    - `reserves`: `id`, `student_id`, `student_nom`, `data`, `hora_inici`, `hora_fi`, `franja`, `activitat`, `activitat_id`, `places`, `telefon`, `email`, `estat`, `hores`, `notes`, `recurrent_id`, `calendar_event_id`, `created_at`.
+    - `configuracio`: `clau`, `valor`.
+    - `dies_tancats`: `data`, `motiu`.
 3. **Endpoints clau de l'API REST**:
-   - `GET /api/reserves/disponibilitat?data=YYYY-MM-DD`
-   - `GET /api/reserves/mes?any=YYYY&mes=MM`
-   - `POST /api/reserves`
-   - `POST /api/reserves/recurrent-preview`
-   - `POST /api/reserves/recurrent`
-   - `POST /api/reserves/cancel-serie`
-   - `POST /api/admin/auth`
-   - `POST /api/admin/change-pin`
-   - `GET /api/admin/snapshots`
-   - `POST /api/admin/snapshots`
-   - `POST /api/admin/restore-snapshot`
-   - `POST /api/alumnes/recuperar-pin`
-   - `POST /api/alumnes/canviar-pin`
-   - `POST /api/scan`
-   - `GET /api/alumnes/me?codi=...`
+    - `GET /api/reserves/disponibilitat?data=YYYY-MM-DD`
+    - `GET /api/reserves/mes?any=YYYY&mes=MM`
+    - `POST /api/reserves`
+    - `POST /api/reserves/recurrent-preview`
+    - `POST /api/reserves/recurrent`
+    - `POST /api/reserves/cancel-serie`
+    - `POST /api/admin/auth`
+    - `POST /api/admin/change-pin`
+    - `GET /api/admin/snapshots`
+    - `POST /api/admin/snapshots`
+    - `POST /api/admin/restore-snapshot`
+    - `POST /api/alumnes/recuperar-pin`
+    - `POST /api/alumnes/canviar-pin`
+    - `GET /api/admin/carnet/config`
+    - `POST /api/admin/carnet/config`
+    - `GET /api/carnet/export-svg?id=...`
+    - `POST /api/scan`
+    - `GET /api/alumnes/me?codi=...`
+    - `GET /api/alumnes/{id}`
 
 ---
 
 ### 13. BATERIA DE PROVES UNITÀRIES I D'INTEGRACIÓ
-- El projecte inclou la suite `tests/test_backend.py` amb un mínim de 27 proves unitàries que cobreixen:
+- El projecte inclou la suite `tests/test_backend.py` amb un mínim de 31 proves unitàries que cobreixen:
   - Formatatge exacte de segons a hores (`HH:MM:SS`).
   - Balanços i descomptes d'hores d'alumnes.
   - Cicles de fitxatge complets i tancament forçat per oblit.
@@ -218,5 +232,8 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
   - Autenticació d'alumnes i recuperació de contrasenya (PIN).
   - Generació, previsualització i cancel·lació de reserves recurrents en bloc.
   - Còpies de seguretat SQLite (snapshots) i restauració íntegra.
+  - Configuració dinàmica de disseny de carnet i exportació SVG vectorial.
+  - Retorn complet de reserves d'alumne per a la fitxa 360° integrada inline.
+  - Persistència de data de naixement (`data_naixement`) i càlcul automàtic de l'edat.
   - Totes les proves han d'executar-se i aprovar-se satisfactòriament amb l'ordre `python3 -m unittest discover tests`.
 ```
