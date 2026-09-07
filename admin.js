@@ -1742,7 +1742,7 @@ async function renderAdminCalendar() {
     html += `
       <div class="${cellClasses.join(' ')}" data-date="${dateStr}">
         <div class="cal-day-num">${day}</div>
-        ${count > 0 ? `<div class="cal-day-badge">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</div>` : ''}
+        ${count > 0 ? `<div class="cal-day-badge" title="${count} ${count === 1 ? 'reserva' : 'reserves'}"><span class="badge-full">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</span><span class="badge-short">${count} res.</span></div>` : ''}
         ${isClosed && count === 0 ? `<div class="cal-day-closed-label">Tancat</div>` : ''}
       </div>
     `;
