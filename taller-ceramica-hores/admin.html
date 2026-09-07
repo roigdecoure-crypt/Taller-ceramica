@@ -81,6 +81,16 @@
         </span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
+      <li class="sidebar-item" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+            <circle cx="6" cy="15" r="1"></circle>
+          </svg>
+        </span>
+        <span class="nav-text">Dissenyador de Carnets</span>
+      </li>
 
       <div class="sidebar-divider"></div>
 
@@ -358,6 +368,176 @@
           <p style="color: var(--color-muted); font-size: 14px; grid-column: 1/-1;">
             No hi ha cap alumne al taller en aquests moments. Quan passin el codi QR apareixeran aquí automàticament.
           </p>
+        </div>
+      </div>
+    </section>
+ 
+    <!-- PESTANYA 4: DISSENYADOR DE CARNETS -->
+    <section class="admin-tab-view" id="view-carnet-designer">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 22px; font-weight: 800; color: #2C221E; margin: 0;">Dissenyador de Carnets</h2>
+          <p style="font-size: 13px; color: #8C827A; margin: 4px 0 0 0;">Personalitza l'estil artesanal de les targetes de socis i alumnes del taller.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-designer-reset-default">Restablir Original</button>
+          <button type="button" class="btn btn-primary" id="btn-designer-save-config">Desar com a Disseny del Taller</button>
+        </div>
+      </div>
+
+      <div class="carnet-designer-grid">
+        <!-- Panell Esquerre: Controls de Disseny -->
+        <div class="designer-controls-panel">
+          <div>
+            <label class="form-label" style="font-weight: 700;">Alumne de Mostra</label>
+            <select id="designer-sample-student" class="form-control" style="width: 100%;">
+              <option value="SAMPLE_ZOEY">Zoey (300Z) - Model Oficial</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label" style="font-weight: 700;">Nom de Marca</label>
+            <input type="text" id="designer-input-brand" class="form-control" value="Roig de Coure">
+          </div>
+
+          <div>
+            <div class="designer-group-title">Color de Fons (Esmalt Ceràmic)</div>
+            <div class="swatches-bar" id="swatches-bg">
+              <button type="button" class="color-swatch-btn active" data-color="#b1ffc2" style="background-color: #b1ffc2;" title="Verd Celadó Artesanal"></button>
+              <button type="button" class="color-swatch-btn" data-color="#831D1D" style="background-color: #831D1D;" title="Roig Coure"></button>
+              <button type="button" class="color-swatch-btn" data-color="#FAF7F5" style="background-color: #FAF7F5;" title="Porcellana Clara"></button>
+              <button type="button" class="color-swatch-btn" data-color="#E8DDD1" style="background-color: #E8DDD1;" title="Argila Natural"></button>
+              <button type="button" class="color-swatch-btn" data-color="#262322" style="background-color: #262322;" title="Basalt Fosc"></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="color" id="designer-color-bg" value="#b1ffc2" style="width: 44px; height: 36px; border: 1px solid #DDD; border-radius: 8px; cursor: pointer; padding: 2px;">
+              <span style="font-size: 13px; color: #666;" id="designer-color-bg-val">#b1ffc2</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="designer-group-title">Color de Text & Marca</div>
+            <div class="swatches-bar" id="swatches-text">
+              <button type="button" class="color-swatch-btn active" data-color="#801b1b" style="background-color: #801b1b;" title="Terracota Roig"></button>
+              <button type="button" class="color-swatch-btn" data-color="#1A1817" style="background-color: #1A1817;" title="Negre Carbó"></button>
+              <button type="button" class="color-swatch-btn" data-color="#FFFFFF" style="background-color: #FFFFFF;" title="Blanc Pur"></button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="color" id="designer-color-text" value="#801b1b" style="width: 44px; height: 36px; border: 1px solid #DDD; border-radius: 8px; cursor: pointer; padding: 2px;">
+              <span style="font-size: 13px; color: #666;" id="designer-color-text-val">#801b1b</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="designer-group-title">Tipografia</div>
+            <select id="designer-select-font" class="form-control" style="width: 100%;">
+              <option value="borel" selected>Cal·ligràfica Artesanal (Borel / Cursiva)</option>
+              <option value="modern">Moderna Neta (Roboto / Sans-serif)</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="designer-group-title">Elements Visuals</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-bowl" checked>
+                <span>Mostrar silueta del bol ceràmic a dalt a la dreta</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-divider" checked>
+                <span>Mostrar línia divisòria decorativa</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div class="designer-group-title">Camps Visibles</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-nom" checked disabled>
+                <span>Nom</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-cognoms" checked>
+                <span>Cognoms</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-codi" checked disabled>
+                <span>Codi Alumne</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-telefon">
+                <span>Telèfon</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="designer-check-saldo">
+                <span>Saldo Hores</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panell Dret: Previsualització en viu i exportació -->
+        <div class="designer-preview-panel">
+          <div class="designer-card-stage">
+            <!-- Targeta en viu -->
+            <div class="ceramic-badge-artesanal" id="designer-live-badge">
+              <div class="badge-artesanal-header">
+                <span class="badge-artesanal-brand" id="preview-brand-name">Roig de Coure</span>
+                <div class="badge-artesanal-logo" id="preview-bowl-container">
+                  <svg viewBox="0 0 100 65">
+                    <path d="M 5 8 C 15 45, 35 52, 50 52 C 65 52, 85 45, 95 8 C 96 4, 91 4, 88 7 C 76 36, 62 42, 50 42 C 38 42, 24 36, 12 7 C 9 4, 4 4, 5 8 Z M 34 52 L 34 58 L 42 58 L 42 52 Z M 58 52 L 58 58 L 66 58 L 66 52 Z" fill="currentColor"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="badge-artesanal-body">
+                <div class="badge-artesanal-fields">
+                  <div class="badge-artesanal-field" id="preview-field-nom-wrap">
+                    <span class="badge-artesanal-label">Nom:</span>
+                    <span class="badge-artesanal-value" id="preview-nom-val">Zoey</span>
+                  </div>
+
+                  <div class="badge-artesanal-field" id="preview-field-cognoms-wrap">
+                    <span class="badge-artesanal-label">Cognoms:</span>
+                    <span class="badge-artesanal-value" id="preview-cognoms-val">—</span>
+                  </div>
+
+                  <div class="badge-artesanal-divider" id="preview-divider-line"></div>
+
+                  <div class="badge-artesanal-field" id="preview-field-codi-wrap">
+                    <span class="badge-artesanal-label">Codi Alumne:</span>
+                    <span class="badge-artesanal-code-val" id="preview-codi-val">300Z</span>
+                  </div>
+
+                  <div class="badge-artesanal-field" id="preview-field-telefon-wrap" style="display: none;">
+                    <span class="badge-artesanal-label">Telèfon:</span>
+                    <span class="badge-artesanal-value" id="preview-telefon-val">+34 600 000 000</span>
+                  </div>
+
+                  <div class="badge-artesanal-field" id="preview-field-saldo-wrap" style="display: none;">
+                    <span class="badge-artesanal-label">Saldo:</span>
+                    <span class="badge-artesanal-value" id="preview-saldo-val">10h 00m</span>
+                  </div>
+                </div>
+
+                <div class="badge-artesanal-qr-box" id="preview-qr-mount"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra d'eines d'acció / descàrrega -->
+          <div class="designer-actions-toolbar">
+            <button type="button" class="btn btn-outline" id="btn-designer-export-svg">
+              <span>Descarregar en SVG (Vectorial)</span>
+            </button>
+            <button type="button" class="btn btn-outline" id="btn-designer-export-png">
+              <span>Descarregar en PNG (CR80 300 DPI)</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-designer-print">
+              <span>Imprimir Carnet</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -654,31 +834,40 @@
 
   <!-- MODAL: CARNET D'ALUMNE (VISUALITZAR / IMPRIMIR / DESCARREGAR) -->
   <div class="modal-backdrop" id="modal-carnet-backdrop">
-    <div class="modal-dialog" style="max-width: 440px;">
+    <div class="modal-dialog" style="max-width: 480px;">
       <div class="modal-header">
-        <h3>Carnet d'Alumne amb QR</h3>
+        <h3>Carnet d'Alumne Oficial</h3>
         <button class="modal-close" data-close="modal-carnet-backdrop">&times;</button>
       </div>
       
       <div class="student-card-container">
         <!-- Targeta física renderitzada -->
-        <div class="ceramic-badge" id="printable-badge">
-          <div class="badge-top">
-            <div class="workshop-brand">
-              <span class="workshop-name" id="badge-ws-name">Roig de Coure</span>
+        <div class="ceramic-badge-artesanal" id="printable-badge">
+          <div class="badge-artesanal-header">
+            <span class="badge-artesanal-brand" id="badge-ws-name">Roig de Coure</span>
+            <div class="badge-artesanal-logo" id="badge-ws-logo-container">
+              <svg viewBox="0 0 100 65" class="badge-bowl-icon">
+                <path d="M 5 8 C 15 45, 35 52, 50 52 C 65 52, 85 45, 95 8 C 96 4, 91 4, 88 7 C 76 36, 62 42, 50 42 C 38 42, 24 36, 12 7 C 9 4, 4 4, 5 8 Z M 34 52 L 34 58 L 42 58 L 42 52 Z M 58 52 L 58 58 L 66 58 L 66 52 Z" fill="currentColor"/>
+              </svg>
             </div>
-            <span style="font-size: 11px; font-weight: 700; color: #5E7E6F; text-transform: uppercase; letter-spacing: 0.5px;">Taller de Ceràmica</span>
           </div>
-          <div class="badge-content">
-            <div class="badge-info">
-              <div class="badge-label">Nom:</div>
-              <div class="badge-student-name" id="badge-nom">Nom</div>
-              <div class="badge-label">Cognoms:</div>
-              <div class="badge-student-surnames" id="badge-cognoms">Cognoms</div>
-              <div class="badge-label">Codi Alumne:</div>
-              <div class="badge-id-val" id="badge-id">TC-100</div>
+          <div class="badge-artesanal-body">
+            <div class="badge-artesanal-fields">
+              <div class="badge-artesanal-field">
+                <span class="badge-artesanal-label">Nom:</span>
+                <span class="badge-artesanal-value" id="badge-nom">Nom</span>
+              </div>
+              <div class="badge-artesanal-field">
+                <span class="badge-artesanal-label">Cognoms:</span>
+                <span class="badge-artesanal-value" id="badge-cognoms">Cognoms</span>
+              </div>
+              <div class="badge-artesanal-divider"></div>
+              <div class="badge-artesanal-field">
+                <span class="badge-artesanal-label">Codi Alumne:</span>
+                <span class="badge-artesanal-code-val" id="badge-id">TC-100</span>
+              </div>
             </div>
-            <div class="badge-qr-box" id="badge-qr-container">
+            <div class="badge-artesanal-qr-box" id="badge-qr-container">
               <!-- QR generat per QREngine -->
             </div>
           </div>
@@ -687,7 +876,9 @@
         <!-- Botons d'acció -->
         <div class="card-actions">
           <button class="btn btn-primary btn-sm" id="btn-print-card">Imprimir Carnet</button>
-          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">Copiar Enllaç Alumne</button>
+          <button class="btn btn-outline btn-sm" id="btn-modal-export-svg">Descarregar SVG</button>
+          <button class="btn btn-outline btn-sm" id="btn-modal-export-png">Descarregar PNG</button>
+          <button class="btn btn-outline btn-sm" id="btn-copy-card-link">Copiar Enllaç</button>
         </div>
       </div>
     </div>

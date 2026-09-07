@@ -1,131 +1,193 @@
 /**
- * card.css - Disseny del Carnet d'Alumne amb QR i format per a impressió
+ * card.css - Disseny del Carnet d'Alumne Oficial i Dissenyador de Carnets (CR80)
+ * Plantilla artesanal ceràmica: Verd Celadó, Tipografia Borel/Buffalo, Bol de Ceràmica, Línia divisòria i QR
  */
+
+@import url('https://fonts.googleapis.com/css2?family=Borel&family=Roboto:wght@400;500;700;900&display=swap');
+
+:root {
+  --card-bg-color: #b1ffc2;
+  --card-text-color: #801b1b;
+  --card-font-family: 'Borel', 'Buffalo', cursive;
+}
 
 .student-card-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   padding: 10px 0;
+  width: 100%;
 }
 
-/* Format físic de la targeta (CR80: 85.6mm x 54mm aproximat a pantalla) */
-.ceramic-badge {
-  width: 360px;
-  height: 226px;
-  background: #FFFFFF;
-  border-radius: 14px;
-  border: 2px solid #E8DFD5;
-  box-shadow: 0 8px 20px rgba(46, 40, 37, 0.12);
+/* =======================================================
+   PLANTILLA ARTESANAL OFICIAL ROIG DE COURE (CR80: 85.6 x 54 mm)
+   ======================================================= */
+.ceramic-badge-artesanal {
+  width: 420px;
+  max-width: 100%;
+  aspect-ratio: 1.586 / 1;
+  background-color: var(--card-bg-color, #b1ffc2);
+  border-radius: 20px;
+  border: 1px solid rgba(128, 27, 27, 0.18);
+  box-shadow: 0 10px 28px rgba(44, 34, 30, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  justify-content: space-between;
+  padding: 22px 24px;
+  box-sizing: border-box;
   position: relative;
-  font-family: var(--brand-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  overflow: hidden;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+/* Suport retrocompatible per a .ceramic-badge */
+.ceramic-badge {
+  width: 420px;
+  max-width: 100%;
+  aspect-ratio: 1.586 / 1;
+  background-color: var(--card-bg-color, #b1ffc2);
+  border-radius: 20px;
+  border: 1px solid rgba(128, 27, 27, 0.18);
+  box-shadow: 0 10px 28px rgba(44, 34, 30, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 24px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
   user-select: none;
 }
 
-/* Capçalera de la targeta */
+/* Capçalera artesanal */
+.badge-artesanal-header,
 .badge-top {
-  background: linear-gradient(135deg, var(--brand-primary, #C25E3A) 0%, var(--brand-secondary, #A44927) 100%);
-  color: #FFFFFF;
-  padding: 12px 16px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  background: transparent;
+  padding: 0;
 }
-.badge-top .workshop-brand {
+
+.badge-artesanal-brand,
+.badge-top .workshop-name {
+  font-family: var(--card-font-family, 'Borel', 'Buffalo', cursive);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--card-text-color, #801b1b);
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+}
+
+/* Bol de ceràmica artesanal (icona superior dreta) */
+.badge-artesanal-logo,
+.badge-top .workshop-icon {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  color: var(--card-text-color, #801b1b);
+  flex-shrink: 0;
 }
-.badge-top .workshop-icon {
-  font-size: 20px;
-}
-.badge-top .workshop-name {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-.badge-top .badge-type {
-  font-size: 10px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.25);
-  padding: 3px 8px;
-  border-radius: 99px;
-  letter-spacing: 0.5px;
+
+.badge-artesanal-logo svg,
+.badge-artesanal-logo img,
+.badge-bowl-icon svg {
+  width: 52px;
+  height: 34px;
+  object-fit: contain;
+  fill: currentColor;
 }
 
 /* Cos de la targeta */
+.badge-artesanal-body,
 .badge-content {
-  flex: 1;
   display: flex;
-  padding: 14px 16px;
-  gap: 14px;
+  justify-content: space-between;
   align-items: center;
-  background: #FFF;
+  gap: 16px;
+  flex: 1;
+  background: transparent;
+  padding: 0;
 }
 
+/* Columna esquerra: Camps */
+.badge-artesanal-fields,
 .badge-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
-.badge-student-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: #2E2825;
-  line-height: 1.2;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.badge-student-surnames {
-  font-size: 13px;
-  font-weight: 600;
-  color: #736B66;
-  margin-bottom: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.badge-id-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #FAF6F0;
-  border: 1px solid #E8DFD5;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #C25E3A;
-  width: fit-content;
-  margin-bottom: 8px;
-}
-.badge-phone {
-  font-size: 11px;
-  color: #8C847E;
+
+.badge-artesanal-field {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
 }
 
-/* Contenidor del QR */
+.badge-artesanal-label,
+.badge-label {
+  font-family: var(--card-font-family, 'Borel', 'Buffalo', cursive);
+  font-size: 15px;
+  color: var(--card-text-color, #801b1b);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.badge-artesanal-value,
+.badge-student-name,
+.badge-student-surnames {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1A1817;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.badge-artesanal-code-val,
+.badge-id-val {
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--card-text-color, #801b1b);
+  letter-spacing: 0.5px;
+}
+
+/* Línia separadora decorativa */
+.badge-artesanal-divider {
+  border-bottom: 1.5px dashed var(--card-text-color, #801b1b);
+  opacity: 0.55;
+  margin: 5px 0;
+  width: 90%;
+}
+
+/* Columna dreta: Codi QR */
+.badge-artesanal-qr-box,
 .badge-qr-box {
-  width: 105px;
-  height: 105px;
+  width: 116px;
+  height: 116px;
   background: #FFFFFF;
-  border: 1px solid #E8DFD5;
-  border-radius: 8px;
-  padding: 4px;
+  border-radius: 12px;
+  padding: 6px;
+  border: 2px solid var(--card-text-color, #801b1b);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
+
+.badge-artesanal-qr-box img,
+.badge-artesanal-qr-box canvas,
 .badge-qr-box img,
 .badge-qr-box canvas {
   width: 100% !important;
@@ -133,43 +195,138 @@
   display: block;
 }
 
-/* Peu de la targeta */
-.badge-footer {
-  background: #FAF6F0;
-  border-top: 1px solid #E8DFD5;
-  padding: 6px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  color: #8C847E;
-}
-
-/* Botons d'acció del carnet */
+/* Botons d'acció */
 .card-actions {
   display: flex;
   gap: 10px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
-/* Regles per a impressió */
+/* =======================================================
+   DISSENYADOR DE CARNETS (PANELL D'ADMINISTRACIÓ)
+   ======================================================= */
+.carnet-designer-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 28px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+@media (max-width: 960px) {
+  .carnet-designer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.designer-controls-panel {
+  background: #FFFFFF;
+  border: 1px solid #EAE5E1;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.designer-group-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2C221E;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #F0ECE8;
+  padding-bottom: 6px;
+}
+
+/* Selector de paletes ràpides */
+.swatches-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.color-swatch-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.color-swatch-btn:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch-btn.active {
+  box-shadow: 0 0 0 3px var(--color-primary, #831D1D);
+  transform: scale(1.1);
+}
+
+/* Previsualització en viu */
+.designer-preview-panel {
+  background: #FFFFFF;
+  border: 1px solid #EAE5E1;
+  border-radius: 16px;
+  padding: 26px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+.designer-card-stage {
+  padding: 24px;
+  background: #FAF7F5;
+  border-radius: 20px;
+  border: 1px dashed #DDD6D0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.designer-actions-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Format d'impressió físic CR80 */
 @media print {
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
-  .ceramic-badge, .ceramic-badge * {
-    visibility: visible;
+  .ceramic-badge-artesanal,
+  .ceramic-badge-artesanal *,
+  .ceramic-badge,
+  .ceramic-badge * {
+    visibility: visible !important;
   }
+  .ceramic-badge-artesanal,
   .ceramic-badge {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: none;
-    border: 1px solid #999;
-    width: 85.6mm;
-    height: 53.98mm;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    box-shadow: none !important;
+    border: 1px solid #B2CEB3 !important;
+    width: 85.6mm !important;
+    height: 53.98mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

@@ -348,31 +348,50 @@ async function showStudentBadgeModal(studentId) {
   const student = allStudents.find(s => s.id === studentId);
   if (!student) return;
 
-  const cfg = await Store.getConfig();
-  document.getElementById('badge-ws-name').textContent = cfg.taller_nom || 'Roig de Coure';
+  currentViewingStudent = { alumne: student };
 
-  const logoUrl = cfg.taller_logo_url;
-  const badgeLogoImg = document.getElementById('badge-ws-logo-img');
-  const badgeLogoIcon = document.getElementById('badge-ws-logo-icon');
-  if (logoUrl && logoUrl.trim() !== '') {
-    if (badgeLogoImg) { badgeLogoImg.src = logoUrl; badgeLogoImg.style.display = 'inline-block'; }
-    if (badgeLogoIcon) badgeLogoIcon.style.display = 'none';
-  } else {
-    if (badgeLogoImg) { badgeLogoImg.src = ''; badgeLogoImg.style.display = 'none'; }
-    if (badgeLogoIcon) badgeLogoIcon.style.display = 'none';
+  let cfg = {};
+  try {
+    cfg = await Store.getCarnetConfig();
+  } catch (e) {
+    cfg = { background_color: '#b1ffc2', text_color: '#801b1b', brand_name: 'Roig de Coure' };
+  }
+
+  const badge = document.getElementById('printable-badge');
+  if (badge) {
+    badge.style.setProperty('--card-bg-color', cfg.background_color || '#b1ffc2');
+    badge.style.setProperty('--card-text-color', cfg.text_color || '#801b1b');
+    const font = cfg.font_style === 'modern' ? 'system-ui, -apple-system, sans-serif' : "'Borel', 'Buffalo', cursive";
+    badge.style.setProperty('--card-font-family', font);
+  }
+
+  const wsName = document.getElementById('badge-ws-name');
+  if (wsName) wsName.textContent = cfg.brand_name || 'Roig de Coure';
+
+  const logoContainer = document.getElementById('badge-ws-logo-container');
+  if (logoContainer) {
+    logoContainer.style.display = cfg.show_bowl_logo !== false ? 'flex' : 'none';
   }
 
   document.getElementById('badge-nom').textContent = student.nom;
-  document.getElementById('badge-cognoms').textContent = student.cognoms || '';
+  document.getElementById('badge-cognoms').textContent = student.cognoms || '—';
   document.getElementById('badge-id').textContent = student.id;
-  const telEl = document.getElementById('badge-tel');
-  if (telEl) telEl.textContent = student.telefon ? `Tel: ${student.telefon}` : '';
-  const altaEl = document.getElementById('badge-data-alta');
-  if (altaEl) altaEl.textContent = `Alta: ${TimeUtils.formatDate(student.data_alta)}`;
 
   // Generar QR
   const qrContainer = document.getElementById('badge-qr-container');
-  QREngine.generateQR(qrContainer, student.id, 105);
+  if (qrContainer && typeof QREngine !== 'undefined') {
+    QREngine.generateQR(qrContainer, student.id, 104);
+  }
+
+  // Botons de descàrrega al modal
+  const btnSvg = document.getElementById('btn-modal-export-svg');
+  if (btnSvg) {
+    btnSvg.onclick = () => downloadCardAsSVG(student, cfg);
+  }
+  const btnPng = document.getElementById('btn-modal-export-png');
+  if (btnPng) {
+    btnPng.onclick = () => downloadCardAsPNG(student, cfg);
+  }
 
   document.getElementById('modal-carnet-backdrop').classList.add('active');
 }
@@ -436,6 +455,7 @@ if (typeof window !== 'undefined') {
 function setupEventListeners() {
   initBrandStudio();
   initReservesAdmin();
+  initCardDesigner();
 
   // Navegació de la barra lateral (Estil WordPress)
   document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
@@ -453,12 +473,16 @@ function setupEventListeners() {
         if (tab === 'reserves') heading.textContent = 'Gestió de Reserves';
         else if (tab === 'alumnes') heading.textContent = 'Alumnes & Clients';
         else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
+        else if (tab === 'carnet-designer') heading.textContent = 'Dissenyador de Carnets';
       }
 
       if (tab === 'reserves') {
         refreshAppointmentsDashboard();
       } else if (tab === 'alumnes') {
         refreshStudentsList();
+      } else if (tab === 'carnet-designer') {
+        populateDesignerStudentSelect();
+        updateCardDesignPreview();
       }
     });
   });
@@ -2519,6 +2543,495 @@ async function loadSnapshotsList() {
 
   } catch (err) {
     container.innerHTML = `<div style="padding: 16px; text-align: center; color: #D32F2F; font-size: 12px;">Error carregant còpies de seguretat: ${err.message}</div>`;
+  }
+}
+
+/* =======================================================
+   DISSENYADOR DE CARNETS D'ALUMNE (CR80)
+   ======================================================= */
+let cardDesignerConfig = null;
+let currentDesignerStudent = null;
+
+async function initCardDesigner() {
+  const panel = document.getElementById('view-carnet-designer');
+  if (!panel) return;
+
+  // Carregar configuració existent
+  try {
+    cardDesignerConfig = await Store.getCarnetConfig();
+  } catch (e) {
+    cardDesignerConfig = {
+      background_color: '#b1ffc2',
+      text_color: '#801b1b',
+      font_style: 'borel',
+      show_bowl_logo: true,
+      custom_logo_svg: '',
+      show_divider: true,
+      brand_name: 'Roig de Coure',
+      visible_fields: { nom: true, cognoms: true, codi: true, telefon: false, saldo: false }
+    };
+  }
+
+  // Omplir selector d'alumnes de mostra
+  populateDesignerStudentSelect();
+
+  // Aplicar valors als controls
+  syncDesignerControlsWithConfig();
+
+  // Esdeveniments per a paletes de colors ràpides (Fons)
+  document.querySelectorAll('#swatches-bg .color-swatch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#swatches-bg .color-swatch-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const color = btn.dataset.color;
+      const bgPicker = document.getElementById('designer-color-bg');
+      const bgVal = document.getElementById('designer-color-bg-val');
+      if (bgPicker) bgPicker.value = color;
+      if (bgVal) bgVal.textContent = color;
+      if (cardDesignerConfig) cardDesignerConfig.background_color = color;
+      updateCardDesignPreview();
+    });
+  });
+
+  // Esdeveniments per a paletes de colors ràpides (Text & Marca)
+  document.querySelectorAll('#swatches-text .color-swatch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#swatches-text .color-swatch-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const color = btn.dataset.color;
+      const textPicker = document.getElementById('designer-color-text');
+      const textVal = document.getElementById('designer-color-text-val');
+      if (textPicker) textPicker.value = color;
+      if (textVal) textVal.textContent = color;
+      if (cardDesignerConfig) cardDesignerConfig.text_color = color;
+      updateCardDesignPreview();
+    });
+  });
+
+  // Color picker lliure de fons
+  const colorBgInput = document.getElementById('designer-color-bg');
+  colorBgInput?.addEventListener('input', (e) => {
+    const color = e.target.value;
+    const bgVal = document.getElementById('designer-color-bg-val');
+    if (bgVal) bgVal.textContent = color;
+    document.querySelectorAll('#swatches-bg .color-swatch-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.color.toLowerCase() === color.toLowerCase());
+    });
+    if (cardDesignerConfig) cardDesignerConfig.background_color = color;
+    updateCardDesignPreview();
+  });
+
+  // Color picker lliure de text
+  const colorTextInput = document.getElementById('designer-color-text');
+  colorTextInput?.addEventListener('input', (e) => {
+    const color = e.target.value;
+    const textVal = document.getElementById('designer-color-text-val');
+    if (textVal) textVal.textContent = color;
+    document.querySelectorAll('#swatches-text .color-swatch-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.color.toLowerCase() === color.toLowerCase());
+    });
+    if (cardDesignerConfig) cardDesignerConfig.text_color = color;
+    updateCardDesignPreview();
+  });
+
+  // Input de marca
+  document.getElementById('designer-input-brand')?.addEventListener('input', (e) => {
+    if (cardDesignerConfig) cardDesignerConfig.brand_name = e.target.value;
+    updateCardDesignPreview();
+  });
+
+  // Selector de font
+  document.getElementById('designer-select-font')?.addEventListener('change', (e) => {
+    if (cardDesignerConfig) cardDesignerConfig.font_style = e.target.value;
+    updateCardDesignPreview();
+  });
+
+  // Checkbox de bol ceràmic
+  document.getElementById('designer-check-bowl')?.addEventListener('change', (e) => {
+    if (cardDesignerConfig) cardDesignerConfig.show_bowl_logo = e.target.checked;
+    updateCardDesignPreview();
+  });
+
+  // Checkbox de línia divisòria
+  document.getElementById('designer-check-divider')?.addEventListener('change', (e) => {
+    if (cardDesignerConfig) cardDesignerConfig.show_divider = e.target.checked;
+    updateCardDesignPreview();
+  });
+
+  // Checkboxes de camps
+  ['cognoms', 'telefon', 'saldo'].forEach(field => {
+    const chk = document.getElementById(`designer-check-${field}`);
+    chk?.addEventListener('change', (e) => {
+      if (cardDesignerConfig) {
+        cardDesignerConfig.visible_fields = cardDesignerConfig.visible_fields || {};
+        cardDesignerConfig.visible_fields[field] = e.target.checked;
+      }
+      updateCardDesignPreview();
+    });
+  });
+
+  // Selector d'alumne de mostra
+  document.getElementById('designer-sample-student')?.addEventListener('change', (e) => {
+    const val = e.target.value;
+    if (val === 'SAMPLE_ZOEY') {
+      currentDesignerStudent = { id: '300Z', nom: 'Zoey', cognoms: '', telefon: '+34 600 000 000' };
+    } else {
+      const found = allStudents.find(s => s.id === val);
+      currentDesignerStudent = found || { id: '300Z', nom: 'Zoey', cognoms: '', telefon: '+34 600 000 000' };
+    }
+    updateCardDesignPreview();
+  });
+
+  // Botó: Desar com a Disseny del Taller
+  document.getElementById('btn-designer-save-config')?.addEventListener('click', async () => {
+    try {
+      await Store.saveCarnetConfig(cardDesignerConfig);
+      showToast('Disseny de carnet desat correctament com a oficial del taller.', 'success');
+    } catch (err) {
+      showToast('Error desant el disseny: ' + err.message, 'error');
+    }
+  });
+
+  // Botó: Restablir Original
+  document.getElementById('btn-designer-reset-default')?.addEventListener('click', () => {
+    cardDesignerConfig = {
+      background_color: '#b1ffc2',
+      text_color: '#801b1b',
+      font_style: 'borel',
+      show_bowl_logo: true,
+      custom_logo_svg: '',
+      show_divider: true,
+      brand_name: 'Roig de Coure',
+      visible_fields: { nom: true, cognoms: true, codi: true, telefon: false, saldo: false }
+    };
+    syncDesignerControlsWithConfig();
+    updateCardDesignPreview();
+    showToast('Plantilla restablerta al model artesanal original.', 'info');
+  });
+
+  // Botó: Descarregar en SVG
+  document.getElementById('btn-designer-export-svg')?.addEventListener('click', () => {
+    downloadCardAsSVG(currentDesignerStudent || { id: '300Z', nom: 'Zoey', cognoms: '' }, cardDesignerConfig);
+  });
+
+  // Botó: Descarregar en PNG (CR80 300 DPI)
+  document.getElementById('btn-designer-export-png')?.addEventListener('click', () => {
+    downloadCardAsPNG(currentDesignerStudent || { id: '300Z', nom: 'Zoey', cognoms: '' }, cardDesignerConfig);
+  });
+
+  // Botó: Imprimir Carnet
+  document.getElementById('btn-designer-print')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  // Renderització inicial
+  currentDesignerStudent = { id: '300Z', nom: 'Zoey', cognoms: '', telefon: '+34 600 000 000' };
+  updateCardDesignPreview();
+}
+
+function populateDesignerStudentSelect() {
+  const sel = document.getElementById('designer-sample-student');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="SAMPLE_ZOEY">Zoey (300Z) - Model Oficial</option>';
+  if (Array.isArray(allStudents)) {
+    allStudents.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.nom} ${s.cognoms || ''} (${s.id})`.trim();
+      sel.appendChild(opt);
+    });
+  }
+  if (currentVal && sel.querySelector(`option[value="${currentVal}"]`)) {
+    sel.value = currentVal;
+  }
+}
+
+function syncDesignerControlsWithConfig() {
+  if (!cardDesignerConfig) return;
+  const brandInput = document.getElementById('designer-input-brand');
+  if (brandInput) brandInput.value = cardDesignerConfig.brand_name || 'Roig de Coure';
+
+  const fontSelect = document.getElementById('designer-select-font');
+  if (fontSelect) fontSelect.value = cardDesignerConfig.font_style || 'borel';
+
+  const colorBg = cardDesignerConfig.background_color || '#b1ffc2';
+  const colorBgInput = document.getElementById('designer-color-bg');
+  const bgVal = document.getElementById('designer-color-bg-val');
+  if (colorBgInput) colorBgInput.value = colorBg;
+  if (bgVal) bgVal.textContent = colorBg;
+  document.querySelectorAll('#swatches-bg .color-swatch-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.color.toLowerCase() === colorBg.toLowerCase());
+  });
+
+  const colorText = cardDesignerConfig.text_color || '#801b1b';
+  const colorTextInput = document.getElementById('designer-color-text');
+  const textVal = document.getElementById('designer-color-text-val');
+  if (colorTextInput) colorTextInput.value = colorText;
+  if (textVal) textVal.textContent = colorText;
+  document.querySelectorAll('#swatches-text .color-swatch-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.color.toLowerCase() === colorText.toLowerCase());
+  });
+
+  const chkBowl = document.getElementById('designer-check-bowl');
+  if (chkBowl) chkBowl.checked = cardDesignerConfig.show_bowl_logo !== false;
+
+  const chkDivider = document.getElementById('designer-check-divider');
+  if (chkDivider) chkDivider.checked = cardDesignerConfig.show_divider !== false;
+
+  const vis = cardDesignerConfig.visible_fields || {};
+  const chkCognoms = document.getElementById('designer-check-cognoms');
+  if (chkCognoms) chkCognoms.checked = vis.cognoms !== false;
+  const chkTel = document.getElementById('designer-check-telefon');
+  if (chkTel) chkTel.checked = Boolean(vis.telefon);
+  const chkSaldo = document.getElementById('designer-check-saldo');
+  if (chkSaldo) chkSaldo.checked = Boolean(vis.saldo);
+}
+
+function updateCardDesignPreview() {
+  const badge = document.getElementById('designer-live-badge');
+  if (!badge || !cardDesignerConfig) return;
+
+  const bg = cardDesignerConfig.background_color || '#b1ffc2';
+  const text = cardDesignerConfig.text_color || '#801b1b';
+  const font = cardDesignerConfig.font_style === 'modern' ? 'system-ui, -apple-system, sans-serif' : "'Borel', 'Buffalo', cursive";
+
+  badge.style.setProperty('--card-bg-color', bg);
+  badge.style.setProperty('--card-text-color', text);
+  badge.style.setProperty('--card-font-family', font);
+
+  const brandEl = document.getElementById('preview-brand-name');
+  if (brandEl) brandEl.textContent = cardDesignerConfig.brand_name || 'Roig de Coure';
+
+  const bowlContainer = document.getElementById('preview-bowl-container');
+  if (bowlContainer) {
+    bowlContainer.style.display = cardDesignerConfig.show_bowl_logo ? 'flex' : 'none';
+  }
+
+  const dividerEl = document.getElementById('preview-divider-line');
+  if (dividerEl) {
+    dividerEl.style.display = cardDesignerConfig.show_divider ? 'block' : 'none';
+  }
+
+  const s = currentDesignerStudent || { id: '300Z', nom: 'Zoey', cognoms: '', telefon: '+34 600 000 000' };
+  const nomEl = document.getElementById('preview-nom-val');
+  if (nomEl) nomEl.textContent = s.nom || 'Zoey';
+
+  const cognomsWrap = document.getElementById('preview-field-cognoms-wrap');
+  const cognomsEl = document.getElementById('preview-cognoms-val');
+  const vis = cardDesignerConfig.visible_fields || {};
+  if (cognomsWrap) {
+    cognomsWrap.style.display = vis.cognoms !== false ? 'flex' : 'none';
+  }
+  if (cognomsEl) cognomsEl.textContent = s.cognoms || '—';
+
+  const codiEl = document.getElementById('preview-codi-val');
+  if (codiEl) codiEl.textContent = s.id || '300Z';
+
+  const telWrap = document.getElementById('preview-field-telefon-wrap');
+  const telEl = document.getElementById('preview-telefon-val');
+  if (telWrap) {
+    telWrap.style.display = vis.telefon && s.telefon ? 'flex' : 'none';
+  }
+  if (telEl) telEl.textContent = s.telefon || '';
+
+  const saldoWrap = document.getElementById('preview-field-saldo-wrap');
+  if (saldoWrap) {
+    saldoWrap.style.display = vis.saldo ? 'flex' : 'none';
+  }
+
+  // Generar codi QR
+  const qrMount = document.getElementById('preview-qr-mount');
+  if (qrMount && typeof QREngine !== 'undefined') {
+    QREngine.generateQR(qrMount, s.id || '300Z', 104);
+  }
+}
+
+/* =======================================================
+   EXPORTACIÓ VECTORIAL SVG I PNG D'ALTA RESOLUCIÓ (CR80)
+   ======================================================= */
+function downloadCardAsSVG(student, config) {
+  const cfg = config || cardDesignerConfig || {};
+  const s = student || { id: '300Z', nom: 'Zoey', cognoms: '' };
+  const bg = cfg.background_color || '#b1ffc2';
+  const text = cfg.text_color || '#801b1b';
+  const brand = cfg.brand_name || 'Roig de Coure';
+  const fontStyle = cfg.font_style || 'borel';
+  const fontFam = fontStyle === 'modern' ? 'system-ui, -apple-system, sans-serif' : "'Borel', 'Buffalo', cursive";
+  const showBowl = cfg.show_bowl_logo !== false;
+  const showDivider = cfg.show_divider !== false;
+
+  // Extreure QR com a imatge data URL del contenidor de previsualització
+  let qrDataUrl = '';
+  const qrImg = document.querySelector('#preview-qr-mount img, #badge-qr-container img');
+  const qrCanvas = document.querySelector('#preview-qr-mount canvas, #badge-qr-container canvas');
+  if (qrCanvas) {
+    qrDataUrl = qrCanvas.toDataURL('image/png');
+  } else if (qrImg && qrImg.src) {
+    qrDataUrl = qrImg.src;
+  }
+
+  const bowlSvg = showBowl ? `
+    <g transform="translate(845, 52)" fill="${text}">
+      <path d="M 5 12 C 18 50, 50 56, 70 56 C 90 56, 122 50, 135 12 C 137 6, 128 6, 123 10 C 108 44, 88 48, 70 48 C 52 48, 32 44, 17 10 C 12 6, 3 6, 5 12 Z M 44 56 L 44 65 L 56 65 L 56 56 Z M 84 56 L 84 65 L 96 65 L 96 56 Z"/>
+    </g>` : '';
+
+  const dividerSvg = showDivider ? `
+    <line x1="60" y1="435" x2="560" y2="435" stroke="${text}" stroke-width="2" stroke-dasharray="12, 8" opacity="0.65"/>` : '';
+
+  const qrElement = qrDataUrl ? `
+    <image x="695" y="255" width="230" height="230" href="${qrDataUrl}"/>` : `
+    <rect x="710" y="270" width="200" height="200" fill="#000000" rx="8"/>
+    <text x="810" y="380" fill="#ffffff" font-family="Roboto, sans-serif" font-size="20" text-anchor="middle">${s.id}</text>`;
+
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1012 638" width="1012" height="638">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Borel&amp;family=Roboto:wght@400;500;700;900&amp;display=swap');
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1012" height="638" rx="28" ry="28" fill="${bg}" stroke="${text}" stroke-opacity="0.2" stroke-width="2"/>
+  <text x="60" y="105" font-family="${fontFam}" font-size="46" font-weight="bold" fill="${text}">${brand}</text>
+  ${bowlSvg}
+  <g transform="translate(0, 40)">
+    <text x="60" y="175" font-family="${fontFam}" font-size="30" fill="${text}">Nom:</text>
+    <text x="60" y="230" font-family="Roboto, sans-serif" font-size="36" font-weight="500" fill="#1f1f1f">${s.nom || 'Zoey'}</text>
+    <text x="60" y="300" font-family="${fontFam}" font-size="30" fill="${text}">Cognoms:</text>
+    <text x="60" y="355" font-family="Roboto, sans-serif" font-size="36" font-weight="500" fill="#1f1f1f">${s.cognoms || '—'}</text>
+    ${dividerSvg}
+    <text x="60" y="450" font-family="${fontFam}" font-size="30" fill="${text}">Codi Alumne:</text>
+    <text x="60" y="515" font-family="Roboto, sans-serif" font-size="44" font-weight="700" fill="${text}">${s.id || '300Z'}</text>
+  </g>
+  <rect x="680" y="240" width="260" height="260" rx="16" fill="#ffffff" stroke="${text}" stroke-width="2"/>
+  ${qrElement}
+</svg>`;
+
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `carnet-${s.id || 'alumne'}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadCardAsPNG(student, config) {
+  const cfg = config || cardDesignerConfig || {};
+  const s = student || { id: '300Z', nom: 'Zoey', cognoms: '' };
+  const bg = cfg.background_color || '#b1ffc2';
+  const text = cfg.text_color || '#801b1b';
+  const brand = cfg.brand_name || 'Roig de Coure';
+  const fontFam = cfg.font_style === 'modern' ? 'system-ui, sans-serif' : 'Borel, cursive';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1012;
+  canvas.height = 638;
+  const ctx = canvas.getContext('2d');
+
+  function drawRoundedRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.quadraticCurveTo(x + w, y, x + w, y + r);
+    c.lineTo(x + w, y + h - r);
+    c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    c.lineTo(x + r, y + h);
+    c.quadraticCurveTo(x, y + h, x, y + h - r);
+    c.lineTo(x, y + r);
+    c.quadraticCurveTo(x, y, x + r, y);
+    c.closePath();
+  }
+
+  // Pintar fons
+  drawRoundedRect(ctx, 4, 4, 1004, 630, 28);
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.strokeStyle = text;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Marca
+  ctx.font = `bold 46px ${fontFam}`;
+  ctx.fillStyle = text;
+  ctx.fillText(brand, 60, 105);
+
+  // Bol ceràmic a la cantonada
+  if (cfg.show_bowl_logo !== false) {
+    ctx.save();
+    ctx.translate(845, 52);
+    ctx.fillStyle = text;
+    const p = new Path2D("M 5 12 C 18 50, 50 56, 70 56 C 90 56, 122 50, 135 12 C 137 6, 128 6, 123 10 C 108 44, 88 48, 70 48 C 52 48, 32 44, 17 10 C 12 6, 3 6, 5 12 Z M 44 56 L 44 65 L 56 65 L 56 56 Z M 84 56 L 84 65 L 96 65 L 96 56 Z");
+    ctx.fill(p);
+    ctx.restore();
+  }
+
+  // Camps
+  ctx.font = `600 30px ${fontFam}`;
+  ctx.fillStyle = text;
+  ctx.fillText("Nom:", 60, 215);
+  ctx.font = "500 36px Roboto, sans-serif";
+  ctx.fillStyle = "#1f1f1f";
+  ctx.fillText(s.nom || 'Zoey', 60, 270);
+
+  ctx.font = `600 30px ${fontFam}`;
+  ctx.fillStyle = text;
+  ctx.fillText("Cognoms:", 60, 340);
+  ctx.font = "500 36px Roboto, sans-serif";
+  ctx.fillStyle = "#1f1f1f";
+  ctx.fillText(s.cognoms || '—', 60, 395);
+
+  if (cfg.show_divider !== false) {
+    ctx.beginPath();
+    ctx.setLineDash([12, 8]);
+    ctx.strokeStyle = text;
+    ctx.lineWidth = 2;
+    ctx.moveTo(60, 435);
+    ctx.lineTo(560, 435);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.font = `600 30px ${fontFam}`;
+  ctx.fillStyle = text;
+  ctx.fillText("Codi Alumne:", 60, 490);
+  ctx.font = "700 44px Roboto, sans-serif";
+  ctx.fillStyle = text;
+  ctx.fillText(s.id || '300Z', 60, 555);
+
+  // Marc del QR
+  drawRoundedRect(ctx, 680, 240, 260, 260, 16);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.strokeStyle = text;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dibuixar QR des del canvas o imatge
+  const qrCanvas = document.querySelector('#preview-qr-mount canvas, #badge-qr-container canvas');
+  const qrImg = document.querySelector('#preview-qr-mount img, #badge-qr-container img');
+  const finishDownload = () => {
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carnet-${s.id || 'alumne'}-cr80-300dpi.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+
+  if (qrCanvas) {
+    ctx.drawImage(qrCanvas, 695, 255, 230, 230);
+    finishDownload();
+  } else if (qrImg && qrImg.complete) {
+    ctx.drawImage(qrImg, 695, 255, 230, 230);
+    finishDownload();
+  } else {
+    finishDownload();
   }
 }
 

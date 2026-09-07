@@ -158,6 +158,155 @@ def verify_admin_pin(input_pin):
         configured_pin = '1234'
     return str(input_pin).strip() == configured_pin
 
+DEFAULT_CARNET_CONFIG = {
+    "background_color": "#b1ffc2",
+    "text_color": "#801b1b",
+    "font_style": "borel",
+    "show_bowl_logo": True,
+    "custom_logo_svg": "",
+    "show_divider": True,
+    "brand_name": "Roig de Coure",
+    "visible_fields": {
+        "nom": True,
+        "cognoms": True,
+        "codi": True,
+        "telefon": False,
+        "saldo": False
+    }
+}
+
+def get_carnet_config(conn=None):
+    """
+    Retorna la configuració de disseny del carnet emmagatzemada a la BD o la configuració per defecte.
+    """
+    cfg = dict(DEFAULT_CARNET_CONFIG)
+    try:
+        should_close = False
+        if conn is None:
+            conn = get_db()
+            should_close = True
+        cursor = conn.cursor()
+        cursor.execute("SELECT valor FROM configuracio WHERE clau = 'carnet_design'")
+        row = cursor.fetchone()
+        if row and row['valor']:
+            saved = json.loads(row['valor'])
+            if isinstance(saved, dict):
+                cfg.update(saved)
+                if 'visible_fields' in saved and isinstance(saved['visible_fields'], dict):
+                    merged_vis = dict(DEFAULT_CARNET_CONFIG['visible_fields'])
+                    merged_vis.update(saved['visible_fields'])
+                    cfg['visible_fields'] = merged_vis
+        if should_close:
+            conn.close()
+    except Exception as e:
+        print(f"[Carnet Config] Error llegint configuració: {e}")
+    return cfg
+
+def generate_carnet_svg(student, config=None):
+    """
+    Genera el codi SVG vectorial autònom del carnet d'alumne segons la configuració del taller.
+    Format CR80 (proporció 1.586 : 1, 1012 x 638 px).
+    """
+    if not config:
+        config = get_carnet_config()
+
+    bg_color = config.get('background_color', '#b1ffc2')
+    text_color = config.get('text_color', '#801b1b')
+    brand_name = config.get('brand_name', 'Roig de Coure')
+    font_style = config.get('font_style', 'borel')
+    show_bowl = config.get('show_bowl_logo', True)
+    custom_logo = config.get('custom_logo_svg', '')
+    show_divider = config.get('show_divider', True)
+    vis = config.get('visible_fields', {})
+
+    nom = (student.get('nom') or 'Zoey').strip()
+    cognoms = (student.get('cognoms') or '').strip()
+    codi = (student.get('id') or '300Z').strip()
+    telefon = (student.get('telefon') or '').strip()
+
+    script_font = "'Borel', 'Buffalo', cursive" if font_style != 'modern' else "system-ui, -apple-system, sans-serif"
+
+    # Silueta vectorial artesanal del bol ceràmic
+    bowl_markup = ''
+    if show_bowl:
+        if custom_logo and '<svg' in custom_logo:
+            bowl_markup = f'<g transform="translate(845, 52)">{custom_logo}</g>'
+        else:
+            bowl_markup = f'''
+      <g transform="translate(845, 52)" fill="{text_color}">
+        <path d="M 5 12 C 18 50, 50 56, 70 56 C 90 56, 122 50, 135 12 C 137 6, 128 6, 123 10 C 108 44, 88 48, 70 48 C 52 48, 32 44, 17 10 C 12 6, 3 6, 5 12 Z M 44 56 L 44 65 L 56 65 L 56 56 Z M 84 56 L 84 65 L 96 65 L 96 56 Z"/>
+      </g>'''
+
+    divider_markup = f'''<line x1="60" y1="435" x2="560" y2="435" stroke="{text_color}" stroke-width="2" stroke-dasharray="12, 8" opacity="0.65"/>''' if show_divider else ''
+
+    tel_markup = f'''<text x="60" y="585" font-family="{script_font}" font-size="22" fill="{text_color}">Telèfon:</text><text x="160" y="585" font-family="Roboto, sans-serif" font-size="22" font-weight="600" fill="#1f1f1f">{telefon}</text>''' if vis.get('telefon') and telefon else ''
+
+    # QR box amb representació vectorial neta
+    qr_svg = f'''
+    <g transform="translate(680, 240)">
+      <rect x="0" y="0" width="260" height="260" rx="16" fill="#ffffff" stroke="{text_color}" stroke-width="2" filter="drop-shadow(0px 4px 10px rgba(0,0,0,0.08))"/>
+      <!-- QR Finder Top-Left -->
+      <rect x="25" y="25" width="55" height="55" fill="#000000" rx="6"/>
+      <rect x="33" y="33" width="39" height="39" fill="#ffffff" rx="3"/>
+      <rect x="41" y="41" width="23" height="23" fill="#000000" rx="2"/>
+      <!-- QR Finder Top-Right -->
+      <rect x="180" y="25" width="55" height="55" fill="#000000" rx="6"/>
+      <rect x="188" y="33" width="39" height="39" fill="#ffffff" rx="3"/>
+      <rect x="196" y="41" width="23" height="23" fill="#000000" rx="2"/>
+      <!-- QR Finder Bottom-Left -->
+      <rect x="25" y="180" width="55" height="55" fill="#000000" rx="6"/>
+      <rect x="33" y="188" width="39" height="39" fill="#ffffff" rx="3"/>
+      <rect x="41" y="196" width="23" height="23" fill="#000000" rx="2"/>
+      <!-- QR Timing & Data Patterns -->
+      <rect x="95" y="48" width="70" height="9" fill="#000000"/>
+      <rect x="48" y="95" width="9" height="70" fill="#000000"/>
+      <rect x="100" y="90" width="16" height="16" fill="#000000"/>
+      <rect x="130" y="90" width="20" height="16" fill="#000000"/>
+      <rect x="165" y="100" width="16" height="30" fill="#000000"/>
+      <rect x="100" y="125" width="45" height="16" fill="#000000"/>
+      <rect x="100" y="160" width="30" height="40" fill="#000000"/>
+      <rect x="145" y="150" width="35" height="16" fill="#000000"/>
+      <rect x="150" y="180" width="50" height="25" fill="#000000"/>
+      <rect x="195" y="135" width="30" height="25" fill="#000000"/>
+      <text x="130" y="235" font-family="Roboto, sans-serif" font-size="14" font-weight="700" fill="#1f1f1f" text-anchor="middle" letter-spacing="1">{codi}</text>
+    </g>'''
+
+    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1012 638" width="1012" height="638">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Borel&amp;family=Roboto:wght@400;500;700&amp;display=swap');
+    </style>
+  </defs>
+  <!-- Fons de la targeta en proporció CR80 -->
+  <rect x="0" y="0" width="1012" height="638" rx="28" ry="28" fill="{bg_color}" stroke="{text_color}" stroke-opacity="0.25" stroke-width="2"/>
+
+  <!-- Marca Roig de Coure -->
+  <text x="60" y="105" font-family="{script_font}" font-size="46" font-weight="bold" fill="{text_color}">{brand_name}</text>
+
+  <!-- Bol de ceràmica artesanal -->
+  {bowl_markup}
+
+  <!-- Camps de l'Alumne -->
+  <g transform="translate(0, 40)">
+    <text x="60" y="175" font-family="{script_font}" font-size="30" fill="{text_color}">Nom:</text>
+    <text x="60" y="230" font-family="Roboto, sans-serif" font-size="36" font-weight="500" fill="#1f1f1f">{nom}</text>
+
+    <text x="60" y="300" font-family="{script_font}" font-size="30" fill="{text_color}">Cognoms:</text>
+    <text x="60" y="355" font-family="Roboto, sans-serif" font-size="36" font-weight="500" fill="#1f1f1f">{cognoms if cognoms else '—'}</text>
+
+    {divider_markup}
+
+    <text x="60" y="450" font-family="{script_font}" font-size="30" fill="{text_color}">Codi Alumne:</text>
+    <text x="60" y="515" font-family="Roboto, sans-serif" font-size="44" font-weight="700" fill="{text_color}">{codi}</text>
+
+    {tel_markup}
+  </g>
+
+  <!-- Codi QR integrat -->
+  {qr_svg}
+</svg>'''
+    return svg_content
+
 def init_db():
     with get_db() as conn:
         cursor = conn.cursor()
@@ -300,6 +449,7 @@ def init_db():
             'whatsapp_meta_template_confirmacio': "reserva_confirmada",
             'whatsapp_meta_template_recordatori_48h': "reserva_recordatori_48h",
             'whatsapp_meta_template_recordatori_dia': "reserva_recordatori_dia",
+            'carnet_design': json.dumps(DEFAULT_CARNET_CONFIG, ensure_ascii=False),
             'franges_horaries': default_franges_json,
             'admin_pin': os.environ.get('ADMIN_PIN', '1234')
         }
@@ -1770,6 +1920,33 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'config': cfg})
                 return
 
+            elif path == '/api/carnet/config':
+                cfg = get_carnet_config()
+                self.send_json({'ok': True, 'success': True, 'config': cfg})
+                return
+
+            elif path == '/api/carnet/export-svg':
+                query_params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                student_id = (query_params.get('id', [''])[0]).strip()
+                student = None
+                if student_id:
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT * FROM alumnes WHERE id = ?", (student_id,))
+                        row = cursor.fetchone()
+                        if row:
+                            student = row_to_dict(row)
+                if not student:
+                    student = {'id': student_id or '300Z', 'nom': 'Zoey', 'cognoms': ''}
+                svg_data = generate_carnet_svg(student)
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/svg+xml; charset=utf-8')
+                self.send_header('Content-Disposition', f'attachment; filename="carnet-{student.get("id", "alumne")}.svg"')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(svg_data.encode('utf-8'))
+                return
+
             elif path == '/api/export':
                 # Exportació de backup complet JSON
                 with get_db() as conn:
@@ -2933,6 +3110,18 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 res = send_whatsapp_meta(tel, tpl, params_list, lang)
                 status_code = 200 if res.get('ok') else 400
                 self.send_json(res, status_code)
+                return
+
+            elif path in ('/api/admin/carnet/config', '/api/carnet/config'):
+                # Desar configuració de disseny del carnet
+                carnet_cfg = data.get('config') if isinstance(data, dict) and 'config' in data else data
+                val_str = json.dumps(carnet_cfg, ensure_ascii=False) if isinstance(carnet_cfg, dict) else str(carnet_cfg)
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('carnet_design', ?)", (val_str,))
+                    conn.commit()
+                sync_to_google_sheets_async('save_config', {'carnet_design': val_str})
+                self.send_json({'ok': True, 'success': True, 'message': 'Disseny de carnet actualitzat', 'config': carnet_cfg if isinstance(carnet_cfg, dict) else json.loads(val_str)})
                 return
 
             elif path == '/api/config':

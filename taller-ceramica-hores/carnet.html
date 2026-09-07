@@ -7,8 +7,8 @@
   <title>Carnet Digital d'Alumne - Roig de Coure</title>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/styles.css?v=6.0">
-  <link rel="stylesheet" href="css/card.css?v=6.0">
+  <link rel="stylesheet" href="css/styles.css?v=7.1">
+  <link rel="stylesheet" href="css/card.css?v=7.1">
   <style>
     body {
       background: #FAF7F5;
@@ -315,6 +315,11 @@
         Desar QR Fons Blanc Clàssic
       </button>
 
+      <!-- Botó Descarregar Carnet en SVG -->
+      <a href="#" class="btn-action-pass btn-outline-action" id="btn-svg-download" style="font-size: 13px;">
+        Descarregar Carnet en SVG (Vectorial)
+      </a>
+
       <!-- Botó Imprimir Carnet -->
       <button type="button" class="btn-action-pass btn-outline-action" id="btn-print-carnet">
         Imprimir Carnet Físic
@@ -333,7 +338,8 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
-  <script src="js/qr-engine.js?v=6.0"></script>
+  <script src="js/store.js?v=7.1"></script>
+  <script src="js/qr-engine.js?v=7.1"></script>
   <script>
     (function() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -386,6 +392,57 @@
 
         // Actualitzar enllaç .pkpass
         btnWallet.href = `/api/wallet/pass?id=${encodeURIComponent(id)}`;
+
+        const btnSvg = document.getElementById('btn-svg-download');
+        if (btnSvg) {
+          btnSvg.href = `/api/carnet/export-svg?id=${encodeURIComponent(id)}`;
+          btnSvg.setAttribute('download', `carnet-${id}.svg`);
+        }
+
+        // Aplicar disseny artesanal configurat
+        try {
+          if (typeof Store !== 'undefined' && Store.getCarnetConfig) {
+            const carnetCfg = await Store.getCarnetConfig();
+            const cardEl = document.getElementById('wallet-card');
+            if (cardEl && carnetCfg) {
+              const bg = carnetCfg.background_color || '#b1ffc2';
+              const txt = carnetCfg.text_color || '#801b1b';
+              cardEl.style.background = bg;
+              cardEl.style.color = txt;
+              cardEl.style.border = `2px solid ${txt}40`;
+              const brandTitle = cardEl.querySelector('.brand-title');
+              if (brandTitle) {
+                brandTitle.style.color = txt;
+                brandTitle.textContent = carnetCfg.brand_name || 'Roig de Coure';
+                if (carnetCfg.font_style !== 'modern') {
+                  brandTitle.style.fontFamily = "'Borel', 'Buffalo', cursive";
+                }
+              }
+              const typeLabel = cardEl.querySelector('.card-type-label');
+              if (typeLabel) typeLabel.style.color = `${txt}CC`;
+              const badgeIdBadge = cardEl.querySelector('.wallet-badge-id');
+              if (badgeIdBadge) {
+                badgeIdBadge.style.color = txt;
+                badgeIdBadge.style.borderColor = `${txt}66`;
+                badgeIdBadge.style.background = `${txt}15`;
+              }
+              const metaLabel = cardEl.querySelector('.student-meta-label');
+              if (metaLabel) {
+                metaLabel.style.color = txt;
+                if (carnetCfg.font_style !== 'modern') {
+                  metaLabel.style.fontFamily = "'Borel', 'Buffalo', cursive";
+                  metaLabel.style.fontSize = "16px";
+                }
+              }
+              const nameVal = cardEl.querySelector('.student-name-val');
+              if (nameVal) nameVal.style.color = '#1A1817';
+              const qrFooter = cardEl.querySelector('.qr-code-footer-text');
+              if (qrFooter) qrFooter.style.color = txt;
+            }
+          }
+        } catch (e) {
+          console.warn('Error aplicant disseny artesanal a carnet.html:', e);
+        }
 
         try {
           const res = await fetch(`/api/alumnes/${encodeURIComponent(id)}`);

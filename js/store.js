@@ -670,6 +670,62 @@ const Store = {
     return { ok: true, message: 'Configuració desada' };
   },
 
+  /* ====================== DISSENY DEL CARNET ====================== */
+
+  async getCarnetConfig() {
+    const defaultConfig = {
+      background_color: '#b1ffc2',
+      text_color: '#801b1b',
+      font_style: 'borel',
+      show_bowl_logo: true,
+      custom_logo_svg: '',
+      show_divider: true,
+      brand_name: 'Roig de Coure',
+      visible_fields: {
+        nom: true,
+        cognoms: true,
+        codi: true,
+        telefon: false,
+        saldo: false
+      }
+    };
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/carnet/config?t=${Date.now()}`);
+        const json = await res.json();
+        if (json.ok && json.config) {
+          return { ...defaultConfig, ...json.config, visible_fields: { ...defaultConfig.visible_fields, ...(json.config.visible_fields || {}) } };
+        }
+      } catch (e) {
+        console.warn('Error carregant configuració del carnet de l\'API:', e);
+      }
+    }
+    const data = this._getLocalData();
+    const stored = data.config && data.config.carnet_design ? (typeof data.config.carnet_design === 'string' ? JSON.parse(data.config.carnet_design) : data.config.carnet_design) : null;
+    return stored ? { ...defaultConfig, ...stored, visible_fields: { ...defaultConfig.visible_fields, ...(stored.visible_fields || {}) } } : defaultConfig;
+  },
+
+  async saveCarnetConfig(cfg) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/admin/carnet/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: cfg })
+        });
+        const json = await res.json();
+        if (json.ok) return json;
+      } catch (e) {
+        this.mode = 'local';
+      }
+    }
+    const data = this._getLocalData();
+    data.config = data.config || {};
+    data.config.carnet_design = cfg;
+    this._saveLocalData(data);
+    return { ok: true, message: 'Disseny del carnet desat localment' };
+  },
+
   async getSyncStatus() {
     if (this.mode === 'api') {
       try {

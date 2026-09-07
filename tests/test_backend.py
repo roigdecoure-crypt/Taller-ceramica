@@ -970,6 +970,112 @@ class TestCeramicsBackend(unittest.TestCase):
             cur.execute("DELETE FROM reserves WHERE recurrent_id = ?", (recurrent_id,))
             conn.commit()
 
+    def test_28_carnet_config_endpoints(self):
+        """
+        Comprova la lectura i modificació de la configuració del carnet via API REST.
+        """
+        import io
+
+        def call_get(path):
+            handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+            handler.path = path
+            handler.headers = {}
+            handler.wfile = io.BytesIO()
+            status_box = []
+            def mock_send_response(code, msg=None):
+                status_box.append(code)
+            handler.send_response = mock_send_response
+            handler.send_header = lambda k, v: None
+            handler.end_headers = lambda: None
+            handler.do_GET()
+            raw = handler.wfile.getvalue().decode('utf-8')
+            return (status_box[0] if status_box else 200), json.loads(raw)
+
+        def call_post(path, data):
+            body = json.dumps(data).encode('utf-8')
+            handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+            handler.path = path
+            handler.headers = {'Content-Length': str(len(body)), 'Content-Type': 'application/json'}
+            handler.rfile = io.BytesIO(body)
+            handler.wfile = io.BytesIO()
+            status_box = []
+            def mock_send_response(code, msg=None):
+                status_box.append(code)
+            handler.send_response = mock_send_response
+            handler.send_header = lambda k, v: None
+            handler.end_headers = lambda: None
+            handler.do_POST()
+            raw = handler.wfile.getvalue().decode('utf-8')
+            return (status_box[0] if status_box else 200), json.loads(raw)
+
+        # 1. Comprovar lectura de configuració per defecte
+        status1, data1 = call_get('/api/carnet/config')
+        self.assertEqual(status1, 200)
+        self.assertTrue(data1.get('ok'))
+        cfg = data1['config']
+        self.assertEqual(cfg.get('background_color'), '#b1ffc2')
+        self.assertEqual(cfg.get('text_color'), '#801b1b')
+        self.assertEqual(cfg.get('brand_name'), 'Roig de Coure')
+        self.assertTrue(cfg.get('show_bowl_logo'))
+
+        # 2. Modificar configuració
+        new_cfg = {
+            'background_color': '#FAF7F5',
+            'text_color': '#2C221E',
+            'font_style': 'modern',
+            'show_bowl_logo': False,
+            'show_divider': False,
+            'brand_name': 'Roig de Coure Test',
+            'visible_fields': {
+                'nom': True,
+                'cognoms': True,
+                'codi': True,
+                'telefon': True,
+                'saldo': False
+            }
+        }
+        status_p, data_p = call_post('/api/admin/carnet/config', {'config': new_cfg})
+        self.assertEqual(status_p, 200)
+        self.assertTrue(data_p.get('ok'))
+
+        # 3. Comprovar persistència
+        status2, data2 = call_get('/api/carnet/config')
+        self.assertEqual(status2, 200)
+        self.assertEqual(data2['config']['background_color'], '#FAF7F5')
+        self.assertEqual(data2['config']['brand_name'], 'Roig de Coure Test')
+        self.assertFalse(data2['config']['show_bowl_logo'])
+        self.assertTrue(data2['config']['visible_fields']['telefon'])
+
+        # 4. Restablir configuració original
+        call_post('/api/admin/carnet/config', {'config': server.DEFAULT_CARNET_CONFIG})
+
+    def test_29_carnet_export_svg(self):
+        """
+        Comprova la generació i exportació del fitxer SVG del carnet d'un alumne.
+        """
+        import io
+
+        handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler.path = '/api/carnet/export-svg?id=231F'
+        handler.headers = {}
+        handler.wfile = io.BytesIO()
+        status_box = []
+        headers_dict = {}
+        def mock_send_response(code, msg=None):
+            status_box.append(code)
+        handler.send_response = mock_send_response
+        handler.send_header = lambda k, v: headers_dict.update({k: v})
+        handler.end_headers = lambda: None
+        handler.do_GET()
+
+        self.assertEqual(status_box[0] if status_box else 200, 200)
+        self.assertIn('image/svg+xml', headers_dict.get('Content-Type', ''))
+        svg_content = handler.wfile.getvalue().decode('utf-8')
+        self.assertIn('<svg', svg_content)
+        self.assertIn('231F', svg_content)
+        self.assertIn('Ferran', svg_content)
+        self.assertIn('Roig de Coure', svg_content)
+
 if __name__ == '__main__':
     unittest.main()
 
