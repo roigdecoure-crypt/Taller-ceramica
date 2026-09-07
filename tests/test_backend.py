@@ -1201,6 +1201,100 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertEqual(res_get['alumne']['data_naixement'], birth_10)
         self.assertEqual(res_get['alumne']['edat'], 10)
 
+    def test_32_session_manual_create_and_edit_correction(self):
+        """
+        Comprova la creació, correcció/edició i eliminació d'una sessió manual
+        per esmenar errors d'entrada i sortida.
+        """
+        import io
+
+        test_id = "TC-TEST-CORRECT"
+        c = self.conn.cursor()
+        c.execute("DELETE FROM sessions WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM paquets_hores WHERE student_id = ?", (test_id,))
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
+        c.execute('''
+            INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, actiu)
+            VALUES (?, 'Alumne Correccio', 'Sessio', '611999888', 'corr@test.cat', '1111', ?, 1)
+        ''', (test_id, datetime.now().isoformat()))
+        self.conn.commit()
+
+        # 1. Crear sessió errònia (2 hores: 10:00 a 12:00)
+        payload_create = {
+            'studentId': test_id,
+            'entrada': '2026-09-08T10:00:00',
+            'sortida': '2026-09-08T12:00:00',
+            'notes': 'Sessió inicial amb error'
+        }
+        body = json.dumps(payload_create).encode('utf-8')
+        handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler.path = '/api/sessions/manual'
+        handler.headers = {'Content-Length': str(len(body)), 'Content-Type': 'application/json'}
+        handler.rfile = io.BytesIO(body)
+        handler.wfile = io.BytesIO()
+        status_box = []
+        handler.send_response = lambda code, msg=None: status_box.append(code)
+        handler.send_header = lambda k, v: None
+        handler.end_headers = lambda: None
+        handler.do_POST()
+
+        self.assertEqual(status_box[0] if status_box else 200, 200)
+        resp_create = json.loads(handler.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(resp_create.get('ok'))
+        sess_id = resp_create['id']
+        self.assertEqual(resp_create['duradaHms'], '02:00:00')
+
+        # 2. Corregir la sessió (rectificar horari: 10:00 a 11:30 -> 1h 30m)
+        payload_edit = {
+            'id': sess_id,
+            'studentId': test_id,
+            'entrada': '2026-09-08T10:00:00',
+            'sortida': '2026-09-08T11:30:00',
+            'notes': 'Sessió rectificada correctament'
+        }
+        body_edit = json.dumps(payload_edit).encode('utf-8')
+        handler_edit = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler_edit.path = '/api/sessions/manual'
+        handler_edit.headers = {'Content-Length': str(len(body_edit)), 'Content-Type': 'application/json'}
+        handler_edit.rfile = io.BytesIO(body_edit)
+        handler_edit.wfile = io.BytesIO()
+        status_box_edit = []
+        handler_edit.send_response = lambda code, msg=None: status_box_edit.append(code)
+        handler_edit.send_header = lambda k, v: None
+        handler_edit.end_headers = lambda: None
+        handler_edit.do_POST()
+
+        self.assertEqual(status_box_edit[0] if status_box_edit else 200, 200)
+        resp_edit = json.loads(handler_edit.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(resp_edit.get('ok'))
+        self.assertEqual(resp_edit['duradaHms'], '01:30:00')
+
+        # Comprovar canvis persistits a SQLite
+        c.execute("SELECT durada_segons, format_hms, notes FROM sessions WHERE id = ?", (sess_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['durada_segons'], 5400)
+        self.assertEqual(row['format_hms'], '01:30:00')
+        self.assertEqual(row['notes'], 'Sessió rectificada correctament')
+
+        # 3. Eliminar la sessió (DELETE /api/sessions/{id})
+        handler_del = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler_del.path = f'/api/sessions/{sess_id}'
+        handler_del.headers = {}
+        handler_del.wfile = io.BytesIO()
+        status_box_del = []
+        handler_del.send_response = lambda code, msg=None: status_box_del.append(code)
+        handler_del.send_header = lambda k, v: None
+        handler_del.end_headers = lambda: None
+        handler_del.do_DELETE()
+
+        self.assertEqual(status_box_del[0] if status_box_del else 200, 200)
+        resp_del = json.loads(handler_del.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(resp_del.get('ok'))
+
+        c.execute("SELECT id FROM sessions WHERE id = ?", (sess_id,))
+        self.assertIsNone(c.fetchone())
+
 if __name__ == '__main__':
     unittest.main()
 

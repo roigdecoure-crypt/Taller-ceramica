@@ -2511,9 +2511,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Creació o edició manual de sessió
                 sess_id = data.get('id')
                 student_id = data.get('studentId')
-                data_sess = data.get('data') or get_now().strftime('%Y-%m-%d')
                 entrada = data.get('entrada')
                 sortida = data.get('sortida')
+                data_sess = data.get('data') or (entrada[:10] if entrada else get_now().strftime('%Y-%m-%d'))
                 notes = data.get('notes') or ''
 
                 if not student_id or not entrada or not sortida:

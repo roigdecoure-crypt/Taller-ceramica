@@ -475,6 +475,7 @@ function renderInlineStudentSessions(sessions) {
         ${isOberta ? '<span class="badge badge-success">Oberta</span>' : (isForcada ? '<span class="badge badge-warning" title="Tancat per oblit">Oblit</span>' : '<span class="badge badge-neutral">Tancada</span>')}
       </td>
       <td style="text-align: right; white-space: nowrap;">
+        <button type="button" class="btn btn-outline btn-sm btn-edit-sessio" data-id="${s.id}" style="padding:3px 8px; margin-right:4px;" title="Modificar horaris de la sessió">Editar</button>
         <button type="button" class="btn btn-outline btn-sm btn-delete-sessio" data-id="${s.id}" style="color:var(--color-danger); border-color:var(--color-danger); padding:3px 8px;" title="Eliminar sessió">Eliminar</button>
       </td>
     `;
@@ -802,6 +803,32 @@ function setupEventListeners() {
       }
     }
 
+    // Modificar sessió des de la fitxa de l'alumne
+    if (target.classList.contains('btn-edit-sessio')) {
+      const sessId = target.dataset.id;
+      if (!currentViewingStudent || !currentViewingStudent.sessions) return;
+      const sess = currentViewingStudent.sessions.find(s => s.id === sessId);
+      if (!sess) return;
+      const a = currentViewingStudent.alumne;
+
+      const titleEl = document.getElementById('modal-manual-title');
+      if (titleEl) titleEl.textContent = 'Modificar Sessió d\'Assistència';
+
+      document.getElementById('manual-sessio-id').value = sess.id;
+      document.getElementById('manual-sessio-student-id').value = a.id;
+      document.getElementById('manual-sessio-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
+
+      const entradaDt = sess.entrada ? new Date(sess.entrada) : new Date();
+      const sortidaDt = sess.sortida ? new Date(sess.sortida) : new Date();
+      document.getElementById('manual-sessio-entrada').value = TimeUtils.toLocalDatetimeInput(entradaDt);
+      document.getElementById('manual-sessio-sortida').value = TimeUtils.toLocalDatetimeInput(sortidaDt);
+      document.getElementById('manual-sessio-notes').value = sess.notes || '';
+
+      const sec = Math.max(0, Math.floor((sortidaDt - entradaDt) / 1000));
+      document.getElementById('manual-sessio-preview').textContent = TimeUtils.secondsToHms(sec);
+      document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
+    }
+
     // Eliminar sessió des del drawer o fitxa
     if (target.classList.contains('btn-delete-sessio')) {
       if (confirm('Segur que vols eliminar aquesta sessió?')) {
@@ -863,6 +890,8 @@ function setupEventListeners() {
   document.getElementById('inline-btn-manual-session')?.addEventListener('click', () => {
     if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
+    const titleEl = document.getElementById('modal-manual-title');
+    if (titleEl) titleEl.textContent = 'Registrar Sessió Manual';
     document.getElementById('manual-sessio-id').value = '';
     document.getElementById('manual-sessio-student-id').value = a.id;
     document.getElementById('manual-sessio-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
@@ -871,6 +900,7 @@ function setupEventListeners() {
     const oneHourAgo = new Date(now.getTime() - 3600000);
     document.getElementById('manual-sessio-entrada').value = TimeUtils.toLocalDatetimeInput(oneHourAgo);
     document.getElementById('manual-sessio-sortida').value = TimeUtils.toLocalDatetimeInput(now);
+    document.getElementById('manual-sessio-notes').value = '';
     document.getElementById('manual-sessio-preview').textContent = '01:00:00';
     document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
   });
@@ -951,6 +981,8 @@ function setupEventListeners() {
   document.getElementById('drawer-btn-add-manual-session')?.addEventListener('click', () => {
     if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
+    const titleEl = document.getElementById('modal-manual-title');
+    if (titleEl) titleEl.textContent = 'Registrar Sessió Manual';
     document.getElementById('manual-sessio-id').value = '';
     document.getElementById('manual-sessio-student-id').value = a.id;
     document.getElementById('manual-sessio-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
@@ -959,6 +991,7 @@ function setupEventListeners() {
     const oneHourAgo = new Date(now.getTime() - 3600000);
     document.getElementById('manual-sessio-entrada').value = TimeUtils.toLocalDatetimeInput(oneHourAgo);
     document.getElementById('manual-sessio-sortida').value = TimeUtils.toLocalDatetimeInput(now);
+    document.getElementById('manual-sessio-notes').value = '';
     document.getElementById('manual-sessio-preview').textContent = '01:00:00';
     document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
   });
@@ -1158,14 +1191,17 @@ function setupEventListeners() {
     const sessId = document.getElementById('manual-sessio-id').value;
     const entrada = new Date(manualEntrada.value).toISOString();
     const sortida = new Date(manualSortida.value).toISOString();
+    const data_sess = entrada.slice(0, 10);
     const notes = document.getElementById('manual-sessio-notes').value;
 
     try {
-      const res = await Store.saveManualSession({ id: sessId, studentId, entrada, sortida, notes });
+      const res = await Store.saveManualSession({ id: sessId, studentId, data: data_sess, entrada, sortida, notes });
       showToast(res.message, 'success');
       document.getElementById('modal-manual-sessio-backdrop').classList.remove('active');
       await refreshStudentsList();
-      if (currentViewingStudent) openStudentDrawer(studentId);
+      if (currentViewingStudent && currentViewingStudent.alumne) {
+        openStudentInlineDetail(studentId);
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }
