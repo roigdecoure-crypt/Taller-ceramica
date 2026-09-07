@@ -848,6 +848,128 @@ class TestCeramicsBackend(unittest.TestCase):
             cur.execute("DELETE FROM alumnes WHERE id = 'TC-PINTEST'")
             conn.commit()
 
+    def test_25_recurring_reservations_creation(self):
+        """
+        Comprova la generació i inserció de reserves recurrents amb recurrent_id compartit.
+        """
+        # 1. Provar càlcul de dates (saltant dilluns/dimarts)
+        dates, skipped = server.calculate_recurring_dates('2026-09-16', frequency='setmanal', repetitions=4, skip_closed=True)
+        self.assertEqual(len(dates), 4)
+        self.assertEqual(dates[0], '2026-09-16') # Dimecres
+        self.assertEqual(dates[1], '2026-09-23') # Dimecres
+        self.assertEqual(dates[2], '2026-09-30') # Dimecres
+        self.assertEqual(dates[3], '2026-10-07') # Dimecres
+
+        # 2. Inserir reserves recurrents
+        recurrent_id = "REC-TEST-SERIE-1"
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM reserves WHERE recurrent_id = ?", (recurrent_id,))
+            for i, d in enumerate(dates):
+                res_id = f"RES-REC-TEST-{i+1}"
+                cur.execute('''
+                    INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, estat, hores, recurrent_id, created_at)
+                    VALUES (?, '231F', 'Ferran Picornell', ?, '10:00', '12:00', 'M1', 'Torn', 'torn', 1, 'confirmada', 2.0, ?, '2026-09-07T12:00:00')
+                ''', (res_id, d, recurrent_id))
+            conn.commit()
+
+            # Comprovar que totes 4 tenen el mateix recurrent_id
+            cur.execute("SELECT COUNT(*) as cnt FROM reserves WHERE recurrent_id = ?", (recurrent_id,))
+            self.assertEqual(cur.fetchone()['cnt'], 4)
+
+            # Comprovar que l'aforament s'ha ocupat a la data 2026-09-16
+            cur.execute("SELECT SUM(places) as ocupades FROM reserves WHERE data = '2026-09-16' AND estat = 'confirmada'")
+            self.assertGreaterEqual(cur.fetchone()['ocupades'], 1)
+
+    def test_26_recurring_reservations_cancel_series(self):
+        """
+        Comprova la cancel·lació de tota una sèrie recurrent mitjançant recurrent_id.
+        """
+        recurrent_id = "REC-TEST-SERIE-1"
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            # Cancel·lar tota la sèrie
+            cur.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE recurrent_id = ?", (recurrent_id,))
+            conn.commit()
+
+            # Comprovar que cap està activa
+            cur.execute("SELECT COUNT(*) as cnt FROM reserves WHERE recurrent_id = ? AND estat = 'confirmada'", (recurrent_id,))
+            self.assertEqual(cur.fetchone()['cnt'], 0)
+
+            cur.execute("SELECT COUNT(*) as cnt FROM reserves WHERE recurrent_id = ? AND estat = 'cancel·lada'", (recurrent_id,))
+            self.assertEqual(cur.fetchone()['cnt'], 4)
+
+            # Neteja de la prova
+            cur.execute("DELETE FROM reserves WHERE recurrent_id = ?", (recurrent_id,))
+            conn.commit()
+
+    def test_27_recurrent_endpoints_http(self):
+        """
+        Comprova els endpoints HTTP de reserves recurrents (preview, creació i cancel·lació de sèrie).
+        """
+        import io
+
+        def call_post(path, data):
+            body = json.dumps(data).encode('utf-8')
+            handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+            handler.path = path
+            handler.headers = {'Content-Length': str(len(body)), 'Content-Type': 'application/json'}
+            handler.rfile = io.BytesIO(body)
+            handler.wfile = io.BytesIO()
+            status_box = []
+            def mock_send_response(code, msg=None):
+                status_box.append(code)
+            handler.send_response = mock_send_response
+            handler.send_header = lambda k, v: None
+            handler.end_headers = lambda: None
+            handler.do_POST()
+            resp = json.loads(handler.wfile.getvalue().decode('utf-8'))
+            return (status_box[0] if status_box else 200), resp
+
+        # 1. Provar previsualització de reserves recurrents
+        status1, data = call_post('/api/reserves/recurrent-preview', {
+            'data_inici': '2026-09-16',
+            'frequencia': 'setmanal',
+            'repeticions': 4,
+            'activitat_id': 'torn',
+            'places': 1
+        })
+        self.assertEqual(status1, 200)
+        self.assertTrue(data['ok'])
+        self.assertEqual(len(data['preview']), 4)
+        self.assertEqual(data['preview'][0]['data'], '2026-09-16')
+
+        # 2. Provar creació de sèrie recurrent
+        status2, data2 = call_post('/api/reserves/recurrent', {
+            'student_id': '231F',
+            'data_inici': '2026-09-16',
+            'frequencia': 'setmanal',
+            'repeticions': 4,
+            'activitat_id': 'torn',
+            'places': 1,
+            'hora_inici': '10:00',
+            'notes': 'Test Sèrie Recurrent'
+        })
+        self.assertEqual(status2, 200)
+        self.assertTrue(data2['ok'])
+        self.assertEqual(data2['total_creades'], 4)
+        recurrent_id = data2['recurrent_id']
+        self.assertTrue(recurrent_id.startswith('REC-'))
+
+        # 3. Provar cancel·lació de la sèrie recurrent sencera
+        status3, data3 = call_post('/api/reserves/cancel-serie', {
+            'recurrent_id': recurrent_id
+        })
+        self.assertEqual(status3, 200)
+        self.assertTrue(data3['ok'])
+        self.assertEqual(data3['total_cancelades'], 4)
+
+        # Neteja de les dades de prova
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM reserves WHERE recurrent_id = ?", (recurrent_id,))
+            conn.commit()
+
 if __name__ == '__main__':
     unittest.main()
 

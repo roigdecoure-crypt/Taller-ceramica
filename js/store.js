@@ -993,6 +993,54 @@ const Store = {
     return { ok: false, error: 'Reserva no trobada' };
   },
 
+  async previewReservesRecurrents(previewData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/recurrent-preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(previewData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error preview reserves recurrents:', e);
+      }
+    }
+    return { ok: false, error: 'Connexió no disponible per a la previsualització' };
+  },
+
+  async crearReservesRecurrents(recurringData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/recurrent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(recurringData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error creant reserves recurrents a l\'API:', e);
+      }
+    }
+    return { ok: false, error: 'Error de connexió al servidor' };
+  },
+
+  async cancelarSerieRecurrent(recurrentId, fromDate = null) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/cancel-serie`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recurrent_id: recurrentId, from_date: fromDate })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error cancel·lant sèrie recurrent a l\'API:', e);
+      }
+    }
+    return { ok: false, error: 'Error de connexió al servidor' };
+  },
+
   async updateReservaAssistencia(id, assistit) {
     if (this.mode === 'api') {
       try {

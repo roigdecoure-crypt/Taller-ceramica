@@ -1158,11 +1158,71 @@
             </div>
           </div>
 
+          <!-- Modalitat de la reserva: Puntual o Recurrent -->
+          <div>
+            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Modalitat de la reserva:</label>
+            <div style="display: flex; gap: 14px; background: #F9FAFB; padding: 8px 12px; border-radius: 6px; border: 1px solid #E5E7EB; flex-wrap: wrap;">
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_mode" value="puntual" checked onchange="toggleAdminReservaMode();">
+                Puntual (un sol dia)
+              </label>
+              <label style="font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="radio" name="admin_res_mode" value="recurrent" onchange="toggleAdminReservaMode();">
+                Recurrent (repetir periòdicament)
+              </label>
+            </div>
+          </div>
+
           <!-- Data de la reserva -->
           <div>
-            <label for="admin-res-data" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Data de la reserva:</label>
+            <label for="admin-res-data" id="admin-res-data-label" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Data de la reserva:</label>
             <input type="date" id="admin-res-data" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;" onchange="handleAdminResDataChange();">
             <div id="admin-res-data-warning" style="display: none; margin-top: 5px; font-size: 12px; color: #DC2626; font-weight: 600; background: #FEF2F2; padding: 6px 10px; border-radius: 4px; border: 1px solid #FCA5A5;"></div>
+          </div>
+
+          <!-- Panell de configuració de la Reserva Recurrent (desplegable) -->
+          <div id="admin-res-group-recurrent" style="display: none; background: #F4F7F5; border: 1px solid #D2E3D8; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 13px; font-weight: 700; color: #5E7E6F; margin-bottom: 10px;">
+              Configuració de la Sèrie Recurrent
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label for="admin-res-frequencia" style="font-size: 11px; font-weight: 700; color: #374151; display: block; margin-bottom: 3px;">Freqüència:</label>
+                <select id="admin-res-frequencia" class="form-control" style="width: 100%; padding: 7px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 5px;" onchange="updateRecurringPreview();">
+                  <option value="setmanal">Cada setmana (Setmanal)</option>
+                  <option value="quinzenal">Cada 2 setmanes (Quinzenal)</option>
+                  <option value="mensual">Cada mes (Mensual)</option>
+                </select>
+              </div>
+              <div>
+                <label for="admin-res-repeticions" style="font-size: 11px; font-weight: 700; color: #374151; display: block; margin-bottom: 3px;">Nombre de sessions:</label>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                  <input type="number" id="admin-res-repeticions" min="2" max="26" value="4" class="form-control" style="width: 60px; padding: 7px 8px; font-size: 13px; text-align: center; border: 1px solid #D1D5DB; border-radius: 5px;" onchange="updateRecurringPreview();">
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="setPresetRepeticions(4);" style="padding: 4px 6px; font-size: 11px;">4s (1m)</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="setPresetRepeticions(8);" style="padding: 4px 6px; font-size: 11px;">8s (2m)</button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="setPresetRepeticions(12);" style="padding: 4px 6px; font-size: 11px;">12s (3m)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+              <label style="font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #374151;">
+                <input type="checkbox" id="admin-res-saltar-tancats" checked onchange="updateRecurringPreview();">
+                <span>Saltar automàticament els dies festius i tancats per completar les sessions</span>
+              </label>
+            </div>
+
+            <!-- Previsualització de les dates calculades de la sèrie -->
+            <div id="admin-recurring-preview-box" style="background: #FFF; border: 1px solid #E5E7EB; border-radius: 6px; padding: 10px; font-size: 12px;">
+              <div style="font-weight: 700; color: #374151; margin-bottom: 6px;" id="admin-recurring-preview-summary">
+                Previsualització de sessions:
+              </div>
+              <div id="admin-recurring-preview-list" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                <!-- Dates generades -->
+              </div>
+            </div>
           </div>
 
           <!-- Activitat i Places -->

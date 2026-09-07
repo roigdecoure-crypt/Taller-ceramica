@@ -1834,6 +1834,8 @@ async function renderAdminDayAppointments(dateStr) {
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
     const isValRegal = r.val_regal === 1 || (r.notes && r.notes.includes('VAL REGAL'));
     const valRegalBadge = isValRegal ? `<span class="badge" style="background: #FDE8E8; color: #831D1D; border: 1px solid #F8B4B4; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">Val regal (${actNom})</span>` : '';
+    const isRecurrent = !!r.recurrent_id;
+    const recurrentBadge = isRecurrent ? `<span class="badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;" title="Sèrie de reserves periòdiques">Recurrent</span>` : '';
 
     return `
       <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">
@@ -1841,7 +1843,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actNom} ${placesBadge} ${valRegalBadge}
+            ${slotDesc} &bull; ${actNom} ${placesBadge} ${valRegalBadge} ${recurrentBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>
@@ -1869,8 +1871,13 @@ async function renderAdminDayAppointments(dateStr) {
               </a>
             ` : ''}
             ${!isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 6px; font-size: 11.5px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta reserva">
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 6px; font-size: 11.5px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta sessió">
                 Cancel·lar
+              </button>
+            ` : ''}
+            ${!isCancelled && isRecurrent ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-serie" data-recurrent-id="${r.recurrent_id}" data-date="${dateStr}" style="padding: 3px 6px; font-size: 11.5px; color: #DC2626; border-color: #FCA5A5; background: #FEF2F2;" title="Cancel·lar totes les sessions futures d'aquesta sèrie">
+                Cancel·lar Sèrie
               </button>
             ` : ''}
           </div>
@@ -1896,7 +1903,7 @@ async function renderAdminDayAppointments(dateStr) {
     });
   });
 
-  // Delegar cancel·lació de reserva
+  // Delegar cancel·lació de reserva individual
   tableBody.querySelectorAll('.btn-app-cancel-reserva').forEach(btn => {
     btn.addEventListener('click', async () => {
       const resId = btn.dataset.resId;
@@ -1911,6 +1918,27 @@ async function renderAdminDayAppointments(dateStr) {
           }
         } catch (err) {
           showToast('Error cancel·lant reserva: ' + err.message, 'error');
+        }
+      }
+    });
+  });
+
+  // Delegar cancel·lació de sèrie recurrent sencera
+  tableBody.querySelectorAll('.btn-app-cancel-serie').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const recId = btn.dataset.recurrentId;
+      const fromDate = btn.dataset.date;
+      if (confirm(`Segur que vols cancel·lar totes les sessions pendents d'aquesta sèrie recurrent a partir del dia ${fromDate}? S'alliberaran totes les places.`)) {
+        try {
+          const res = await Store.cancelarSerieRecurrent(recId, fromDate);
+          if (res && res.ok) {
+            showToast(res.message || 'Sèrie recurrent cancel·lada correctament.', 'info');
+            await refreshAppointmentsDashboard();
+          } else {
+            showToast(res?.error || 'No s\'ha pogut cancel·lar la sèrie', 'error');
+          }
+        } catch (err) {
+          showToast('Error cancel·lant sèrie: ' + err.message, 'error');
         }
       }
     });
@@ -1965,6 +1993,11 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   if (radioExistent) radioExistent.checked = true;
   toggleAdminReservaClientType();
 
+  // Reset a mode puntual
+  const radioPuntual = document.querySelector('input[name="admin_res_mode"][value="puntual"]');
+  if (radioPuntual) radioPuntual.checked = true;
+  toggleAdminReservaMode();
+
   // Netejar inputs de nou client
   const mNom = document.getElementById('admin-res-nou-nom');
   const mTel = document.getElementById('admin-res-nou-tel');
@@ -1993,6 +2026,10 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   const placesInput = document.getElementById('admin-res-places');
   if (placesInput) placesInput.value = 1;
 
+  // Repeticions per defecte
+  const repsInput = document.getElementById('admin-res-repeticions');
+  if (repsInput) repsInput.value = 4;
+
   // Hora inici 10:00
   const horaSelect = document.getElementById('admin-res-hora-inici');
   if (horaSelect) horaSelect.value = '10:00';
@@ -2020,6 +2057,111 @@ function toggleAdminReservaClientType() {
   }
 }
 
+function toggleAdminReservaMode() {
+  const mode = document.querySelector('input[name="admin_res_mode"]:checked')?.value || 'puntual';
+  const grpRec = document.getElementById('admin-res-group-recurrent');
+  const dateLabel = document.getElementById('admin-res-data-label');
+  const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
+
+  if (mode === 'recurrent') {
+    if (grpRec) grpRec.style.display = 'block';
+    if (dateLabel) dateLabel.textContent = "Data d'inici de la sèrie:";
+    const reps = document.getElementById('admin-res-repeticions')?.value || 4;
+    if (submitBtn) submitBtn.textContent = `Confirmar Sèrie Recurrent (${reps} sessions)`;
+    updateRecurringPreview();
+  } else {
+    if (grpRec) grpRec.style.display = 'none';
+    if (dateLabel) dateLabel.textContent = "Data de la reserva:";
+    if (submitBtn) submitBtn.textContent = "Confirmar Reserva";
+  }
+}
+
+function setPresetRepeticions(n) {
+  const input = document.getElementById('admin-res-repeticions');
+  if (input) {
+    input.value = n;
+    const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
+    if (submitBtn && document.querySelector('input[name="admin_res_mode"]:checked')?.value === 'recurrent') {
+      submitBtn.textContent = `Confirmar Sèrie Recurrent (${n} sessions)`;
+    }
+    updateRecurringPreview();
+  }
+}
+
+async function updateRecurringPreview() {
+  const mode = document.querySelector('input[name="admin_res_mode"]:checked')?.value || 'puntual';
+  if (mode !== 'recurrent') return;
+
+  const dataInici = document.getElementById('admin-res-data')?.value;
+  const frequencia = document.getElementById('admin-res-frequencia')?.value || 'setmanal';
+  const repeticions = parseInt(document.getElementById('admin-res-repeticions')?.value || 4, 10);
+  const activitatId = document.getElementById('admin-res-activitat')?.value || 'torn';
+  const places = parseInt(document.getElementById('admin-res-places')?.value || 1, 10);
+  const saltarTancats = document.getElementById('admin-res-saltar-tancats')?.checked !== false;
+
+  const summaryEl = document.getElementById('admin-recurring-preview-summary');
+  const listEl = document.getElementById('admin-recurring-preview-list');
+  const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
+
+  if (submitBtn) {
+    submitBtn.textContent = `Confirmar Sèrie Recurrent (${repeticions} sessions)`;
+  }
+
+  if (!dataInici) {
+    if (listEl) listEl.innerHTML = '<div style="color: #6B7280; padding: 6px;">Selecciona una data d\'inici per veure les sessions.</div>';
+    return;
+  }
+
+  if (listEl) {
+    listEl.innerHTML = '<div style="color: #6B7280; padding: 6px;">Calculant sessions i disponibilitat...</div>';
+  }
+
+  try {
+    const res = await Store.previewReservesRecurrents({
+      data_inici: dataInici,
+      frequencia: frequencia,
+      repeticions: repeticions,
+      activitat_id: activitatId,
+      places: places,
+      saltar_tancats: saltarTancats
+    });
+
+    if (res && res.ok && Array.isArray(res.preview)) {
+      if (summaryEl) {
+        summaryEl.textContent = `Sessions programades (${res.preview.length} demanades, ${frequencia}):`;
+      }
+      listEl.innerHTML = res.preview.map((p, idx) => {
+        const dFmt = formatCatalanFullDate(p.data);
+        const isOk = p.disponible;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-radius: 4px; background: ${isOk ? '#F0FDF4' : '#FEF2F2'}; border: 1px solid ${isOk ? '#BBF7D0' : '#FECACA'};">
+            <div>
+              <strong style="color: #111827; font-size: 12px;">${idx + 1}. ${dFmt}</strong>
+            </div>
+            <div>
+              <span class="badge ${isOk ? 'badge-success' : 'badge-danger'}" style="font-size: 11px; padding: 2px 6px;">
+                ${isOk ? `Obert (${p.places_lliures_activitat} pl. lliures)` : `Complet (${p.places_lliures_activitat} lliures)`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (res.dates_saltades && res.dates_saltades.length > 0) {
+        listEl.innerHTML += `
+          <div style="font-size: 11px; color: #92400E; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 4px; padding: 4px 8px; margin-top: 4px;">
+            S'han saltat ${res.dates_saltades.length} dia(es) per tancament/festiu: ${res.dates_saltades.map(s => s.data).join(', ')}.
+          </div>
+        `;
+      }
+    } else {
+      if (listEl) listEl.innerHTML = `<div style="color: #DC2626; padding: 6px;">${res?.error || 'No s\'han pogut calcular les dates'}</div>`;
+    }
+  } catch (err) {
+    if (listEl) listEl.innerHTML = `<div style="color: #DC2626; padding: 6px;">Error: ${err.message}</div>`;
+  }
+}
+
 function handleAdminResDataChange() {
   const dateInput = document.getElementById('admin-res-data');
   const warningDiv = document.getElementById('admin-res-data-warning');
@@ -2041,14 +2183,20 @@ function handleAdminResDataChange() {
   } else {
     warningDiv.style.display = 'none';
   }
+
+  // Actualitzar previsualització recurrent si s'escau
+  if (document.querySelector('input[name="admin_res_mode"]:checked')?.value === 'recurrent') {
+    updateRecurringPreview();
+  }
 }
 
 async function handleAdminSubmitNovaReserva(e) {
   if (e) e.preventDefault();
   const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
+  const originalBtnText = submitBtn ? submitBtn.textContent : 'Confirmar Reserva';
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Confirmant...';
+    submitBtn.textContent = 'Processant...';
   }
 
   const clientType = document.querySelector('input[name="admin_res_client_type"]:checked')?.value || 'existent';
@@ -2062,7 +2210,7 @@ async function handleAdminSubmitNovaReserva(e) {
     studentId = sel ? sel.value : '';
     if (!studentId) {
       alert('Si us plau, selecciona un alumne registrat a la llista.');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
       return;
     }
     const opt = sel.options[sel.selectedIndex];
@@ -2075,7 +2223,7 @@ async function handleAdminSubmitNovaReserva(e) {
     studentEmail = document.getElementById('admin-res-nou-email')?.value?.trim();
     if (!studentNom || !studentTel) {
       alert('Cal indicar el nom complet i el telèfon de contacte del client.');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
       return;
     }
     studentId = `CLI-${Date.now().toString().slice(-4)}`;
@@ -2084,12 +2232,13 @@ async function handleAdminSubmitNovaReserva(e) {
   const dataRes = document.getElementById('admin-res-data')?.value;
   if (!dataRes) {
     alert('Cal indicar la data de la reserva.');
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Confirmar Reserva'; }
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalBtnText; }
     return;
   }
 
   const actSelect = document.getElementById('admin-res-activitat');
   const actId = actSelect ? actSelect.value : 'torn';
+  const actOpt = actSelect ? actSelect.options[actSelect.selectedIndex] : null;
   const actNom = actOpt ? actOpt.text.split('(')[0].trim() : 'Torn';
 
   const places = parseInt(document.getElementById('admin-res-places')?.value || 1, 10);
@@ -2099,46 +2248,91 @@ async function handleAdminSubmitNovaReserva(e) {
   const horaFi = horaSelect?.options[horaSelect.selectedIndex]?.dataset.fi || '12:00';
 
   const notes = document.getElementById('admin-res-notes')?.value?.trim() || '';
+  const mode = document.querySelector('input[name="admin_res_mode"]:checked')?.value || 'puntual';
 
   try {
-    const res = await Store.crearReserva({
-      student_id: studentId,
-      student_nom: studentNom,
-      telefon: studentTel,
-      email: studentEmail,
-      data: dataRes,
-      franja_id: 'M1',
-      franja: 'M1',
-      activitat: actNom,
-      activitat_id: actId,
-      places: places,
-      hora_inici: horaInici,
-      hora_fi: horaFi,
-      hores: 2.0,
-      notes: notes
-    });
+    if (mode === 'recurrent') {
+      const frequencia = document.getElementById('admin-res-frequencia')?.value || 'setmanal';
+      const repeticions = parseInt(document.getElementById('admin-res-repeticions')?.value || 4, 10);
+      const saltarTancats = document.getElementById('admin-res-saltar-tancats')?.checked !== false;
 
-    if (res && res.ok) {
-      showToast(`Reserva confirmada amb èxit per a ${studentNom}!`, 'success');
-      if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
-      closeAdminNovaReservaModal();
+      const res = await Store.crearReservesRecurrents({
+        student_id: studentId,
+        student_nom: studentNom,
+        telefon: studentTel,
+        email: studentEmail,
+        data_inici: dataRes,
+        frequencia: frequencia,
+        repeticions: repeticions,
+        saltar_tancats: saltarTancats,
+        franja_id: 'M1',
+        franja: 'M1',
+        activitat: actNom,
+        activitat_id: actId,
+        places: places,
+        hora_inici: horaInici,
+        hora_fi: horaFi,
+        hores: 2.0,
+        notes: notes
+      });
 
-      adminSelectedDate = dataRes;
-      await refreshAppointmentsDashboard();
+      if (res && res.ok) {
+        showToast(res.message || `Sèrie de ${res.total_creades} reserves recurrents creada amb èxit!`, 'success');
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        closeAdminNovaReservaModal();
 
-      if (adminReservesCalendar) {
-        adminReservesCalendar.selectedDate = dataRes;
-        await adminReservesCalendar.refresh();
+        adminSelectedDate = dataRes;
+        await refreshAppointmentsDashboard();
+
+        if (adminReservesCalendar) {
+          adminReservesCalendar.selectedDate = dataRes;
+          await adminReservesCalendar.refresh();
+        }
+      } else {
+        alert(`No s'ha pogut crear la sèrie recurrent: ${(res && res.error) || 'Aforament complet o error en les dates'}`);
       }
+
     } else {
-      alert(`No s'ha pogut crear la reserva: ${(res && res.error) || 'Aforament complet o dia no disponible'}`);
+      // Reserva puntual
+      const res = await Store.crearReserva({
+        student_id: studentId,
+        student_nom: studentNom,
+        telefon: studentTel,
+        email: studentEmail,
+        data: dataRes,
+        franja_id: 'M1',
+        franja: 'M1',
+        activitat: actNom,
+        activitat_id: actId,
+        places: places,
+        hora_inici: horaInici,
+        hora_fi: horaFi,
+        hores: 2.0,
+        notes: notes
+      });
+
+      if (res && res.ok) {
+        showToast(`Reserva confirmada amb èxit per a ${studentNom}!`, 'success');
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        closeAdminNovaReservaModal();
+
+        adminSelectedDate = dataRes;
+        await refreshAppointmentsDashboard();
+
+        if (adminReservesCalendar) {
+          adminReservesCalendar.selectedDate = dataRes;
+          await adminReservesCalendar.refresh();
+        }
+      } else {
+        alert(`No s'ha pogut crear la reserva: ${(res && res.error) || 'Aforament complet o dia no disponible'}`);
+      }
     }
   } catch (err) {
     alert(`Error en crear la reserva: ${err.message}`);
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Confirmar Reserva';
+      submitBtn.textContent = originalBtnText;
     }
   }
 }
@@ -2148,6 +2342,9 @@ if (typeof window !== 'undefined') {
   window.openAdminNovaReservaModal = openAdminNovaReservaModal;
   window.closeAdminNovaReservaModal = closeAdminNovaReservaModal;
   window.toggleAdminReservaClientType = toggleAdminReservaClientType;
+  window.toggleAdminReservaMode = toggleAdminReservaMode;
+  window.setPresetRepeticions = setPresetRepeticions;
+  window.updateRecurringPreview = updateRecurringPreview;
   window.handleAdminResDataChange = handleAdminResDataChange;
   window.handleAdminSubmitNovaReserva = handleAdminSubmitNovaReserva;
   window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
