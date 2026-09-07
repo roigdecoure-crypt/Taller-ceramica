@@ -1547,7 +1547,7 @@ async function openReservesModal(preselectedDate) {
   if (!modal) return;
   modal.classList.add('active');
 
-  const targetDate = preselectedDate || adminSelectedDate || getAdminLocalDate();
+  const targetDate = preselectedDate || null;
 
   try {
     const cfg = await Store.getConfig();
@@ -1577,20 +1577,21 @@ async function openReservesModal(preselectedDate) {
       containerId: 'admin-reserves-calendar-mount',
       isAdmin: true,
       allStudents: allStudents,
+      initialDate: targetDate,
       onBookingSuccess: async () => {
         showToast('Reserva confirmada i sincronitzada.', 'success');
         await refreshAppointmentsDashboard();
       }
     });
-    if (targetDate) {
-      adminReservesCalendar.selectedDate = targetDate;
-    }
+    adminReservesCalendar.selectedDate = targetDate;
     await adminReservesCalendar.init();
   } else {
     adminReservesCalendar.setAllStudents(allStudents);
+    adminReservesCalendar.selectedDate = targetDate;
     if (targetDate) {
-      adminReservesCalendar.selectedDate = targetDate;
       await adminReservesCalendar.loadDay(targetDate);
+    } else {
+      adminReservesCalendar.dayData = null;
     }
     await adminReservesCalendar.refresh();
   }
