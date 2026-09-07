@@ -702,6 +702,64 @@ class TestCeramicsBackend(unittest.TestCase):
             self.assertIsNone(server.find_student_by_code(cur, 'a'))
             self.assertIsNone(server.find_student_by_code(cur, '999999999999'))
 
+    def test_20_admin_pin_auth_and_change(self):
+        """
+        Comprova l'autenticació amb PIN mestre d'administració i el canvi de PIN.
+        """
+        # 1. Verificació de PIN inicial per defecte (1234)
+        self.assertTrue(server.verify_admin_pin('1234'))
+        self.assertFalse(server.verify_admin_pin('0000'))
+        self.assertFalse(server.verify_admin_pin(''))
+
+        # 2. Modificació del PIN a la base de dades
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('admin_pin', '9876')")
+            conn.commit()
+
+        self.assertTrue(server.verify_admin_pin('9876'))
+        self.assertFalse(server.verify_admin_pin('1234'))
+
+        # 3. Restaurar PIN per defecte (1234)
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('admin_pin', '1234')")
+            conn.commit()
+
+        self.assertTrue(server.verify_admin_pin('1234'))
+
+    def test_21_backup_and_restore_system(self):
+        """
+        Comprova la creació de snapshots diaris i manuals, i la capacitat de restauració.
+        """
+        # 1. Crear snapshot manual
+        filename = server.create_manual_snapshot(prefix="test_manual")
+        self.assertTrue(filename.startswith("test_manual_"))
+        self.assertTrue(filename.endswith(".db"))
+        filepath = os.path.join(server.BACKUP_DIR, filename)
+        self.assertTrue(os.path.exists(filepath))
+        self.assertGreater(os.path.getsize(filepath), 0)
+
+        # 2. Comprovar que és una base de dades SQLite vàlida
+        with sqlite3.connect(filepath) as test_conn:
+            cur = test_conn.cursor()
+            cur.execute("SELECT COUNT(*) as c FROM alumnes")
+            count = cur.fetchone()[0]
+            self.assertGreater(count, 0)
+
+        # 3. Provar snapshot diari
+        server.create_daily_snapshot_if_needed()
+        today_str = server.get_now().strftime('%Y-%m-%d')
+        daily_file = os.path.join(server.BACKUP_DIR, f"ceramica_{today_str}.db")
+        self.assertTrue(os.path.exists(daily_file))
+
+        # Neteja del fitxer test_manual
+        try:
+            os.remove(filepath)
+        except Exception:
+            pass
+
 if __name__ == '__main__':
     unittest.main()
+
 

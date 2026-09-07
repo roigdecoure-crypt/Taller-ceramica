@@ -9,19 +9,26 @@ let liveTimerInterval = null;
 // Inicialització
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', async () => {
+    initAdminAuth();
     setupEventListeners();
     startLiveClock();
 
-    try {
-      await Store.init();
-    } catch (err) {
-      console.warn('Store.init warning:', err);
+    const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
+    if (isAuth) {
+      await loadAdminDashboardData();
     }
-
-    loadConfig();
-    await refreshStudentsList();
-    await initAppointmentsDashboard();
   });
+}
+
+async function loadAdminDashboardData() {
+  try {
+    await Store.init();
+  } catch (err) {
+    console.warn('Store.init warning:', err);
+  }
+  loadConfig();
+  await refreshStudentsList();
+  await initAppointmentsDashboard();
 }
 
 function showToast(message, type = 'info') {
@@ -1012,17 +1019,80 @@ function setupEventListeners() {
   // Modal Backup & Export
   document.getElementById('btn-exportar')?.addEventListener('click', () => {
     document.getElementById('modal-backup-backdrop').classList.add('active');
+    loadSnapshotsList();
   });
   document.getElementById('btn-sidebar-export')?.addEventListener('click', () => {
     document.getElementById('modal-backup-backdrop').classList.add('active');
+    loadSnapshotsList();
   });
 
-  document.getElementById('btn-download-json').addEventListener('click', () => {
+  // Botó per crear snapshot manual immediat
+  document.getElementById('btn-create-snapshot')?.addEventListener('click', async () => {
+    try {
+      showToast('Creant snapshot de la base de dades...', 'info');
+      const res = await fetch('/api/admin/backups', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(data.message || 'Snapshot creat correctament!', 'success');
+        await loadSnapshotsList();
+      } else {
+        showToast(data.error || 'Error creant snapshot', 'error');
+      }
+    } catch (err) {
+      showToast('Error de connexió: ' + err.message, 'error');
+    }
+  });
+
+  // Refrescar llista de snapshots
+  document.getElementById('btn-refresh-snapshots')?.addEventListener('click', loadSnapshotsList);
+
+  // Canviar PIN d'Administració
+  document.getElementById('btn-cfg-change-pin')?.addEventListener('click', async () => {
+    const curInput = document.getElementById('cfg-pin-current');
+    const newInput = document.getElementById('cfg-pin-new');
+    const statusEl = document.getElementById('cfg-pin-status');
+    const oldPin = curInput.value.trim();
+    const newPin = newInput.value.trim();
+
+    if (!oldPin || !newPin) {
+      statusEl.textContent = 'Cal omplir el PIN actual i el nou PIN.';
+      statusEl.style.color = '#D32F2F';
+      statusEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/change-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPin, newPin })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        statusEl.textContent = data.message || 'PIN actualitzat correctament!';
+        statusEl.style.color = '#2E7D32';
+        statusEl.style.display = 'block';
+        curInput.value = '';
+        newInput.value = '';
+        showToast('PIN d\'administrador actualitzat!', 'success');
+      } else {
+        statusEl.textContent = data.error || 'Error actualitzant el PIN.';
+        statusEl.style.color = '#D32F2F';
+        statusEl.style.display = 'block';
+      }
+    } catch (err) {
+      statusEl.textContent = 'Error de connexió: ' + err.message;
+      statusEl.style.color = '#D32F2F';
+      statusEl.style.display = 'block';
+    }
+  });
+
+  document.getElementById('btn-download-json')?.addEventListener('click', () => {
     Store.exportBackupJson();
     showToast('Còpia de seguretat descarregada!', 'success');
   });
 
-  document.getElementById('input-restore-json').addEventListener('change', async (e) => {
+  document.getElementById('input-restore-json')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (confirm('Segur que vols restaurar aquesta còpia? Es sobreescriuran les dades.')) {
@@ -2083,6 +2153,175 @@ if (typeof window !== 'undefined') {
   window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
   window.refreshAppointmentsDashboard = refreshAppointmentsDashboard;
   window.initAppointmentsDashboard = initAppointmentsDashboard;
+  window.initAdminAuth = initAdminAuth;
+  window.loadSnapshotsList = loadSnapshotsList;
+}
+
+// --- AUTENTICACIÓ I PANELL DE CONTROL AMB PIN ---
+function initAdminAuth() {
+  const lockScreen = document.getElementById('admin-lock-screen');
+  const authForm = document.getElementById('form-admin-auth');
+  const pinInput = document.getElementById('input-admin-pin');
+  const pinError = document.getElementById('admin-pin-error');
+  const logoutBtn = document.getElementById('btn-sidebar-logout');
+
+  const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
+  if (isAuth) {
+    if (lockScreen) lockScreen.style.display = 'none';
+  } else {
+    if (lockScreen) lockScreen.style.display = 'flex';
+    if (pinInput) setTimeout(() => pinInput.focus(), 150);
+  }
+
+  if (authForm) {
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pin = pinInput ? pinInput.value.trim() : '';
+      if (!pin) return;
+
+      const submitBtn = document.getElementById('btn-submit-admin-pin');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Comprovant...';
+      }
+      if (pinError) pinError.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          sessionStorage.setItem('roig_admin_auth', '1');
+          if (lockScreen) lockScreen.style.display = 'none';
+          showToast('Sessió d\'administrador iniciada', 'success');
+          await loadAdminDashboardData();
+        } else {
+          if (pinError) {
+            pinError.textContent = data.error || 'PIN incorrecte. Torna-ho a provar.';
+            pinError.style.display = 'block';
+          }
+          if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+          }
+        }
+      } catch (err) {
+        if (pinError) {
+          pinError.textContent = 'Error de connexió: ' + err.message;
+          pinError.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Desbloquejar Panell \u2192';
+        }
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      if (confirm('Vols tancar la sessió d\'administració?')) {
+        sessionStorage.removeItem('roig_admin_auth');
+        window.location.reload();
+      }
+    });
+  }
+}
+
+// --- GESTIÓ DE SNAPSHOTS I RESTAURACIÓ ---
+async function loadSnapshotsList() {
+  const container = document.getElementById('snapshots-list-container');
+  if (!container) return;
+
+  container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-muted); font-size: 12px;">Carregant còpies de seguretat...</div>';
+
+  try {
+    const res = await fetch('/api/admin/backups');
+    const data = await res.json();
+    if (!data.ok || !data.backups || data.backups.length === 0) {
+      container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-muted); font-size: 12px;">No hi ha cap còpia de seguretat disponible.</div>';
+      return;
+    }
+
+    let html = `
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+        <thead>
+          <tr style="background: #FAF8F5; border-bottom: 1px solid var(--color-border); color: var(--color-muted);">
+            <th style="padding: 8px 10px; font-weight: 600;">Fitxer / Tipus</th>
+            <th style="padding: 8px 10px; font-weight: 600;">Data</th>
+            <th style="padding: 8px 10px; font-weight: 600;">Mida</th>
+            <th style="padding: 8px 10px; font-weight: 600; text-align: right;">Accions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    data.backups.forEach(b => {
+      const tipusLabel = b.tipus === 'actual' ? '<span style="color: #2E7D32; font-weight: 600;">[En ús]</span>'
+        : (b.tipus === 'diari' ? '<span style="color: #1976D2;">[Diari]</span>'
+        : (b.tipus === 'pre_restauracio' ? '<span style="color: #E65100;">[Pre-restauració]</span>' : '<span style="color: #5D4037;">[Manual]</span>'));
+
+      const downloadUrl = `/api/admin/backups/download?file=${encodeURIComponent(b.filename)}`;
+      
+      let actionsHtml = `<a href="${downloadUrl}" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 7px; text-decoration: none;" download>Descarregar</a>`;
+      if (b.isRestoreable) {
+        actionsHtml += ` <button type="button" class="btn btn-outline btn-sm btn-restore-snapshot" data-file="${b.filename}" style="font-size: 11px; padding: 3px 7px; color: #D32F2F; border-color: #D32F2F; margin-left: 4px;">Restaurar</button>`;
+      }
+
+      html += `
+        <tr style="border-bottom: 1px solid #EFEAE6;">
+          <td style="padding: 8px 10px; font-family: monospace; font-size: 11px;">
+            ${tipusLabel} ${b.filename}
+          </td>
+          <td style="padding: 8px 10px; color: var(--color-muted); white-space: nowrap;">${b.data}</td>
+          <td style="padding: 8px 10px; color: var(--color-muted);">${b.midaFormatted}</td>
+          <td style="padding: 8px 10px; text-align: right; white-space: nowrap;">
+            ${actionsHtml}
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+
+    // Connectar botons de restauració
+    container.querySelectorAll('.btn-restore-snapshot').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const fileToRestore = e.currentTarget.getAttribute('data-file');
+        if (!fileToRestore) return;
+
+        const confirmMsg = `ATENCIÓ: Vols restaurar la base de dades a la versió "${fileToRestore}"?\n\nEs crearà automàticament una còpia de seguretat de l'estat actual abans de restaurar.`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          showToast('Restaurant base de dades...', 'info');
+          const restoreRes = await fetch('/api/admin/backups/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: fileToRestore })
+          });
+          const resJson = await restoreRes.json();
+          if (resJson.ok) {
+            showToast(resJson.message || 'Base de dades restaurada correctament!', 'success');
+            await loadSnapshotsList();
+            await loadAdminDashboardData();
+          } else {
+            showToast(resJson.error || 'Error en restaurar la base de dades.', 'error');
+          }
+        } catch (restoreErr) {
+          showToast('Error de connexió: ' + restoreErr.message, 'error');
+        }
+      });
+    });
+
+  } catch (err) {
+    container.innerHTML = `<div style="padding: 16px; text-align: center; color: #D32F2F; font-size: 12px;">Error carregant còpies de seguretat: ${err.message}</div>`;
+  }
 }
 
 

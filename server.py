@@ -81,13 +81,82 @@ PORT = int(os.environ.get('PORT', 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'data', 'ceramica.db')
 
-# Assegurar directori data/
+# Assegurar directoris data/ i data/backups/
 os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+BACKUP_DIR = os.path.join(BASE_DIR, 'data', 'backups')
+os.makedirs(BACKUP_DIR, exist_ok=True)
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def clean_old_backups(days=30):
+    """Purga automàticament els fitxers de còpia més antics de X dies."""
+    try:
+        if not os.path.exists(BACKUP_DIR):
+            return
+        now_ts = time.time()
+        max_age = days * 86400
+        for f in os.listdir(BACKUP_DIR):
+            if f.endswith('.db'):
+                fp = os.path.join(BACKUP_DIR, f)
+                if os.path.isfile(fp) and (now_ts - os.path.getmtime(fp)) > max_age:
+                    try:
+                        os.remove(fp)
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"[Backup] Error netejant backups antics: {e}")
+
+def create_daily_snapshot_if_needed():
+    """Crea una còpia de seguretat SQLite del dia d'avui si encara no existeix."""
+    try:
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        today_str = get_now().strftime('%Y-%m-%d')
+        daily_path = os.path.join(BACKUP_DIR, f"ceramica_{today_str}.db")
+        if not os.path.exists(daily_path) and os.path.exists(DB_PATH):
+            with get_db() as src_conn:
+                dest_conn = sqlite3.connect(daily_path)
+                src_conn.backup(dest_conn)
+                dest_conn.close()
+            clean_old_backups(30)
+    except Exception as e:
+        print(f"[Backup] Error creant snapshot diari: {e}")
+
+def create_manual_snapshot(prefix="ceramica_manual"):
+    """Crea un snapshot de la base de dades a petició."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    ts = get_now().strftime('%Y%m%d_%H%M%S')
+    filename = f"{prefix}_{ts}.db"
+    dest_path = os.path.join(BACKUP_DIR, filename)
+    with get_db() as src_conn:
+        dest_conn = sqlite3.connect(dest_path)
+        src_conn.backup(dest_conn)
+        dest_conn.close()
+    return filename
+
+def verify_admin_pin(input_pin):
+    """Verifica si el PIN facilitat coincideix amb el PIN configurat a la BD o env."""
+    if not input_pin:
+        return False
+    configured_pin = None
+    env_pin = os.environ.get('ADMIN_PIN')
+    if env_pin:
+        configured_pin = env_pin.strip()
+    else:
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT valor FROM configuracio WHERE clau = 'admin_pin'")
+                row = cursor.fetchone()
+                if row and row['valor']:
+                    configured_pin = str(row['valor']).strip()
+        except Exception:
+            pass
+    if not configured_pin:
+        configured_pin = '1234'
+    return str(input_pin).strip() == configured_pin
 
 def init_db():
     with get_db() as conn:
@@ -229,7 +298,8 @@ def init_db():
             'whatsapp_meta_template_confirmacio': "reserva_confirmada",
             'whatsapp_meta_template_recordatori_48h': "reserva_recordatori_48h",
             'whatsapp_meta_template_recordatori_dia': "reserva_recordatori_dia",
-            'franges_horaries': default_franges_json
+            'franges_horaries': default_franges_json,
+            'admin_pin': os.environ.get('ADMIN_PIN', '1234')
         }
         for k, v in default_config.items():
             cursor.execute('INSERT OR IGNORE INTO configuracio (clau, valor) VALUES (?, ?)', (k, v))
@@ -284,6 +354,7 @@ def init_db():
         conn.commit()
 
 init_db()
+create_daily_snapshot_if_needed()
 
 def get_google_sheets_url():
     """Obté l'URL de Google Sheets des de la base de dades (prioritari) o variable d'entorn (Render)"""
@@ -1352,6 +1423,66 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'alumnesTotals': tot_alumnes, 'alumnesAlTaller': alumnes_actius, 'timestamp': datetime.now().isoformat()})
                 return
 
+            elif path == '/api/admin/backups':
+                create_daily_snapshot_if_needed()
+                backups_list = []
+                # 1. Base de dades actual
+                if os.path.exists(DB_PATH):
+                    live_size = os.path.getsize(DB_PATH)
+                    live_mtime = datetime.fromtimestamp(os.path.getmtime(DB_PATH))
+                    backups_list.append({
+                        'filename': 'ceramica.db',
+                        'tipus': 'actual',
+                        'data': live_mtime.strftime('%Y-%m-%d %H:%M:%S'),
+                        'midaBytes': live_size,
+                        'midaFormatted': f"{live_size / 1024:.1f} KB" if live_size < 1048576 else f"{live_size / 1048576:.1f} MB",
+                        'isRestoreable': False
+                    })
+                
+                # 2. Còpies històriques
+                if os.path.exists(BACKUP_DIR):
+                    for fname in sorted(os.listdir(BACKUP_DIR), reverse=True):
+                        if fname.endswith('.db'):
+                            fpath = os.path.join(BACKUP_DIR, fname)
+                            if os.path.isfile(fpath):
+                                sz = os.path.getsize(fpath)
+                                mtime = datetime.fromtimestamp(os.path.getmtime(fpath))
+                                b_type = 'diari' if 'ceramica_20' in fname else ('pre_restauracio' if 'pre_restore' in fname else 'manual')
+                                backups_list.append({
+                                    'filename': fname,
+                                    'tipus': b_type,
+                                    'data': mtime.strftime('%Y-%m-%d %H:%M:%S'),
+                                    'midaBytes': sz,
+                                    'midaFormatted': f"{sz / 1024:.1f} KB" if sz < 1048576 else f"{sz / 1048576:.1f} MB",
+                                    'isRestoreable': True
+                                })
+                self.send_json({'ok': True, 'backups': backups_list})
+                return
+
+            elif path == '/api/admin/backups/download':
+                fname = params.get('file', ['ceramica.db'])[0].strip()
+                # Seguretat: evitar path traversal
+                safe_name = os.path.basename(fname)
+                if safe_name == 'ceramica.db':
+                    target_path = DB_PATH
+                else:
+                    target_path = os.path.join(BACKUP_DIR, safe_name)
+                
+                if not os.path.exists(target_path) or not os.path.isfile(target_path):
+                    self.send_json({'ok': False, 'error': 'Arxiu de còpia no trobat'}, 404)
+                    return
+                
+                with open(target_path, 'rb') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/x-sqlite3')
+                self.send_header('Content-Disposition', f'attachment; filename="{safe_name}"')
+                self.send_header('Content-Length', str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
             elif path == '/api/alumnes':
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -1550,7 +1681,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute('SELECT clau, valor FROM configuracio')
                     rows = cursor.fetchall()
-                    cfg = {r['clau']: r['valor'] for r in rows}
+                    cfg = {r['clau']: r['valor'] for r in rows if r['clau'] != 'admin_pin'}
                 self.send_json({'ok': True, 'config': cfg})
                 return
 
@@ -1567,7 +1698,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('SELECT * FROM reserves')
                     reserves = [row_to_dict(r) for r in cursor.fetchall()]
                     cursor.execute('SELECT * FROM configuracio')
-                    config = {r['clau']: r['valor'] for r in cursor.fetchall()}
+                    config = {r['clau']: r['valor'] for r in cursor.fetchall() if r['clau'] != 'admin_pin'}
                 self.send_json({
                     'versio': '1.0',
                     'timestamp': get_now().strftime('%Y-%m-%dT%H:%M:%S'),
@@ -1607,7 +1738,60 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 data = {}
 
         try:
-            if path == '/api/alumnes':
+            if path == '/api/admin/auth':
+                pin = str(data.get('pin', '')).strip()
+                if verify_admin_pin(pin):
+                    self.send_json({'ok': True, 'token': 'roig_admin_ok', 'message': 'Autenticació correcta'})
+                else:
+                    self.send_json({'ok': False, 'error': 'PIN incorrecte'}, 401)
+                return
+
+            elif path == '/api/admin/change-pin':
+                old_pin = str(data.get('oldPin', '')).strip()
+                new_pin = str(data.get('newPin', '')).strip()
+                if not verify_admin_pin(old_pin):
+                    self.send_json({'ok': False, 'error': 'El PIN actual no és correcte'}, 401)
+                    return
+                if len(new_pin) < 4:
+                    self.send_json({'ok': False, 'error': 'El nou PIN ha de tenir com a mínim 4 caràcters'}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('admin_pin', ?)", (new_pin,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'PIN d\'administrador actualitzat correctament'})
+                return
+
+            elif path == '/api/admin/backups':
+                try:
+                    filename = create_manual_snapshot()
+                    self.send_json({'ok': True, 'filename': filename, 'message': f'Còpia de seguretat creada: {filename}'})
+                except Exception as e:
+                    self.send_json({'ok': False, 'error': f'Error creant còpia: {str(e)}'}, 500)
+                return
+
+            elif path == '/api/admin/backups/restore':
+                fname = data.get('filename', '').strip()
+                if not fname:
+                    self.send_json({'ok': False, 'error': 'Cal especificar el nom de la còpia a restaurar'}, 400)
+                    return
+                safe_name = os.path.basename(fname)
+                backup_file = os.path.join(BACKUP_DIR, safe_name)
+                if not os.path.exists(backup_file) or not safe_name.endswith('.db'):
+                    self.send_json({'ok': False, 'error': 'Arxiu de còpia no trobat o invàlid'}, 404)
+                    return
+                try:
+                    # Crear backup de protecció de l'estat actual abans de restaurar
+                    create_manual_snapshot(prefix="ceramica_pre_restore")
+                    with sqlite3.connect(backup_file) as src_conn:
+                        with get_db() as dest_conn:
+                            src_conn.backup(dest_conn)
+                    self.send_json({'ok': True, 'message': f'Base de dades restaurada amb èxit des de {safe_name}'})
+                except Exception as e:
+                    self.send_json({'ok': False, 'error': f'Error restaurant còpia: {str(e)}'}, 500)
+                return
+
+            elif path == '/api/alumnes':
                 # Crear o actualitzar alumne
                 student_id = (data.get('id') or '').strip()
                 nom = (data.get('nom') or '').strip()
