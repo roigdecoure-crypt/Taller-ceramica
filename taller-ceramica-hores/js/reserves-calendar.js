@@ -33,7 +33,7 @@ class ReservesCalendar {
     const now = new Date();
     this.currentYear = now.getFullYear();
     this.currentMonth = now.getMonth() + 1; // 1-12
-    this.selectedDate = this._getInitialOpenDate();
+    this.selectedDate = options.initialDate || null;
 
     this.monthData = null;
     this.dayData = null;
@@ -116,7 +116,11 @@ class ReservesCalendar {
 
   async refresh() {
     await this.loadMonth(this.currentYear, this.currentMonth);
-    await this.loadDay(this.selectedDate);
+    if (this.selectedDate) {
+      await this.loadDay(this.selectedDate);
+    } else {
+      this.dayData = null;
+    }
     this.render();
   }
 
@@ -134,7 +138,12 @@ class ReservesCalendar {
   }
 
   async loadDay(dateStr) {
-    this.selectedDate = dateStr;
+    this.selectedDate = dateStr || null;
+    if (!dateStr) {
+      this.dayData = null;
+      this.loadingDay = false;
+      return;
+    }
     this.loadingDay = true;
     try {
       if (typeof Store !== 'undefined' && Store.getDisponibilitat) {
@@ -155,6 +164,14 @@ class ReservesCalendar {
     } finally {
       this.loadingDay = false;
     }
+  }
+
+  async loadMonthData(year, month) {
+    return await this.loadMonth(year, month);
+  }
+
+  async loadDayData(dateStr) {
+    return await this.loadDay(dateStr);
   }
 
   render() {
@@ -344,7 +361,7 @@ class ReservesCalendar {
         <div class="${cellClasses.join(' ')}" data-date="${dateStr}" ${isRest ? 'title="Tancat per descans setmanal (Dilluns i Dimarts). Obrim de Dimecres a Diumenge."' : ''}>
           <div class="day-header">
             <span class="day-num">${d}</span>
-            ${isSelected ? (isToday ? '<span style="font-size:9px; font-weight:800; background:var(--color-primary); color:#FFF; padding:1px 5px; border-radius:3px;">AVUI (TRIAT)</span>' : '<span style="font-size:9px; font-weight:800; background:var(--color-primary); color:#FFF; padding:1px 5px; border-radius:3px;">TRIAT</span>') : (isToday ? '<span style="font-size:9px; font-weight:800; color:var(--color-primary);">AVUI</span>' : '')}
+            ${isToday ? '<span style="font-size:9px; font-weight:800; color:var(--color-primary);">AVUI</span>' : ''}
           </div>
           <div>
             ${badgeHtml}
@@ -355,11 +372,11 @@ class ReservesCalendar {
 
     return `
       <div class="res-calendar-card">
-        <!-- Indicador clar del Pas 1 -->
+        <!-- Indicador clar de selecció -->
         <div class="res-step-banner-p1" style="background: #FDF9F7; border: 1.5px solid #EFE4DC; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
           <div>
-            <div style="font-size: 13px; font-weight: 800; color: var(--color-primary);">Pas 1: Tria el dia que vols venir al taller</div>
-            <div style="font-size: 12px; color: var(--color-muted);">Toca qualsevol dia disponible del calendari per veure'n els horaris i reservar.</div>
+            <div style="font-size: 13px; font-weight: 800; color: var(--color-primary);">Tria el dia que vols venir al taller</div>
+            <div style="font-size: 12px; color: var(--color-muted);">Toca qualsevol data disponible del calendari per veure els torns i reservar.</div>
           </div>
           <div style="font-size: 11px; background: #FFF; border: 1px solid #E5DDD5; padding: 4px 8px; border-radius: 6px; color: var(--color-dark); font-weight: 600;">
             Obrim Dc a Dg (10h - 13h)
@@ -395,42 +412,48 @@ class ReservesCalendar {
   }
 
   _renderDayDetailHtml() {
+    if (!this.selectedDate) {
+      return `
+        <div class="res-day-detail-card res-day-detail-empty" style="background: #FAF9F8; border: 1.5px dashed var(--color-border); border-radius: var(--radius-lg); padding: 26px 20px; text-align: center; margin-top: 18px;">
+          <div style="font-size: 15px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
+            Selecciona un dia al calendari
+          </div>
+          <div style="font-size: 13px; color: var(--color-muted); max-width: 440px; margin: 0 auto; line-height: 1.4;">
+            Fes clic a qualsevol data disponible (de dimecres a diumenge) per consultar els torns disponibles i reservar la teva sessió.
+          </div>
+        </div>
+      `;
+    }
+
     const dateStr = this.selectedDate;
     const formattedDate = this._formatCatalanDate(dateStr);
     const day = this.dayData;
 
     if (this.loadingDay) {
       return `
-        <div class="res-day-detail-card">
-          <div style="text-align:center; padding: 30px; color: var(--color-muted);">
+        <div class="res-day-detail-card" style="margin-top: 18px; padding: 28px 20px; text-align: center;">
+          <div style="color: var(--color-muted); font-size: 14px;">
             Carregant disponibilitat per al ${formattedDate}...
           </div>
         </div>
       `;
     }
 
-    if (!day) {
+    if (!day || day.tancat) {
       return `
-        <div class="res-day-detail-card">
-          <div style="text-align:center; padding: 30px; color: var(--color-muted);">
-            Selecciona una data al calendari per veure les franges i l'aforament.
-          </div>
-        </div>
-      `;
-    }
-
-    if (day.tancat) {
-      return `
-        <div class="res-day-detail-card">
-          <div class="res-day-detail-header">
-            <div class="res-day-detail-date">
-              <span>${formattedDate}</span>
+        <div class="res-day-detail-card" id="res-selected-day-section" style="margin-top: 18px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm);">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--color-border); padding-bottom:12px; margin-bottom:16px;">
+            <div>
+              <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:#D32F2F;">Dia tancat</span>
+              <h3 style="font-size:18px; font-weight:800; color:var(--color-dark); margin:2px 0 0;">${formattedDate}</h3>
             </div>
-            <span class="res-day-global-rule" style="background:#FDF5F5; color:#831D1D;">Taller Tancat</span>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-res-unselect-date" style="font-size:12px; padding:5px 12px; border-radius:8px;">
+              Canviar dia
+            </button>
           </div>
           <div style="padding: 24px; text-align: center; color: var(--color-muted); background: #FAF9F8; border-radius: var(--radius-md);">
-            <h4 style="font-size: 15px; font-weight: 700; color: var(--color-dark);">${day.motiu || 'El taller roman tancat aquest dia.'}</h4>
-            <p style="font-size: 13px; margin-top: 4px;">Horari habitual: obert de <strong>Dimecres a Diumenge</strong> de 10:00 a 13:00 i de 17:00 a 20:00.</p>
+            <h4 style="font-size: 15px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">${day ? (day.motiu || 'El taller roman tancat aquest dia.') : 'El taller roman tancat aquest dia.'}</h4>
+            <p style="font-size: 13px; margin: 0;">Horari habitual: obert de <strong>Dimecres a Diumenge</strong> de 10:00 a 13:00 i de 17:00 a 20:00.</p>
           </div>
         </div>
       `;
@@ -443,33 +466,32 @@ class ReservesCalendar {
     const lliuresTotal = Math.max(0, maxCapFranja - (day.totalOcupadesDia || 0));
 
     return `
-      <div class="res-day-detail-card">
-        <!-- Indicador clar del Pas 2 (Dia triat) -->
-        <div class="res-day-detail-selected-banner" style="background:#FAF8F5; border-left:4px solid var(--color-primary); padding:12px 16px; border-radius:0 10px 10px 0; margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
-            <div>
-              <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--color-primary); margin-bottom:3px;">
-                Pas 2: Has triat aquest dia
-              </div>
-              <div class="res-day-detail-date" style="font-size:18px; font-weight:800; color:var(--color-dark); margin:0;">
-                <span>${formattedDate}</span>
-                ${isToday ? '<span style="font-size:11px; background:#EFE8E3; color:var(--color-dark); padding:2px 8px; border-radius:99px; font-weight:600; margin-left:8px; vertical-align:middle;">Avui</span>' : ''}
-              </div>
-            </div>
-            <div style="font-size:12px; color:var(--color-muted); text-align:right;">
-              Toca una altra data al calendari superior si vols canviar de dia
-            </div>
+      <div class="res-day-detail-card" id="res-selected-day-section" style="margin-top: 18px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm);">
+        <!-- Capçalera neta del dia seleccionat -->
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-bottom:14px; border-bottom:1px solid var(--color-border); margin-bottom:16px;">
+          <div>
+            <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--color-primary);">
+              Horaris disponibles
+            </span>
+            <h3 style="font-size:19px; font-weight:800; color:var(--color-dark); margin:2px 0 0;">
+              ${formattedDate}
+              ${isToday ? '<span style="font-size:11px; background:#EFE8E3; color:var(--color-dark); padding:2px 8px; border-radius:99px; font-weight:600; margin-left:8px; vertical-align:middle;">Avui</span>' : ''}
+            </h3>
           </div>
-          <div style="font-size:13px; color:var(--color-muted); margin-top:8px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-            <span>Ocupació del taller: <strong style="color:var(--color-dark);">${day.totalOcupadesDia || 0} de ${maxCapFranja} places</strong></span>
-            <span>Places lliures: <strong style="color:#2E7D32;">${lliuresTotal} disponibles</strong></span>
-            <span class="res-day-global-rule" style="margin:0; font-size:11px; padding:3px 8px; border-radius:4px; background:#EFEBE9;">Aforament màxim: <strong>${maxCapFranja} places</strong></span>
-            ${this.isAdmin ? `
-              <button type="button" class="btn btn-roig-coure btn-sm" onclick="if(typeof openAdminNovaReservaModal==='function') openAdminNovaReservaModal('${dateStr}');" style="padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; margin-left:auto;">
-                + Nova Reserva d'Alumne
-              </button>
-            ` : ''}
-          </div>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-res-unselect-date" style="font-size:12px; padding:6px 14px; border-radius:8px; font-weight:600;">
+            Canviar de dia
+          </button>
+        </div>
+
+        <div style="font-size:13px; color:var(--color-muted); margin-bottom:18px; display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+          <span>Ocupació del taller: <strong style="color:var(--color-dark);">${day.totalOcupadesDia || 0} de ${maxCapFranja} places</strong></span>
+          <span>Places lliures: <strong style="color:#2E7D32;">${lliuresTotal} disponibles</strong></span>
+          <span class="res-day-global-rule" style="margin:0; font-size:11px; padding:3px 8px; border-radius:4px; background:#EFEBE9;">Aforament màxim: <strong>${maxCapFranja} places</strong></span>
+          ${this.isAdmin ? `
+            <button type="button" class="btn btn-roig-coure btn-sm" onclick="if(typeof openAdminNovaReservaModal==='function') openAdminNovaReservaModal('${dateStr}');" style="padding:4px 12px; font-size:12px; font-weight:700; cursor:pointer; margin-left:auto;">
+              + Nova Reserva d'Alumne
+            </button>
+          ` : ''}
         </div>
 
         <div class="res-slots-grid">
@@ -676,12 +698,20 @@ class ReservesCalendar {
         const now = new Date();
         this.currentYear = now.getFullYear();
         this.currentMonth = now.getMonth() + 1;
-        this.selectedDate = this._getInitialOpenDate();
         await this.loadMonthData(this.currentYear, this.currentMonth);
-        await this.loadDayData(this.selectedDate);
         this.render();
-        const detailCard = this.container.querySelector('.res-day-detail-card');
-        if (detailCard) detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+
+    // Botó per deseleccionar data o canviar de dia
+    const btnUnselect = this.container.querySelector('#btn-res-unselect-date');
+    if (btnUnselect) {
+      btnUnselect.addEventListener('click', () => {
+        this.selectedDate = null;
+        this.dayData = null;
+        this.render();
+        const calCard = this.container.querySelector('.res-calendar-card');
+        if (calCard) calCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
 
@@ -695,7 +725,7 @@ class ReservesCalendar {
             await this.loadDayData(date);
             this.render();
           }
-          const detailCard = this.container.querySelector('.res-day-detail-card');
+          const detailCard = this.container.querySelector('#res-selected-day-section') || this.container.querySelector('.res-day-detail-card');
           if (detailCard) {
             detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }

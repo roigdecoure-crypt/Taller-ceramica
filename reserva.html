@@ -1270,9 +1270,7 @@
         cell.classList.toggle('selected', isSel);
         const stEl = cell.querySelector('.day-status');
         if (stEl) {
-          if (isSel) {
-            stEl.textContent = 'Triat';
-          } else if (cDate === todayISO) {
+          if (cDate === todayISO) {
             stEl.textContent = 'Avui';
           } else {
             stEl.textContent = 'Obert';
@@ -1360,7 +1358,7 @@
             </div>
           `;
         } else {
-          const statusText = isSelected ? 'Triat' : (isToday ? 'Avui' : 'Obert');
+          const statusText = isToday ? 'Avui' : 'Obert';
           const selClass = isSelected ? 'selected' : '';
           const todayClass = isToday ? 'is-today' : '';
           html += `
