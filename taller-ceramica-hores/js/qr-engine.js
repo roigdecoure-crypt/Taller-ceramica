@@ -75,15 +75,16 @@ const QREngine = {
 
     const wantFront = cameraChoice === 'user' || (typeof cameraChoice === 'string' && /front|user|selfie/i.test(cameraChoice));
 
+    if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      throw new Error("L'accés a la càmera requereix connexió segura HTTPS.");
+    }
+
     const config = {
       fps: 25,
       videoConstraints: {
         facingMode: wantFront ? 'user' : 'environment',
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 }
-      },
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       }
     };
 
@@ -109,30 +110,38 @@ const QREngine = {
 
     // Cas 1: Si s'ha passat un ID de càmera concret (des del desplegable)
     if (cameraChoice && cameraChoice !== 'user' && cameraChoice !== 'environment') {
-      await this.html5QrScanner.start(
-        cameraChoice,
-        config,
-        handleSuccess,
-        handleError
-      );
-      return true;
+      try {
+        await this.html5QrScanner.start(
+          cameraChoice,
+          config,
+          handleSuccess,
+          handleError
+        );
+        this._startNativeHardwareDetection(elementId, handleSuccess);
+        this._optimizeVideoTrack(elementId);
+        return true;
+      } catch (errCustom) {
+        console.warn('Error amb càmera específica, provant per defecte:', errCustom);
+        await this.stopScanner();
+        this.html5QrScanner = new Html5Qrcode(elementId);
+      }
     }
 
-    // Cas 2: Intentar seleccionar la càmera frontal o posterior amb resolució HD
+    // Cas 2: Intentar seleccionar la càmera frontal o posterior per facingMode
     try {
       await this.html5QrScanner.start(
-        { 
-          facingMode: wantFront ? 'user' : 'environment',
-          width: { min: 640, ideal: 1280, max: 1920 },
-          height: { min: 480, ideal: 720, max: 1080 }
-        },
+        { facingMode: wantFront ? 'user' : 'environment' },
         config,
         handleSuccess,
         handleError
       );
+      this._startNativeHardwareDetection(elementId, handleSuccess);
+      this._optimizeVideoTrack(elementId);
       return true;
     } catch (errFacing) {
       console.warn(`Error iniciant amb facingMode directament:`, errFacing);
+      await this.stopScanner();
+      this.html5QrScanner = new Html5Qrcode(elementId);
     }
 
     // Cas 3: Si falla, busquem a la llista de càmeres del dispositiu
@@ -142,7 +151,6 @@ const QREngine = {
         let chosen = null;
         if (wantFront) {
           chosen = devices.find(d => /front|user|anterior|delantera|selfie|face/i.test(d.label || ''));
-          // Si no té nom explícit i n'hi ha més d'una, la segona acostuma a ser la frontal
           if (!chosen && devices.length > 1) {
             chosen = devices[1];
           }
@@ -157,26 +165,98 @@ const QREngine = {
           handleSuccess,
           handleError
         );
+        this._startNativeHardwareDetection(elementId, handleSuccess);
+        this._optimizeVideoTrack(elementId);
         return true;
       }
     } catch (errDevices) {
       console.warn('Error provant dispositius específics:', errDevices);
+      await this.stopScanner();
+      this.html5QrScanner = new Html5Qrcode(elementId);
     }
 
-    // Cas 4: Últim recurs - provar qualsevol càmera disponible
+    // Cas 4: Últim recurs - provar qualsevol càmera disponible sense filtres
     await this.html5QrScanner.start(
       { facingMode: 'environment' },
-      config,
+      { fps: 20 },
       handleSuccess,
       handleError
     );
+    this._startNativeHardwareDetection(elementId, handleSuccess);
+    this._optimizeVideoTrack(elementId);
     return true;
+  },
+
+  /**
+   * Detector natiu d'alta velocitat accelerat per maquinari (Google ML Kit / Chromium C++)
+   * Executa a 60 FPS i detecta codis sobre pantalles mòbils i smartwatches d'alta brillantor
+   */
+  _startNativeHardwareDetection(elementId, handleSuccess) {
+    this._stopNativeDetector = false;
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const checkFrame = async () => {
+          if (this._stopNativeDetector || !this.html5QrScanner) return;
+          const videoEl = document.querySelector(`#${elementId} video`);
+          if (videoEl && videoEl.readyState >= 2 && !videoEl.paused) {
+            try {
+              const barcodes = await detector.detect(videoEl);
+              if (barcodes && barcodes.length > 0) {
+                const found = barcodes.find(b => b.format === 'qr_code') || barcodes[0];
+                if (found && found.rawValue) {
+                  handleSuccess(found.rawValue, { rawValue: found.rawValue });
+                }
+              }
+            } catch (err) {
+              // Frame en trànsit, continuar
+            }
+          }
+          if (!this._stopNativeDetector) {
+            requestAnimationFrame(checkFrame);
+          }
+        };
+        requestAnimationFrame(checkFrame);
+      } catch (e) {
+        console.warn('BarcodeDetector natiu no disponible:', e);
+      }
+    }
+  },
+
+  /**
+   * Optimitza els paràmetres de la pista de vídeo (enfocament continu i autoexposició si estan suportats)
+   */
+  _optimizeVideoTrack(elementId) {
+    setTimeout(() => {
+      try {
+        const videoEl = document.querySelector(`#${elementId} video`);
+        if (videoEl && videoEl.srcObject) {
+          const track = videoEl.srcObject.getVideoTracks()[0];
+          if (track && track.getCapabilities) {
+            const caps = track.getCapabilities();
+            const advanced = {};
+            if (caps.focusMode && caps.focusMode.includes('continuous')) {
+              advanced.focusMode = 'continuous';
+            }
+            if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
+              advanced.exposureMode = 'continuous';
+            }
+            if (Object.keys(advanced).length > 0) {
+              track.applyConstraints({ advanced: [advanced] }).catch(() => {});
+            }
+          }
+        }
+      } catch (e) {
+        // Ignorar si el maquinari no admet applyConstraints
+      }
+    }, 400);
   },
 
   /**
    * Atura la càmera i allibera els recursos
    */
   async stopScanner() {
+    this._stopNativeDetector = true;
     if (this.html5QrScanner) {
       try {
         if (this.html5QrScanner.isScanning) {
