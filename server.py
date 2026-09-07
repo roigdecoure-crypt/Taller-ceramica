@@ -158,6 +158,32 @@ def verify_admin_pin(input_pin):
         configured_pin = '1234'
     return str(input_pin).strip() == configured_pin
 
+def calculate_age_from_birthdate(birthdate_str):
+    """Calcula l'edat exacta en anys a partir de la data de naixement."""
+    if not birthdate_str:
+        return None
+    try:
+        s = str(birthdate_str).strip()
+        if not s:
+            return None
+        if '/' in s:
+            parts = s.split('/')
+            if len(parts) == 3:
+                born = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+            else:
+                return None
+        else:
+            parts = s.split('-')
+            if len(parts) == 3:
+                born = datetime(int(parts[0]), int(parts[1]), int(parts[2][:2]))
+            else:
+                return None
+        today = datetime.now()
+        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        return age if age >= 0 else None
+    except Exception:
+        return None
+
 DEFAULT_CARNET_CONFIG = {
     "background_color": "#b1ffc2",
     "text_color": "#801b1b",
@@ -322,7 +348,8 @@ def init_db():
                 data_alta TEXT NOT NULL,
                 notes TEXT,
                 actiu INTEGER DEFAULT 1,
-                edat INTEGER DEFAULT NULL
+                edat INTEGER DEFAULT NULL,
+                data_naixement TEXT DEFAULT NULL
             )
         ''')
         # Taula de paquets d'hores (compres)
@@ -403,6 +430,12 @@ def init_db():
         # Migració de columna edat a la taula alumnes si no existeix
         try:
             cursor.execute("ALTER TABLE alumnes ADD COLUMN edat INTEGER DEFAULT NULL")
+        except Exception:
+            pass
+
+        # Migració de columna data_naixement a la taula alumnes si no existeix
+        try:
+            cursor.execute("ALTER TABLE alumnes ADD COLUMN data_naixement TEXT DEFAULT NULL")
         except Exception:
             pass
 
@@ -2141,6 +2174,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 email = (data.get('email') or '').strip()
                 pin = (data.get('pin') or '').strip()
                 notes = (data.get('notes') or '').strip()
+                data_naixement = (data.get('data_naixement') or '').strip() or None
                 edat_raw = data.get('edat')
                 edat = None
                 if edat_raw is not None and str(edat_raw).strip() != '':
@@ -2148,6 +2182,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         edat = int(edat_raw)
                     except (ValueError, TypeError):
                         edat = None
+
+                # Si es facilita data_naixement, calcular l'edat automàticament
+                if data_naixement:
+                    calc_age = calculate_age_from_birthdate(data_naixement)
+                    if calc_age is not None:
+                        edat = calc_age
 
                 if not nom:
                     self.send_json({'ok': False, 'error': 'El nom és obligatori'}, 400)
@@ -2171,8 +2211,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     data_alta = data.get('data_alta') or get_now().strftime('%Y-%m-%dT%H:%M:%S')
 
                     cursor.execute('''
-                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu, edat, data_naixement)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                         ON CONFLICT(id) DO UPDATE SET
                             nom=excluded.nom,
                             cognoms=excluded.cognoms,
@@ -2180,8 +2220,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             email=excluded.email,
                             pin=excluded.pin,
                             notes=excluded.notes,
-                            edat=excluded.edat
-                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes, edat))
+                            edat=excluded.edat,
+                            data_naixement=excluded.data_naixement
+                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes, edat, data_naixement))
                     conn.commit()
 
                 # Sincronitzar amb Google Sheets de forma persistent en segon pla
@@ -2195,10 +2236,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'data_alta': data_alta,
                     'notes': notes,
                     'actiu': 1,
-                    'edat': edat
+                    'edat': edat,
+                    'data_naixement': data_naixement
                 })
 
-                self.send_json({'ok': True, 'id': student_id, 'message': 'Alumne desat correctament'})
+                self.send_json({'ok': True, 'id': student_id, 'edat': edat, 'data_naixement': data_naixement, 'message': 'Alumne desat correctament'})
                 return
 
             elif path == '/api/checkin':

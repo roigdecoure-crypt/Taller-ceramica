@@ -220,6 +220,44 @@ const TimeUtils = {
       isNegative: balanceSeconds < 0,
       isLow: balanceSeconds >= 0 && balanceSeconds < 7200 // menys de 2 hores
     };
+  },
+
+  /**
+   * Calcula l'edat en anys a partir de la data de naixement (YYYY-MM-DD o Date)
+   * @param {string|Date} birthdate
+   * @returns {number|null} Edat en anys o null si és invàlida
+   */
+  calculateAge(birthdate) {
+    if (!birthdate) return null;
+    let bDate;
+    if (birthdate instanceof Date) {
+      bDate = birthdate;
+    } else if (typeof birthdate === 'string') {
+      const clean = birthdate.trim();
+      if (!clean) return null;
+      if (clean.includes('/')) {
+        const parts = clean.split('/');
+        if (parts.length === 3) {
+          bDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+      } else {
+        const parts = clean.split('-');
+        if (parts.length === 3) {
+          bDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+          bDate = new Date(clean);
+        }
+      }
+    }
+    if (!bDate || isNaN(bDate.getTime())) return null;
+
+    const today = new Date();
+    let age = today.getFullYear() - bDate.getFullYear();
+    const m = today.getMonth() - bDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < bDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
   }
 };
 

@@ -1126,6 +1126,81 @@ class TestCeramicsBackend(unittest.TestCase):
         self.assertEqual(res['reserves'][0]['activitat'], 'Modelatge')
         self.assertEqual(res['reserves'][0]['estat'], 'confirmada')
 
+    def test_31_student_birthdate_and_auto_age(self):
+        """
+        Comprova la persistència de la data de naixement (data_naixement) i
+        el càlcul automàtic de l'edat tant a la funció auxiliar com al POST /api/alumnes.
+        """
+        import io
+
+        # 1. Provar helper calculate_age_from_birthdate
+        today = datetime.now()
+        birth_10 = f"{today.year - 10:04d}-{today.month:02d}-{today.day:02d}"
+        self.assertEqual(server.calculate_age_from_birthdate(birth_10), 10)
+        self.assertIsNone(server.calculate_age_from_birthdate(None))
+        self.assertIsNone(server.calculate_age_from_birthdate(''))
+        self.assertIsNone(server.calculate_age_from_birthdate('invalid-date'))
+
+        # 2. Inserció d'alumne amb data_naixement via POST /api/alumnes
+        test_id = "TC-TEST-AGE"
+        c = self.conn.cursor()
+        c.execute("DELETE FROM alumnes WHERE id = ?", (test_id,))
+        self.conn.commit()
+
+        student_payload = {
+            'id': test_id,
+            'nom': 'Alumne Naixement',
+            'cognoms': 'Test Edat',
+            'telefon': '655443322',
+            'email': 'naixement@test.cat',
+            'pin': '4321',
+            'data_naixement': birth_10,
+            'notes': 'Test edat automatica'
+        }
+
+        body_bytes = json.dumps(student_payload).encode('utf-8')
+        handler = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler.path = '/api/alumnes'
+        handler.headers = {'Content-Length': str(len(body_bytes)), 'Content-Type': 'application/json'}
+        handler.rfile = io.BytesIO(body_bytes)
+        handler.wfile = io.BytesIO()
+        status_box = []
+        handler.send_response = lambda code, msg=None: status_box.append(code)
+        handler.send_header = lambda k, v: None
+        handler.end_headers = lambda: None
+        handler.do_POST()
+
+        self.assertEqual(status_box[0] if status_box else 200, 200)
+        resp = json.loads(handler.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(resp.get('ok'))
+        self.assertEqual(resp['id'], test_id)
+        self.assertEqual(resp['data_naixement'], birth_10)
+        self.assertEqual(resp['edat'], 10)
+
+        # 3. Comprovar recuperació a la base de dades
+        c.execute("SELECT data_naixement, edat FROM alumnes WHERE id = ?", (test_id,))
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row['data_naixement'], birth_10)
+        self.assertEqual(row['edat'], 10)
+
+        # 4. Comprovar recuperació via GET /api/alumnes/{id}
+        handler_get = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        handler_get.path = f'/api/alumnes/{test_id}'
+        handler_get.headers = {}
+        handler_get.wfile = io.BytesIO()
+        status_box_get = []
+        handler_get.send_response = lambda code, msg=None: status_box_get.append(code)
+        handler_get.send_header = lambda k, v: None
+        handler_get.end_headers = lambda: None
+        handler_get.do_GET()
+
+        self.assertEqual(status_box_get[0] if status_box_get else 200, 200)
+        res_get = json.loads(handler_get.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_get.get('ok'))
+        self.assertEqual(res_get['alumne']['data_naixement'], birth_10)
+        self.assertEqual(res_get['alumne']['edat'], 10)
+
 if __name__ == '__main__':
     unittest.main()
 

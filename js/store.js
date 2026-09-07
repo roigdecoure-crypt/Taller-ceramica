@@ -274,6 +274,13 @@ const Store = {
     }
 
     const existingIdx = (data.alumnes || []).findIndex(a => a.id === id);
+    let edat = studentData.edat !== undefined && studentData.edat !== null && String(studentData.edat).trim() !== '' ? parseInt(studentData.edat, 10) : null;
+    const dataNaixement = studentData.data_naixement || null;
+    if (dataNaixement && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function') {
+      const calc = TimeUtils.calculateAge(dataNaixement);
+      if (calc !== null) edat = calc;
+    }
+
     const alumneRecord = {
       id: id,
       nom: studentData.nom,
@@ -284,7 +291,8 @@ const Store = {
       data_alta: studentData.data_alta || new Date().toISOString(),
       notes: studentData.notes || '',
       actiu: 1,
-      edat: studentData.edat !== undefined && studentData.edat !== null && String(studentData.edat).trim() !== '' ? parseInt(studentData.edat, 10) : null
+      edat: edat,
+      data_naixement: dataNaixement
     };
 
     if (existingIdx >= 0) {

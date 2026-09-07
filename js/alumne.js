@@ -517,29 +517,35 @@ async function setupStudentPurchaseSection(a) {
     if (bizumConceptEl) bizumConceptEl.textContent = `${a.id} ${a.nom}`;
     if (bizumPhoneEl) bizumPhoneEl.textContent = cfg.taller_telefon || '+34 600 000 000';
 
-    // Determinar categoria per defecte segons l'edat registrada a la base de dades (<= 12 infantil, > 12 adults)
+    // Determinar categoria per defecte segons la data de naixement / edat registrada
     let categoria = 'adults';
-    const hasEdat = a.edat !== null && a.edat !== undefined && String(a.edat).trim() !== '';
-    if (hasEdat) {
-      const edatNum = parseInt(a.edat, 10);
-      if (!isNaN(edatNum)) {
-        categoria = edatNum <= edatTall ? 'infantil' : 'adults';
-      }
+    let ageNum = null;
+    if (a.data_naixement && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function') {
+      ageNum = TimeUtils.calculateAge(a.data_naixement);
+    }
+    if (ageNum === null && a.edat !== null && a.edat !== undefined && String(a.edat).trim() !== '') {
+      const parsed = parseInt(a.edat, 10);
+      if (!isNaN(parsed)) ageNum = parsed;
+    }
+
+    if (ageNum !== null) {
+      categoria = ageNum <= edatTall ? 'infantil' : 'adults';
     }
 
     function updateCategoryUI(cat) {
       if (!titleEl || !descEl || !iconEl) return;
+      const birthInfo = a.data_naixement ? `Data de naixement: ${TimeUtils.formatDate(a.data_naixement)} (${ageNum} anys). ` : (ageNum !== null ? `Edat: ${ageNum} anys. ` : '');
       if (cat === 'infantil') {
         iconEl.textContent = '';
         titleEl.textContent = `Tarifa Infantil (fins a ${edatTall} anys)`;
-        descEl.textContent = hasEdat
-          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article infantil de Stripe.`
+        descEl.textContent = birthInfo
+          ? `${birthInfo}Redirigirà a l'article infantil de Stripe.`
           : `S'aplicarà la passarel·la per a alumnes de fins a ${edatTall} anys.`;
       } else {
         iconEl.textContent = '';
         titleEl.textContent = `Tarifa Adults (més de ${edatTall} anys)`;
-        descEl.textContent = hasEdat
-          ? `Edat registrada: ${a.edat} anys. Redirigirà a l'article d'adults de Stripe.`
+        descEl.textContent = birthInfo
+          ? `${birthInfo}Redirigirà a l'article d'adults de Stripe.`
           : `S'aplicarà la passarel·la d'adults (més de ${edatTall} anys).`;
       }
       if (selectCat) selectCat.value = cat;

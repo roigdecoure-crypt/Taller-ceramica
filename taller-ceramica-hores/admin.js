@@ -208,7 +208,14 @@ function renderStudentsTable(students) {
     tr.className = 'student-clickable-row';
     tr.dataset.id = s.id;
     tr.title = "Fes clic a qualsevol lloc de la fila per veure la informació i historial complet";
-    const edatLabel = s.edat !== null && s.edat !== undefined ? `<div style="font-size:11px; color:var(--color-muted);">${s.edat} anys (${s.edat >= 12 ? 'Adult' : 'Infantil'})</div>` : '';
+    let edatLabel = '';
+    const age = (s.edat !== null && s.edat !== undefined) ? s.edat : (s.data_naixement && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function' ? TimeUtils.calculateAge(s.data_naixement) : null);
+    if (s.data_naixement) {
+      const ageStr = age !== null ? ` (${age} anys · ${age >= 12 ? 'Adult' : 'Infantil'})` : '';
+      edatLabel = `<div style="font-size:11px; color:var(--color-muted);">Naixement: ${TimeUtils.formatDate(s.data_naixement)}${ageStr}</div>`;
+    } else if (age !== null) {
+      edatLabel = `<div style="font-size:11px; color:var(--color-muted);">${age} anys (${age >= 12 ? 'Adult' : 'Infantil'})</div>`;
+    }
     tr.innerHTML = `
       <td><strong>${s.id}</strong></td>
       <td>
@@ -321,9 +328,15 @@ async function openStudentInlineDetail(studentId) {
     const pinEl = document.getElementById('inline-student-pin');
     if (pinEl) pinEl.textContent = a.pin || '-';
 
+    const birthEl = document.getElementById('inline-student-data-naixement');
+    if (birthEl) {
+      birthEl.textContent = a.data_naixement ? TimeUtils.formatDate(a.data_naixement) : '-';
+    }
+
     const edatEl = document.getElementById('inline-student-edat');
     if (edatEl) {
-      edatEl.textContent = (a.edat !== null && a.edat !== undefined) ? `${a.edat} anys (${a.edat >= 12 ? 'Adult' : 'Infantil'})` : '-';
+      const calcAge = (a.edat !== null && a.edat !== undefined) ? a.edat : (a.data_naixement && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function' ? TimeUtils.calculateAge(a.data_naixement) : null);
+      edatEl.textContent = calcAge !== null ? `${calcAge} anys (${calcAge >= 12 ? 'Adult' : 'Infantil'})` : '-';
     }
 
     const altaEl = document.getElementById('inline-student-alta');
@@ -879,7 +892,16 @@ function setupEventListeners() {
     document.getElementById('alumne-form-email').value = a.email || '';
     document.getElementById('alumne-form-pin').value = a.pin || '';
     document.getElementById('alumne-form-notes').value = a.notes || '';
-    document.getElementById('alumne-form-edat').value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
+    const birthVal = a.data_naixement ? a.data_naixement.split('T')[0] : '';
+    const birthInput = document.getElementById('alumne-form-data-naixement');
+    const edatInput = document.getElementById('alumne-form-edat');
+    const agePrev = document.getElementById('alumne-form-age-preview');
+    if (birthInput) birthInput.value = birthVal;
+    if (edatInput) edatInput.value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
+    if (agePrev) {
+      const curAge = (a.edat !== null && a.edat !== undefined) ? a.edat : (birthVal && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function' ? TimeUtils.calculateAge(birthVal) : null);
+      agePrev.textContent = curAge !== null ? `Edat calculada: ${curAge} anys (${curAge >= 12 ? 'Tarifa Adults' : 'Tarifa Infantil'})` : '';
+    }
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
@@ -952,7 +974,16 @@ function setupEventListeners() {
     document.getElementById('alumne-form-email').value = a.email || '';
     document.getElementById('alumne-form-pin').value = a.pin || '';
     document.getElementById('alumne-form-notes').value = a.notes || '';
-    document.getElementById('alumne-form-edat').value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
+    const birthVal = a.data_naixement ? a.data_naixement.split('T')[0] : '';
+    const birthInput = document.getElementById('alumne-form-data-naixement');
+    const edatInput = document.getElementById('alumne-form-edat');
+    const agePrev = document.getElementById('alumne-form-age-preview');
+    if (birthInput) birthInput.value = birthVal;
+    if (edatInput) edatInput.value = (a.edat !== null && a.edat !== undefined) ? a.edat : '';
+    if (agePrev) {
+      const curAge = (a.edat !== null && a.edat !== undefined) ? a.edat : (birthVal && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function' ? TimeUtils.calculateAge(birthVal) : null);
+      agePrev.textContent = curAge !== null ? `Edat calculada: ${curAge} anys (${curAge >= 12 ? 'Tarifa Adults' : 'Tarifa Infantil'})` : '';
+    }
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
@@ -974,6 +1005,8 @@ function setupEventListeners() {
     document.getElementById('form-alumne').reset();
     document.getElementById('alumne-form-id').value = '';
     document.getElementById('alumne-form-edat').value = '';
+    if (document.getElementById('alumne-form-data-naixement')) document.getElementById('alumne-form-data-naixement').value = '';
+    if (document.getElementById('alumne-form-age-preview')) document.getElementById('alumne-form-age-preview').textContent = '';
     document.getElementById('modal-alumne-backdrop').classList.add('active');
   });
 
@@ -1033,9 +1066,35 @@ function setupEventListeners() {
     });
   });
 
+  // Listener per calcular edat en temps real quan es selecciona la data de naixement
+  const birthChangeInput = document.getElementById('alumne-form-data-naixement');
+  if (birthChangeInput) {
+    birthChangeInput.addEventListener('input', () => {
+      const val = birthChangeInput.value;
+      const age = (val && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function') ? TimeUtils.calculateAge(val) : null;
+      const prev = document.getElementById('alumne-form-age-preview');
+      const hidden = document.getElementById('alumne-form-edat');
+      if (age !== null) {
+        if (hidden) hidden.value = age;
+        if (prev) prev.textContent = `Edat calculada: ${age} anys (${age >= 12 ? 'Tarifa Adults' : 'Tarifa Infantil'})`;
+      } else {
+        if (hidden) hidden.value = '';
+        if (prev) prev.textContent = '';
+      }
+    });
+  }
+
   // Formulari Alumne Submit
   document.getElementById('form-alumne').addEventListener('submit', async (e) => {
     e.preventDefault();
+    const dataNaixement = document.getElementById('alumne-form-data-naixement') ? document.getElementById('alumne-form-data-naixement').value : '';
+    let calculatedAge = null;
+    if (dataNaixement && typeof TimeUtils !== 'undefined' && typeof TimeUtils.calculateAge === 'function') {
+      calculatedAge = TimeUtils.calculateAge(dataNaixement);
+    }
+    const hiddenEdat = document.getElementById('alumne-form-edat') ? document.getElementById('alumne-form-edat').value : '';
+    const finalEdat = calculatedAge !== null ? calculatedAge : (hiddenEdat ? parseInt(hiddenEdat, 10) : null);
+
     const data = {
       id: document.getElementById('alumne-form-id').value,
       nom: document.getElementById('alumne-form-nom').value,
@@ -1044,7 +1103,8 @@ function setupEventListeners() {
       email: document.getElementById('alumne-form-email').value,
       pin: document.getElementById('alumne-form-pin').value,
       notes: document.getElementById('alumne-form-notes').value,
-      edat: document.getElementById('alumne-form-edat').value ? parseInt(document.getElementById('alumne-form-edat').value, 10) : null
+      data_naixement: dataNaixement || null,
+      edat: finalEdat
     };
     try {
       const res = await Store.saveAlumne(data);
