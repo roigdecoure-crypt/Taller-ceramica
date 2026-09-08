@@ -1016,7 +1016,7 @@ def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='
                 'User-Agent': 'TallerCeramicaBackend/1.0'
             }
         )
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with execute_safe_request(req, timeout=15) as resp:
             res_json = json.loads(resp.read().decode('utf-8'))
             msg_id = ''
             if 'messages' in res_json and len(res_json['messages']) > 0 and 'id' in res_json['messages'][0]:
