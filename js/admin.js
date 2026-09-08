@@ -1925,27 +1925,36 @@ function initReservesAdmin() {
   });
 
   // Desar aforament màxim global
-  document.getElementById('btn-admin-save-aforament')?.addEventListener('click', async () => {
-    const input = document.getElementById('admin-input-aforament');
+  const saveAforamentGlobal = async (inputId, dispId) => {
+    const input = document.getElementById(inputId) || document.getElementById('admin-input-aforament');
     if (!input) return;
     const val = parseInt(input.value, 10) || 12;
     try {
       await Store.guardarAforamentMaxim(val);
       showToast(`Aforament màxim global actualitzat a ${val} places/franja.`, 'success');
-      const dispVal = document.getElementById('admin-display-aforament-val');
-      if (dispVal) dispVal.textContent = `${val} places simultànies`;
+      ['admin-display-aforament-val', 'modal-admin-display-aforament-val'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = `${val} places simultànies`;
+      });
+      ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      });
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
       await refreshAppointmentsDashboard();
     } catch (err) {
       showToast('Error desant aforament: ' + err.message, 'error');
     }
-  });
+  };
+
+  document.getElementById('btn-admin-save-aforament')?.addEventListener('click', () => saveAforamentGlobal('admin-input-aforament'));
+  document.getElementById('btn-modal-save-aforament')?.addEventListener('click', () => saveAforamentGlobal('modal-admin-input-aforament'));
 
   // Desar capacitats per activitat (Torn, Modelatge, Pintar ceràmica)
-  document.getElementById('btn-admin-save-capacitats-act')?.addEventListener('click', async () => {
-    const torn = parseInt(document.getElementById('admin-cap-torn')?.value, 10) || 4;
-    const modelatge = parseInt(document.getElementById('admin-cap-modelatge')?.value, 10) || 8;
-    const pintar = parseInt(document.getElementById('admin-cap-pintar')?.value, 10) || 12;
+  const saveCapacitatsActivitats = async (prefix = '') => {
+    const torn = parseInt((document.getElementById(`${prefix}admin-cap-torn`) || document.getElementById('admin-cap-torn'))?.value, 10) || 4;
+    const modelatge = parseInt((document.getElementById(`${prefix}admin-cap-modelatge`) || document.getElementById('admin-cap-modelatge'))?.value, 10) || 8;
+    const pintar = parseInt((document.getElementById(`${prefix}admin-cap-pintar`) || document.getElementById('admin-cap-pintar'))?.value, 10) || 12;
 
     try {
       await Store.guardarCapacitatsActivitats({
@@ -1954,12 +1963,23 @@ function initReservesAdmin() {
         capacitat_max_pintar: pintar
       });
       showToast(`Capacitats desades: Torn (${torn}), Modelatge (${modelatge}), Pintar (${pintar}).`, 'success');
+      ['', 'modal-'].forEach(p => {
+        const tEl = document.getElementById(`${p}admin-cap-torn`);
+        if (tEl) tEl.value = torn;
+        const mEl = document.getElementById(`${p}admin-cap-modelatge`);
+        if (mEl) mEl.value = modelatge;
+        const pEl = document.getElementById(`${p}admin-cap-pintar`);
+        if (pEl) pEl.value = pintar;
+      });
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
       await refreshAppointmentsDashboard();
     } catch (err) {
       showToast('Error desant capacitats d\'activitats: ' + err.message, 'error');
     }
-  });
+  };
+
+  document.getElementById('btn-admin-save-capacitats-act')?.addEventListener('click', () => saveCapacitatsActivitats(''));
+  document.getElementById('btn-modal-save-capacitats-act')?.addEventListener('click', () => saveCapacitatsActivitats('modal-'));
 }
 
 async function openReservesModal(preselectedDate) {
@@ -1972,24 +1992,27 @@ async function openReservesModal(preselectedDate) {
   try {
     const cfg = await Store.getConfig();
     const maxCap = parseInt(cfg.aforament_maxim_per_franja || 12, 10);
-    const inputCap = document.getElementById('admin-input-aforament');
-    if (inputCap) inputCap.value = maxCap;
-    const dispVal = document.getElementById('admin-display-aforament-val');
-    if (dispVal) dispVal.textContent = `${maxCap} places simultànies`;
+    ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = maxCap;
+    });
+    ['admin-display-aforament-val', 'modal-admin-display-aforament-val'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = `${maxCap} places simultànies`;
+    });
 
     // Carregar capacitats de les 3 activitats
     const acts = await Store.getActivitatsConfig();
     const actMap = {};
     acts.forEach(a => { actMap[a.id] = a.capacitatMax; });
-    if (document.getElementById('admin-cap-torn')) {
-      document.getElementById('admin-cap-torn').value = actMap['torn'] || 4;
-    }
-    if (document.getElementById('admin-cap-modelatge')) {
-      document.getElementById('admin-cap-modelatge').value = actMap['modelatge'] || 8;
-    }
-    if (document.getElementById('admin-cap-pintar')) {
-      document.getElementById('admin-cap-pintar').value = actMap['pintar'] || 12;
-    }
+    ['', 'modal-'].forEach(p => {
+      const tEl = document.getElementById(`${p}admin-cap-torn`);
+      if (tEl) tEl.value = actMap['torn'] || 4;
+      const mEl = document.getElementById(`${p}admin-cap-modelatge`);
+      if (mEl) mEl.value = actMap['modelatge'] || 8;
+      const pEl = document.getElementById(`${p}admin-cap-pintar`);
+      if (pEl) pEl.value = actMap['pintar'] || 12;
+    });
   } catch (e) {}
 
   if (!adminReservesCalendar) {

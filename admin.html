@@ -13,9 +13,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=7.1">
-  <link rel="stylesheet" href="css/admin.css?v=7.1">
-  <link rel="stylesheet" href="css/card.css?v=7.1">
+  <link rel="stylesheet" href="css/styles.css?v=8.0">
+  <link rel="stylesheet" href="css/admin.css?v=8.0">
+  <link rel="stylesheet" href="css/card.css?v=8.0">
+  <script>
+    function triggerOpenModal(modalId, specificFnName) {
+      if (specificFnName && typeof window[specificFnName] === 'function') {
+        try {
+          window[specificFnName]();
+          return;
+        } catch (e) {
+          console.warn('Avís cridant ' + specificFnName + ':', e);
+        }
+      }
+      var m = document.getElementById(modalId);
+      if (m) {
+        m.classList.add('active');
+      }
+    }
+  </script>
 </head>
 <body class="admin-app-layout">
 
@@ -183,17 +199,17 @@
       <div class="top-bar-left">
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
       </div>
-      <div class="top-bar-actions">
-        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal();}else{var m=document.getElementById('modal-admin-nova-reserva-backdrop');if(m)m.classList.add('active');}">
+      <div class="top-bar-actions notranslate" translate="no">
+        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');">
           + Nova Reserva
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{var m=document.getElementById('modal-reserves-backdrop');if(m)m.classList.add('active');}">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');">
           Control Aforament
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{var m=document.getElementById('modal-admin-manual-backdrop');if(m)m.classList.add('active');}">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="triggerOpenModal('modal-admin-manual-backdrop', 'openAdminManualCheckinModal');">
           Entrada / Sortida Manual
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne" onclick="if(typeof openNewStudentModal==='function'){openNewStudentModal();}else{var m=document.getElementById('modal-alumne-backdrop');if(m)m.classList.add('active');}">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');">
           Nou Alumne
         </button>
       </div>
@@ -1192,6 +1208,8 @@
             </button>
           </div>
           <div id="cfg-whatsapp-test-status" style="font-size: 11px; margin-top: 6px; display: none;"></div>
+        </div>
+
         <!-- Seguretat i PIN d'Administració -->
         <div style="background: #FDF8F5; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid #EAD8CE; margin-bottom: 16px;">
           <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 4px;">Seguretat &bull; PIN d'Accés d'Administració</div>
@@ -1434,15 +1452,15 @@
             <div style="display: flex; align-items: center; gap: 8px;">
               <div>
                 <span style="font-size: 13px; font-weight: 700; color: var(--color-dark);">Aforament màxim del taller (Torn de matí):</span>
-                <span style="font-size: 13px; font-weight: 800; color: var(--color-primary); margin-left: 4px;" id="admin-display-aforament-val">12 places simultànies</span>
+                <span style="font-size: 13px; font-weight: 800; color: var(--color-primary); margin-left: 4px;" id="modal-admin-display-aforament-val">12 places simultànies</span>
               </div>
             </div>
 
             <!-- Configuració de capacitat màxima global -->
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 12px; font-weight: 600; color: var(--color-dark); margin: 0;">Límit global matí:</label>
-              <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 65px; text-align: center; padding: 4px 6px; font-size: 13px;" class="form-control" value="12">
-              <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" title="Desar límit global d'aforament">Desar global</button>
+              <input type="number" id="modal-admin-input-aforament" min="1" max="50" style="width: 65px; text-align: center; padding: 4px 6px; font-size: 13px;" class="form-control" value="12">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-modal-save-aforament" title="Desar límit global d'aforament">Desar global</button>
             </div>
           </div>
 
@@ -1454,17 +1472,17 @@
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Torn:</label>
-                <input type="number" id="admin-cap-torn" min="1" max="20" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="4">
+                <input type="number" id="modal-admin-cap-torn" min="1" max="20" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="4">
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Modelatge:</label>
-                <input type="number" id="admin-cap-modelatge" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="8">
+                <input type="number" id="modal-admin-cap-modelatge" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="8">
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-size: 12px; font-weight: 600; margin: 0;">Pintar:</label>
-                <input type="number" id="admin-cap-pintar" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="12">
+                <input type="number" id="modal-admin-cap-pintar" min="1" max="30" style="width: 52px; text-align: center; padding: 3px 5px; font-size: 12px;" class="form-control" value="12">
               </div>
-              <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px;" title="Desar capacitats de les 3 activitats">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-modal-save-capacitats-act" style="padding: 4px 10px; font-size: 12px;" title="Desar capacitats de les 3 activitats">
                 Desar capacitats
               </button>
             </div>
@@ -1781,12 +1799,12 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js"></script>
-  <script src="js/time-utils.js?v=7.1"></script>
-  <script src="js/sound.js?v=7.1"></script>
-  <script src="js/qr-engine.js?v=7.1"></script>
-  <script src="js/store.js?v=7.1"></script>
-  <script src="js/reserves-calendar.js?v=7.1"></script>
-  <script src="js/admin.js?v=7.1"></script>
+  <script src="lib/qrcode.min.js?v=8.0"></script>
+  <script src="js/time-utils.js?v=8.0"></script>
+  <script src="js/sound.js?v=8.0"></script>
+  <script src="js/qr-engine.js?v=8.0"></script>
+  <script src="js/store.js?v=8.0"></script>
+  <script src="js/reserves-calendar.js?v=8.0"></script>
+  <script src="js/admin.js?v=8.0"></script>
 </body>
 </html>
