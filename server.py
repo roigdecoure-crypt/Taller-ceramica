@@ -87,7 +87,7 @@ BACKUP_DIR = os.path.join(BASE_DIR, 'data', 'backups')
 os.makedirs(BACKUP_DIR, exist_ok=True)
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -336,6 +336,8 @@ def generate_carnet_svg(student, config=None):
 def init_db():
     with get_db() as conn:
         cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL;")
+        cursor.execute("PRAGMA synchronous=NORMAL;")
         # Taula d'alumnes
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS alumnes (
@@ -1677,7 +1679,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
         params = urllib.parse.parse_qs(url.query)
 
         if not path.startswith('/api/'):
-            # Servir arxius estàtics
+            # Aliases per a rutes netes i compatibilitat (singular/plural, sense .html)
+            clean_path = path.rstrip('/')
+            query_str = ('?' + url.query) if url.query else ''
+            if clean_path in ('/alumne', '/alumnes', '/alumnes.html'):
+                self.path = '/alumne.html' + query_str
+            elif clean_path == '/admin':
+                self.path = '/admin.html' + query_str
+            elif clean_path in ('/reserva', '/reserves'):
+                self.path = '/reserva.html' + query_str
+            elif clean_path == '/carnet':
+                self.path = '/carnet.html' + query_str
+            elif clean_path == '/scanner':
+                self.path = '/scanner.html' + query_str
             return super().do_GET()
 
         try:
