@@ -18,6 +18,8 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
+import ssl
 from datetime import datetime, timedelta, timezone, date
 
 try:
@@ -77,7 +79,7 @@ def parse_to_local_dt(dt_str):
     except Exception:
         return get_now()
 
-PORT = int(os.environ.get('PORT', 8080))
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else int(os.environ.get('PORT', 8080))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'data', 'ceramica.db')
 
@@ -592,6 +594,26 @@ def sanitize_time_str(val, default='10:00'):
     return default
 
 
+def execute_safe_request(req, timeout=25):
+    handlers = [urllib.request.HTTPRedirectHandler()]
+    try:
+        ctx = ssl.create_default_context()
+        handlers.append(urllib.request.HTTPSHandler(context=ctx))
+    except Exception:
+        pass
+    opener = urllib.request.build_opener(*handlers)
+    try:
+        return opener.open(req, timeout=timeout)
+    except urllib.error.URLError as e:
+        if 'CERTIFICATE_VERIFY_FAILED' in str(e):
+            ctx_unverified = ssl._create_unverified_context()
+            unverified_opener = urllib.request.build_opener(
+                urllib.request.HTTPSHandler(context=ctx_unverified),
+                urllib.request.HTTPRedirectHandler()
+            )
+            return unverified_opener.open(req, timeout=timeout)
+        raise e
+
 def hydrate_from_google_sheets(target_url=None):
     """
     Descàrrega inicial i bolcat (hidratació) des de Google Sheets cap a SQLite.
@@ -614,8 +636,7 @@ def hydrate_from_google_sheets(target_url=None):
             headers={'User-Agent': 'TallerCeramicaBackend/1.0', 'Accept': 'application/json'}
         )
 
-        opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
-        with opener.open(req, timeout=25) as resp:
+        with execute_safe_request(req, timeout=25) as resp:
             raw = resp.read().decode('utf-8')
             res = json.loads(raw)
 
@@ -826,8 +847,7 @@ def sync_to_google_sheets_async(action, payload):
                 data=body,
                 headers={'Content-Type': 'application/json', 'User-Agent': 'TallerCeramicaBackend/1.0'}
             )
-            opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
-            with opener.open(req, timeout=20) as resp:
+            with execute_safe_request(req, timeout=20) as resp:
                 raw_resp = resp.read()
                 try:
                     res_data = json.loads(raw_resp.decode('utf-8'))
