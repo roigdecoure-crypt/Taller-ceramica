@@ -184,16 +184,16 @@
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
       </div>
       <div class="top-bar-actions">
-        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal();}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}">
+        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal();}else{var m=document.getElementById('modal-admin-nova-reserva-backdrop');if(m)m.classList.add('active');}">
           + Nova Reserva
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="openReservesModal();">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="if(typeof openReservesModal==='function'){openReservesModal();}else{var m=document.getElementById('modal-reserves-backdrop');if(m)m.classList.add('active');}">
           Control Aforament
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{document.getElementById('modal-admin-manual-backdrop').classList.add('active');}">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="if(typeof openAdminManualCheckinModal==='function'){openAdminManualCheckinModal();}else{var m=document.getElementById('modal-admin-manual-backdrop');if(m)m.classList.add('active');}">
           Entrada / Sortida Manual
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne" onclick="if(typeof openNewStudentModal==='function'){openNewStudentModal();}else{var m=document.getElementById('modal-alumne-backdrop');if(m)m.classList.add('active');}">
           Nou Alumne
         </button>
       </div>

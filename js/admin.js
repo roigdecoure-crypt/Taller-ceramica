@@ -622,6 +622,27 @@ if (typeof window !== 'undefined') {
   window.openAdminManualCheckinModal = openAdminManualCheckinModal;
 }
 
+// Modal Nou Alumne (Funció global i des de la capçalera)
+function openNewStudentModal() {
+  const title = document.getElementById('modal-alumne-title');
+  if (title) title.textContent = "Donar d'Alta Nou Alumne";
+  const form = document.getElementById('form-alumne');
+  if (form) form.reset();
+  const idEl = document.getElementById('alumne-form-id');
+  if (idEl) idEl.value = '';
+  const edatEl = document.getElementById('alumne-form-edat');
+  if (edatEl) edatEl.value = '';
+  const dataNaix = document.getElementById('alumne-form-data-naixement');
+  if (dataNaix) dataNaix.value = '';
+  const agePrev = document.getElementById('alumne-form-age-preview');
+  if (agePrev) agePrev.textContent = '';
+  const modal = document.getElementById('modal-alumne-backdrop');
+  if (modal) modal.classList.add('active');
+}
+if (typeof window !== 'undefined') {
+  window.openNewStudentModal = openNewStudentModal;
+}
+
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {
   initBrandStudio();
@@ -1033,14 +1054,8 @@ function setupEventListeners() {
   });
 
   // Modal Nou Alumne (Des de dalt)
-  document.getElementById('btn-nou-alumne').addEventListener('click', () => {
-    document.getElementById('modal-alumne-title').textContent = 'Donar d\'Alta Nou Alumne';
-    document.getElementById('form-alumne').reset();
-    document.getElementById('alumne-form-id').value = '';
-    document.getElementById('alumne-form-edat').value = '';
-    if (document.getElementById('alumne-form-data-naixement')) document.getElementById('alumne-form-data-naixement').value = '';
-    if (document.getElementById('alumne-form-age-preview')) document.getElementById('alumne-form-age-preview').textContent = '';
-    document.getElementById('modal-alumne-backdrop').classList.add('active');
+  document.getElementById('btn-nou-alumne')?.addEventListener('click', () => {
+    openNewStudentModal();
   });
 
   // Modal Entrada / Sortida Manual (Admin)
@@ -1516,17 +1531,41 @@ function setupEventListeners() {
   });
 
   // Botons del Carnet
-  document.getElementById('btn-print-card').addEventListener('click', () => {
+  document.getElementById('btn-print-card')?.addEventListener('click', () => {
     window.print();
   });
 
-  document.getElementById('btn-copy-card-link').addEventListener('click', () => {
-    const studentId = document.getElementById('badge-id').textContent;
+  document.getElementById('btn-copy-card-link')?.addEventListener('click', () => {
+    const studentId = document.getElementById('badge-id')?.textContent || '';
     const url = `${window.location.origin}${window.location.pathname.replace('admin.html', 'alumne.html')}?id=${studentId}`;
     navigator.clipboard.writeText(url).then(() => {
       showToast('Enllaç directe de l\'alumne copiat al porta-retalls!', 'success');
     }).catch(() => {
       showToast('URL: ' + url, 'info');
+    });
+  });
+
+  // Tancar qualsevol modal amb botons .modal-close o data-close
+  document.querySelectorAll('.modal-close, [data-close]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const targetId = btn.getAttribute('data-close');
+      if (targetId) {
+        const m = document.getElementById(targetId);
+        if (m) m.classList.remove('active');
+      } else {
+        const m = btn.closest('.modal-backdrop');
+        if (m) m.classList.remove('active');
+      }
+    });
+  });
+
+  // Tancar fent clic al fons del modal (fora del contingut)
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.classList.remove('active');
+      }
     });
   });
 }
