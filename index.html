@@ -378,11 +378,13 @@
     burger.addEventListener('click', () => {
       navLinksEl.classList.toggle('open');
       burger.classList.toggle('active');
+      document.body.classList.toggle('menu-open');
     });
     navLinksEl.querySelectorAll('a').forEach(a => {
       a.addEventListener('click', () => {
         navLinksEl.classList.remove('open');
         burger.classList.remove('active');
+        document.body.classList.remove('menu-open');
       });
     });
 
