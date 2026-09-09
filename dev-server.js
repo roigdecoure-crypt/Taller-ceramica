@@ -68,7 +68,7 @@ const server = http.createServer((req, res) => {
 
   const clean = pathname.replace(/\/+$/, '') || '/';
   if (ALIASES[clean]) pathname = ALIASES[clean];
-  if (pathname === '/') pathname = '/landing.html';
+  if (pathname === '/') pathname = '/index.html';
 
   const filePath = path.join(ROOT, pathname);
   if (!filePath.startsWith(ROOT)) {
