@@ -866,11 +866,14 @@ def sync_to_google_sheets_async(action, payload):
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
 
-# Intentar hidratació inicial automàtica a l'arrencada si tenim URL
-try:
-    hydrate_from_google_sheets()
-except Exception as e:
-    print(f"[Google Sheets] Avís inicialitzant hidratació: {e}")
+# Hidratació inicial en segon pla per no bloquejar l'arrencada del servidor
+def _hydrate_background():
+    try:
+        hydrate_from_google_sheets()
+    except Exception as e:
+        print(f"[Google Sheets] Avís inicialitzant hidratació: {e}")
+
+threading.Thread(target=_hydrate_background, daemon=True).start()
 
 def row_to_dict(row):
     return dict(row) if row else None
@@ -3377,6 +3380,7 @@ def run_server():
     local_ip = "127.0.0.1"
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1)
         s.connect(('8.8.8.8', 80))
         local_ip = s.getsockname()[0]
         s.close()
