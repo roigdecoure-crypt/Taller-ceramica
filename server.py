@@ -1712,6 +1712,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/carnet.html' + query_str
             elif clean_path == '/scanner':
                 self.path = '/scanner.html' + query_str
+            elif clean_path == '/landing':
+                self.path = '/landing.html' + query_str
             return super().do_GET()
 
         try:
