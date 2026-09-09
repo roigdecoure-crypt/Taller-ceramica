@@ -2,6 +2,7 @@
   "name": "taller-ceramica",
   "private": true,
   "scripts": {
-    "dev": "python3 server.py 5173"
+    "dev": "node dev-server.js",
+    "build": "echo 'No build step needed'"
   }
 }
