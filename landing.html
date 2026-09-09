@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roig de Coure - Programari de Gestió per a Tallers de Ceràmica</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="landing-nav" id="landingNav">
+    <div class="nav-container">
+      <a href="#top" class="nav-brand">
+        <span class="nav-brand-script">Roig de Coure</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#funcionalitats">Funcionalitats</a>
+        <a href="#modes">Modes de treball</a>
+        <a href="#preus">Preus</a>
+        <a href="#faq">Preguntes freqüents</a>
+        <a href="#contacte" class="nav-cta">Sol·licita una demo</a>
+      </div>
+      <button class="nav-burger" id="navBurger" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-bg-shape"></div>
+    <div class="hero-content">
+      <div class="hero-badge">Programari de gestió per a tallers de ceràmica</div>
+      <h1 class="hero-title">
+        Gestiona el teu taller de ceràmica<br>
+        <span class="hero-title-accent">amb artesania i precisió</span>
+      </h1>
+      <p class="hero-subtitle">
+        Reserves, control d'assistència, carnets QR, paquets d'hores o per sessions,
+        pagaments en línia i sincronització amb Google. Tot en català, tot en un sol lloc.
+      </p>
+      <div class="hero-actions">
+        <a href="#preus" class="btn-hero-primary">Veure plans i preus</a>
+        <a href="#funcionalitats" class="btn-hero-secondary">Descobrir funcionalitats</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">2</div>
+          <div class="hero-stat-label">Modes de treball</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">100%</div>
+          <div class="hero-stat-label">En català</div>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">24/7</div>
+          <div class="hero-stat-label">Reserves en línia</div>
+        </div>
+      </div>
+    </div>
+    <a href="#funcionalitats" class="hero-scroll-hint" aria-label="Baixa">
+      <span class="scroll-arrow"></span>
+    </a>
+  </header>
+
+  <!-- TRUST BAR -->
+  <section class="trust-bar">
+    <div class="trust-container">
+      <span class="trust-label">Integracions incloses</span>
+      <div class="trust-items">
+        <span class="trust-item">Stripe</span>
+        <span class="trust-dot"></span>
+        <span class="trust-item">Google Calendar</span>
+        <span class="trust-dot"></span>
+        <span class="trust-item">Google Sheets</span>
+        <span class="trust-dot"></span>
+        <span class="trust-item">WhatsApp</span>
+        <span class="trust-dot"></span>
+        <span class="trust-item">Apple Wallet</span>
+        <span class="trust-dot"></span>
+        <span class="trust-item">Google Wallet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FUNCIONALITATS -->
+  <section class="features" id="funcionalitats">
+    <div class="section-header">
+      <div class="section-eyebrow">Funcionalitats</div>
+      <h2 class="section-title">Tot el que necessita el teu taller</h2>
+      <p class="section-subtitle">
+        Des de la reserva en línia fins al control d'assistència amb QR, passant per la venda de paquets
+        i la gestió d'alumnes. Un sistema complet pensat per a tallers reals.
+      </p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-num">01</div>
+        <h3 class="feature-title">Reserves en línia</h3>
+        <p class="feature-desc">
+          Calendari visual interactiu amb control d'aforament per activitat. Els alumnes reserven plaça
+          des del mòbil, triant torn, modelatge o pintura. Confirmació per WhatsApp i arxiu d'agenda (.ics).
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">02</div>
+        <h3 class="feature-title">Control d'assistència amb QR</h3>
+        <p class="feature-desc">
+          Escàner amb mode ambient discret per a tauletes i mòbils a l'entrada del taller. Detecta
+          entrades i sortides automàticament, amb so de confirmació i càlcul exacte del temps.
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">03</div>
+        <h3 class="feature-title">Carnets digitals i físics</h3>
+        <p class="feature-desc">
+          Carnet d'alumne amb codi QR descarregable per a mòbil, rellotge intel·ligent (Apple Watch, Wear OS),
+          Apple Wallet i Google Wallet. Dissenyador de carnets personalitzable amb els teus colors.
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">04</div>
+        <h3 class="feature-title">Venda de paquets</h3>
+        <p class="feature-desc">
+          Els alumnes compren hores o sessions des del seu portal amb Stripe. Pagament segur amb targeta
+          o Apple Pay. Suma automàtica al compte i tarifa diferenciada per a adults i infantil.
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">05</div>
+        <h3 class="feature-title">Panell d'administració 360°</h3>
+        <p class="feature-desc">
+          Gestió completa d'alumnes amb fitxa 360°: reserves, sessions, compres i saldo. Reserves
+          recurrents, control de festius, exportació a Excel i còpies de seguretat automàtiques.
+        </p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">06</div>
+        <h3 class="feature-title">Portal de l'alumne</h3>
+        <p class="feature-desc">
+          Cada alumne té el seu espai privat: saldo d'hores en temps real, historial complet,
+          properes reserves, canvi de PIN i recuperació de contrasenya. Tot autònom, sense trucades.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODES DE TREBALL -->
+  <section class="modes" id="modes">
+    <div class="section-header">
+      <div class="section-eyebrow">Dos modes de treball</div>
+      <h2 class="section-title">Tria com funciona el teu taller</h2>
+      <p class="section-subtitle">
+        Cada taller té la seva manera de funcionar. Per això el programari s'adapta a tu, no al revés.
+      </p>
+    </div>
+    <div class="modes-grid">
+      <div class="mode-card mode-card-hours">
+        <div class="mode-badge">Mode 1</div>
+        <h3 class="mode-title">Control per hores</h3>
+        <p class="mode-tagline">Per a tallers amb horari flexible</p>
+        <ul class="mode-list">
+          <li>Còmput exacte del temps en format HH:MM:SS</li>
+          <li>Entrada i sortida lliure amb QR o registre manual</li>
+          <li>Venda de paquets d'hores (5h, 10h, 20h...)</li>
+          <li>Saldo d'hores en temps real al portal de l'alumne</li>
+          <li>Tancament de cicles oblidats amb durada per defecte</li>
+          <li>Tarifa diferenciada adults / infantil</li>
+        </ul>
+        <div class="mode-illustration">
+          <div class="mode-clock">
+            <div class="mode-clock-face">
+              <div class="mode-clock-hand mode-clock-hour"></div>
+              <div class="mode-clock-hand mode-clock-minute"></div>
+              <div class="mode-clock-center"></div>
+            </div>
+          </div>
+          <div class="mode-clock-label">HH:MM:SS</div>
+        </div>
+      </div>
+      <div class="mode-card mode-card-sessions">
+        <div class="mode-badge mode-badge-secondary">Mode 2</div>
+        <h3 class="mode-title">Control per sessions</h3>
+        <p class="mode-tagline">Per a tallers amb sessions programades</p>
+        <ul class="mode-list">
+          <li>Comptador de sessions assistides, no de hores</li>
+          <li>Reserva de sessions individuals o recurrents</li>
+          <li>Venda de bonificacions (4, 8, 12 sessions...)</li>
+          <li>Control d'assistència: present, absent, anul·lat</li>
+          <li>Marcatge ràpid de presència des del panell</li>
+          <li>Validesa per data dels bonificacions</li>
+        </ul>
+        <div class="mode-illustration">
+          <div class="mode-sessions">
+            <div class="mode-session-dot active"></div>
+            <div class="mode-session-dot active"></div>
+            <div class="mode-session-dot active"></div>
+            <div class="mode-session-dot"></div>
+            <div class="mode-session-dot"></div>
+            <div class="mode-session-dot"></div>
+            <div class="mode-session-dot"></div>
+            <div class="mode-session-dot"></div>
+          </div>
+          <div class="mode-clock-label">3 / 8 sessions</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREUS -->
+  <section class="pricing" id="preus">
+    <div class="section-header">
+      <div class="section-eyebrow">Plans i preus</div>
+      <h2 class="section-title">Un preu just per a cada taller</h2>
+      <p class="section-subtitle">
+        Sense comissions per reserva. Sense costos amagats. Tries el pla segons les necessitats
+        del teu taller i pots canviar o cancel·lar quan vulguis.
+      </p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Pla Taller -->
+      <div class="pricing-card">
+        <div class="pricing-name">Taller</div>
+        <div class="pricing-price">
+          <span class="pricing-currency">€</span>
+          <span class="pricing-amount">19</span>
+          <span class="pricing-period">/mes</span>
+        </div>
+        <p class="pricing-desc">Per a tallers petits amb un sol professor.</p>
+        <ul class="pricing-features">
+          <li>Fins a 25 alumnes actius</li>
+          <li>Reserves en línia amb calendari</li>
+          <li>Control d'assistència amb QR</li>
+          <li>Portal de l'alumne amb saldo</li>
+          <li>1 mode de treball (hores o sessions)</li>
+          <li>Carnets digitals amb QR</li>
+          <li>Exportació a Excel</li>
+        </ul>
+        <a href="#contacte" class="btn-pricing">Començar ara</a>
+      </div>
+
+      <!-- Pla Estudi -->
+      <div class="pricing-card pricing-card-popular">
+        <div class="pricing-popular-tag">Més popular</div>
+        <div class="pricing-name">Estudi</div>
+        <div class="pricing-price">
+          <span class="pricing-currency">€</span>
+          <span class="pricing-amount">39</span>
+          <span class="pricing-period">/mes</span>
+        </div>
+        <p class="pricing-desc">Per a tallers en creixement amb diverses activitats.</p>
+        <ul class="pricing-features">
+          <li>Fins a 100 alumnes actius</li>
+          <li>Tot el del pla Taller, més:</li>
+          <li>Dos modes de treball actius (hores i sessions)</li>
+          <li>Reserves recurrents (setmanals, quinzenals, mensuals)</li>
+          <li>Dissenyador de carnets personalitzat</li>
+          <li>Sincronització amb Google Sheets i Calendar</li>
+          <li>Notificacions per WhatsApp (Meta Cloud API)</li>
+          <li>Còpies de seguretat automàtiques diàries</li>
+        </ul>
+        <a href="#contacte" class="btn-pricing btn-pricing-popular">Començar ara</a>
+      </div>
+
+      <!-- Pla Atelier -->
+      <div class="pricing-card">
+        <div class="pricing-name">Atelier</div>
+        <div class="pricing-price">
+          <span class="pricing-currency">€</span>
+          <span class="pricing-amount">79</span>
+          <span class="pricing-period">/mes</span>
+        </div>
+        <p class="pricing-desc">Per a escoles de ceràmica amb diversos professors.</p>
+        <ul class="pricing-features">
+          <li>Alumnes il·limitats</li>
+          <li>Tot el del pla Estudi, més:</li>
+          <li>Múltiples professors amb permisos</li>
+          <li>Múltiples espais o sales</li>
+          <li>Integració Stripe avançada (checkout propi)</li>
+          <li>Passis Apple Wallet i Google Wallet automàtics</li>
+          <li>Suport prioritari i formació personalitzada</li>
+          <li>Instal·lació al teu propi servidor (Docker)</li>
+        </ul>
+        <a href="#contacte" class="btn-pricing">Parlem-ne</a>
+      </div>
+    </div>
+    <div class="pricing-note">
+      <span>Tots els plans inclouen</span>
+      <span class="pricing-note-dot"></span>
+      <span>SSL segur</span>
+      <span class="pricing-note-dot"></span>
+      <span>100% en català</span>
+      <span class="pricing-note-dot"></span>
+      <span>PWA instal·lable a mòbil</span>
+      <span class="pricing-note-dot"></span>
+      <span>Sense permanència</span>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="section-header">
+      <div class="section-eyebrow">Preguntes freqüents</div>
+      <h2 class="section-title">Resolem els teus dubtes</h2>
+    </div>
+    <div class="faq-container">
+      <details class="faq-item">
+        <summary>Puc canviar entre el mode d'hores i el de sessions?</summary>
+        <p>Sí. Pots començar amb un mode i canviar a l'altre en qualsevol moment. Les dades existents
+        (alumnes, reserves, saldo) es mantenen intactes. El canvi només afecta la manera de comptabilitzar
+        l'assistència i els paquets nous que es venguin.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Necessito un servidor propi per fer-lo funcionar?</summary>
+        <p>No. L'aplicació es pot desplejar gratuïtament a la núvol (Render, Railway, Fly.io) i funciona
+        amb HTTPS automàtic. Si prefereixes tenir-lo al teu propi servidor o ordinador del taller,
+        també pots executar-lo localment amb Python o Docker.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Els meus alumnes necessiten descarstrar res?</summary>
+        <p>No. Els alumnes accedeixen al seu portal des del navegador del mòbil. Si volen, poden
+        instal·lar l'app a la pantalla d'inici (PWA) per tenir el carnet QR sempre a mà, fins i tot
+        sense connexió a internet.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Com funcionen els pagaments amb Stripe?</summary>
+        <p>Configures els teus enllaços de pagament de Stripe (Payment Links) al panell d'administració.
+        Quan un alumne vol comprar hores o sessions, és redirigit a la pàgina segura de Stripe. En completar
+        el pagament, les hores o sessions es sumen automàticament al seu compte.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Puc provar-ho abans de pagar?</summary>
+        <p>Sí. Pots sol·licitar una demo gratuïta i accedir al sistema amb dades de prova. Tindràs accés
+        complet a totes les funcionalitats durant 15 dies sense cap cost. Sense targeta, sense compromís.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Les meves dades estan segures?</summary>
+        <p>Sí. Les dades s'emmagatzemen en una base de dades SQLite pròpia al teu servidor. Es fan
+        còpies de seguretat automàtiques diàries amb retenció de 30 dies, i pots descarregar o restaurar
+        còpies en qualsevol moment. No compartim dades amb tercers.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Funciona sense connexió a internet?</summary>
+        <p>El portal de l'alumne i l'escàner QR funcionen en mode offline gràcies a la tecnologia PWA
+        i l'emmagatzematge local del navegador. Quan es restableix la connexió, les dades es sincronitzen
+        automàticament amb el servidor.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Puc personalitzar el disseny amb la meva marca?</summary>
+        <p>Sí. Pots configurar el nom del taller, el logotip, els colors corporatius i el disseny dels
+        carnets des del panell d'administració. Tot s'adapta a la identitat visual del teu taller.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="cta-final" id="contacte">
+    <div class="cta-final-content">
+      <h2 class="cta-final-title">Comença a gestionar el teu taller amb calma</h2>
+      <p class="cta-final-subtitle">
+        Sol·licita una demo sense compromís. Et configurem el sistema amb el teu nom, els teus horaris
+        i les teves activitats perquè ho provis com si fos real.
+      </p>
+      <div class="cta-final-actions">
+        <a href="mailto:hola@roigdecoure.cat?subject=Demo%20del%20programari%20de%20gesti%C3%B3&body=Hola,%20m'agradaria%20provar%20el%20programari%20de%20gesti%C3%B3%20per%20al%20meu%20taller%20de%20cer%C3%A0mica." class="btn-cta-primary">Sol·licitar demo gratuïta</a>
+        <a href="https://wa.me/34683633880?text=Hola,%20m'agradaria%20tenir%20informaci%C3%B3%20del%20programari%20de%20gesti%C3%B3%20per%20tallers%20de%20cer%C3%A0mica" target="_blank" rel="noopener" class="btn-cta-secondary">Parlar per WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="landing-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="footer-brand-script">Roig de Coure</span>
+        <p class="footer-tagline">Programari de gestió per a tallers de ceràmica artesanal.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Producte</h4>
+          <a href="#funcionalitats">Funcionalitats</a>
+          <a href="#modes">Modes de treball</a>
+          <a href="#preus">Preus</a>
+          <a href="#faq">Preguntes freqüents</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contacte</h4>
+          <a href="mailto:hola@roigdecoure.cat">hola@roigdecoure.cat</a>
+          <a href="https://wa.me/34683633880" target="_blank" rel="noopener">+34 683 63 38 80</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Roig de Coure. Fet amb artesania a Catalunya.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Navbar scroll effect
+    const nav = document.getElementById('landingNav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 40) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // Mobile menu
+    const burger = document.getElementById('navBurger');
+    const navLinks = document.getElementById('navLinks');
+    burger.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      burger.classList.toggle('active');
+    });
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        burger.classList.remove('active');
+      });
+    });
+
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', (e) => {
+        const target = document.querySelector(anchor.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Reveal on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.feature-card, .mode-card, .pricing-card, .faq-item').forEach(el => {
+      el.classList.add('reveal');
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
