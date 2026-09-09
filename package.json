@@ -1,0 +1,7 @@
+{
+  "name": "taller-ceramica",
+  "private": true,
+  "scripts": {
+    "dev": "python3 server.py 5173"
+  }
+}
