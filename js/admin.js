@@ -2722,7 +2722,7 @@ async function handleAdminSubmitNovaReserva(e) {
 
       if (res && res.ok) {
         showToast(res.message || `Sèrie de ${res.total_creades} reserves recurrents creada amb èxit!`, 'success');
-        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
         closeAdminNovaReservaModal();
 
         adminSelectedDate = dataRes;
@@ -2761,7 +2761,7 @@ async function handleAdminSubmitNovaReserva(e) {
 
       if (res && res.ok) {
         showToast(`Reserva confirmada amb èxit per a ${studentNom}!`, 'success');
-        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
         closeAdminNovaReservaModal();
 
         adminSelectedDate = dataRes;

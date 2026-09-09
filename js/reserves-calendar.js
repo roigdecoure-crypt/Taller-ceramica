@@ -1017,10 +1017,8 @@ class ReservesCalendar {
           ReservesCalendar.sendBookingPush(reservaObj);
 
           // 2. So de confirmació
-          if (typeof SoundEngine !== 'undefined' && SoundEngine.playSuccess) {
-            SoundEngine.playSuccess();
-          } else if (typeof Sound !== 'undefined' && Sound.playSuccess) {
-            Sound.playSuccess();
+          if (typeof SoundEngine !== 'undefined') {
+            SoundEngine.playCheckin();
           }
 
           // 3. Mostrar modal d'èxit amb coordinació de calendaris (Google Calendar / .ics)
