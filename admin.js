@@ -2,6 +2,14 @@
  * admin.js - Lògica del Panell d'Administració 360° per al Taller de Ceràmica
  */
 
+// SoundEngine stub - evita errors quan es criden sons no implementats
+const SoundEngine = {
+  playCheckin: function() {},
+  playCheckout: function() {},
+  playSuccess: function() {},
+  playError: function() {}
+};
+
 let allStudents = [];
 let currentViewingStudent = null;
 let liveTimerInterval = null;
