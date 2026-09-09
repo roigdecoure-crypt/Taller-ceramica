@@ -502,7 +502,7 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" WHERE clau = "stripe_url_infantil" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "edat_tall_infantil" AND (valor = "" OR valor IS NULL)')
-        cursor.execute('UPDATE configuracio SET valor = "reserves" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR valor = "roigdecoure" OR valor = "Roig de Coure")')
+        cursor.execute('UPDATE configuracio SET valor = "reserves" WHERE clau = "google_calendar_name" AND (valor = "" OR valor IS NULL OR LOWER(REPLACE(valor, " ", "")) IN ("roigdecoure", "reserves"))')
         cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
         cursor.execute("DELETE FROM reserves WHERE data LIKE '%GMT%' OR data LIKE '%Central European%' OR data LIKE '%hora de verano%' OR id = 'TEST-DEBUG-1'")
 

@@ -244,6 +244,17 @@ const Store = {
         return { ok: false, error: 'Error de connexió: ' + err.message };
       }
     }
+    const data = this._getLocalData();
+    const student = (data.alumnes || []).find(a => a.id === studentId);
+    if (!student) return { ok: false, error: 'Alumne no trobat' };
+    if (currentPin !== null && String(student.pin || '') !== String(currentPin || '')) {
+      return { ok: false, error: 'La contrasenya actual no és correcta' };
+    }
+    if (String(newPin || '').trim().length < 4) {
+      return { ok: false, error: 'La nova contrasenya ha de tenir almenys 4 caràcters' };
+    }
+    student.pin = String(newPin).trim();
+    this._saveLocalData(data);
     return { ok: true, message: 'Contrasenya actualitzada correctament' };
   },
 

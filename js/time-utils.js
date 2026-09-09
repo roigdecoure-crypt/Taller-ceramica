@@ -191,8 +191,8 @@ const TimeUtils = {
    * @param {Array} sessions
    */
   calculateStudentBalance(studentId, packages = [], sessions = []) {
-    const studentPacks = packages.filter(p => p.studentId === studentId);
-    const studentSessions = sessions.filter(s => s.studentId === studentId && s.estat !== 'oberta');
+    const studentPacks = packages.filter(p => (p.studentId || p.student_id) === studentId);
+    const studentSessions = sessions.filter(s => (s.studentId || s.student_id) === studentId && s.estat !== 'oberta');
 
     // Total segons comprats
     const totalBoughtSeconds = studentPacks.reduce((acc, p) => {
@@ -202,7 +202,7 @@ const TimeUtils = {
 
     // Total segons consumits en sessions tancades
     const totalSpentSeconds = studentSessions.reduce((acc, s) => {
-      return acc + (parseInt(s.duradaSegons, 10) || 0);
+      return acc + (parseInt(s.duradaSegons ?? s.durada_segons, 10) || 0);
     }, 0);
 
     const balanceSeconds = totalBoughtSeconds - totalSpentSeconds;
