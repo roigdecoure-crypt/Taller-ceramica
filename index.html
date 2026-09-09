@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Roig de Coure — Botiga Taller de Ceràmica a Olot</title>
   <meta name="description" content="Roig de Coure és una botiga taller de ceràmica a Olot. Activitats de torn, modelatge, pintura de peces, vidre, monogràfics, grups i casals. Reserves en línia.">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
@@ -427,8 +430,14 @@
       obs.observe(el);
     });
 
-    // ── Service Worker ──
+    // ── Netejar cache antic i re-registrar Service Worker ──
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+      });
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+      }
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
