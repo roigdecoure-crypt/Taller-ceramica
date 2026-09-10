@@ -341,7 +341,17 @@ img { max-width: 100%; height: auto; display: block; }
 .activities-section { padding: 100px 0; background: #FFF; }
 
 .activities-grid-showcase {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 28px;
+}
+
+.activity-card.card-span-6 {
+  grid-column: span 6;
+}
+
+.activity-card.card-span-4 {
+  grid-column: span 4;
 }
 
 .activity-card {
@@ -627,6 +637,8 @@ img { max-width: 100%; height: auto; display: block; }
   }
   @keyframes menuSlide { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
   .activities-grid-showcase { grid-template-columns: 1fr; }
+  .activity-card.card-span-6,
+  .activity-card.card-span-4 { grid-column: span 1; }
   .booking-controls-row { grid-template-columns: 1fr; }
   .gift-grid { grid-template-columns: 1fr; }
   .contact-grid { grid-template-columns: 1fr; }
