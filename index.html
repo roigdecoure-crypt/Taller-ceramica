@@ -386,42 +386,31 @@
       <div class="gift-grid">
         <div class="reveal-left">
           <div class="form-group">
-            <label class="form-label" for="gift-exp-select">Tipus d'experiencia</label>
-            <select class="form-select" id="gift-exp-select">
-              <option value="torn">Experiencia de Torn o Modelatge (Adults)</option>
+            <label class="form-label" for="gift-exp-select">Tria l'experiència a regalar</label>
+            <select class="form-select" id="gift-exp-select" style="font-size: 15px; padding: 14px;">
+              <option value="torn">Experiència de Torn o Modelatge (Adults)</option>
               <option value="torn-infant">Torn o Modelatge (Menors de 12 anys)</option>
-              <option value="pintar">Experiencia de Pintar Ceramica</option>
+              <option value="pintar">Experiència de Pintar Ceràmica</option>
               <option value="hores-adults">Pack d'Hores de Taller (Adults)</option>
               <option value="hores-infant">Pack d'Hores de Taller (Menors de 12 anys)</option>
             </select>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="gift-to-input">Per a qui es el regal?</label>
-            <input type="text" class="form-input" id="gift-to-input" placeholder="Nom de la persona afortunada">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="gift-from-input">De part de</label>
-            <input type="text" class="form-input" id="gift-from-input" placeholder="El teu nom">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="gift-msg-input">Missatge personalitzat</label>
-            <textarea class="form-input" id="gift-msg-input" rows="3" placeholder="Esperem que gaudeixis d'aquesta experiencia unica al fang!"></textarea>
-          </div>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-primary" id="gift-pay-btn">Passarel·la de Pagament</button>
-            <button type="button" class="btn btn-outline" id="gift-print-btn">Imprimir Val Regal</button>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6;">
+            A la passarel·la de pagament segura podràs introduir el nom del destinatari, de part de qui és el regal i la teva dedicatòria personalitzada.
+          </p>
+          <div>
+            <button type="button" class="btn btn-primary btn-lg btn-block" id="gift-pay-btn">Passarel·la de Pagament</button>
           </div>
         </div>
         <div class="reveal-right">
           <div class="gift-preview-card float-anim">
             <div class="gift-badge-brand">Roig de Coure</div>
-            <p style="font-size: 11px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Taller de Ceramica &mdash; Olot</p>
+            <p style="font-size: 11px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Taller de Ceràmica &mdash; Olot</p>
             <div class="gift-voucher-title">Val Regal</div>
-            <div class="gift-voucher-exp" id="preview-gift-exp">Experiencia de Torn o Modelatge (Adults)</div>
-            <p style="font-size: 14px; color: var(--dark); margin-bottom: 4px;">Per a: <strong id="preview-gift-to">Persona Afortunada</strong></p>
-            <p class="gift-voucher-notes" id="preview-gift-msg">Esperem que gaudeixis d'aquesta experiencia unica al fang!</p>
-            <div class="gift-voucher-code" id="preview-gift-code">RDC-2026-0000</div>
-            <p style="font-size: 11px; color: var(--muted); margin-top: 12px;">Bescanviable a roigdecoure.cat o al taller</p>
+            <div class="gift-voucher-exp" id="preview-gift-exp">Experiència de Torn o Modelatge (Adults)</div>
+            <p class="gift-voucher-notes" style="margin: 16px 0;">Una experiència artesanal única per gaudir i crear amb les mans.</p>
+            <div class="gift-voucher-code" id="preview-gift-code">RDC-2026-VAL</div>
+            <p style="font-size: 11px; color: var(--muted); margin-top: 14px;">Bescanviable a roigdecoure.cat o al taller</p>
           </div>
         </div>
       </div>

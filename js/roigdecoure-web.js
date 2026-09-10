@@ -349,25 +349,15 @@
 
   function initGiftVoucher() {
     var expSel = document.getElementById('gift-exp-select');
-    var toIn = document.getElementById('gift-to-input');
-    var msgIn = document.getElementById('gift-msg-input');
-    var fromIn = document.getElementById('gift-from-input');
     var prevExp = document.getElementById('preview-gift-exp');
-    var prevTo = document.getElementById('preview-gift-to');
-    var prevMsg = document.getElementById('preview-gift-msg');
     var prevCode = document.getElementById('preview-gift-code');
+
     function upd() {
       if (prevExp && expSel) prevExp.textContent = expSel.options[expSel.selectedIndex].text;
-      if (prevTo && toIn) prevTo.textContent = toIn.value.trim() || 'Persona Afortunada';
-      if (prevMsg && msgIn) prevMsg.textContent = msgIn.value.trim() || 'Esperem que gaudeixis d aquesta experiencia unica al fang!';
     }
+
     if (expSel) expSel.addEventListener('change', upd);
-    if (toIn) toIn.addEventListener('input', upd);
-    if (msgIn) msgIn.addEventListener('input', upd);
     if (prevCode) prevCode.textContent = 'RDC-' + new Date().getFullYear() + '-' + (1000 + Math.floor(Math.random() * 9000));
-    
-    var printBtn = document.getElementById('gift-print-btn');
-    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
 
     var payBtn = document.getElementById('gift-pay-btn');
     if (payBtn) payBtn.addEventListener('click', function (e) {
