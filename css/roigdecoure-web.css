@@ -187,14 +187,15 @@ img { max-width: 100%; height: auto; display: block; }
    ========================================================================== */
 .site-header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-  background: rgba(250,247,244,0.7);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(232,225,218,0.5);
+  border-bottom: 1px solid rgba(232,225,218,0.7);
+  box-shadow: 0 2px 14px rgba(42,36,33,0.08);
   transition: var(--transition);
 }
 .site-header.scrolled {
-  background: rgba(255,255,255,0.92);
-  box-shadow: 0 4px 20px rgba(42,36,33,0.08);
+  background: rgba(255,255,255,0.98);
+  box-shadow: 0 4px 24px rgba(42,36,33,0.12);
 }
 .nav-container { display: flex; align-items: center; justify-content: space-between; height: 72px; }
 .brand-wrapper { display: flex; align-items: center; gap: 10px; }
@@ -334,6 +335,116 @@ img { max-width: 100%; height: auto; display: block; }
   100% { top: 100%; }
 }
 .scroll-text { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+
+/* ==========================================================================
+   FONS FOTOGRÀFIC DINÀMIC PER A TOTES LES SECCIONS
+   ========================================================================== */
+.section-with-bg {
+  position: relative;
+  overflow: hidden;
+  background: #1A120E !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.section-with-bg > .container {
+  position: relative;
+  z-index: 2;
+}
+.section-bg-slider {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.section-bg-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 8s ease-out;
+  will-change: opacity, transform;
+}
+.section-bg-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+.section-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(22,15,12,0.82) 0%, rgba(40,27,21,0.86) 50%, rgba(131,29,29,0.44) 100%);
+}
+
+/* Encapçalaments sobre fons fotogràfic */
+.section-with-bg .section-header h2 {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 14px rgba(0,0,0,0.5);
+}
+.section-with-bg .section-header p {
+  color: rgba(255, 255, 255, 0.90) !important;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
+}
+.section-with-bg .eyebrow {
+  background: rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #FFB8A5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 16px;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Targetes i blocs sobre fons fotogràfic */
+.section-with-bg .activity-card {
+  background: #FFFFFF !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+}
+.section-with-bg .booking-wrapper {
+  background: #FFFFFF !important;
+  box-shadow: 0 16px 44px rgba(0,0,0,0.28);
+}
+.gift-form-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 36px 32px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+}
+.section-with-bg .gift-preview-card {
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+}
+.section-with-bg .pricing-card {
+  background: #FFFFFF !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+}
+.section-with-bg .pricing-included-box {
+  background: #FFFFFF !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+.section-with-bg .faq-accordion {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 12px 32px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+}
+.contact-form-card {
+  max-width: 620px;
+  margin: 50px auto 0;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 36px 32px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.25);
+}
+.contact-form-card h3 {
+  color: var(--dark);
+}
 
 /* ==========================================================================
    3. ACTIVITATS - CARDS AMB HOVER CINEMATICS

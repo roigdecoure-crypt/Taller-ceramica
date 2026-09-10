@@ -21,6 +21,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     initScrollReveals();
     initHeroBackgroundSlider();
+    initSectionBackgroundSliders();
     initNavigation();
     initBookingEngine();
     initGiftVoucher();
@@ -110,6 +111,55 @@
         ticking = true;
       }
     }, { passive: true });
+  }
+
+  /* ==== SLIDERS DE FONS PER A TOTES LES SECCIONS ==== */
+  function initSectionBackgroundSliders() {
+    var sections = document.querySelectorAll('.section-with-bg');
+    if (!sections.length) return;
+
+    sections.forEach(function (sec, secIdx) {
+      var slides = sec.querySelectorAll('.section-bg-slide');
+      if (slides.length <= 1) return;
+
+      var currentIdx = 0;
+      var timer = null;
+      var intervalDuration = 4800 + (secIdx % 3) * 500;
+
+      function nextSlide() {
+        slides[currentIdx].classList.remove('active');
+        currentIdx = (currentIdx + 1) % slides.length;
+        slides[currentIdx].classList.add('active');
+      }
+
+      function startTimer() {
+        if (!timer) {
+          timer = setInterval(nextSlide, intervalDuration);
+        }
+      }
+
+      function stopTimer() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              startTimer();
+            } else {
+              stopTimer();
+            }
+          });
+        }, { threshold: 0.05, rootMargin: '200px 0px' });
+        observer.observe(sec);
+      } else {
+        startTimer();
+      }
+    });
   }
 
   /* ==== NAVEGACIO ==== */
