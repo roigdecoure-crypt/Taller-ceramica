@@ -1,8 +1,8 @@
 /**
- * roigdecoure-web.css - Disseny Contemporani, Lluminos i Dinamic
+ * roigdecoure-web.css - Minimalisme Contemporani amb Fons Fixes
  * Roig de Coure · Taller i Botiga de Ceràmica i Vidre · Olot
- * Zero emojis. Tipografia moderna neo-grotesca + Buffalo per a signatura.
- * Fons fixes parallax, quadres i textos emergents, màxima llegibilitat.
+ * 4 fons fotogràfics que canvien suaument + informació flotant que llisca a sobre.
+ * Zero emojis. Tipografia Plus Jakarta Sans + Buffalo per a la signatura.
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap');
@@ -18,63 +18,47 @@
 }
 
 /* ==========================================================================
-   1. VARIABLES & PALETA LLUMINOSA CONTEMPORANIA
+   1. VARIABLES & PALETA MINIMALISTA
    ========================================================================== */
 :root {
-  /* Fons i Superfícies Clares i Càlides */
-  --bg-main: #FAF8F5;            /* Sorra ceràmica molt suau */
-  --bg-surface: #FFFFFF;         /* Blanc pur porcellana */
-  --bg-elevated: #F4EFE9;        /* Bescuit suau */
-  --bg-accent-tint: #F7F1EB;     /* To càlid de taller */
+  --bg-page: #FAF8F5;
+  --card-surface: rgba(255, 255, 255, 0.94);
+  --card-surface-pure: #FFFFFF;
+  --card-subtle: #F6F2EB;
 
-  /* Tipografia i Text */
-  --text-primary: #191614;       /* Carbó fosc d'alt contrast */
-  --text-secondary: #575049;     /* Gris argila mitjà per a lectura fluïda */
-  --text-muted: #877E75;         /* Detalls i etiquetes */
-  --text-on-dark: #FFFFFF;
+  --text-main: #1C1816;
+  --text-body: #524B45;
+  --text-muted: #857C74;
 
-  /* Accents d'Identitat de Roig de Coure */
-  --accent-terracotta: #C85A32;  /* Terracota Roig de Coure viva */
-  --accent-terracotta-hover: #B24E29;
-  --accent-terracotta-subtle: rgba(200, 90, 50, 0.08);
-  --accent-terracotta-glow: rgba(200, 90, 50, 0.22);
-  --accent-ochre: #C08D46;       /* Ocre de cendra daurat */
-  --accent-sage: #527564;        /* Verd sàlvia artesanal */
-  --accent-sage-subtle: rgba(82, 117, 100, 0.09);
+  --accent-terracotta: #C85A32;
+  --accent-terracotta-hover: #B04C27;
+  --accent-terracotta-subtle: rgba(200, 90, 50, 0.09);
+  --accent-terracotta-glow: rgba(200, 90, 50, 0.25);
+  --accent-ochre: #BF8B44;
 
-  /* Línies i Separadors */
+  --border-card: rgba(255, 255, 255, 0.85);
   --border-subtle: #EBE4DA;
   --border-medium: #DDD4C7;
-  --border-focus: #C85A32;
 
-  /* Relleu i Ombres Suaus */
   --radius-xs: 8px;
   --radius-sm: 14px;
-  --radius-md: 22px;
-  --radius-lg: 32px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
   --radius-full: 9999px;
 
-  --shadow-card: 0 10px 30px -5px rgba(25, 22, 20, 0.06), 0 4px 12px rgba(25, 22, 20, 0.03);
-  --shadow-hover: 0 20px 40px -8px rgba(25, 22, 20, 0.12), 0 8px 16px rgba(200, 90, 50, 0.08);
+  --shadow-floating: 0 25px 60px -15px rgba(28, 24, 22, 0.12), 0 8px 24px rgba(28, 24, 22, 0.04);
+  --shadow-card: 0 10px 30px -5px rgba(28, 24, 22, 0.06);
   --shadow-terracotta: 0 12px 30px -4px rgba(200, 90, 50, 0.35);
 
-  /* Transicions suaus */
-  --ease-modern: cubic-bezier(0.16, 1, 0.3, 1);
-  --transition: all 0.35s var(--ease-modern);
+  --ease-minimal: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition: all 0.35s var(--ease-minimal);
 
-  /* Tipografies */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Verdana, sans-serif;
   --font-script: 'Buffalo', cursive;
-
-  /* Mides tipogràfiques modernes */
-  --display-hero: clamp(2.6rem, 2rem + 4.2vw, 5.4rem);
-  --display-h2: clamp(1.8rem, 1.4rem + 2vw, 3.2rem);
-  --display-h3: clamp(1.3rem, 1.1rem + 1vw, 2rem);
-  --font-lead: clamp(1.05rem, 0.98rem + 0.35vw, 1.3rem);
 }
 
 /* ==========================================================================
-   2. RESET & BASE
+   2. BASE & RESET
    ========================================================================== */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -84,22 +68,20 @@
 
 html {
   scroll-behavior: smooth;
-  background-color: var(--bg-main);
-  color: var(--text-primary);
+  background-color: var(--bg-page);
+  color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background-color: var(--bg-main);
-  color: var(--text-primary);
-  overflow-x: hidden;
+  background-color: var(--bg-page);
+  color: var(--text-main);
   position: relative;
   min-height: 100vh;
-  cursor: default; /* El cursor del sistema sempre és visible i precís */
+  cursor: default;
 }
 
 ::selection {
@@ -117,15 +99,12 @@ a {
   color: inherit;
   text-decoration: none;
   transition: var(--transition);
-  cursor: pointer;
 }
 
 button {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
   border: none;
-  outline: none;
   background: none;
   cursor: pointer;
 }
@@ -133,85 +112,119 @@ button {
 input, select, textarea {
   font-family: inherit;
   font-size: inherit;
-  color: inherit;
   border: none;
   outline: none;
 }
 
 /* ==========================================================================
-   3. SISTEMA D'APARICIO AMB SCROLL (REVEAL ON SCROLL)
+   3. GESTOR DE FONS FIXES FULLSCREEN (4 FONS QUE CANVIEN AMB L'SCROLL)
    ========================================================================== */
-.reveal {
+.fixed-backdrop-manager {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.backdrop-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.8s var(--ease-modern), transform 0.8s var(--ease-modern);
+  transform: scale(1.05);
+  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
-.reveal.is-visible {
+.backdrop-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Fons 1: Torn de terrissa */
+.backdrop-slide-0 {
+  background-image: url('../img/web/classes-torn-modelatge.png');
+}
+
+/* Fons 2: Pintar ceràmica i creació */
+.backdrop-slide-1 {
+  background-image: url('../img/web/pintar-ceramica-original.png');
+}
+
+/* Fons 3: Exposició i peces cuites al forn */
+.backdrop-slide-2 {
+  background-image: url('../img/web/peces-expo.jpeg');
+}
+
+/* Fons 4: Taller i comunitat */
+.backdrop-slide-3 {
+  background-image: url('../img/web/grups-families-original.jpg');
+}
+
+/* Vel translúcid clar que permet veure la foto amb nitidesa i dóna contrast al text */
+.backdrop-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(250, 248, 245, 0.42) 0%, rgba(250, 248, 245, 0.68) 50%, rgba(250, 248, 245, 0.85) 100%);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ==========================================================================
+   4. CAPA DE CONTINGUT FLOTANT QUE LLISCA A SOBRE
+   ========================================================================== */
+.floating-content-layer {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.container-minimal {
+  width: 100%;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(1.2rem, 3vw, 2.5rem);
+  padding-right: clamp(1.2rem, 3vw, 2.5rem);
+}
+
+/* Targeta flotant minimalista principal */
+.floating-panel {
+  background: var(--card-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  padding: clamp(2rem, 4vw, 3.8rem);
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+  transition: transform 0.6s var(--ease-minimal), opacity 0.6s var(--ease-minimal);
+}
+
+/* Animació d'entrada suau amb scroll */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.75s var(--ease-minimal), transform 0.75s var(--ease-minimal);
+}
+
+.reveal-item.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
-
-/* Contenidor central */
-.container-atelier {
-  width: 100%;
-  max-width: 1260px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: clamp(1.25rem, 3vw, 2.5rem);
-  padding-right: clamp(1.25rem, 3vw, 2.5rem);
-}
-
-.section-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--accent-terracotta);
-  margin-bottom: 0.85rem;
-}
-
-.section-label::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--accent-terracotta);
-}
-
-.section-title {
-  font-size: var(--display-h2);
-  font-weight: 800;
-  line-height: 1.14;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-  margin-bottom: 1.15rem;
-}
-
-.section-title span.highlight {
-  color: var(--accent-terracotta);
-}
-
-.section-subtitle {
-  font-size: var(--font-lead);
-  color: var(--text-secondary);
-  max-width: 660px;
-  line-height: 1.6;
-}
-
 /* ==========================================================================
-   4. NAVEGACIO SUPERIOR (HEADER LLEUGER & GLASS)
+   5. CAPÇALERA MINIMALISTA (FIXED GLASS)
    ========================================================================== */
-.site-header {
+.minimal-header {
   position: fixed;
   top: 0;
   left: 0;
@@ -220,46 +233,45 @@ input, select, textarea {
   padding: 1.2rem 0;
   transition: padding 0.35s ease, background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
   border-bottom: 1px solid transparent;
-  background-color: transparent;
 }
 
-.site-header.scrolled {
+.minimal-header.scrolled {
   padding: 0.85rem 0;
-  background-color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background-color: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom-color: var(--border-subtle);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
-.header-container {
+.header-flex-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.brand-signature {
+.brand-wrapper {
   display: flex;
   align-items: center;
   gap: 0.85rem;
 }
 
-.brand-logo-img {
-  width: 38px;
-  height: 38px;
+.brand-logo-icon {
+  width: 36px;
+  height: 36px;
   object-fit: contain;
 }
 
-.brand-title {
+.brand-name {
   font-family: var(--font-script);
-  font-size: 2.2rem;
+  font-size: 2.1rem;
   line-height: 1;
-  color: var(--text-primary);
+  color: var(--text-main);
   display: block;
 }
 
-.brand-meta {
-  font-size: 0.65rem;
+.brand-subline {
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -268,22 +280,22 @@ input, select, textarea {
   margin-top: 0.15rem;
 }
 
-.nav-links {
+.nav-links-menu {
   display: flex;
   align-items: center;
   gap: 2rem;
   list-style: none;
 }
 
-.nav-link {
-  font-size: 0.85rem;
+.nav-menu-link {
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-body);
   position: relative;
   padding: 0.35rem 0;
 }
 
-.nav-link::after {
+.nav-menu-link::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -295,26 +307,19 @@ input, select, textarea {
   transition: width 0.3s ease;
 }
 
-.nav-link:hover {
+.nav-menu-link:hover {
   color: var(--accent-terracotta);
 }
 
-.nav-link:hover::after {
+.nav-menu-link:hover::after {
   width: 100%;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.btn-primary-modern {
+.btn-cta-terracotta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.6rem;
+  padding: 0.7rem 1.5rem;
   border-radius: var(--radius-full);
   background: var(--accent-terracotta);
   color: #FFFFFF;
@@ -326,23 +331,22 @@ input, select, textarea {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.btn-primary-modern:hover {
+.btn-cta-terracotta:hover {
   background: var(--accent-terracotta-hover);
   transform: translateY(-2px);
   box-shadow: 0 16px 36px -4px rgba(200, 90, 50, 0.45);
   color: #FFFFFF;
 }
 
-.btn-secondary-modern {
+.btn-cta-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.6rem;
+  padding: 0.7rem 1.5rem;
   border-radius: var(--radius-full);
-  background: var(--bg-surface);
+  background: #FFFFFF;
   border: 1px solid var(--border-medium);
-  color: var(--text-primary);
+  color: var(--text-main);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -350,37 +354,35 @@ input, select, textarea {
   transition: var(--transition);
 }
 
-.btn-secondary-modern:hover {
-  border-color: var(--text-primary);
+.btn-cta-outline:hover {
+  border-color: var(--text-main);
   transform: translateY(-2px);
-  background: #FFFFFF;
 }
 
-.mobile-menu-toggle {
+.mobile-toggle-btn {
   display: none;
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 5px;
-  background: var(--bg-surface);
+  background: #FFFFFF;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   box-shadow: var(--shadow-card);
 }
 
-.mobile-menu-toggle span {
+.mobile-toggle-btn span {
   display: block;
   width: 20px;
   height: 2px;
-  background-color: var(--text-primary);
+  background-color: var(--text-main);
   border-radius: var(--radius-full);
-  transition: var(--transition);
 }
 
-/* Mobile Drawer */
-.mobile-nav-drawer {
+/* Drawer Mòbil */
+.mobile-nav-overlay {
   position: fixed;
   inset: 0;
   background: rgba(250, 248, 245, 0.98);
@@ -396,12 +398,12 @@ input, select, textarea {
   transition: opacity 0.35s ease;
 }
 
-.mobile-nav-drawer.open {
+.mobile-nav-overlay.open {
   opacity: 1;
   pointer-events: auto;
 }
 
-.mobile-nav-links {
+.mobile-nav-items {
   list-style: none;
   text-align: center;
   display: flex;
@@ -409,144 +411,111 @@ input, select, textarea {
   gap: 1.5rem;
 }
 
-.mobile-nav-link {
+.mobile-nav-item a {
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--text-primary);
-}
-
-.mobile-nav-link:hover {
-  color: var(--accent-terracotta);
+  color: var(--text-main);
 }
 
 /* ==========================================================================
-   5. HERO LLEUGER, DINAMIC I POTENT
+   6. SECCIO HERO FLOTANT
    ========================================================================== */
-.modern-hero {
-  position: relative;
-  min-height: 92vh;
-  min-height: 92dvh;
+.hero-scroll-stage {
+  min-height: 95vh;
+  min-height: 95dvh;
   display: flex;
   align-items: center;
-  padding-top: 7.5rem;
+  padding-top: 7rem;
   padding-bottom: 4rem;
-  background: linear-gradient(175deg, #FAF7F2 0%, #F5EEE4 50%, #FAF8F5 100%);
-  overflow: hidden;
 }
 
-.hero-glow-sphere {
-  position: absolute;
-  top: -10%;
-  right: -5%;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(200, 90, 50, 0.12) 0%, rgba(200, 90, 50, 0) 70%);
-  pointer-events: none;
-  filter: blur(40px);
+.hero-floating-card {
+  background: var(--card-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-floating);
+  padding: clamp(2.5rem, 5vw, 4.5rem);
+  max-width: 860px;
 }
 
-.hero-layout-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 3.5rem;
-  align-items: center;
-  position: relative;
-  z-index: 5;
-}
-
-.hero-live-badge {
+.hero-pill-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
   padding: 0.4rem 1rem;
-  background: var(--bg-surface);
+  background: #FFFFFF;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-full);
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-primary);
+  color: var(--text-main);
   box-shadow: var(--shadow-card);
   margin-bottom: 1.5rem;
 }
 
-.live-indicator-dot {
+.pulsing-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background-color: var(--accent-terracotta);
-  position: relative;
 }
 
-.live-indicator-dot::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background-color: var(--accent-terracotta);
-  opacity: 0.4;
-  animation: pulseBeacon 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
-}
-
-@keyframes pulseBeacon {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  100% { transform: scale(2.5); opacity: 0; }
-}
-
-.hero-main-title {
-  font-size: var(--display-hero);
+.hero-headline {
+  font-size: clamp(2.6rem, 2.2rem + 3.8vw, 4.8rem);
   font-weight: 800;
-  line-height: 1.02;
+  line-height: 1.05;
   letter-spacing: -0.035em;
-  color: var(--text-primary);
+  color: var(--text-main);
   margin-bottom: 1.4rem;
 }
 
-.hero-main-title span.color-emphasis {
+.hero-headline span.accent {
   color: var(--accent-terracotta);
 }
 
-.hero-lead-text {
-  font-size: var(--font-lead);
-  color: var(--text-secondary);
+.hero-subtext {
+  font-size: clamp(1.05rem, 0.98rem + 0.3vw, 1.25rem);
+  color: var(--text-body);
   line-height: 1.65;
   margin-bottom: 2.2rem;
-  max-width: 580px;
+  max-width: 650px;
 }
 
-.hero-buttons-row {
+.hero-actions-row {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 2.8rem;
+  margin-bottom: 2.5rem;
 }
 
-.hero-numbers-strip {
+.hero-key-metrics {
   display: flex;
-  gap: 2.2rem;
+  gap: 2.5rem;
   padding-top: 1.8rem;
   border-top: 1px solid var(--border-subtle);
   flex-wrap: wrap;
 }
 
-.hero-stat-box {
+.metric-unit {
   display: flex;
   flex-direction: column;
 }
 
-.hero-stat-value {
-  font-size: 1.9rem;
+.metric-number {
+  font-size: 1.85rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--text-primary);
+  color: var(--text-main);
   line-height: 1;
 }
 
-.hero-stat-label {
-  font-size: 0.74rem;
+.metric-label {
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -554,651 +523,270 @@ input, select, textarea {
   margin-top: 0.3rem;
 }
 
-/* Composició Visual Hero */
-.hero-visual-frame {
-  position: relative;
-}
-
-.hero-image-card {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: 0 25px 60px -15px rgba(25, 22, 20, 0.16);
-  border: 4px solid #FFFFFF;
-}
-
-.hero-image-card img {
-  width: 100%;
-  height: 480px;
-  object-fit: cover;
-  object-position: center 35%;
-  transition: transform 0.8s var(--ease-modern);
-}
-
-.hero-image-card:hover img {
-  transform: scale(1.04);
-}
-
-/* Targetes flotants superposades (Floating Badges) */
-.hero-floating-card {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(14px);
-  padding: 0.9rem 1.3rem;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  animation: floatSubtle 6s ease-in-out infinite alternate;
-}
-
-.hero-floating-card.card-top {
-  top: -15px;
-  left: -20px;
-}
-
-.hero-floating-card.card-bottom {
-  bottom: -20px;
-  right: -15px;
-  animation-delay: -3s;
-}
-
-@keyframes floatSubtle {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-8px); }
-}
-
-.floating-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent-terracotta-subtle);
-  color: var(--accent-terracotta);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-.floating-card-title {
-  font-size: 0.84rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.floating-card-sub {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-}
-
 /* ==========================================================================
-   6. CINTA KINETICA (TICKER)
+   7. SECCIO ACTIVITATS FLOTANT (LES 7 DISCIPLINES)
    ========================================================================== */
-.kinetic-ticker-bar {
-  background-color: #FFFFFF;
-  border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 1.1rem 0;
-  overflow: hidden;
-  position: relative;
-  z-index: 10;
+.activities-scroll-stage {
+  padding: 4rem 0;
 }
 
-.ticker-motion-track {
-  display: flex;
-  white-space: nowrap;
-  gap: 2.5rem;
-  animation: tickerSlide 30s linear infinite;
-  will-change: transform;
+.panel-header-block {
+  margin-bottom: 2.5rem;
 }
 
-.ticker-motion-track:hover {
-  animation-play-state: paused;
-}
-
-@keyframes tickerSlide {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.ticker-chip {
+.tag-label {
   display: inline-flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.88rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-}
-
-.ticker-chip span.bold-accent {
-  color: var(--accent-terracotta);
-}
-
-.ticker-dot-sep {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: var(--border-medium);
-}
-
-/* ==========================================================================
-   7. PRIMER FONS FIX PARALLAX ("FONS FIX 1: L'OFICI DEL FANG")
-   ========================================================================== */
-.parallax-window-section {
-  position: relative;
-  min-height: 640px;
-  background-image: url('../img/web/classes-torn-modelatge.png');
-  background-attachment: fixed;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  display: flex;
-  align-items: center;
-  padding: 7rem 0;
-  overflow: hidden;
-}
-
-/* Overlay per assegurar llegibilitat cristal·lina del text */
-.parallax-window-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(25, 22, 20, 0.72) 0%, rgba(25, 22, 20, 0.52) 100%);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
-.parallax-content-container {
-  position: relative;
-  z-index: 10;
-  max-width: 920px;
-}
-
-/* Quadre Flotant que apareix sobre el fons fix */
-.parallax-floating-box {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-radius: var(--radius-lg);
-  padding: clamp(2rem, 4vw, 3.8rem);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.parallax-quote-text {
-  font-size: clamp(1.4rem, 1.2rem + 1vw, 2.1rem);
+  gap: 0.5rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-}
-
-.parallax-quote-text span.accent {
-  color: var(--accent-terracotta);
-}
-
-.parallax-author-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 1.25rem;
-}
-
-.parallax-author-name {
-  font-size: 0.85rem;
-  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-primary);
+  letter-spacing: 0.14em;
+  color: var(--accent-terracotta);
+  margin-bottom: 0.75rem;
 }
 
-.parallax-author-tag {
-  font-size: 0.78rem;
-  color: var(--text-muted);
+.panel-title {
+  font-size: clamp(1.8rem, 1.4rem + 1.8vw, 3rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--text-main);
+  margin-bottom: 0.85rem;
 }
 
-/* ==========================================================================
-   8. STORYTELLING DE L'OFICI (LES 4 FASES AMB REVEAL)
-   ========================================================================== */
-.process-section {
-  padding: 8rem 0;
-  background-color: var(--bg-main);
+.panel-subtitle {
+  font-size: 1.05rem;
+  color: var(--text-body);
+  max-width: 620px;
 }
 
-.process-steps-grid {
+.activities-minimal-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.75rem;
-  margin-top: 4rem;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
 }
 
-.step-reveal-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+.activity-mini-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
-  padding: 2.25rem 1.8rem;
+  padding: 1.8rem;
   box-shadow: var(--shadow-card);
   transition: var(--transition);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: relative;
-  overflow: hidden;
 }
 
-.step-reveal-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--accent-terracotta);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.activity-mini-card.span-6 { grid-column: span 6; }
+.activity-mini-card.span-4 { grid-column: span 4; }
+
+.activity-mini-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-terracotta);
+  box-shadow: var(--shadow-floating);
 }
 
-.step-reveal-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-hover);
-  border-color: var(--border-medium);
-}
-
-.step-reveal-card:hover::before {
-  opacity: 1;
-}
-
-.step-badge-number {
-  font-size: 2.4rem;
+.act-badge-top {
+  font-size: 0.68rem;
   font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--accent-terracotta);
-  margin-bottom: 1.2rem;
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
-.step-card-title {
-  font-size: 1.18rem;
+.act-title-text {
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
+  color: var(--text-main);
+  margin-bottom: 0.6rem;
 }
 
-.step-card-desc {
+.act-desc-text {
   font-size: 0.88rem;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin-bottom: 1.5rem;
+  color: var(--text-body);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
 }
 
-.step-card-footer {
-  font-size: 0.74rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent-ochre);
+.act-meta-row {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
   border-top: 1px solid var(--border-subtle);
-  padding-top: 1rem;
-}
-
-/* ==========================================================================
-   9. SEGON FONS FIX PARALLAX ("FONS FIX 2: PECES & CUITA")
-   ========================================================================== */
-.parallax-window-second {
-  position: relative;
-  min-height: 520px;
-  background-image: url('../img/web/peces-expo.jpeg');
-  background-attachment: fixed;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  display: flex;
-  align-items: center;
-  padding: 6rem 0;
-  overflow: hidden;
-}
-
-.parallax-cards-spread {
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 2.5rem;
-  align-items: center;
-  position: relative;
-  z-index: 10;
-}
-
-.parallax-feature-box {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg);
-  padding: clamp(2rem, 3.5vw, 3.2rem);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22);
-}
-
-.parallax-feature-box h3 {
-  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.4rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
+  padding-top: 0.85rem;
   margin-bottom: 1rem;
 }
 
-.parallax-feature-box p {
-  font-size: 0.98rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 1.75rem;
-}
-
-.parallax-pill-tags {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.parallax-pill {
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0.4rem 0.9rem;
-  background: var(--bg-accent-tint);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-full);
-  color: var(--text-primary);
-}
-
-/* ==========================================================================
-   10. LES 7 ACTIVITATS (COVER CARDS DINAMIQUES)
-   ========================================================================== */
-.activities-section {
-  padding: 8rem 0;
-  background-color: var(--bg-surface);
-}
-
-.activities-grid-modern {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 2rem;
-  margin-top: 3.5rem;
-}
-
-.activity-card-cover {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 480px;
-  padding: 2.25rem;
-  box-shadow: var(--shadow-card);
-  border: 1px solid var(--border-subtle);
-  transition: transform 0.4s var(--ease-modern), box-shadow 0.4s var(--ease-modern);
-}
-
-.activity-card-cover.span-8 {
-  grid-column: span 8;
-  min-height: 520px;
-}
-
-.activity-card-cover.span-4 {
-  grid-column: span 4;
-}
-
-.activity-card-cover.span-6 {
-  grid-column: span 6;
-}
-
-.card-image-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-.card-image-bg img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.7s var(--ease-modern);
-}
-
-.activity-card-cover:hover .card-image-bg img {
-  transform: scale(1.06);
-}
-
-.card-scrim-gradient {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background: linear-gradient(to top, rgba(20, 17, 15, 0.94) 0%, rgba(20, 17, 15, 0.6) 45%, rgba(20, 17, 15, 0.1) 100%);
-  transition: opacity 0.3s ease;
-}
-
-.activity-card-cover:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-hover);
-}
-
-.card-body-content {
-  position: relative;
-  z-index: 5;
-  color: #FFFFFF;
-}
-
-.card-tag-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.3rem 0.8rem;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  color: #FFFFFF;
-  margin-bottom: 0.85rem;
-}
-
-.card-tag-badge.star {
-  background: var(--accent-terracotta);
-}
-
-.card-title-act {
-  font-size: 2.2rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: #FFFFFF;
-  line-height: 1.1;
-  margin-bottom: 0.65rem;
-}
-
-.card-desc-act {
-  font-size: 0.92rem;
-  color: #DDD4C7;
-  line-height: 1.6;
-  margin-bottom: 1.4rem;
-  max-width: 500px;
-}
-
-.card-specs-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  padding: 0.85rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  margin-bottom: 1.4rem;
-  font-size: 0.8rem;
-  color: #FFFFFF;
-}
-
-.card-spec-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.card-spec-item span.muted {
-  color: #BBB0A4;
-}
-
-.card-cta-btn {
+.act-link-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.4rem;
-  border-radius: var(--radius-full);
-  background: #FFFFFF;
-  color: var(--text-primary);
+  gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  color: var(--accent-terracotta);
   transition: var(--transition);
 }
 
-.card-cta-btn:hover {
-  background: var(--accent-terracotta);
-  color: #FFFFFF;
+.act-link-btn:hover {
+  color: var(--accent-terracotta-hover);
   transform: translateX(4px);
 }
 
 /* ==========================================================================
-   11. MOTOR DE RESERVES INTEGRAT (DISSENY NET I CLAR)
+   8. SECCIO L'OFICI & FILOSOFIA FLOTANT
    ========================================================================== */
-.booking-section {
-  padding: 8rem 0;
-  background-color: var(--bg-main);
-  position: relative;
+.craft-scroll-stage {
+  padding: 4rem 0;
 }
 
-.booking-panel-box {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-  margin-top: 3.5rem;
-}
-
-.booking-columns-layout {
+.craft-steps-row {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-top: 2.5rem;
 }
 
-.booking-left-col {
-  padding: clamp(2rem, 3.5vw, 3.2rem);
-  background: var(--bg-elevated);
-  border-right: 1px solid var(--border-subtle);
-}
-
-.booking-right-col {
-  padding: clamp(2rem, 3.5vw, 3.2rem);
-  background: #FFFFFF;
-}
-
-/* Selector d'Activitats */
-.act-chips-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-bottom: 2.2rem;
-}
-
-.act-chip-item {
-  padding: 0.6rem 1.1rem;
-  border-radius: var(--radius-full);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  transition: var(--transition);
-}
-
-.act-chip-item:hover {
-  border-color: var(--text-primary);
-  color: var(--text-primary);
-}
-
-.act-chip-item.selected {
-  background: var(--accent-terracotta);
-  border-color: var(--accent-terracotta);
-  color: #FFFFFF;
-  box-shadow: 0 4px 14px var(--accent-terracotta-glow);
-}
-
-/* Calendari Interactiu */
-.calendar-card-ui {
+.craft-step-box {
   background: #FFFFFF;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
-  padding: 1.5rem;
-  box-shadow: var(--shadow-card);
-  margin-bottom: 2rem;
+  padding: 1.6rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
-.calendar-header-ui {
+.craft-step-num {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-terracotta);
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.craft-step-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.craft-step-desc {
+  font-size: 0.84rem;
+  color: var(--text-body);
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   9. SECCIO RESERVES FLOTANT
+   ========================================================================== */
+.booking-scroll-stage {
+  padding: 4rem 0;
+}
+
+.booking-two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 2.5rem;
+}
+
+.booking-col-left {
+  background: var(--card-subtle);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+}
+
+.chips-activity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.8rem;
+}
+
+.chip-select-btn {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-full);
+  background: #FFFFFF;
+  border: 1px solid var(--border-medium);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-body);
+  transition: var(--transition);
+}
+
+.chip-select-btn.selected {
+  background: var(--accent-terracotta);
+  border-color: var(--accent-terracotta);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px var(--accent-terracotta-glow);
+}
+
+/* Calendari */
+.cal-box-ui {
+  background: #FFFFFF;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.cal-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
-.cal-title-month {
-  font-size: 1.15rem;
+.cal-month-text {
+  font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
+  color: var(--text-main);
 }
 
-.cal-nav-buttons-wrap {
+.cal-arrows-wrap {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
-.cal-arrow-btn {
-  width: 34px;
-  height: 34px;
+.cal-arrow-button {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 1px solid var(--border-medium);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
-  background: var(--bg-surface);
+  font-weight: 700;
+  color: var(--text-main);
+  background: #FFFFFF;
   transition: var(--transition);
 }
 
-.cal-arrow-btn:hover {
-  background: var(--text-primary);
+.cal-arrow-button:hover {
+  background: var(--text-main);
   color: #FFFFFF;
 }
 
-.cal-weekdays-row {
+.cal-weekdays-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.6rem;
 }
 
-.cal-days-grid-ui {
+.cal-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
+  gap: 4px;
 }
 
 .cal-day-cell {
@@ -1207,29 +795,27 @@ input, select, textarea {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xs);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-main);
   transition: var(--transition);
   user-select: none;
 }
 
 .cal-day-cell.available {
   cursor: pointer;
-  background: var(--bg-accent-tint);
+  background: var(--card-subtle);
 }
 
 .cal-day-cell.available:hover {
   background: var(--accent-terracotta);
   color: #FFFFFF;
-  transform: scale(1.08);
 }
 
 .cal-day-cell.selected {
   background: var(--accent-terracotta) !important;
   color: #FFFFFF !important;
   font-weight: 800;
-  box-shadow: 0 4px 12px var(--accent-terracotta-glow);
 }
 
 .cal-day-cell.closed,
@@ -1243,217 +829,157 @@ input, select, textarea {
   pointer-events: none;
 }
 
-.calendar-legend-bar {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 0.85rem;
-}
-
-/* Selector de Torns */
-.shifts-row-grid {
+/* Selector Torns */
+.shifts-grid-two {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
 }
 
-.shift-card-tile {
-  padding: 1.1rem;
+.shift-tile-box {
+  padding: 1rem;
   border-radius: var(--radius-sm);
-  background: var(--bg-surface);
+  background: var(--card-subtle);
   border: 1px solid var(--border-medium);
   cursor: pointer;
   transition: var(--transition);
 }
 
-.shift-card-tile:hover {
-  border-color: var(--text-primary);
-}
-
-.shift-card-tile.selected {
+.shift-tile-box.selected {
   border-color: var(--accent-terracotta);
   background: var(--accent-terracotta-subtle);
 }
 
-.shift-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.35rem;
-}
-
-.shift-name-text {
+.shift-title-text {
+  font-size: 0.82rem;
   font-weight: 800;
-  font-size: 0.86rem;
-  color: var(--text-primary);
+  color: var(--text-main);
 }
 
-.shift-hours-badge {
-  font-size: 0.76rem;
+.shift-hours-text {
+  font-size: 0.74rem;
   font-weight: 700;
   color: var(--accent-terracotta);
 }
 
-/* Formulari de Camps */
-.booking-form-stack {
+/* Formulari */
+.form-input-stack {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
 }
 
-.input-split-row {
+.two-inputs-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
-.field-control-wrap {
+.input-item-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
-.field-control-wrap label {
-  font-size: 0.76rem;
+.input-item-wrap label {
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary);
+  color: var(--text-body);
 }
 
-.input-styled-field {
+.form-styled-field {
   width: 100%;
-  padding: 0.85rem 1.1rem;
-  background: var(--bg-surface);
+  padding: 0.8rem 1rem;
+  background: var(--card-subtle);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-xs);
-  color: var(--text-primary);
-  font-size: 0.9rem;
+  color: var(--text-main);
+  font-size: 0.88rem;
   transition: var(--transition);
 }
 
-.input-styled-field:focus {
+.form-styled-field:focus {
   border-color: var(--accent-terracotta);
   box-shadow: 0 0 0 3px var(--accent-terracotta-glow);
+  background: #FFFFFF;
 }
 
-.booking-live-summary-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-medium);
+.summary-strip-card {
+  background: var(--card-subtle);
   border-radius: var(--radius-sm);
-  padding: 1.25rem;
-  margin-top: 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.summary-data-line {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.4rem;
-}
-
-.summary-data-line:last-child {
-  margin-bottom: 0;
-  font-weight: 800;
-  color: var(--text-primary);
+  padding: 1.1rem;
+  font-size: 0.84rem;
+  color: var(--text-body);
+  margin-bottom: 1.25rem;
 }
 
 /* ==========================================================================
-   12. VAL REGAL AMB PASSIS STRIPE DIRECTES (SENSE WHATSAPP)
+   10. SECCIO VAL REGAL STRIPE FLOTANT
    ========================================================================== */
-.gift-section-modern {
-  padding: 8rem 0;
-  background-color: var(--bg-surface);
+.gift-scroll-stage {
+  padding: 4rem 0;
 }
 
-.gift-cards-grid-ui {
+.gift-cards-triplet {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-top: 3.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
 }
 
-.gift-box-card {
-  background: var(--bg-surface);
+.gift-minimal-card {
+  background: #FFFFFF;
   border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
-  padding: 2.5rem 2rem;
+  border-radius: var(--radius-md);
+  padding: 2.2rem 1.8rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: var(--transition);
   box-shadow: var(--shadow-card);
+  transition: var(--transition);
 }
 
-.gift-box-card.featured-card {
+.gift-minimal-card.featured {
   border-color: var(--accent-terracotta);
-  background: linear-gradient(175deg, #FFFFFF 0%, #FFF7F3 100%);
-  box-shadow: 0 20px 45px -10px rgba(200, 90, 50, 0.15);
+  box-shadow: 0 15px 35px -5px rgba(200, 90, 50, 0.15);
 }
 
-.gift-box-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-hover);
+.gift-minimal-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-floating);
 }
 
-.gift-badge-pill {
-  font-size: 0.7rem;
+.gift-top-badge {
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--accent-terracotta);
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.5rem;
   display: block;
 }
 
-.gift-title-heading {
-  font-size: 1.6rem;
+.gift-heading {
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-  line-height: 1.2;
+  color: var(--text-main);
+  margin-bottom: 0.65rem;
 }
 
-.gift-desc-body {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
+.gift-text {
+  font-size: 0.86rem;
+  color: var(--text-body);
+  line-height: 1.55;
   margin-bottom: 1.5rem;
 }
 
-.gift-features-list {
-  list-style: none;
-  margin-bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-}
-
-.gift-features-list li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.gift-features-list li::before {
-  content: '·';
-  color: var(--accent-terracotta);
-  font-size: 1.6rem;
-  line-height: 0;
-}
-
-.btn-stripe-pay {
+.btn-stripe-direct {
   width: 100%;
-  padding: 0.85rem 1.25rem;
+  padding: 0.8rem 1.2rem;
   border-radius: var(--radius-full);
   background: var(--accent-terracotta);
   color: #FFFFFF;
@@ -1464,256 +990,107 @@ input, select, textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  transition: var(--transition);
   box-shadow: var(--shadow-terracotta);
+  transition: var(--transition);
 }
 
-.btn-stripe-pay:hover {
+.btn-stripe-direct:hover {
   background: var(--accent-terracotta-hover);
   color: #FFFFFF;
   transform: translateY(-2px);
-  box-shadow: 0 16px 36px -4px rgba(200, 90, 50, 0.45);
 }
 
 /* ==========================================================================
-   13. PREGUNTES FREQUENTS (FAQ ACORDIO CLAR)
+   11. SECCIO FAQ & CONTACTE FLOTANT
    ========================================================================== */
-.faq-section-modern {
-  padding: 8rem 0;
-  background-color: var(--bg-main);
+.faq-contact-stage {
+  padding: 4rem 0 6rem 0;
 }
 
-.faq-layout-two-col {
+.two-panels-split {
   display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 4rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
 }
 
-.faq-accordion-stack {
+.faq-accordion-box {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
-.faq-card-panel {
-  background: var(--bg-surface);
+.faq-accordion-item {
+  background: #FFFFFF;
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  box-shadow: var(--shadow-card);
-  transition: var(--transition);
 }
 
-.faq-card-panel:hover {
-  border-color: var(--text-primary);
-}
-
-.faq-btn-trigger {
+.faq-accordion-btn {
   width: 100%;
-  padding: 1.4rem 1.8rem;
+  padding: 1.2rem 1.4rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   text-align: left;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  transition: var(--transition);
+  color: var(--text-main);
 }
 
-.faq-btn-trigger:hover {
-  color: var(--accent-terracotta);
-}
-
-.faq-icon-arrow {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--border-medium);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  flex-shrink: 0;
-  transition: transform 0.3s ease, background 0.3s ease, color 0.3s ease;
-}
-
-.faq-card-panel.open .faq-icon-arrow {
-  transform: rotate(45deg);
-  background: var(--accent-terracotta);
-  color: #FFFFFF;
-  border-color: var(--accent-terracotta);
-}
-
-.faq-body-drawer {
+.faq-accordion-content {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.4s var(--ease-modern);
+  transition: max-height 0.4s var(--ease-minimal);
 }
 
-.faq-card-panel.open .faq-body-drawer {
-  max-height: 350px;
+.faq-accordion-item.open .faq-accordion-content {
+  max-height: 280px;
 }
 
-.faq-inner-text {
-  padding: 0 1.8rem 1.5rem 1.8rem;
-  font-size: 0.92rem;
-  color: var(--text-secondary);
-  line-height: 1.7;
-}
-
-/* ==========================================================================
-   14. LOCALITZACIO & CONTACTE
-   ========================================================================== */
-.contact-section-modern {
-  padding: 8rem 0;
-  background-color: var(--bg-surface);
-}
-
-.contact-split-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3.5rem;
-  margin-top: 3.5rem;
-}
-
-.contact-info-card {
-  background: var(--bg-main);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
-  padding: clamp(2rem, 3.5vw, 3.2rem);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.contact-rows-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.8rem;
-  margin: 2.5rem 0;
-}
-
-.contact-row-entry {
-  display: flex;
-  gap: 1.25rem;
-  align-items: flex-start;
-}
-
-.contact-icon-bubble {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--accent-terracotta-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-terracotta);
-  flex-shrink: 0;
-}
-
-.contact-text-meta h4 {
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-terracotta);
-  margin-bottom: 0.25rem;
-}
-
-.contact-text-meta p,
-.contact-text-meta a {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.contact-text-meta a:hover {
-  color: var(--accent-terracotta);
-}
-
-.map-wrapper-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  height: 100%;
-  min-height: 420px;
-  box-shadow: var(--shadow-card);
-}
-
-.map-wrapper-card iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* ==========================================================================
-   15. PEU DE PAGINA (FOOTER LLUMINOS I NET)
-   ========================================================================== */
-.site-footer-modern {
-  background-color: #FFFFFF;
-  border-top: 1px solid var(--border-subtle);
-  padding: 5rem 0 2.5rem 0;
-}
-
-.footer-top-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 3rem;
-  margin-bottom: 4rem;
-}
-
-.footer-brand-title {
-  font-family: var(--font-script);
-  font-size: 2.8rem;
-  color: var(--text-primary);
-  margin-bottom: 0.85rem;
-  display: block;
-}
-
-.footer-tagline-text {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  max-width: 320px;
+.faq-content-inner {
+  padding: 0 1.4rem 1.2rem 1.4rem;
+  font-size: 0.88rem;
+  color: var(--text-body);
   line-height: 1.6;
 }
 
-.footer-nav-heading {
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent-terracotta);
-  margin-bottom: 1.25rem;
-}
-
-.footer-ul-list {
-  list-style: none;
+/* Contacte Info */
+.contact-meta-box {
+  background: #FFFFFF;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  justify-content: space-between;
 }
 
-.footer-ul-link {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  transition: var(--transition);
+.contact-meta-entry {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.footer-ul-link:hover {
-  color: var(--accent-terracotta);
-  padding-left: 4px;
+.contact-meta-entry:last-child {
+  margin-bottom: 0;
 }
 
-.footer-sub-bar {
+/* ==========================================================================
+   12. PEU DE PAGINA (MINIMAL FOOTER)
+   ========================================================================== */
+.minimal-footer {
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--border-subtle);
+  padding: 3rem 0;
+  position: relative;
+  z-index: 10;
+}
+
+.footer-flex-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 2rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   flex-wrap: wrap;
@@ -1721,12 +1098,12 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   16. MODAL DE CONFIRMACIO
+   13. MODAL CONFIRMACIO
    ========================================================================== */
-.atelier-modal-overlay {
+.modal-confirm-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(25, 22, 20, 0.6);
+  background: rgba(28, 24, 22, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
@@ -1739,129 +1116,72 @@ input, select, textarea {
   transition: opacity 0.3s ease;
 }
 
-.atelier-modal-overlay.active {
+.modal-confirm-backdrop.active {
   opacity: 1;
   pointer-events: auto;
 }
 
-.atelier-modal-box {
+.modal-white-card {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-lg);
-  padding: 2.8rem;
-  max-width: 520px;
+  border-radius: var(--radius-md);
+  padding: 2.5rem;
+  max-width: 500px;
   width: 100%;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-floating);
   position: relative;
-  transform: scale(0.95);
-  transition: transform 0.3s var(--ease-modern);
 }
 
-.atelier-modal-overlay.active .atelier-modal-box {
-  transform: scale(1);
-}
-
-.modal-close-btn {
+.modal-close-trigger {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  width: 36px;
-  height: 36px;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: var(--card-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
   font-weight: 800;
-}
-
-.modal-close-btn:hover {
-  background: var(--text-primary);
-  color: #FFFFFF;
-}
-
-.modal-title-heading {
-  font-size: 1.7rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
-}
-
-.modal-body-desc {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin-bottom: 2rem;
+  color: var(--text-main);
 }
 
 /* ==========================================================================
-   17. RESPONSIVE MEDIA QUERIES
+   14. RESPONSIVE
    ========================================================================== */
-@media (max-width: 1080px) {
-  .hero-layout-grid {
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-  }
-  .hero-visual-frame {
-    max-width: 580px;
-    margin: 0 auto;
-  }
-  .process-steps-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .booking-columns-layout {
+@media (max-width: 1024px) {
+  .activities-minimal-grid {
     grid-template-columns: 1fr;
   }
-  .booking-left-col {
-    border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
+  .activity-mini-card.span-6,
+  .activity-mini-card.span-4 {
+    grid-column: span 12;
   }
-  .contact-split-grid {
-    grid-template-columns: 1fr;
-  }
-  .footer-top-grid {
+  .craft-steps-row {
     grid-template-columns: 1fr 1fr;
   }
-  .activity-card-cover.span-8,
-  .activity-card-cover.span-4,
-  .activity-card-cover.span-6 {
-    grid-column: span 12;
-    min-height: 440px;
+  .booking-two-cols {
+    grid-template-columns: 1fr;
   }
-  .parallax-cards-spread {
+  .two-panels-split {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .nav-links, .header-actions .btn-primary-modern {
+  .nav-links-menu, .header-flex-row .btn-cta-terracotta {
     display: none;
   }
-  .mobile-menu-toggle {
+  .mobile-toggle-btn {
     display: flex;
   }
-  .hero-main-title {
-    font-size: clamp(2.3rem, 1.8rem + 4.5vw, 3.4rem);
-  }
-  .process-steps-grid {
+  .craft-steps-row {
     grid-template-columns: 1fr;
   }
-  .input-split-row {
+  .two-inputs-row {
     grid-template-columns: 1fr;
   }
-  .faq-layout-two-col {
+  .shifts-grid-two {
     grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  .footer-top-grid {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-  .parallax-window-section,
-  .parallax-window-second {
-    background-attachment: scroll; /* Millor rendiment a mòbils */
   }
 }

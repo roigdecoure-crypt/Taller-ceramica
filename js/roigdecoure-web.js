@@ -1,7 +1,6 @@
 /**
  * roigdecoure-web.js - Motor interactiu contemporani per a Roig de Coure
- * Sistema lluminós i dinàmic: Reveal on scroll per a quadres i textos,
- * calendari d'aforaments interactiu, passarel·la Stripe directa i FAQ.
+ * Gestor de fons fixes dinàmics + informació flotant amb reveal suau.
  * Zero emojis. 100% autèntic Roig de Coure.
  */
 
@@ -44,6 +43,7 @@
 
   // Inicialització al carregar el DOM
   document.addEventListener('DOMContentLoaded', function () {
+    initBackdropSwitcher();
     initScrollReveals();
     initHeaderScroll();
     initMobileNav();
@@ -56,39 +56,72 @@
   });
 
   /* ==========================================================================
-     2. REVEAL ON SCROLL (QUADRES I TEXTOS QUE APAREIXEN)
+     2. GESTOR DE FONS FIXES (CANVI SUAU DE FOTOGRAFIA AMB L'SCROLL)
+     ========================================================================== */
+  function initBackdropSwitcher() {
+    const slides = document.querySelectorAll('.backdrop-slide');
+    const steps = document.querySelectorAll('.scroll-step');
+    if (!slides.length || !steps.length) return;
+
+    function updateActiveBackdrop() {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const triggerLine = scrollY + (windowHeight * 0.45);
+
+      let currentBgIndex = 0;
+
+      steps.forEach(function (step) {
+        const top = step.offsetTop;
+        const height = step.offsetHeight;
+        if (triggerLine >= top && triggerLine < (top + height)) {
+          const idx = parseInt(step.getAttribute('data-bg-index'), 10);
+          if (!isNaN(idx)) {
+            currentBgIndex = idx;
+          }
+        }
+      });
+
+      slides.forEach(function (slide, i) {
+        slide.classList.toggle('active', i === currentBgIndex);
+      });
+    }
+
+    window.addEventListener('scroll', updateActiveBackdrop, { passive: true });
+    updateActiveBackdrop();
+  }
+
+  /* ==========================================================================
+     3. REVEAL SUAU DELS PANELLS FLOTANTS
      ========================================================================== */
   function initScrollReveals() {
-    const reveals = document.querySelectorAll('.reveal');
-    if (!reveals.length) return;
+    const items = document.querySelectorAll('.reveal-item');
+    if (!items.length) return;
 
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
-            // Un cop visible, no cal continuar observant
             observer.unobserve(entry.target);
           }
         });
       }, {
-        threshold: 0.12,
-        rootMargin: '0px 0px -40px 0px'
+        threshold: 0.08,
+        rootMargin: '0px 0px -30px 0px'
       });
 
-      reveals.forEach(function (el) {
+      items.forEach(function (el) {
         observer.observe(el);
       });
     } else {
-      // Fallback per a navegadors antics
-      reveals.forEach(function (el) {
+      items.forEach(function (el) {
         el.classList.add('is-visible');
       });
     }
   }
 
   /* ==========================================================================
-     3. HEADER & NAVEGACIO SCROLL
+     4. HEADER SCROLL & MOBIL DRAWER
      ========================================================================== */
   function initHeaderScroll() {
     const header = document.getElementById('siteHeader');
@@ -120,17 +153,16 @@
   }
 
   /* ==========================================================================
-     4. SELECTOR D'ACTIVITATS I VINCULACIO AMB RESERVES
+     5. SELECTOR D'ACTIVITATS I ENLLAÇOS DIRECTES
      ========================================================================== */
   function initActivitySelector() {
-    const chips = document.querySelectorAll('.act-chip-item');
+    const chips = document.querySelectorAll('.chip-select-btn');
     chips.forEach(function (btn) {
       btn.addEventListener('click', function () {
         selectActivity(this.getAttribute('data-act'));
       });
     });
 
-    // Enllaços directes des de les targetes d'activitats cap al bloc de reserves
     const cardLinks = document.querySelectorAll('.select-act-link');
     cardLinks.forEach(function (link) {
       link.addEventListener('click', function () {
@@ -144,12 +176,10 @@
     if (!CFG.names[act]) return;
     state.activity = act;
 
-    // Actualitzar botons de xips
-    document.querySelectorAll('.act-chip-item').forEach(function (btn) {
+    document.querySelectorAll('.chip-select-btn').forEach(function (btn) {
       btn.classList.toggle('selected', btn.getAttribute('data-act') === act);
     });
 
-    // Actualitzar aforament màxim al selector de persones
     const numSelect = document.getElementById('numPersonsSelect');
     if (numSelect) {
       const max = CFG.capacities[act] || 4;
@@ -168,7 +198,7 @@
   }
 
   /* ==========================================================================
-     5. CALENDARI INTERACTIU (OBERTS DC A DG, DL I DT TANCATS)
+     6. CALENDARI INTERACTIU (OBERTS DC A DG, DL I DT TANCATS)
      ========================================================================== */
   function initCalendarWidget() {
     renderCalendar(state.calYear, state.calMonth);
@@ -235,7 +265,6 @@
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
 
-    // Ajustar dilluns com a inici de setmana (0=Dl, 6=Dg)
     let startDayIndex = firstDay.getDay() - 1;
     if (startDayIndex === -1) startDayIndex = 6;
 
@@ -284,7 +313,7 @@
   }
 
   /* ==========================================================================
-     6. SELECTOR DE TORNS I HORARIS
+     7. SELECTOR DE TORNS I HORARIS
      ========================================================================== */
   function initShiftSelector() {
     const shiftMati = document.getElementById('shiftMati');
@@ -371,7 +400,7 @@
   }
 
   /* ==========================================================================
-     7. FORMULARI DE RESERVA & WHATSAPP
+     8. GESTIO DEL FORMULARI DE RESERVA & WHATSAPP
      ========================================================================== */
   function initBookingForm() {
     const form = document.getElementById('bookingForm');
@@ -391,7 +420,7 @@
       const notes = document.getElementById('clientNotes').value.trim();
 
       if (!name || !phone || !email) {
-        alert('Si us plau, omple el teu nom, telèfon i correu electrònic.');
+        alert('Si us plau, omple les teves dades de contacte (nom, telèfon i correu).');
         return;
       }
 
@@ -430,7 +459,7 @@ Gràcies!';
       const waBtn = document.getElementById('modalWhatsAppBtn');
 
       if (modalContent) {
-        modalContent.textContent = 'Molt bé, ' + name + '! Hem registrat la teva sol·licitud per a ' + actName + ' el dia ' + dateFormatted + ' a les ' + state.time + ' h (' + state.persons + ' places). Per agilitzar la confirmació de la teva plaça, pots enviar directament les dades per WhatsApp al taller:';
+        modalContent.textContent = 'Molt bé, ' + name + '! Hem registrat la teva sol·licitud per a ' + actName + ' el dia ' + dateFormatted + ' a les ' + state.time + ' h (' + state.persons + ' places). Pots enviar la confirmació directa per WhatsApp al taller per accelerar la gestió de la teva plaça:';
       }
 
       if (waBtn) {
@@ -463,12 +492,12 @@ Gràcies!';
   }
 
   /* ==========================================================================
-     8. PREGUNTES FREQUENTS (FAQ ACORDIO)
+     9. PREGUNTES FREQUENTS (FAQ ACORDIO)
      ========================================================================== */
   function initFaqAccordion() {
-    const items = document.querySelectorAll('.faq-card-panel');
+    const items = document.querySelectorAll('.faq-accordion-item');
     items.forEach(function (card) {
-      const btn = card.querySelector('.faq-btn-trigger');
+      const btn = card.querySelector('.faq-accordion-btn');
       if (!btn) return;
 
       btn.addEventListener('click', function () {
