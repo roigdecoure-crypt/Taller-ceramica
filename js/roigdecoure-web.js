@@ -339,6 +339,14 @@
   }
 
   /* ==== VAL REGAL ==== */
+  const STRIPE_GIFT_URLS = {
+    'torn': 'https://buy.stripe.com/3cI14n2BHdPH0KKg5vgIo0m',           // Experiència torn o modelatge adults
+    'torn-infant': 'https://buy.stripe.com/6oUeVd1xDbHzbpof1rgIo0k',    // Experiència torn o modelatge <= 12 anys
+    'pintar': 'https://buy.stripe.com/aFacN5ekpfXPdxw8D3gIo0o',         // Regalar Experiències / Pintar
+    'hores-adults': 'https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n',   // Hores de taller Adults
+    'hores-infant': 'https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j'    // Hores de taller <= 12 anys
+  };
+
   function initGiftVoucher() {
     var expSel = document.getElementById('gift-exp-select');
     var toIn = document.getElementById('gift-to-input');
@@ -357,18 +365,16 @@
     if (toIn) toIn.addEventListener('input', upd);
     if (msgIn) msgIn.addEventListener('input', upd);
     if (prevCode) prevCode.textContent = 'RDC-' + new Date().getFullYear() + '-' + (1000 + Math.floor(Math.random() * 9000));
+    
     var printBtn = document.getElementById('gift-print-btn');
     if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
-    var waBtn = document.getElementById('gift-wa-btn');
-    if (waBtn) waBtn.addEventListener('click', function (e) {
+
+    var payBtn = document.getElementById('gift-pay-btn');
+    if (payBtn) payBtn.addEventListener('click', function (e) {
       e.preventDefault();
-      var exp = expSel ? expSel.options[expSel.selectedIndex].text : 'Experiencia';
-      var to = (toIn && toIn.value.trim()) || 'Un amic';
-      var from = (fromIn && fromIn.value.trim()) || '';
-      var code = prevCode ? prevCode.textContent : 'VAL-RDC';
-      var t = encodeURIComponent('Hola Roig de Coure! Val Regal:\n- ' + exp + '\n- Per a: ' + to +
-        (from ? '\n- De: ' + from : '') + '\n- Codi: ' + code);
-      window.open('https://wa.me/' + CFG.phone + '?text=' + t, '_blank');
+      var selVal = (expSel && expSel.value) || 'torn';
+      var stripeUrl = STRIPE_GIFT_URLS[selVal] || STRIPE_GIFT_URLS['torn'];
+      window.open(stripeUrl, '_blank');
     });
     upd();
   }
