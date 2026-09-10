@@ -9,7 +9,7 @@
     phone: '34683633880',
     email: 'roigdecoure@gmail.com',
     capacities: { torn: 4, modelatge: 8, pintar: 12, vidre: 6 },
-    names: { torn: 'Torn de Terrissa', modelatge: 'Modelatge & Escultura', pintar: 'Pintar Ceramica', vidre: 'Fusio de Vidre' },
+    names: { torn: 'Torn', modelatge: 'Modelatge', pintar: 'Pintar Ceramica', vidre: 'Fusio de Vidre' },
     closedWeekdays: [1, 2]
   };
 
