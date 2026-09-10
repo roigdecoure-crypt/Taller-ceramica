@@ -20,7 +20,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     initScrollReveals();
-    initParallaxHero();
+    initHeroBackgroundSlider();
     initNavigation();
     initBookingEngine();
     initGiftVoucher();
@@ -43,30 +43,73 @@
     els.forEach(function (el) { observer.observe(el); });
   }
 
-  /* ==== PARALLAX HERO & CINEMATIC LOAD ==== */
-  function initParallaxHero() {
+  /* ==== HERO BACKGROUND SLIDER (FONS CANVIANT AMB TRANSICIÓ SUAU) ==== */
+  function initHeroBackgroundSlider() {
+    var slides = document.querySelectorAll('.hero-slide');
+    var dots = document.querySelectorAll('.hero-dot');
+    var slider = document.getElementById('hero-bg-slider');
     var hero = document.querySelector('.hero-section');
-    var bg = document.getElementById('hero-bg');
-    if (!hero || !bg) return;
+    if (!slides.length) return;
 
-    // Trigger cinematic zoom-out after load
-    setTimeout(function () { hero.classList.add('loaded'); }, 100);
+    var currentIdx = 0;
+    var timer = null;
+    var intervalDuration = 4500;
 
-    // Parallax on scroll
+    function goToSlide(idx) {
+      slides.forEach(function (s, i) {
+        s.classList.toggle('active', i === idx);
+      });
+      dots.forEach(function (d, i) {
+        d.classList.toggle('active', i === idx);
+      });
+      currentIdx = idx;
+    }
+
+    function nextSlide() {
+      var next = (currentIdx + 1) % slides.length;
+      goToSlide(next);
+    }
+
+    function startTimer() {
+      stopTimer();
+      timer = setInterval(nextSlide, intervalDuration);
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        var idx = parseInt(dot.getAttribute('data-index'), 10);
+        if (!isNaN(idx)) {
+          goToSlide(idx);
+          startTimer();
+        }
+      });
+    });
+
+    startTimer();
+
     var ticking = false;
     window.addEventListener('scroll', function () {
       if (!ticking) {
         requestAnimationFrame(function () {
           var scrollY = window.pageYOffset;
-          if (scrollY < window.innerHeight) {
-            bg.style.transform = 'scale(' + (1 + scrollY * 0.0002) + ') translateY(' + (scrollY * 0.3) + 'px)';
-            hero.style.opacity = Math.max(0, 1 - scrollY / (window.innerHeight * 0.9));
+          if (scrollY < window.innerHeight && slider) {
+            slider.style.transform = 'translateY(' + (scrollY * 0.28) + 'px)';
+            if (hero) {
+              hero.style.opacity = Math.max(0, 1 - scrollY / (window.innerHeight * 0.92));
+            }
           }
           ticking = false;
         });
         ticking = true;
       }
-    });
+    }, { passive: true });
   }
 
   /* ==== NAVEGACIO ==== */

@@ -232,13 +232,37 @@ img { max-width: 100%; height: auto; display: block; }
   position: relative; min-height: 100vh; display: flex; align-items: center;
   overflow: hidden; color: #FFF; padding: 100px 0 80px;
 }
-.hero-bg {
-  position: absolute; inset: 0; z-index: 0;
-  background: url('../img/web/torn-banner.jpg') center/cover no-repeat;
-  transform: scale(1.1);
-  transition: transform 8s ease-out;
+.hero-bg-slider {
+  position: absolute; inset: 0; z-index: 0; overflow: hidden;
 }
-.hero-section.loaded .hero-bg { transform: scale(1); }
+.hero-slide {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center center; background-repeat: no-repeat;
+  opacity: 0; transform: scale(1.08);
+  transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out;
+  will-change: opacity, transform;
+}
+.hero-slide.active {
+  opacity: 1; transform: scale(1);
+}
+.hero-slider-dots {
+  position: absolute; bottom: 28px; right: 36px; z-index: 3;
+  display: flex; gap: 8px; align-items: center;
+}
+.hero-dot {
+  width: 20px; height: 4px; background: rgba(255, 255, 255, 0.35);
+  border: none; border-radius: 2px; cursor: pointer;
+  transition: background-color 0.3s ease, width 0.3s ease; padding: 0;
+}
+.hero-dot:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+.hero-dot.active {
+  background: #FFFFFF; width: 36px;
+}
+@media (max-width: 768px) {
+  .hero-slider-dots { bottom: 16px; right: 20px; }
+}
 .hero-overlay {
   position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(160deg, rgba(26,18,14,0.75) 0%, rgba(50,35,28,0.85) 50%, rgba(131,29,29,0.4) 100%);
