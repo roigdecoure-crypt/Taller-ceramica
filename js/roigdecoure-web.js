@@ -34,7 +34,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     initNavigation();
-    initHeroTilt();
+    initHeroSlider();
     initFloatingDock();
     initBookingEngine();
     initGiftVoucher();
@@ -103,24 +103,100 @@
   }
 
   /* ==========================================================================
-     2. PARALLAX / 3D TILT AL HERO (INTERACCIÓ FLUIDA DE RATOLÍ)
+     2. HERO CINEMÀTIC SLIDER (KEN BURNS + AUTO-PLAY + SWIPE)
      ========================================================================== */
-  function initHeroTilt() {
-    var frame = document.getElementById('hero-frame');
-    if (!frame || window.innerWidth < 980) return;
+  function initHeroSlider() {
+    var slides = document.querySelectorAll('.hero-slide');
+    var dots = document.querySelectorAll('.slider-dot');
+    var prevBtn = document.getElementById('slider-prev');
+    var nextBtn = document.getElementById('slider-next');
+    var section = document.querySelector('.hero-slider-section');
+    if (!slides.length) return;
 
-    frame.addEventListener('mousemove', function (e) {
-      var rect = frame.getBoundingClientRect();
-      var x = e.clientX - rect.left - rect.width / 2;
-      var y = e.clientY - rect.top - rect.height / 2;
-      var rotateX = -(y / rect.height) * 10;
-      var rotateY = (x / rect.width) * 10;
-      frame.style.transform = 'perspective(1000px) rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg) scale(1.02)';
+    var current = 0;
+    var total = slides.length;
+    var timer = null;
+
+    function goTo(idx) {
+      current = (idx + total) % total;
+      slides.forEach(function (s, i) {
+        s.classList.toggle('active', i === current);
+      });
+      dots.forEach(function (d, i) {
+        d.classList.toggle('active', i === current);
+      });
+    }
+
+    function next() {
+      goTo(current + 1);
+    }
+
+    function prev() {
+      goTo(current - 1);
+    }
+
+    function resetTimer() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(next, 5500);
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        prev();
+        resetTimer();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        next();
+        resetTimer();
+      });
+    }
+
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        var idx = parseInt(this.getAttribute('data-go'), 10);
+        if (!isNaN(idx)) {
+          goTo(idx);
+          resetTimer();
+        }
+      });
     });
 
-    frame.addEventListener('mouseleave', function () {
-      frame.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
-    });
+    // Pausa temporal en hover per facilitar lectura en escriptori
+    if (section) {
+      section.addEventListener('mouseenter', function () {
+        if (timer) clearInterval(timer);
+      });
+      section.addEventListener('mouseleave', function () {
+        resetTimer();
+      });
+
+      // Suport per gest lliscant (swipe) en dispositius tàctils / mòbils
+      var touchStartX = 0;
+      var touchEndX = 0;
+      section.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+
+      section.addEventListener('touchend', function (e) {
+        touchEndX = e.changedTouches[0].screenX;
+        var diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 45) {
+          if (diff > 0) {
+            next();
+          } else {
+            prev();
+          }
+          resetTimer();
+        }
+      }, { passive: true });
+    }
+
+    resetTimer();
   }
 
   /* ==========================================================================
