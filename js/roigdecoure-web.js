@@ -311,7 +311,7 @@
         data: booking.date, torn: booking.shift === 'mati' ? 'Mati (10-13h)' : 'Tarda (17-20h)',
         hora: booking.arrivalTime, val: isVal ? (valCode || 'Si') : null, id: 'PENDENT-WA' });
       form.reset();
-    } finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Reserva de Placa'; } }
+    } finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Reserva de Plaça'; } }
   }
 
   function showModal(d) {
