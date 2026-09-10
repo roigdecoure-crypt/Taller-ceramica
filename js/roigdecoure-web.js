@@ -1,7 +1,7 @@
 /**
  * roigdecoure-web.js - Motor interactiu contemporani per a Roig de Coure
- * Tactile Wabi-Sabi Modernism: Cursor magnetic artesà, track horitzontal,
- * calendari dinàmic amb control d'aforaments i torns, passarel·la Stripe i FAQ.
+ * Sistema lluminós i dinàmic: Reveal on scroll per a quadres i textos,
+ * calendari d'aforaments interactiu, passarel·la Stripe directa i FAQ.
  * Zero emojis. 100% autèntic Roig de Coure.
  */
 
@@ -44,10 +44,9 @@
 
   // Inicialització al carregar el DOM
   document.addEventListener('DOMContentLoaded', function () {
-    initMagneticCursor();
+    initScrollReveals();
     initHeaderScroll();
     initMobileNav();
-    initProcessTrack();
     initActivitySelector();
     initCalendarWidget();
     initShiftSelector();
@@ -57,72 +56,35 @@
   });
 
   /* ==========================================================================
-     2. CURSOR MAGNETIC ARTESA (DESKTOP)
+     2. REVEAL ON SCROLL (QUADRES I TEXTOS QUE APAREIXEN)
      ========================================================================== */
-  function initMagneticCursor() {
-    const cursor = document.getElementById('artisanCursor');
-    if (!cursor) return;
+  function initScrollReveals() {
+    const reveals = document.querySelectorAll('.reveal');
+    if (!reveals.length) return;
 
-    // Si el dispositiu no te punter precís (tactil), amagar
-    if (window.matchMedia('(pointer: coarse)').matches) {
-      cursor.style.display = 'none';
-      document.body.classList.remove('has-custom-cursor');
-      return;
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            // Un cop visible, no cal continuar observant
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.12,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      reveals.forEach(function (el) {
+        observer.observe(el);
+      });
+    } else {
+      // Fallback per a navegadors antics
+      reveals.forEach(function (el) {
+        el.classList.add('is-visible');
+      });
     }
-
-    let mouseX = -100, mouseY = -100;
-    let ringX = -100, ringY = -100;
-    const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
-
-    window.addEventListener('mousemove', function (e) {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      cursor.style.opacity = '1';
-    }, { passive: true });
-
-    window.addEventListener('mouseleave', function () {
-      cursor.style.opacity = '0';
-    });
-
-    function render() {
-      ringX = lerp(ringX, mouseX, 0.18);
-      ringY = lerp(ringY, mouseY, 0.18);
-
-      cursor.style.transform = 'translate3d(' + ringX + 'px, ' + ringY + 'px, 0)';
-      requestAnimationFrame(render);
-    }
-    requestAnimationFrame(render);
-
-    // Deteccio d'hover en elements interactius
-    const interactives = document.querySelectorAll('a, button, input, select, textarea, .process-step-card, .activity-cover-card, .faq-item-card');
-    interactives.forEach(function (el) {
-      el.addEventListener('mouseenter', function () {
-        document.body.classList.add('cursor-hover');
-      });
-      el.addEventListener('mouseleave', function () {
-        document.body.classList.remove('cursor-hover');
-      });
-    });
-
-    // Efecte magnetic suau en botons marcats amb data-magnetic
-    const magneticBtns = document.querySelectorAll('[data-magnetic]');
-    magneticBtns.forEach(function (btn) {
-      btn.addEventListener('mousemove', function (e) {
-        const rect = btn.getBoundingClientRect();
-        const x = e.clientX - (rect.left + rect.width / 2);
-        const y = e.clientY - (rect.top + rect.height / 2);
-        btn.style.transform = 'translate3d(' + (x * 0.22) + 'px, ' + (y * 0.22) + 'px, 0)';
-      });
-
-      btn.addEventListener('mouseleave', function () {
-        btn.style.transform = 'translate3d(0, 0, 0)';
-        btn.style.transition = 'transform 0.4s var(--ease-atelier)';
-      });
-
-      btn.addEventListener('mouseenter', function () {
-        btn.style.transition = 'none';
-      });
-    });
   }
 
   /* ==========================================================================
@@ -133,7 +95,7 @@
     if (!header) return;
 
     window.addEventListener('scroll', function () {
-      if (window.scrollY > 40) {
+      if (window.scrollY > 30) {
         header.classList.add('scrolled');
       } else {
         header.classList.remove('scrolled');
@@ -158,35 +120,17 @@
   }
 
   /* ==========================================================================
-     4. TRACK HORITZONTAL DE L'OFICI
-     ========================================================================== */
-  function initProcessTrack() {
-    const track = document.getElementById('processTrack');
-    const prevBtn = document.getElementById('processPrevBtn');
-    const nextBtn = document.getElementById('processNextBtn');
-    if (!track || !prevBtn || !nextBtn) return;
-
-    prevBtn.addEventListener('click', function () {
-      track.scrollBy({ left: -340, behavior: 'smooth' });
-    });
-
-    nextBtn.addEventListener('click', function () {
-      track.scrollBy({ left: 340, behavior: 'smooth' });
-    });
-  }
-
-  /* ==========================================================================
-     5. SELECTOR D'ACTIVITATS
+     4. SELECTOR D'ACTIVITATS I VINCULACIO AMB RESERVES
      ========================================================================== */
   function initActivitySelector() {
-    const chips = document.querySelectorAll('.activity-chip-btn');
+    const chips = document.querySelectorAll('.act-chip-item');
     chips.forEach(function (btn) {
       btn.addEventListener('click', function () {
         selectActivity(this.getAttribute('data-act'));
       });
     });
 
-    // Enllaços des de les targetes d'activitats cap a reserves
+    // Enllaços directes des de les targetes d'activitats cap al bloc de reserves
     const cardLinks = document.querySelectorAll('.select-act-link');
     cardLinks.forEach(function (link) {
       link.addEventListener('click', function () {
@@ -200,12 +144,12 @@
     if (!CFG.names[act]) return;
     state.activity = act;
 
-    // Actualitzar chips actius
-    document.querySelectorAll('.activity-chip-btn').forEach(function (btn) {
+    // Actualitzar botons de xips
+    document.querySelectorAll('.act-chip-item').forEach(function (btn) {
       btn.classList.toggle('selected', btn.getAttribute('data-act') === act);
     });
 
-    // Actualitzar límit del select de persones
+    // Actualitzar aforament màxim al selector de persones
     const numSelect = document.getElementById('numPersonsSelect');
     if (numSelect) {
       const max = CFG.capacities[act] || 4;
@@ -224,7 +168,7 @@
   }
 
   /* ==========================================================================
-     6. CALENDARI DINAMIC (OBERTS DC A DG, DL I DT TANCATS)
+     5. CALENDARI INTERACTIU (OBERTS DC A DG, DL I DT TANCATS)
      ========================================================================== */
   function initCalendarWidget() {
     renderCalendar(state.calYear, state.calMonth);
@@ -254,7 +198,6 @@
       });
     }
 
-    // Seleccionar automàticament el proper dia obert
     selectNextAvailableDay();
   }
 
@@ -263,7 +206,7 @@
     for (let offset = 1; offset <= 14; offset++) {
       const test = new Date(today);
       test.setDate(today.getDate() + offset);
-      const dayOfWeek = test.getDay(); // 0=Dg, 1=Dl, 2=Dt...
+      const dayOfWeek = test.getDay(); // 0=Dg, 1=Dl, 2=Dt, 3=Dc...
       if (!CFG.closedWeekdays.includes(dayOfWeek)) {
         const y = test.getFullYear();
         const m = String(test.getMonth() + 1).padStart(2, '0');
@@ -292,11 +235,10 @@
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
 
-    // Ajustar dilluns com a primer dia de la setmana (0=Dl, 6=Dg)
+    // Ajustar dilluns com a inici de setmana (0=Dl, 6=Dg)
     let startDayIndex = firstDay.getDay() - 1;
     if (startDayIndex === -1) startDayIndex = 6;
 
-    // Cel·les buides abans del primer dia
     for (let i = 0; i < startDayIndex; i++) {
       const empty = document.createElement('div');
       empty.className = 'cal-day-cell empty';
@@ -342,7 +284,7 @@
   }
 
   /* ==========================================================================
-     7. SELECTOR DE TORNS I HORARIS
+     6. SELECTOR DE TORNS I HORARIS
      ========================================================================== */
   function initShiftSelector() {
     const shiftMati = document.getElementById('shiftMati');
@@ -429,7 +371,7 @@
   }
 
   /* ==========================================================================
-     8. GESTIO DEL FORMULARI DE RESERVA & WHATSAPP
+     7. FORMULARI DE RESERVA & WHATSAPP
      ========================================================================== */
   function initBookingForm() {
     const form = document.getElementById('bookingForm');
@@ -449,11 +391,10 @@
       const notes = document.getElementById('clientNotes').value.trim();
 
       if (!name || !phone || !email) {
-        alert('Si us plau, omple les teves dades de contacte (nom, telèfon i correu).');
+        alert('Si us plau, omple el teu nom, telèfon i correu electrònic.');
         return;
       }
 
-      // Preparar text de WhatsApp sense emojis
       const actName = CFG.names[state.activity];
       const dateFormatted = state.date.split('-').reverse().join('/');
       const shiftName = state.shift === 'mati' ? 'Matí' : 'Tarda';
@@ -484,7 +425,6 @@ Gràcies!';
 
       const waUrl = 'https://wa.me/' + CFG.phone + '?text=' + encodeURIComponent(msg);
 
-      // Actualitzar modal de confirmació
       const modal = document.getElementById('confirmModal');
       const modalContent = document.getElementById('modalSummaryContent');
       const waBtn = document.getElementById('modalWhatsAppBtn');
@@ -523,18 +463,17 @@ Gràcies!';
   }
 
   /* ==========================================================================
-     9. PREGUNTES FREQUENTS (FAQ ACORDIO)
+     8. PREGUNTES FREQUENTS (FAQ ACORDIO)
      ========================================================================== */
   function initFaqAccordion() {
-    const items = document.querySelectorAll('.faq-item-card');
+    const items = document.querySelectorAll('.faq-card-panel');
     items.forEach(function (card) {
-      const btn = card.querySelector('.faq-question-btn');
+      const btn = card.querySelector('.faq-btn-trigger');
       if (!btn) return;
 
       btn.addEventListener('click', function () {
         const isOpen = card.classList.contains('open');
 
-        // Tancar els altres acordions per un efecte net
         items.forEach(function (other) {
           other.classList.remove('open');
         });
