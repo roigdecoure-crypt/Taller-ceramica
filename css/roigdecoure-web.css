@@ -366,25 +366,6 @@ img { max-width: 100%; height: auto; display: block; }
 .activity-feature-item { font-size: 13px; color: var(--dark-soft); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
 .feature-bullet { width: 5px; height: 5px; background: var(--secondary); border-radius: 50%; }
 
-/* ==========================================================================
-   4. BANNER HORITZONTAL DE MARQUEE
-   ========================================================================== */
-.marquee-section {
-  background: var(--primary); padding: 16px 0; overflow: hidden; position: relative;
-}
-.marquee-track {
-  display: flex; gap: 60px; animation: marquee 25s linear infinite; white-space: nowrap;
-}
-.marquee-item {
-  font-family: var(--font-serif); font-size: 18px; font-weight: 600;
-  color: rgba(255,255,255,0.8); flex-shrink: 0;
-  display: flex; align-items: center; gap: 16px;
-}
-.marquee-dot { width: 6px; height: 6px; background: rgba(255,255,255,0.4); border-radius: 50%; }
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
 
 /* ==========================================================================
    5. RESERVES
