@@ -76,7 +76,7 @@
       <!-- ETAPA 1: HERO FLOTANT (FONS 0: MANS AL TORN) -->
       <section class="hero-scroll-stage scroll-step" data-bg-index="0" id="inici">
         <div class="container-minimal">
-          <div class="hero-floating-card reveal-item is-visible">
+          <div class="hero-floating-card">
             <div class="hero-pill-badge">
               <span class="pulsing-dot"></span>
               <span>Obert de dimecres a diumenge · Plaça Rector Ferrer, 15</span>
@@ -115,6 +115,15 @@
                 <span class="metric-label">Ceràmica per pintar</span>
               </div>
             </div>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;">
+              <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
+                Desplaça't avall per descobrir les activitats i fer la teva reserva
+              </span>
+              <a href="#activitats" style="font-size: 0.82rem; font-weight: 800; color: var(--accent-terracotta);">
+                Explorar Taller ↓
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -122,132 +131,167 @@
       <!-- ETAPA 2: ACTIVITATS FLOTANTS (FONS 1: PINTAR CERAMICA & CREACIO) -->
       <section class="activities-scroll-stage scroll-step" data-bg-index="1" id="activitats">
         <div class="container-minimal">
-          <div class="floating-panel reveal-item">
+          <div class="floating-panel">
             <div class="panel-header-block">
               <span class="tag-label">Disciplines del Taller</span>
               <h2 class="panel-title">Les 7 activitats artesanes</h2>
               <p class="panel-subtitle">
-                Gaudeix del contacte directe amb el fang i el vidre en grups reduïts i atenció personalitzada.
+                Gaudeix del contacte directe amb el fang i el vidre en grups reduïts i atenció personalitzada al Barri Vell d'Olot.
               </p>
             </div>
 
             <div class="activities-minimal-grid">
               <!-- 1. TORN -->
               <div class="activity-mini-card span-6">
-                <div>
-                  <span class="act-badge-top">Activitat Estrella</span>
-                  <h3 class="act-title-text">Torn</h3>
-                  <p class="act-desc-text">
-                    Aprèn l'art de modelar la ceràmica sobre el torn de terrissaire. Centrat del fang, aixecat de peces, bols i acabat. Per a principiants o perfeccionament.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/classes-torn-modelatge.png" alt="Classes de Torn a Roig de Coure Olot">
                 </div>
-                <div>
-                  <div class="act-meta-row">Capacitat: 4 torns individuals · Fang, eines i 2 cuites incloses</div>
-                  <a href="#reserves" class="act-link-btn select-act-link" data-act="torn">
-                    <span>Reservar Torn →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Activitat Estrella</span>
+                    <h3 class="act-title-text">Torn</h3>
+                    <p class="act-desc-text">
+                      Aprèn l'art de modelar la ceràmica sobre el torn de terrissaire. Centrat del fang, aixecat de peces, bols i acabat. Per a principiants o perfeccionament.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Capacitat: 4 torns individuals · Fang, eines i 2 cuites incloses</div>
+                    <a href="#reserves" class="act-link-btn select-act-link" data-act="torn">
+                      <span>Reservar Torn →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 2. MODELATGE -->
               <div class="activity-mini-card span-6">
-                <div>
-                  <span class="act-badge-top">Manual</span>
-                  <h3 class="act-title-text">Modelatge</h3>
-                  <p class="act-desc-text">
-                    Creació manual a mà lliure: pessic, xurros, planxes i buidat escultòric per donar forma a qualsevol idea amb llibertat creativa.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/modelatge-escultura.jpg" alt="Taller de Modelatge Ceràmic">
                 </div>
-                <div>
-                  <div class="act-meta-row">Capacitat: Fins a 8 places · Tots els materials inclosos</div>
-                  <a href="#reserves" class="act-link-btn select-act-link" data-act="modelatge">
-                    <span>Reservar Modelatge →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Manual</span>
+                    <h3 class="act-title-text">Modelatge</h3>
+                    <p class="act-desc-text">
+                      Creació manual a mà lliure: pessic, xurros, planxes i buidat escultòric per donar forma a qualsevol idea amb total llibertat creativa.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Capacitat: Fins a 8 places · Tots els materials inclosos</div>
+                    <a href="#reserves" class="act-link-btn select-act-link" data-act="modelatge">
+                      <span>Reservar Modelatge →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 3. PINTAR CERAMICA -->
               <div class="activity-mini-card span-4">
-                <div>
-                  <span class="act-badge-top">Familiar</span>
-                  <h3 class="act-title-text">Pintar Ceràmica</h3>
-                  <p class="act-desc-text">
-                    Tria entre més de 50 models de peces cuites (tasses, plats, figures) i decora-les amb pigments ceràmics i esmalt brillant.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/pintar-ceramica-original.png" alt="Taller de Pintar Ceràmica">
                 </div>
-                <div>
-                  <div class="act-meta-row">Capacitat: 12 places · Apta per a totes les edats</div>
-                  <a href="#reserves" class="act-link-btn select-act-link" data-act="pintar">
-                    <span>Reservar Pintar →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Familiar</span>
+                    <h3 class="act-title-text">Pintar Ceràmica</h3>
+                    <p class="act-desc-text">
+                      Tria entre més de 50 models de peces cuites (tasses, plats, figures) i decora-les amb pigments ceràmics i esmalt brillant.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Capacitat: 12 places · Apta per a totes les edats</div>
+                    <a href="#reserves" class="act-link-btn select-act-link" data-act="pintar">
+                      <span>Reservar Pintar →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 4. FUSIO DE VIDRE -->
               <div class="activity-mini-card span-4">
-                <div>
-                  <span class="act-badge-top">Fusing</span>
-                  <h3 class="act-title-text">Fusió de Vidre</h3>
-                  <p class="act-desc-text">
-                    Descobreix el treball amb vidre de manera segura. Tall, composició de colors i fornejada per a quadres i peces decoratives.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/vidre-fusing.jpeg" alt="Fusió de Vidre a Olot">
                 </div>
-                <div>
-                  <div class="act-meta-row">Capacitat: 6 places · Tècnica de fusing</div>
-                  <a href="#reserves" class="act-link-btn select-act-link" data-act="vidre">
-                    <span>Reservar Vidre →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Fusing</span>
+                    <h3 class="act-title-text">Fusió de Vidre</h3>
+                    <p class="act-desc-text">
+                      Descobreix el treball amb vidre de manera segura. Tall, composició de colors i fornejada per a quadres i peces decoratives.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Capacitat: 6 places · Tècnica de fusing</div>
+                    <a href="#reserves" class="act-link-btn select-act-link" data-act="vidre">
+                      <span>Reservar Vidre →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 5. MONOGRAFICS -->
               <div class="activity-mini-card span-4">
-                <div>
-                  <span class="act-badge-top">Especialitzat</span>
-                  <h3 class="act-title-text">Monogràfics</h3>
-                  <p class="act-desc-text">
-                    Cursos monogràfics intensius d'1 a 3 dies sobre tècniques concretes: construcció de teteres, formulació d'esmalts i pastes.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/monografics-tetera.png" alt="Cursos Monogràfics de Ceràmica">
                 </div>
-                <div>
-                  <div class="act-meta-row">Format: 1 a 3 jornades intensives</div>
-                  <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20cursos%20monogràfics" target="_blank" rel="noopener" class="act-link-btn">
-                    <span>Consultar →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Especialitzat</span>
+                    <h3 class="act-title-text">Monogràfics</h3>
+                    <p class="act-desc-text">
+                      Cursos monogràfics intensius d'1 a 3 dies sobre tècniques concretes: construcció de teteres, formulació d'esmalts i pastes.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Format: 1 a 3 jornades intensives</div>
+                    <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20cursos%20monogràfics" target="_blank" rel="noopener" class="act-link-btn">
+                      <span>Consultar →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 6. CASALS INFANTILS -->
               <div class="activity-mini-card span-6">
-                <div>
-                  <span class="act-badge-top">6 a 15 anys</span>
-                  <h3 class="act-title-text">Casals</h3>
-                  <p class="act-desc-text">
-                    Casals de ceràmica i vidre durant les vacances escolars (Nadal, Setmana Santa i Estiu) per desenvolupar l'expressió artística.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/casals-infants.webp" alt="Casals de Ceràmica i Vidre per a Nens">
                 </div>
-                <div>
-                  <div class="act-meta-row">Infants i joves · Totes les peces cuites incloses</div>
-                  <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20casals%20infantils" target="_blank" rel="noopener" class="act-link-btn">
-                    <span>Informació de Casals →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">6 a 15 anys</span>
+                    <h3 class="act-title-text">Casals</h3>
+                    <p class="act-desc-text">
+                      Casals de ceràmica i vidre durant les vacances escolars (Nadal, Setmana Santa i Estiu) per desenvolupar l'expressió artística.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Infants i joves · Totes les peces cuites incloses</div>
+                    <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20casals%20infantils" target="_blank" rel="noopener" class="act-link-btn">
+                      <span>Informació de Casals →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <!-- 7. GRUPS I FAMILIES -->
               <div class="activity-mini-card span-6">
-                <div>
-                  <span class="act-badge-top">Comunitat</span>
-                  <h3 class="act-title-text">Grups i Famílies</h3>
-                  <p class="act-desc-text">
-                    Sessions privades per a grups d'amics, parelles, celebracions o trobades d'empresa combinant torn, modelatge i pintura.
-                  </p>
+                <div class="act-media-thumb">
+                  <img src="img/web/grups-families-original.jpg" alt="Activitats per a Grups i Famílies">
                 </div>
-                <div>
-                  <div class="act-meta-row">Aforament: 4 a 15 persones · Taller en exclusiva</div>
-                  <a href="https://wa.me/34683633880?text=Hola,%20volem%20organitzar%20una%20sessió%20per%20a%20un%20grup" target="_blank" rel="noopener" class="act-link-btn">
-                    <span>Organitzar Grup →</span>
-                  </a>
+                <div class="act-content-box">
+                  <div>
+                    <span class="act-badge-top">Comunitat</span>
+                    <h3 class="act-title-text">Grups i Famílies</h3>
+                    <p class="act-desc-text">
+                      Sessions privades per a grups d'amics, parelles, celebracions o trobades d'empresa combinant torn, modelatge i pintura.
+                    </p>
+                  </div>
+                  <div>
+                    <div class="act-meta-row">Aforament: 4 a 15 persones · Taller en exclusiva</div>
+                    <a href="https://wa.me/34683633880?text=Hola,%20volem%20organitzar%20una%20sessió%20per%20a%20un%20grup" target="_blank" rel="noopener" class="act-link-btn">
+                      <span>Organitzar Grup →</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -258,7 +302,7 @@
       <!-- ETAPA 3: L'OFICI & QUALITAT FLOTANT (FONS 2: PECES CUITES AL FORN) -->
       <section class="craft-scroll-stage scroll-step" data-bg-index="2" id="ofici">
         <div class="container-minimal">
-          <div class="floating-panel reveal-item">
+          <div class="floating-panel">
             <div class="panel-header-block">
               <span class="tag-label">El Mètode Ceramista</span>
               <h2 class="panel-title">Quatre fases i més de 1.000°C</h2>
@@ -304,7 +348,7 @@
       <!-- ETAPA 4: MOTOR DE RESERVES FLOTANT (FONS 3: TALLER I COMUNITAT) -->
       <section class="booking-scroll-stage scroll-step" data-bg-index="3" id="reserves">
         <div class="container-minimal">
-          <div class="floating-panel reveal-item">
+          <div class="floating-panel">
             <div class="panel-header-block">
               <span class="tag-label">Planifica la teva Visita</span>
               <h2 class="panel-title">Reserva la teva plaça al taller</h2>
@@ -452,7 +496,7 @@
       <!-- ETAPA 5: VAL REGAL AMB STRIPE DIRECTE (FONS 3) -->
       <section class="gift-scroll-stage scroll-step" data-bg-index="3" id="val-regal">
         <div class="container-minimal">
-          <div class="floating-panel reveal-item">
+          <div class="floating-panel">
             <div class="panel-header-block">
               <span class="tag-label">Regala Experiències</span>
               <h2 class="panel-title">Val Regal de ceràmica</h2>
@@ -529,7 +573,7 @@
       <!-- ETAPA 6: FAQ & CONTACTE FLOTANT (FONS 3) -->
       <section class="faq-contact-stage scroll-step" data-bg-index="3" id="contacte">
         <div class="container-minimal">
-          <div class="floating-panel reveal-item">
+          <div class="floating-panel">
             <div class="two-panels-split">
               <!-- FAQ Acordió -->
               <div>

@@ -64,16 +64,12 @@
     if (!slides.length || !steps.length) return;
 
     function updateActiveBackdrop() {
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const triggerLine = scrollY + (windowHeight * 0.45);
-
+      const triggerY = window.innerHeight * 0.45;
       let currentBgIndex = 0;
 
       steps.forEach(function (step) {
-        const top = step.offsetTop;
-        const height = step.offsetHeight;
-        if (triggerLine >= top && triggerLine < (top + height)) {
+        const rect = step.getBoundingClientRect();
+        if (rect.top <= triggerY && rect.bottom >= triggerY) {
           const idx = parseInt(step.getAttribute('data-bg-index'), 10);
           if (!isNaN(idx)) {
             currentBgIndex = idx;
@@ -87,6 +83,7 @@
     }
 
     window.addEventListener('scroll', updateActiveBackdrop, { passive: true });
+    window.addEventListener('resize', updateActiveBackdrop, { passive: true });
     updateActiveBackdrop();
   }
 
