@@ -1,568 +1,401 @@
 /**
- * roigdecoure-web.js - Motor interactiu contemporani per a Roig de Coure
- * Gestor de fons fixes dinàmics + informació flotant amb reveal suau.
- * Zero emojis. 100% autèntic Roig de Coure.
+ * roigdecoure-web.js - Motor interactiu trencador per a Roig de Coure
+ * Scroll reveals, parallax hero, reserves en viu, val regal, FAQ
  */
-
 (function () {
   'use strict';
 
-  // 1. CONFIGURACIO OFICIAL DEL TALLER
   const CFG = {
     phone: '34683633880',
     email: 'roigdecoure@gmail.com',
-    capacities: {
-      torn: 4,
-      modelatge: 8,
-      pintar: 12,
-      vidre: 6
-    },
-    names: {
-      torn: 'Torn',
-      modelatge: 'Modelatge',
-      pintar: 'Pintar Ceràmica',
-      vidre: 'Fusió de Vidre'
-    },
-    monthNames: [
-      'Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
-      'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'
-    ],
-    closedWeekdays: [1, 2] // Dilluns (1) i Dimarts (2) descans i fornejades
+    capacities: { torn: 4, modelatge: 8, pintar: 12, vidre: 6 },
+    names: { torn: 'Torn', modelatge: 'Modelatge', pintar: 'Pintar Ceramica', vidre: 'Fusio de Vidre' },
+    closedWeekdays: [1, 2]
   };
 
-  // Estat global de la reserva
-  const state = {
-    activity: 'torn',
-    date: null,
-    shift: 'mati',
-    time: '10:00',
-    persons: 1,
-    calYear: new Date().getFullYear(),
-    calMonth: new Date().getMonth()
+  const booking = {
+    activity: 'torn', numPersons: 1, date: null, shift: 'mati', arrivalTime: '10:00',
+    currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear()
   };
 
-  // Inicialització al carregar el DOM
   document.addEventListener('DOMContentLoaded', function () {
-    initScrollProgressBar();
-    initBackdropSwitcher();
     initScrollReveals();
-    initHeaderScroll();
-    initMobileNav();
-    initActivitySelector();
-    initCalendarWidget();
-    initShiftSelector();
-    initBookingForm();
+    initParallaxHero();
+    initNavigation();
+    initBookingEngine();
+    initGiftVoucher();
     initFaqAccordion();
-    initModalEvents();
+    initContactForm();
   });
 
-  /* ==========================================================================
-     2. GESTOR DE FONS FIXES & CONTROLADOR HUD INTERACTIU
-     ========================================================================== */
-  const SLIDE_TITLES = [
-    "Torn i mans treballant el fang",
-    "Pintar peces ceràmiques",
-    "Exposició de peces vitrificades",
-    "El taller comunitari amb creadors i famílies"
-  ];
-
-  const STAGE_TARGETS = ["#inici", "#activitats", "#ofici", "#reserves"];
-
-  function initBackdropSwitcher() {
-    const slides = document.querySelectorAll('.backdrop-slide');
-    const steps = document.querySelectorAll('.scroll-step');
-    const hudCounter = document.getElementById('hudCounter');
-    const hudTitle = document.getElementById('hudTitle');
-    const hudBtns = document.querySelectorAll('.hud-step-btn');
-
-    if (!slides.length || !steps.length) return;
-
-    function updateActiveBackdrop() {
-      const triggerY = window.innerHeight * 0.45;
-      let currentBgIndex = 0;
-
-      steps.forEach(function (step) {
-        const rect = step.getBoundingClientRect();
-        if (rect.top <= triggerY && rect.bottom >= triggerY) {
-          const idx = parseInt(step.getAttribute('data-bg-index'), 10);
-          if (!isNaN(idx)) {
-            currentBgIndex = idx;
-          }
-        }
-      });
-
-      slides.forEach(function (slide, i) {
-        slide.classList.toggle('active', i === currentBgIndex);
-      });
-
-      // Actualitzar HUD
-      if (hudCounter) {
-        hudCounter.textContent = '0' + (currentBgIndex + 1) + ' / 04';
-      }
-      if (hudTitle) {
-        hudTitle.textContent = SLIDE_TITLES[currentBgIndex] || '';
-      }
-      hudBtns.forEach(function (btn, idx) {
-        btn.classList.toggle('active', idx === currentBgIndex);
-      });
-    }
-
-    // Clics als botons del HUD per navegar directament a cada fons
-    hudBtns.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        const targetIdx = parseInt(btn.getAttribute('data-slide'), 10);
-        if (!isNaN(targetIdx) && STAGE_TARGETS[targetIdx]) {
-          const targetEl = document.querySelector(STAGE_TARGETS[targetIdx]);
-          if (targetEl) {
-            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }
-      });
-    });
-
-    window.addEventListener('scroll', updateActiveBackdrop, { passive: true });
-    window.addEventListener('resize', updateActiveBackdrop, { passive: true });
-    updateActiveBackdrop();
-  }
-
-  /* Barra de progrés de lectura superior */
-  function initScrollProgressBar() {
-    const bar = document.getElementById('scrollProgressBar');
-    if (!bar) return;
-
-    function updateProgress() {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      bar.style.width = Math.min(100, Math.max(0, progress)) + '%';
-    }
-
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    updateProgress();
-  }
-
-  /* ==========================================================================
-     3. REVEAL SUAU DELS PANELLS FLOTANTS
-     ========================================================================== */
+  /* ==== SCROLL REVEAL amb IntersectionObserver ==== */
   function initScrollReveals() {
-    const items = document.querySelectorAll('.reveal-item');
-    if (!items.length) return;
-
-    if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, {
-        threshold: 0.08,
-        rootMargin: '0px 0px -30px 0px'
+    var els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+    if (!els.length) return;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
       });
-
-      items.forEach(function (el) {
-        observer.observe(el);
-      });
-    } else {
-      items.forEach(function (el) {
-        el.classList.add('is-visible');
-      });
-    }
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(function (el) { observer.observe(el); });
   }
 
-  /* ==========================================================================
-     4. HEADER SCROLL & MOBIL DRAWER
-     ========================================================================== */
-  function initHeaderScroll() {
-    const header = document.getElementById('siteHeader');
-    if (!header) return;
+  /* ==== PARALLAX HERO & CINEMATIC LOAD ==== */
+  function initParallaxHero() {
+    var hero = document.querySelector('.hero-section');
+    var bg = document.getElementById('hero-bg');
+    if (!hero || !bg) return;
+
+    // Trigger cinematic zoom-out after load
+    setTimeout(function () { hero.classList.add('loaded'); }, 100);
+
+    // Parallax on scroll
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        requestAnimationFrame(function () {
+          var scrollY = window.pageYOffset;
+          if (scrollY < window.innerHeight) {
+            bg.style.transform = 'scale(' + (1 + scrollY * 0.0002) + ') translateY(' + (scrollY * 0.3) + 'px)';
+            hero.style.opacity = Math.max(0, 1 - scrollY / (window.innerHeight * 0.9));
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  }
+
+  /* ==== NAVEGACIO ==== */
+  function initNavigation() {
+    var header = document.querySelector('.site-header');
+    var toggle = document.getElementById('menu-toggle');
 
     window.addEventListener('scroll', function () {
-      if (window.scrollY > 30) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
+      if (header) {
+        header.classList.toggle('scrolled', window.scrollY > 50);
       }
-    }, { passive: true });
-  }
-
-  function initMobileNav() {
-    const toggle = document.getElementById('mobileToggle');
-    const drawer = document.getElementById('mobileDrawer');
-    if (!toggle || !drawer) return;
-
-    toggle.addEventListener('click', function () {
-      drawer.classList.toggle('open');
+      updateActiveNav();
     });
 
-    drawer.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', function () {
-        drawer.classList.remove('open');
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        document.body.classList.toggle('nav-mobile-open');
+        this.setAttribute('aria-expanded', document.body.classList.contains('nav-mobile-open'));
+      });
+    }
+
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+      link.addEventListener('click', function () { document.body.classList.remove('nav-mobile-open'); });
+    });
+
+    document.querySelectorAll('[data-book-act]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        selectActivity(this.getAttribute('data-book-act'));
+        var sec = document.getElementById('reserves');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
       });
     });
   }
 
-  /* ==========================================================================
-     5. SELECTOR D'ACTIVITATS I ENLLAÇOS DIRECTES
-     ========================================================================== */
-  function initActivitySelector() {
-    const chips = document.querySelectorAll('.chip-select-btn');
-    chips.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        selectActivity(this.getAttribute('data-act'));
+  function updateActiveNav() {
+    var sections = ['inici', 'activitats', 'reserves', 'val-regal', 'tarifes', 'faq', 'contacte'];
+    var current = '';
+    sections.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 120) current = id;
+    });
+    document.querySelectorAll('.nav-link').forEach(function (link) {
+      link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+    });
+  }
+
+  /* ==== MOTOR DE RESERVES ==== */
+  function initBookingEngine() {
+    document.querySelectorAll('.booking-act-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { selectActivity(this.getAttribute('data-act')); });
+    });
+
+    var personsEl = document.getElementById('booking-persons');
+    if (personsEl) personsEl.addEventListener('change', function () {
+      booking.numPersons = parseInt(this.value) || 1;
+      updateShiftSpots();
+    });
+
+    var prevBtn = document.getElementById('cal-prev-btn');
+    var nextBtn = document.getElementById('cal-next-btn');
+    if (prevBtn) prevBtn.addEventListener('click', function () {
+      var now = new Date();
+      var pm = booking.currentMonth - 1;
+      var py = pm < 0 ? booking.currentYear - 1 : booking.currentYear;
+      if (py < now.getFullYear() || (py === now.getFullYear() && (pm < 0 ? 11 : pm) < now.getMonth())) return;
+      booking.currentMonth = pm < 0 ? 11 : pm;
+      booking.currentYear = py;
+      renderCalendar();
+    });
+    if (nextBtn) nextBtn.addEventListener('click', function () {
+      var nm = booking.currentMonth + 1;
+      booking.currentMonth = nm > 11 ? 0 : nm;
+      booking.currentYear = nm > 11 ? booking.currentYear + 1 : booking.currentYear;
+      renderCalendar();
+    });
+
+    document.querySelectorAll('.shift-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        if (this.classList.contains('disabled')) return;
+        document.querySelectorAll('.shift-card').forEach(function (c) { c.classList.remove('selected'); });
+        this.classList.add('selected');
+        booking.shift = this.getAttribute('data-shift');
+        var arr = document.getElementById('booking-arrival-time');
+        if (arr) { arr.value = booking.shift === 'mati' ? '10:00' : '17:00'; booking.arrivalTime = arr.value; }
       });
     });
 
-    const cardLinks = document.querySelectorAll('.select-act-link');
-    cardLinks.forEach(function (link) {
-      link.addEventListener('click', function () {
-        const act = this.getAttribute('data-act');
-        if (act) selectActivity(act);
-      });
-    });
+    var arrSel = document.getElementById('booking-arrival-time');
+    if (arrSel) arrSel.addEventListener('change', function () { booking.arrivalTime = this.value; });
+
+    var chkVal = document.getElementById('chk-val-regal');
+    var valWrap = document.getElementById('val-code-wrap');
+    if (chkVal && valWrap) chkVal.addEventListener('change', function () { valWrap.style.display = this.checked ? 'block' : 'none'; });
+
+    var chkAlu = document.getElementById('chk-soc-alumne');
+    var aluWrap = document.getElementById('alumne-code-wrap');
+    if (chkAlu && aluWrap) chkAlu.addEventListener('change', function () { aluWrap.style.display = this.checked ? 'block' : 'none'; });
+
+    var form = document.getElementById('public-booking-form');
+    if (form) form.addEventListener('submit', handleBookingSubmit);
+
+    selectInitialDate();
+    renderCalendar();
   }
 
   function selectActivity(act) {
-    if (!CFG.names[act]) return;
-    state.activity = act;
-
-    document.querySelectorAll('.chip-select-btn').forEach(function (btn) {
-      btn.classList.toggle('selected', btn.getAttribute('data-act') === act);
+    if (!CFG.capacities[act]) return;
+    booking.activity = act;
+    document.querySelectorAll('.booking-act-btn').forEach(function (b) {
+      b.classList.toggle('selected', b.getAttribute('data-act') === act);
     });
-
-    const numSelect = document.getElementById('numPersonsSelect');
-    if (numSelect) {
-      const max = CFG.capacities[act] || 4;
-      numSelect.innerHTML = '';
-      for (let i = 1; i <= max; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.textContent = i + (i === 1 ? ' persona' : ' persones') + (i === max ? ' (aforament màxim)' : '');
-        numSelect.appendChild(opt);
+    var max = CFG.capacities[act];
+    var sel = document.getElementById('booking-persons');
+    if (sel) {
+      var cur = Math.min(parseInt(sel.value) || 1, max);
+      sel.innerHTML = '';
+      for (var i = 1; i <= max; i++) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.textContent = i === 1 ? '1 persona' : i + ' persones';
+        if (i === cur) opt.selected = true;
+        sel.appendChild(opt);
       }
-      if (state.persons > max) state.persons = max;
-      numSelect.value = state.persons;
+      booking.numPersons = cur;
     }
-
-    updateSummary();
+    renderCalendar();
+    updateShiftSpots();
   }
 
-  /* ==========================================================================
-     6. CALENDARI INTERACTIU (OBERTS DC A DG, DL I DT TANCATS)
-     ========================================================================== */
-  function initCalendarWidget() {
-    renderCalendar(state.calYear, state.calMonth);
-
-    const prevBtn = document.getElementById('calPrevBtn');
-    const nextBtn = document.getElementById('calNextBtn');
-
-    if (prevBtn) {
-      prevBtn.addEventListener('click', function () {
-        state.calMonth--;
-        if (state.calMonth < 0) {
-          state.calMonth = 11;
-          state.calYear--;
-        }
-        renderCalendar(state.calYear, state.calMonth);
-      });
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener('click', function () {
-        state.calMonth++;
-        if (state.calMonth > 11) {
-          state.calMonth = 0;
-          state.calYear++;
-        }
-        renderCalendar(state.calYear, state.calMonth);
-      });
-    }
-
-    selectNextAvailableDay();
-  }
-
-  function selectNextAvailableDay() {
-    const today = new Date();
-    for (let offset = 1; offset <= 14; offset++) {
-      const test = new Date(today);
-      test.setDate(today.getDate() + offset);
-      const dayOfWeek = test.getDay(); // 0=Dg, 1=Dl, 2=Dt, 3=Dc...
-      if (!CFG.closedWeekdays.includes(dayOfWeek)) {
-        const y = test.getFullYear();
-        const m = String(test.getMonth() + 1).padStart(2, '0');
-        const d = String(test.getDate()).padStart(2, '0');
-        state.date = y + '-' + m + '-' + d;
-        state.calYear = test.getFullYear();
-        state.calMonth = test.getMonth();
-        renderCalendar(state.calYear, state.calMonth);
-        updateSummary();
+  function selectInitialDate() {
+    var d = new Date(); d.setHours(0, 0, 0, 0);
+    for (var i = 0; i < 14; i++) {
+      if (!CFG.closedWeekdays.includes(d.getDay())) {
+        booking.date = fmtDate(d);
+        booking.currentMonth = d.getMonth();
+        booking.currentYear = d.getFullYear();
         break;
       }
+      d.setDate(d.getDate() + 1);
     }
   }
 
-  function renderCalendar(year, month) {
-    const titleEl = document.getElementById('calendarMonthYear');
-    if (titleEl) {
-      titleEl.textContent = CFG.monthNames[month] + ' ' + year;
-    }
+  function fmtDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
 
-    const gridEl = document.getElementById('calDaysGrid');
-    if (!gridEl) return;
-    gridEl.innerHTML = '';
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-
-    let startDayIndex = firstDay.getDay() - 1;
-    if (startDayIndex === -1) startDayIndex = 6;
-
-    for (let i = 0; i < startDayIndex; i++) {
-      const empty = document.createElement('div');
-      empty.className = 'cal-day-cell empty';
-      gridEl.appendChild(empty);
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const cell = document.createElement('div');
-      cell.className = 'cal-day-cell';
-      cell.textContent = day;
-
-      const cellDate = new Date(year, month, day);
-      cellDate.setHours(0, 0, 0, 0);
-      const dayOfWeek = cellDate.getDay();
-      const dateString = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-
-      if (cellDate < today) {
-        cell.classList.add('disabled');
-      } else if (CFG.closedWeekdays.includes(dayOfWeek)) {
-        cell.classList.add('closed');
-        cell.title = 'Tancat per fornejades i descans';
-      } else {
+  function renderCalendar() {
+    var grid = document.getElementById('cal-grid-days');
+    var titleEl = document.getElementById('cal-month-title');
+    if (!grid || !titleEl) return;
+    var mNames = ['Gener','Febrer','Marc','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+    titleEl.textContent = mNames[booking.currentMonth] + ' ' + booking.currentYear;
+    grid.innerHTML = '';
+    var firstDay = new Date(booking.currentYear, booking.currentMonth, 1).getDay();
+    var offset = firstDay === 0 ? 6 : firstDay - 1;
+    var total = new Date(booking.currentYear, booking.currentMonth + 1, 0).getDate();
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    for (var i = 0; i < offset; i++) { var e = document.createElement('div'); e.className = 'cal-day empty'; grid.appendChild(e); }
+    for (var day = 1; day <= total; day++) {
+      var dateObj = new Date(booking.currentYear, booking.currentMonth, day);
+      var ds = fmtDate(dateObj);
+      var cell = document.createElement('div');
+      cell.className = 'cal-day'; cell.textContent = day;
+      if (dateObj < today) { cell.classList.add('disabled'); }
+      else if (CFG.closedWeekdays.includes(dateObj.getDay())) { cell.classList.add('closed-day'); cell.title = 'Tancat'; }
+      else {
         cell.classList.add('available');
-        if (state.date === dateString) {
-          cell.classList.add('selected');
-        }
-
-        cell.addEventListener('click', function () {
-          document.querySelectorAll('.cal-day-cell').forEach(function (c) {
-            c.classList.remove('selected');
-          });
-          cell.classList.add('selected');
-          state.date = dateString;
-          updateSummary();
-        });
+        if (booking.date === ds) cell.classList.add('selected');
+        (function (d) { cell.addEventListener('click', function () { booking.date = d; renderCalendar(); updateShiftSpots(); }); })(ds);
       }
-
-      gridEl.appendChild(cell);
+      grid.appendChild(cell);
     }
+    updateDateLabel();
   }
 
-  /* ==========================================================================
-     7. SELECTOR DE TORNS I HORARIS
-     ========================================================================== */
-  function initShiftSelector() {
-    const shiftMati = document.getElementById('shiftMati');
-    const shiftTarda = document.getElementById('shiftTarda');
+  function updateDateLabel() {
+    var el = document.getElementById('selected-date-label');
+    if (!el || !booking.date) return;
+    var p = booking.date.split('-').map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    var dn = ['Diumenge','Dilluns','Dimarts','Dimecres','Dijous','Divendres','Dissabte'];
+    var mn = ['gener','febrer','marc','abril','maig','juny','juliol','agost','setembre','octubre','novembre','desembre'];
+    el.textContent = dn[d.getDay()] + ', ' + p[2] + ' de ' + mn[d.getMonth()] + ' de ' + p[0];
+  }
 
-    if (shiftMati) {
-      shiftMati.addEventListener('click', function (e) {
-        if (e.target.tagName !== 'INPUT') {
-          const radio = shiftMati.querySelector('input[type="radio"]:checked') || shiftMati.querySelector('input[type="radio"]');
-          if (radio) radio.checked = true;
+  async function updateShiftSpots() {
+    var sm = document.getElementById('spots-mati');
+    var st = document.getElementById('spots-tarda');
+    var max = CFG.capacities[booking.activity] || 4;
+    if (!sm || !st || !booking.date) return;
+    try {
+      var res = await fetch('/api/reserves/disponibilitat?data=' + booking.date + '&activitat=' + booking.activity);
+      if (res.ok) {
+        var data = await res.json();
+        if (data.ok && data.franges) {
+          var fm = data.franges.find(function (f) { return f.id === 'mati'; });
+          var ft = data.franges.find(function (f) { return f.id === 'tarda'; });
+          sm.textContent = (fm ? fm.disponibles : max) + ' places disponibles';
+          st.textContent = (ft ? ft.disponibles : max) + ' places disponibles';
+          return;
         }
-        setShift('mati');
-      });
+      }
+    } catch (e) { /* offline */ }
+    sm.textContent = max + ' places disponibles';
+    st.textContent = max + ' places disponibles';
+  }
+
+  async function handleBookingSubmit(e) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    var nom = (form.querySelector('#client-nom') || {}).value || '';
+    var tel = (form.querySelector('#client-tel') || {}).value || '';
+    var email = (form.querySelector('#client-email') || {}).value || '';
+    var notes = (form.querySelector('#client-notes') || {}).value || '';
+    var isVal = (form.querySelector('#chk-val-regal') || {}).checked;
+    var valCode = (form.querySelector('#val-code-input') || {}).value || '';
+    var isAlu = (form.querySelector('#chk-soc-alumne') || {}).checked;
+    var aluId = (form.querySelector('#alumne-code-input') || {}).value || '';
+    nom = nom.trim(); tel = tel.trim();
+    if (!nom || !tel) { alert('Indica el teu nom i telefon.'); return; }
+    if (!booking.date) { alert('Selecciona una data.'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Tramitant...'; }
+    var payload = {
+      activitat_id: booking.activity, activitat: CFG.names[booking.activity],
+      places: booking.numPersons, data: booking.date, franja_id: booking.shift,
+      hora_inici: booking.arrivalTime, nom: nom, telefon: tel, email: email.trim(),
+      notes: notes.trim(), val_regal: isVal ? 1 : 0, codi_val_regal: valCode.trim(),
+      soc_alumne: isAlu ? 1 : 0, student_id: aluId.trim()
+    };
+    try {
+      var res = await fetch('/api/reserves', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      var r = await res.json();
+      if (res.ok && r.ok) {
+        showModal({ nom: nom, tel: tel, act: CFG.names[booking.activity], places: booking.numPersons,
+          data: booking.date, torn: booking.shift === 'mati' ? 'Mati (10-13h)' : 'Tarda (17-20h)',
+          hora: booking.arrivalTime, val: isVal ? (valCode || 'Si') : null, id: r.id || 'CONF-' + Date.now().toString().slice(-6) });
+        form.reset();
+      } else { alert(r.error || 'No s ha pogut completar la reserva.'); }
+    } catch (err) {
+      showModal({ nom: nom, tel: tel, act: CFG.names[booking.activity], places: booking.numPersons,
+        data: booking.date, torn: booking.shift === 'mati' ? 'Mati (10-13h)' : 'Tarda (17-20h)',
+        hora: booking.arrivalTime, val: isVal ? (valCode || 'Si') : null, id: 'PENDENT-WA' });
+      form.reset();
+    } finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Reserva de Plaça'; } }
+  }
+
+  function showModal(d) {
+    var modal = document.getElementById('booking-modal');
+    var content = document.getElementById('modal-summary-content');
+    var waBtn = document.getElementById('modal-wa-btn');
+    if (!modal) return;
+    if (content) content.innerHTML =
+      '<div style="background:#FBF4F2;border:1px solid #E8E1DA;border-radius:8px;padding:16px;margin:16px 0;font-size:14px;line-height:1.6;">' +
+      '<p><strong>Titular:</strong> ' + esc(d.nom) + '</p>' +
+      '<p><strong>Activitat:</strong> ' + esc(d.act) + '</p>' +
+      '<p><strong>Places:</strong> ' + d.places + '</p>' +
+      '<p><strong>Data:</strong> ' + esc(d.data) + '</p>' +
+      '<p><strong>Torn:</strong> ' + esc(d.torn) + ' (Arribada ' + d.hora + 'h)</p>' +
+      (d.val ? '<p><strong>Val Regal:</strong> ' + esc(d.val) + '</p>' : '') +
+      '<p style="margin-top:8px;font-size:12px;color:#787069;">Ref: <code>' + esc(d.id) + '</code></p></div>';
+    if (waBtn) {
+      var t = encodeURIComponent('Hola Roig de Coure! Reserva:\n- ' + d.act + '\n- Data: ' + d.data +
+        '\n- Torn: ' + d.torn + ' (' + d.hora + 'h)\n- Places: ' + d.places + '\n- Nom: ' + d.nom + '\n- Tel: ' + d.tel);
+      waBtn.href = 'https://wa.me/' + CFG.phone + '?text=' + t;
+    }
+    modal.classList.add('active');
+    var close = document.getElementById('modal-close-btn');
+    if (close) close.onclick = function () { modal.classList.remove('active'); };
+  }
+
+  /* ==== VAL REGAL ==== */
+  const STRIPE_GIFT_URLS = {
+    'torn': 'https://buy.stripe.com/3cI14n2BHdPH0KKg5vgIo0m',           // Experiència torn o modelatge adults
+    'torn-infant': 'https://buy.stripe.com/6oUeVd1xDbHzbpof1rgIo0k',    // Experiència torn o modelatge <= 12 anys
+    'pintar': 'https://buy.stripe.com/aFacN5ekpfXPdxw8D3gIo0o',         // Regalar Experiències / Pintar
+    'hores-adults': 'https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n',   // Hores de taller Adults
+    'hores-infant': 'https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j'    // Hores de taller <= 12 anys
+  };
+
+  function initGiftVoucher() {
+    var expSel = document.getElementById('gift-exp-select');
+    var prevExp = document.getElementById('preview-gift-exp');
+    var prevCode = document.getElementById('preview-gift-code');
+
+    function upd() {
+      if (prevExp && expSel) prevExp.textContent = expSel.options[expSel.selectedIndex].text;
     }
 
-    if (shiftTarda) {
-      shiftTarda.addEventListener('click', function (e) {
-        if (e.target.tagName !== 'INPUT') {
-          const radio = shiftTarda.querySelector('input[type="radio"]:checked') || shiftTarda.querySelector('input[type="radio"]');
-          if (radio) radio.checked = true;
-        }
-        setShift('tarda');
-      });
-    }
+    if (expSel) expSel.addEventListener('change', upd);
+    if (prevCode) prevCode.textContent = 'RDC-' + new Date().getFullYear() + '-' + (1000 + Math.floor(Math.random() * 9000));
 
-    document.querySelectorAll('input[name="horaEntrada"]').forEach(function (radio) {
-      radio.addEventListener('change', function () {
-        state.time = this.value;
-        if (this.value.startsWith('10') || this.value.startsWith('11')) {
-          setShift('mati');
-        } else {
-          setShift('tarda');
-        }
-        updateSummary();
+    var payBtn = document.getElementById('gift-pay-btn');
+    if (payBtn) payBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var selVal = (expSel && expSel.value) || 'torn';
+      var stripeUrl = STRIPE_GIFT_URLS[selVal] || STRIPE_GIFT_URLS['torn'];
+      window.open(stripeUrl, '_blank');
+    });
+    upd();
+  }
+
+  /* ==== FAQ ==== */
+  function initFaqAccordion() {
+    document.querySelectorAll('.faq-item').forEach(function (item) {
+      var q = item.querySelector('.faq-question');
+      if (q) q.addEventListener('click', function () {
+        document.querySelectorAll('.faq-item').forEach(function (o) { if (o !== item) o.classList.remove('open'); });
+        item.classList.toggle('open');
       });
     });
-
-    const numSelect = document.getElementById('numPersonsSelect');
-    if (numSelect) {
-      numSelect.addEventListener('change', function () {
-        state.persons = parseInt(this.value, 10);
-        updateSummary();
-      });
-    }
   }
 
-  function setShift(shift) {
-    state.shift = shift;
-    const shiftMati = document.getElementById('shiftMati');
-    const shiftTarda = document.getElementById('shiftTarda');
-
-    if (shift === 'mati') {
-      if (shiftMati) shiftMati.classList.add('selected');
-      if (shiftTarda) shiftTarda.classList.remove('selected');
-      const radio = shiftMati ? shiftMati.querySelector('input[type="radio"]:checked') : null;
-      state.time = radio ? radio.value : '10:00';
-    } else {
-      if (shiftTarda) shiftTarda.classList.add('selected');
-      if (shiftMati) shiftMati.classList.remove('selected');
-      const radio = shiftTarda ? shiftTarda.querySelector('input[type="radio"]:checked') : null;
-      state.time = radio ? radio.value : '17:00';
-    }
-    updateSummary();
-  }
-
-  function updateSummary() {
-    const actEl = document.getElementById('sumActivity');
-    const dateEl = document.getElementById('sumDate');
-    const shiftEl = document.getElementById('sumShift');
-
-    if (actEl) actEl.textContent = CFG.names[state.activity] || 'Torn';
-    if (dateEl) {
-      if (state.date) {
-        const parts = state.date.split('-');
-        dateEl.textContent = parts[2] + ' / ' + parts[1] + ' / ' + parts[0];
-      } else {
-        dateEl.textContent = 'Selecciona un dia al calendari';
-      }
-    }
-    if (shiftEl) {
-      const shiftName = state.shift === 'mati' ? 'Matí' : 'Tarda';
-      shiftEl.textContent = shiftName + ' (' + state.time + ' h) · ' + state.persons + (state.persons === 1 ? ' persona' : ' persones');
-    }
-  }
-
-  /* ==========================================================================
-     8. GESTIO DEL FORMULARI DE RESERVA & WHATSAPP
-     ========================================================================== */
-  function initBookingForm() {
-    const form = document.getElementById('bookingForm');
+  /* ==== CONTACTE ==== */
+  function initContactForm() {
+    var form = document.getElementById('contact-quick-form');
     if (!form) return;
-
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-
-      if (!state.date) {
-        alert('Si us plau, selecciona una data disponible al calendari (obert de dimecres a diumenge).');
-        return;
-      }
-
-      const name = document.getElementById('clientName').value.trim();
-      const phone = document.getElementById('clientPhone').value.trim();
-      const email = document.getElementById('clientEmail').value.trim();
-      const notes = document.getElementById('clientNotes').value.trim();
-
-      if (!name || !phone || !email) {
-        alert('Si us plau, omple les teves dades de contacte (nom, telèfon i correu).');
-        return;
-      }
-
-      const actName = CFG.names[state.activity];
-      const dateFormatted = state.date.split('-').reverse().join('/');
-      const shiftName = state.shift === 'mati' ? 'Matí' : 'Tarda';
-
-      let msg = 'Hola Ferran, m'agradaria reservar plaça al taller de Roig de Coure:
-
-';
-      msg += '- Disciplina: ' + actName + '
-';
-      msg += '- Data: ' + dateFormatted + '
-';
-      msg += '- Torn: ' + shiftName + ' (Arribada a les ' + state.time + ' h)
-';
-      msg += '- Places: ' + state.persons + '
-';
-      msg += '- Nom: ' + name + '
-';
-      msg += '- Telèfon: ' + phone + '
-';
-      msg += '- Correu: ' + email + '
-';
-      if (notes) {
-        msg += '- Observacions: ' + notes + '
-';
-      }
-      msg += '
-Gràcies!';
-
-      const waUrl = 'https://wa.me/' + CFG.phone + '?text=' + encodeURIComponent(msg);
-
-      const modal = document.getElementById('confirmModal');
-      const modalContent = document.getElementById('modalSummaryContent');
-      const waBtn = document.getElementById('modalWhatsAppBtn');
-
-      if (modalContent) {
-        modalContent.textContent = 'Molt bé, ' + name + '! Hem registrat la teva sol·licitud per a ' + actName + ' el dia ' + dateFormatted + ' a les ' + state.time + ' h (' + state.persons + ' places). Pots enviar la confirmació directa per WhatsApp al taller per accelerar la gestió de la teva plaça:';
-      }
-
-      if (waBtn) {
-        waBtn.href = waUrl;
-      }
-
-      if (modal) {
-        modal.classList.add('active');
-      }
+      var nom = (form.querySelector('#c-nom') || {}).value || '';
+      var tel = (form.querySelector('#c-tel') || {}).value || '';
+      var msg = (form.querySelector('#c-msg') || {}).value || '';
+      if (!nom.trim() || !msg.trim()) { alert('Indica el teu nom i missatge.'); return; }
+      var t = encodeURIComponent('Hola Roig de Coure! Consulta:\n- Nom: ' + nom.trim() +
+        '\n- Tel: ' + (tel.trim() || 'No indicat') + '\n- Missatge: ' + msg.trim());
+      window.open('https://wa.me/' + CFG.phone + '?text=' + t, '_blank');
+      form.reset();
     });
   }
 
-  function initModalEvents() {
-    const modal = document.getElementById('confirmModal');
-    const closeBtn = document.getElementById('modalCloseBtn');
-    const doneBtn = document.getElementById('modalDoneBtn');
-
-    function closeModal() {
-      if (modal) modal.classList.remove('active');
-    }
-
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    if (doneBtn) doneBtn.addEventListener('click', closeModal);
-
-    if (modal) {
-      modal.addEventListener('click', function (e) {
-        if (e.target === modal) closeModal();
-      });
-    }
-  }
-
-  /* ==========================================================================
-     9. PREGUNTES FREQUENTS (FAQ ACORDIO)
-     ========================================================================== */
-  function initFaqAccordion() {
-    const items = document.querySelectorAll('.faq-accordion-item');
-    items.forEach(function (card) {
-      const btn = card.querySelector('.faq-accordion-btn');
-      if (!btn) return;
-
-      btn.addEventListener('click', function () {
-        const isOpen = card.classList.contains('open');
-
-        items.forEach(function (other) {
-          other.classList.remove('open');
-        });
-
-        if (!isOpen) {
-          card.classList.add('open');
-        }
-      });
-    });
-  }
-
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 })();

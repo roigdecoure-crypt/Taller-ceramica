@@ -3,775 +3,699 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roig de Coure · Taller i Botiga de Ceràmica i Vidre · Olot</title>
-  <meta name="description" content="Taller artesanal i botiga de ceràmica i vidre a Olot. Classes de torn, modelatge, pintura ceràmica i vidre a la Plaça Rector Ferrer, 15.">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600;1,700&display=swap" rel="stylesheet">
-  
+  <title>Roig de Coure - Taller de Ceramica a Olot | Torn, Modelatge, Pintura i Vidre</title>
+  <meta name="description" content="Roig de Coure es un espai de creacio ceramica a Olot (Girona). Classes de torn, modelatge, pintura sobre ceramica i fusio de vidre. Reserva la teva plaça en linia.">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#831D1D">
   <link rel="stylesheet" href="css/roigdecoure-web.css">
-  <link rel="icon" type="image/png" href="img/logo.png">
 </head>
 <body>
-  <!-- BARRA SUPERIOR DE PROGRÉS DE LECTURA -->
-  <div class="scroll-progress-bar" id="scrollProgressBar" aria-hidden="true"></div>
 
+  <!-- ================================================================
+       NAVBAR GLASSMORPHISM
+       ================================================================ -->
+  <header class="site-header" id="site-header">
+    <div class="container nav-container">
+      <a href="#inici" class="brand-wrapper">
+        <div>
+          <span class="brand-title">Roig de Coure</span>
+          <span class="brand-subtitle">Taller de Ceramica &mdash; Olot</span>
+        </div>
+      </a>
+      <nav>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="#activitats" class="nav-link">Activitats</a></li>
+          <li><a href="#reserves" class="nav-link">Reserves</a></li>
+          <li><a href="#val-regal" class="nav-link">Val Regal</a></li>
+          <li><a href="#tarifes" class="nav-link">Tarifes</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+          <li><a href="#contacte" class="nav-link">Contacte</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <a href="alumne.html" class="btn btn-outline btn-sm">Portal Alumne</a>
+        <a href="#reserves" class="btn btn-primary btn-sm">Reservar</a>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Obrir menu" aria-expanded="false">Menu</button>
+      </div>
+    </div>
+  </header>
 
-  <!-- 4 FONS FOTOGRAFICS FIXES QUE CANVIEN AMB L'SCROLL -->
-  <div class="fixed-backdrop-manager" id="backdropManager" aria-hidden="true">
-    <div class="backdrop-slide backdrop-slide-0 active" id="bgSlide0"></div>
-    <div class="backdrop-slide backdrop-slide-1" id="bgSlide1"></div>
-    <div class="backdrop-slide backdrop-slide-2" id="bgSlide2"></div>
-    <div class="backdrop-slide backdrop-slide-3" id="bgSlide3"></div>
-    <div class="backdrop-scrim"></div>
+  <!-- ================================================================
+       1. HERO CINEMATIC AMB PARALLAX
+       ================================================================ -->
+  <section class="hero-section" id="inici">
+    <div class="hero-bg" id="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-tag">Espai de Creacio Ceramica a Olot</div>
+        <h1 class="hero-title">Roig de Coure</h1>
+        <p class="hero-subtitle">Taller de Ceramica, Torn i Fusio de Vidre</p>
+        <p class="hero-desc">
+          Descobreix l'art de la ceramica al cor d'Olot. Aprendre a tornejar, modelar,
+          pintar ceramica o crear peces de vidre fusionat en un espai acollidor i creatiu,
+          obert de dimecres a diumenge.
+        </p>
+        <div class="hero-cta-group">
+          <a href="#reserves" class="btn btn-primary btn-lg">Reservar Plaça</a>
+          <a href="alumne.html" class="btn btn-outline-white btn-lg">Portal de l'Alumne</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="hero-stat-number" data-count="5">5</span>
+            <span class="hero-stat-label">Activitats</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-number">+50</span>
+            <span class="hero-stat-label">Peces per Pintar</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-number">2h</span>
+            <span class="hero-stat-label">Per Sessio</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-number">Dc-Dg</span>
+            <span class="hero-stat-label">Horari Setmanal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <span class="scroll-text">Descobreix</span>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       MARQUEE HORITZONTAL
+       ================================================================ -->
+  <div class="marquee-section">
+    <div class="marquee-track" id="marquee-track">
+      <span class="marquee-item"><span class="marquee-dot"></span> Torn</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Modelatge</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Pintar Ceramica</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Fusio de Vidre</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Grups & Families</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Monogràfics</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Casals Infantils</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Vals Regal</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Packs d'Hores</span>
+      <!-- Duplicat per a loop continu -->
+      <span class="marquee-item"><span class="marquee-dot"></span> Torn</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Modelatge</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Pintar Ceramica</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Fusio de Vidre</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Grups & Families</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Monogràfics</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Casals Infantils</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Vals Regal</span>
+      <span class="marquee-item"><span class="marquee-dot"></span> Packs d'Hores</span>
+    </div>
   </div>
 
-  <!-- CAPA DE CONTINGUT FLOTANT QUE LLISCA A SOBRE -->
-  <div class="floating-content-layer">
+  <!-- ================================================================
+       2. ACTIVITATS - CARDS AMB REVEAL ESCALONAT
+       ================================================================ -->
+  <section class="activities-section" id="activitats">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Que oferim</span>
+        <h2>Les Nostres Activitats</h2>
+        <p>Cada activitat inclou materials, eines, fornejada de bescuit, esmaltat i cuita final a mes de 1000 graus.</p>
+      </div>
 
-    <!-- CAPÇALERA MINIMALISTA -->
-    <header class="minimal-header" id="siteHeader">
-      <div class="container-minimal header-flex-row">
-        <a href="#" class="brand-wrapper" aria-label="Roig de Coure - Inici">
-          <img src="img/logo.png" alt="Símbol Roig de Coure" class="brand-logo-icon">
-          <div>
-            <span class="brand-name">Roig de Coure</span>
-            <span class="brand-subline">Taller · Botiga · Olot</span>
+      <div class="activities-grid-showcase">
+
+        <!-- Torn -->
+        <div class="activity-card reveal delay-1">
+          <div class="activity-card-media">
+            <img src="img/web/classes-torn-modelatge.png" alt="Torn i Modelatge al taller Roig de Coure" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Fins a 4 torns</span>
           </div>
-        </a>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Torn</h3>
+            <p class="activity-card-desc">
+              Aprendre l'art de modelar la ceramica al torn. Treballaras amb fang i
+              farem tot el proces: centrat, pujada, modelat, bescuit i esmaltat final.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Iniciacio i perfeccionament</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Sessions de 2 hores</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Fang, eines i fornejada inclosos</li>
+            </ul>
+            <a href="#reserves" class="btn btn-primary btn-block" data-book-act="torn">Reservar Plaça</a>
+          </div>
+        </div>
 
-        <nav aria-label="Navegació principal">
-          <ul class="nav-links-menu">
-            <li><a href="#activitats" class="nav-menu-link">Activitats</a></li>
-            <li><a href="#ofici" class="nav-menu-link">L'Ofici</a></li>
-            <li><a href="#reserves" class="nav-menu-link">Reserves</a></li>
-            <li><a href="#val-regal" class="nav-menu-link">Val Regal</a></li>
-            <li><a href="#contacte" class="nav-menu-link">Contacte</a></li>
-          </ul>
-        </nav>
+        <!-- Modelatge -->
+        <div class="activity-card reveal delay-2">
+          <div class="activity-card-media">
+            <img src="img/web/modelatge-escultura.jpg" alt="Modelatge ceràmic al taller" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Fins a 8 places</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Modelatge</h3>
+            <p class="activity-card-desc">
+              Explora les tecniques de modelatge a ma: xurro, planxa, pessic i escultura lliure.
+              Crea peces uniques amb total llibertat creativa.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Totes les tecniques de modelatge</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Escultura i peces funcionals</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Ideal per a principiants</li>
+            </ul>
+            <a href="#reserves" class="btn btn-primary btn-block" data-book-act="modelatge">Reservar Plaça</a>
+          </div>
+        </div>
 
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <a href="#reserves" class="btn-cta-terracotta">
-            <span>Reservar Plaça</span>
-          </a>
-          <button class="mobile-toggle-btn" id="mobileToggle" aria-label="Obrir menú">
-            <span></span>
-            <span></span>
-            <span></span>
+        <!-- Pintar -->
+        <div class="activity-card reveal delay-3">
+          <div class="activity-card-media">
+            <img src="img/web/pintar-ceramica-original.png" alt="Pintar ceramica al taller" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Fins a 12 places</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Pintar Ceramica</h3>
+            <p class="activity-card-desc">
+              Escull entre mes de 50 models de ceramica cuita i decora-la com mes t'agradi.
+              Pinzells, esmalts, pigments i plantilles inclosos. Tothom ho pot fer!
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Mes de 50 peces per escollir</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Pintures i eines incloses</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Sense experiencia previa</li>
+            </ul>
+            <a href="#reserves" class="btn btn-primary btn-block" data-book-act="pintar">Reservar Plaça per Pintar</a>
+          </div>
+        </div>
+
+        <!-- Vidre -->
+        <div class="activity-card reveal delay-4">
+          <div class="activity-card-media">
+            <img src="img/web/vidre-fusing.jpeg" alt="Fusio de vidre al taller" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Fins a 6 places</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Fusio de Vidre</h3>
+            <p class="activity-card-desc">
+              Crea peces decoratives de vidre amb la tecnica del fusing: tall, composicio i fusio al forn.
+              Joies, clauers, plats decoratius i vitralls.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Fusing, vidre glacat i vitral</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Material de vidre inclos</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Peces llestes en 7-10 dies</li>
+            </ul>
+            <a href="#reserves" class="btn btn-secondary btn-block" data-book-act="vidre">Reservar Plaça de Vidre</a>
+          </div>
+        </div>
+
+        <!-- Grups i Famílies -->
+        <div class="activity-card reveal delay-5">
+          <div class="activity-card-media">
+            <img src="img/web/grups-families-original.jpg" alt="Grups i families al taller Roig de Coure" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Grups de 4 a 15</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Grups i Famílies</h3>
+            <p class="activity-card-desc">
+              Veniu en parella, en familia o en grup d'amics a compartir una experiencia al taller.
+              Perfecte per a aniversaris, trobades i team building d'empresa.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Aniversaris i celebracions</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Sessions a mida per a grups</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Torns, pintura o vidre</li>
+            </ul>
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20per%20a%20un%20grup." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar per a Grups</a>
+          </div>
+        </div>
+
+        <!-- Monogràfics -->
+        <div class="activity-card reveal delay-1">
+          <div class="activity-card-media">
+            <img src="img/web/monografics-tetera.png" alt="Cursos monografics a Roig de Coure" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">Monogràfics</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Monogràfics</h3>
+            <p class="activity-card-desc">
+              Tallers tematics especialitzats per aprofundir en tecniques concretes:
+              construccio de teteres, peces escultoriques, esmaltatges i processos ceramica d'autor.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Construccio de tetera artesanal</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Tecniques especifiques i escultura</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Places limitades per curs</li>
+            </ul>
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20cursos%20monografics." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Monogràfics</a>
+          </div>
+        </div>
+
+        <!-- Casals -->
+        <div class="activity-card reveal delay-2">
+          <div class="activity-card-media">
+            <img src="img/web/casals-infants.webp" alt="Casals infantils de ceramica i vidre a Olot" class="activity-card-img" loading="lazy">
+            <span class="activity-card-capacity">De 6 a 15 anys</span>
+          </div>
+          <div class="activity-card-body">
+            <h3 class="activity-card-title">Casals</h3>
+            <p class="activity-card-desc">
+              Casals de ceramica i vidre per a infants durant les vacances d'hivern,
+              primavera i estiu. Combinem aprenentatge creatiu, argila i diversio.
+            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Vacances d'estiu, primavera i hivern</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Ceramica, modelat i vidre</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Totes les peces cuites incloses</li>
+            </ul>
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20casals%20infantils." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Informació de Casals</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       3. RESERVES EN VIU
+       ================================================================ -->
+  <section class="booking-section" id="reserves">
+    <div class="container container-narrow">
+      <div class="section-header reveal">
+        <span class="eyebrow">Reserves en Linia</span>
+        <h2>Reserva la teva Plaça</h2>
+        <p>Tria l'activitat, la data i el torn. Confirmacio immediata.</p>
+      </div>
+
+      <div class="booking-wrapper reveal-scale">
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 16px;">1. Quina activitat t'interessa?</h3>
+        <div class="booking-activities-grid">
+          <button type="button" class="booking-act-btn selected" data-act="torn">
+            <div class="booking-act-header"><span class="booking-act-badge">4 torns</span></div>
+            <div class="booking-act-name">Torn</div>
+            <div class="booking-act-subtitle">Iniciacio i perfeccionament</div>
+          </button>
+          <button type="button" class="booking-act-btn" data-act="modelatge">
+            <div class="booking-act-header"><span class="booking-act-badge">8 places</span></div>
+            <div class="booking-act-name">Modelatge</div>
+            <div class="booking-act-subtitle">Xurro, planxa, pessic</div>
+          </button>
+          <button type="button" class="booking-act-btn" data-act="pintar">
+            <div class="booking-act-header"><span class="booking-act-badge">12 places</span></div>
+            <div class="booking-act-name">Pintar Ceramica</div>
+            <div class="booking-act-subtitle">+50 peces per decorar</div>
           </button>
         </div>
-      </div>
-    </header>
 
-    <!-- MARQUEE CONTINU D'ALTA VELOCITAT EN MOVIMENT -->
-    <div class="editorial-marquee-bar" aria-hidden="true">
-      <div class="marquee-track">
-        <span><span class="star-sep">✦</span> ROIG DE COURE OLOT</span>
-        <span><span class="star-sep">✦</span> TALLER ARTESANAL</span>
-        <span><span class="star-sep">✦</span> CLASSES DE TORN</span>
-        <span><span class="star-sep">✦</span> MODELATGE MANUAL</span>
-        <span><span class="star-sep">✦</span> PINTAR CERÀMICA</span>
-        <span><span class="star-sep">✦</span> FUSIÓ DE VIDRE</span>
-        <span><span class="star-sep">✦</span> FORN A 1.300°C</span>
-        <span><span class="star-sep">✦</span> PEÇES ÚNIQUES</span>
-        <span><span class="star-sep">✦</span> PLAÇA RECTOR FERRER, 15</span>
-        <span><span class="star-sep">✦</span> ROIG DE COURE OLOT</span>
-        <span><span class="star-sep">✦</span> TALLER ARTESANAL</span>
-        <span><span class="star-sep">✦</span> CLASSES DE TORN</span>
-        <span><span class="star-sep">✦</span> MODELATGE MANUAL</span>
-        <span><span class="star-sep">✦</span> PINTAR CERÀMICA</span>
-        <span><span class="star-sep">✦</span> FUSIÓ DE VIDRE</span>
-        <span><span class="star-sep">✦</span> FORN A 1.300°C</span>
-        <span><span class="star-sep">✦</span> PEÇES ÚNIQUES</span>
-        <span><span class="star-sep">✦</span> PLAÇA RECTOR FERRER, 15</span>
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 16px;">2. Tria data i torn</h3>
+        <div class="booking-controls-row">
+          <div>
+            <div class="form-group">
+              <label class="form-label" for="booking-persons">Nombre de persones</label>
+              <select class="form-select" id="booking-persons">
+                <option value="1">1 persona</option>
+                <option value="2">2 persones</option>
+                <option value="3">3 persones</option>
+                <option value="4">4 persones</option>
+              </select>
+            </div>
+            <div style="margin-top: 14px;">
+              <div id="selected-date-label" style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">Selecciona una data</div>
+              <div style="font-size: 12px; color: var(--secondary); background: var(--secondary-light); padding: 8px 12px; border-radius: 8px;">
+                Horari: dimecres a diumenge. Dilluns i dimarts descans.
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="inline-calendar-box">
+              <div class="cal-nav-row">
+                <button type="button" class="cal-nav-btn" id="cal-prev-btn">&larr;</button>
+                <span class="cal-nav-title" id="cal-month-title"></span>
+                <button type="button" class="cal-nav-btn" id="cal-next-btn">&rarr;</button>
+              </div>
+              <div class="cal-weekdays">
+                <div>Dl</div><div>Dt</div><div>Dc</div><div>Dj</div><div>Dv</div><div>Ds</div><div>Dg</div>
+              </div>
+              <div class="cal-grid" id="cal-grid-days"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="shifts-grid" style="margin-bottom: 24px;">
+          <div class="shift-card selected" id="shift-mati" data-shift="mati">
+            <div class="shift-name">Mati</div>
+            <div class="shift-hours">10:00 - 13:00</div>
+            <div class="shift-spots" id="spots-mati">places disponibles</div>
+          </div>
+          <div class="shift-card" id="shift-tarda" data-shift="tarda">
+            <div class="shift-name">Tarda</div>
+            <div class="shift-hours">17:00 - 20:00</div>
+            <div class="shift-spots" id="spots-tarda">places disponibles</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="booking-arrival-time">Hora d'arribada (sessio de 2 hores)</label>
+          <select class="form-select" id="booking-arrival-time">
+            <option value="10:00">10:00 h (fins a les 12:00)</option>
+            <option value="10:15">10:15 h (fins a les 12:15)</option>
+            <option value="10:30">10:30 h (fins a les 12:30)</option>
+            <option value="10:45">10:45 h (fins a les 12:45)</option>
+            <option value="11:00">11:00 h (fins a les 13:00)</option>
+            <option value="16:30">16:30 h (fins a les 18:30)</option>
+            <option value="17:00">17:00 h (fins a les 19:00)</option>
+            <option value="17:30">17:30 h (fins a les 19:30)</option>
+          </select>
+        </div>
+
+        <h3 style="font-size: 15px; font-weight: 700; color: var(--dark); margin: 28px 0 16px;">3. Les teves dades</h3>
+        <form id="public-booking-form">
+          <div class="booking-controls-row">
+            <div class="form-group">
+              <label class="form-label" for="client-nom">Nom complet *</label>
+              <input type="text" class="form-input" id="client-nom" placeholder="Nom i cognoms" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="client-tel">Telefon *</label>
+              <input type="tel" class="form-input" id="client-tel" placeholder="+34 600 000 000" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="client-email">Correu electronic (opcional)</label>
+            <input type="email" class="form-input" id="client-email" placeholder="el-teu@email.com">
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 20px; margin: 18px 0;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+              <input type="checkbox" id="chk-soc-alumne"> Soc alumne del taller
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+              <input type="checkbox" id="chk-val-regal"> Tinc un val regal
+            </label>
+          </div>
+          <div id="alumne-code-wrap" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="alumne-code-input">Codi d'alumne</label>
+              <input type="text" class="form-input" id="alumne-code-input" placeholder="El teu codi o nom">
+            </div>
+          </div>
+          <div id="val-code-wrap" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="val-code-input">Codi del val regal</label>
+              <input type="text" class="form-input" id="val-code-input" placeholder="Ex: RDC-2026-1234">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="client-notes">Notes (opcional)</label>
+            <textarea class="form-input" id="client-notes" rows="2" placeholder="Indicacions especials..." style="resize: vertical;"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 12px;">Confirmar Reserva de Plaça</button>
+        </form>
       </div>
     </div>
+  </section>
 
-
-    <!-- DRAWER MOBIL -->
-    <div class="mobile-nav-overlay" id="mobileDrawer" aria-hidden="true">
-      <ul class="mobile-nav-items">
-        <li class="mobile-nav-item"><a href="#activitats">Activitats</a></li>
-        <li class="mobile-nav-item"><a href="#ofici">L'Ofici</a></li>
-        <li class="mobile-nav-item"><a href="#reserves">Reserves</a></li>
-        <li class="mobile-nav-item"><a href="#val-regal">Val Regal</a></li>
-        <li class="mobile-nav-item"><a href="#contacte">Contacte</a></li>
-      </ul>
+  <!-- ================================================================
+       4. VAL REGAL
+       ================================================================ -->
+  <section class="gift-section" id="val-regal">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Regala Experiencies</span>
+        <h2>Val Regal de Ceramica</h2>
+        <p>Regala una experiencia inoblidable al torn, al taller de pintura o hores lliures.</p>
+      </div>
+      <div class="gift-grid">
+        <div class="reveal-left">
+          <div class="form-group">
+            <label class="form-label" for="gift-exp-select">Tria l'experiència a regalar</label>
+            <select class="form-select" id="gift-exp-select" style="font-size: 15px; padding: 14px;">
+              <option value="torn">Experiència de Torn o Modelatge (Adults)</option>
+              <option value="torn-infant">Torn o Modelatge (Menors de 12 anys)</option>
+              <option value="pintar">Experiència de Pintar Ceràmica</option>
+              <option value="hores-adults">Pack d'Hores de Taller (Adults)</option>
+              <option value="hores-infant">Pack d'Hores de Taller (Menors de 12 anys)</option>
+            </select>
+          </div>
+          <p style="font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6;">
+            A la passarel·la de pagament segura podràs introduir el nom del destinatari, de part de qui és el regal i la teva dedicatòria personalitzada.
+          </p>
+          <div>
+            <button type="button" class="btn btn-primary btn-lg btn-block" id="gift-pay-btn">Passarel·la de Pagament</button>
+          </div>
+        </div>
+        <div class="reveal-right">
+          <div class="gift-preview-card float-anim">
+            <div class="gift-badge-brand">Roig de Coure</div>
+            <p style="font-size: 11px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;">Taller de Ceràmica &mdash; Olot</p>
+            <div class="gift-voucher-title">Val Regal</div>
+            <div class="gift-voucher-exp" id="preview-gift-exp">Experiència de Torn o Modelatge (Adults)</div>
+            <p class="gift-voucher-notes" style="margin: 16px 0;">Una experiència artesanal única per gaudir i crear amb les mans.</p>
+            <div class="gift-voucher-code" id="preview-gift-code">RDC-2026-VAL</div>
+            <p style="font-size: 11px; color: var(--muted); margin-top: 14px;">Bescanviable a roigdecoure.cat o al taller</p>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
 
-    <main>
-      <!-- ETAPA 1: HERO FLOTANT (FONS 0: MANS AL TORN) -->
-      <section class="hero-scroll-stage scroll-step" data-bg-index="0" id="inici">
-        <div class="container-minimal">
-          <div class="hero-editorial-grid">
-            <div class="hero-floating-card">
-            <div class="hero-pill-badge">
-              <span class="pulsing-dot"></span>
-              <span>Obert de dimecres a diumenge · Plaça Rector Ferrer, 15</span>
-            </div>
-
-            <h1 class="hero-headline">
-              L'art de crear<br>
-              amb les teves mans.<br>
-              <span class="accent">Ceràmica viva a Olot.</span>
-            </h1>
-
-            <p class="hero-subtext">
-              Taller i botiga artesanal al centre històric d'Olot. Classes de torn, modelatge, pintura sobre ceràmica i fusió de vidre amb fornejades a més de 1.000°C.
-            </p>
-
-            <div class="hero-actions-row">
-              <a href="#reserves" class="btn-cta-terracotta">
-                <span>Reservar Torn o Classe</span>
-              </a>
-              <a href="#activitats" class="btn-cta-outline">
-                <span>Veure les 7 Activitats</span>
-              </a>
-            </div>
-
-            <div class="hero-key-metrics">
-              <div class="metric-unit">
-                <span class="metric-number">1.300°C</span>
-                <span class="metric-label">Cuites d'alta temperatura</span>
-              </div>
-              <div class="metric-unit">
-                <span class="metric-number">4 Torns</span>
-                <span class="metric-label">Torns de terrissaire</span>
-              </div>
-              <div class="metric-unit">
-                <span class="metric-number">+50 Models</span>
-                <span class="metric-label">Ceràmica per pintar</span>
-              </div>
-            </div>
-
-            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <span style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
-                Desplaça't avall per descobrir les activitats
-              </span>
-              <a href="#activitats" style="font-size: 0.82rem; font-weight: 800; color: var(--accent-terracotta); text-transform: uppercase;">
-                Explorar Taller ↓
-              </a>
-            </div>
-          </div>
-
-          <!-- Targeta lateral dreta: posa en valor el Fons 1 i deixa respirar la foto -->
-          <div class="hero-live-aside">
-            <div class="hero-live-tag-card">
-              <span class="live-eyebrow">Fons 01 · Taller en Directe</span>
-              <h2 class="live-title">El torn de terrissaire en plena creació</h2>
-              <p class="live-desc">
-                Mentre fas scroll, les 4 fotografies d'alta resolució del taller canvien de fons per mostrar-te cada racó i ofici de Roig de Coure.
-              </p>
-              <div class="live-badges">
-                <span>4 Torns Elèctrics</span>
-                <span>Fang de la Garrotxa</span>
-                <span>Cuita a 1.300°C</span>
-                <span>Plaça Rector Ferrer, 15</span>
-              </div>
-            </div>
-          </div>
+  <!-- ================================================================
+       5. TARIFES
+       ================================================================ -->
+  <section class="pricing-section" id="tarifes">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Tarifes</span>
+        <h2>Preus i Paquets</h2>
+        <p>Tots els preus inclouen materials, eines, fornejada i esmaltat.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card reveal delay-1">
+          <h3>Sessio Puntual</h3>
+          <div class="pricing-price">Consultar <span>/ sessio</span></div>
+          <ul class="pricing-list">
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Sessio de 2 hores</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Torn, modelatge o pintura</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Materials inclosos</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Ideal per a provar</li>
+          </ul>
+          <a href="#reserves" class="btn btn-outline btn-block">Reservar Sessio</a>
+        </div>
+        <div class="pricing-card featured reveal delay-2">
+          <span class="pricing-card-badge">Mes Popular</span>
+          <h3>Pack d'Hores</h3>
+          <div class="pricing-price">Consultar <span>/ pack</span></div>
+          <ul class="pricing-list">
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Packs de 10h, 20h o 40h</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Flexibilitat total</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Carnet digital amb QR</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Control d'hores en temps real</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Acces al Portal de l'Alumne</li>
+          </ul>
+          <a href="alumne.html" class="btn btn-primary btn-block">Portal de l'Alumne</a>
+        </div>
+        <div class="pricing-card reveal delay-3">
+          <h3>Val Regal</h3>
+          <div class="pricing-price">Consultar <span>/ experiencia</span></div>
+          <ul class="pricing-list">
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Experiencia de torn o pintura</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Targeta digital i imprimible</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Codi unic bescanviable</li>
+            <li class="pricing-list-item"><span class="feature-bullet"></span> Regal perfecte</li>
+          </ul>
+          <a href="#val-regal" class="btn btn-outline btn-block">Configurar Val Regal</a>
         </div>
       </div>
-      </section>
-
-      <!-- ETAPA 2: ACTIVITATS FLOTANTS (FONS 1: PINTAR CERAMICA & CREACIO) -->
-      <section class="activities-scroll-stage scroll-step" data-bg-index="1" id="activitats">
-        <div class="container-minimal">
-          <div class="floating-panel">
-            <div class="panel-header-block">
-              <span class="tag-label">Disciplines del Taller</span>
-              <h2 class="panel-title">Les 7 activitats artesanes</h2>
-              <p class="panel-subtitle">
-                Gaudeix del contacte directe amb el fang i el vidre en grups reduïts i atenció personalitzada al Barri Vell d'Olot.
-              </p>
-            </div>
-
-            <div class="activities-minimal-grid">
-              <!-- 1. TORN -->
-              <div class="activity-mini-card span-6">
-                <div class="act-media-thumb">
-                  <img src="img/web/classes-torn-modelatge.png" alt="Classes de Torn a Roig de Coure Olot">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Activitat Estrella</span>
-                    <h3 class="act-title-text">Torn</h3>
-                    <p class="act-desc-text">
-                      Aprèn l'art de modelar la ceràmica sobre el torn de terrissaire. Centrat del fang, aixecat de peces, bols i acabat. Per a principiants o perfeccionament.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Capacitat: 4 torns individuals · Fang, eines i 2 cuites incloses</div>
-                    <a href="#reserves" class="act-link-btn select-act-link" data-act="torn">
-                      <span>Reservar Torn →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 2. MODELATGE -->
-              <div class="activity-mini-card span-6">
-                <div class="act-media-thumb">
-                  <img src="img/web/modelatge-escultura.jpg" alt="Taller de Modelatge Ceràmic">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Manual</span>
-                    <h3 class="act-title-text">Modelatge</h3>
-                    <p class="act-desc-text">
-                      Creació manual a mà lliure: pessic, xurros, planxes i buidat escultòric per donar forma a qualsevol idea amb total llibertat creativa.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Capacitat: Fins a 8 places · Tots els materials inclosos</div>
-                    <a href="#reserves" class="act-link-btn select-act-link" data-act="modelatge">
-                      <span>Reservar Modelatge →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 3. PINTAR CERAMICA -->
-              <div class="activity-mini-card span-4">
-                <div class="act-media-thumb">
-                  <img src="img/web/pintar-ceramica-original.png" alt="Taller de Pintar Ceràmica">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Familiar</span>
-                    <h3 class="act-title-text">Pintar Ceràmica</h3>
-                    <p class="act-desc-text">
-                      Tria entre més de 50 models de peces cuites (tasses, plats, figures) i decora-les amb pigments ceràmics i esmalt brillant.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Capacitat: 12 places · Apta per a totes les edats</div>
-                    <a href="#reserves" class="act-link-btn select-act-link" data-act="pintar">
-                      <span>Reservar Pintar →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 4. FUSIO DE VIDRE -->
-              <div class="activity-mini-card span-4">
-                <div class="act-media-thumb">
-                  <img src="img/web/vidre-fusing.jpeg" alt="Fusió de Vidre a Olot">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Fusing</span>
-                    <h3 class="act-title-text">Fusió de Vidre</h3>
-                    <p class="act-desc-text">
-                      Descobreix el treball amb vidre de manera segura. Tall, composició de colors i fornejada per a quadres i peces decoratives.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Capacitat: 6 places · Tècnica de fusing</div>
-                    <a href="#reserves" class="act-link-btn select-act-link" data-act="vidre">
-                      <span>Reservar Vidre →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 5. MONOGRAFICS -->
-              <div class="activity-mini-card span-4">
-                <div class="act-media-thumb">
-                  <img src="img/web/monografics-tetera.png" alt="Cursos Monogràfics de Ceràmica">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Especialitzat</span>
-                    <h3 class="act-title-text">Monogràfics</h3>
-                    <p class="act-desc-text">
-                      Cursos monogràfics intensius d'1 a 3 dies sobre tècniques concretes: construcció de teteres, formulació d'esmalts i pastes.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Format: 1 a 3 jornades intensives</div>
-                    <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20cursos%20monogràfics" target="_blank" rel="noopener" class="act-link-btn">
-                      <span>Consultar →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 6. CASALS INFANTILS -->
-              <div class="activity-mini-card span-6">
-                <div class="act-media-thumb">
-                  <img src="img/web/casals-infants.webp" alt="Casals de Ceràmica i Vidre per a Nens">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">6 a 15 anys</span>
-                    <h3 class="act-title-text">Casals</h3>
-                    <p class="act-desc-text">
-                      Casals de ceràmica i vidre durant les vacances escolars (Nadal, Setmana Santa i Estiu) per desenvolupar l'expressió artística.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Infants i joves · Totes les peces cuites incloses</div>
-                    <a href="https://wa.me/34683633880?text=Hola,%20vull%20informació%20dels%20casals%20infantils" target="_blank" rel="noopener" class="act-link-btn">
-                      <span>Informació de Casals →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 7. GRUPS I FAMILIES -->
-              <div class="activity-mini-card span-6">
-                <div class="act-media-thumb">
-                  <img src="img/web/grups-families-original.jpg" alt="Activitats per a Grups i Famílies">
-                </div>
-                <div class="act-content-box">
-                  <div>
-                    <span class="act-badge-top">Comunitat</span>
-                    <h3 class="act-title-text">Grups i Famílies</h3>
-                    <p class="act-desc-text">
-                      Sessions privades per a grups d'amics, parelles, celebracions o trobades d'empresa combinant torn, modelatge i pintura.
-                    </p>
-                  </div>
-                  <div>
-                    <div class="act-meta-row">Aforament: 4 a 15 persones · Taller en exclusiva</div>
-                    <a href="https://wa.me/34683633880?text=Hola,%20volem%20organitzar%20una%20sessió%20per%20a%20un%20grup" target="_blank" rel="noopener" class="act-link-btn">
-                      <span>Organitzar Grup →</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div class="pricing-included-box reveal">
+        <div class="pricing-included-title">Que esta inclos en totes les activitats?</div>
+        <div class="pricing-included-pills">
+          <span class="included-pill">Fang i argila</span>
+          <span class="included-pill">Eines de treball</span>
+          <span class="included-pill">Engalbes i colors</span>
+          <span class="included-pill">Fornejada de bescuit</span>
+          <span class="included-pill">Esmaltat ceramic</span>
+          <span class="included-pill">Cuita final a +1000 C</span>
+          <span class="included-pill">Davantal del taller</span>
         </div>
-      </section>
-
-      <!-- ETAPA 3: L'OFICI & QUALITAT FLOTANT (FONS 2: PECES CUITES AL FORN) -->
-      <section class="craft-scroll-stage scroll-step" data-bg-index="2" id="ofici">
-        <div class="container-minimal">
-          <div class="floating-panel">
-            <div class="panel-header-block">
-              <span class="tag-label">El Mètode Ceramista</span>
-              <h2 class="panel-title">Quatre fases i més de 1.000°C</h2>
-              <p class="panel-subtitle">
-                Al taller respectem els temps que cada peça requereix. Des de la terra tova fins a la vitrificació alimentària.
-              </p>
-            </div>
-
-            <div class="craft-steps-row">
-              <div class="craft-step-box">
-                <div>
-                  <div class="craft-step-num">01</div>
-                  <h3 class="craft-step-title">La Pastada</h3>
-                  <p class="craft-step-desc">Eliminació de bombolles d'aire per aconseguir una plasticitat uniforme.</p>
-                </div>
-              </div>
-              <div class="craft-step-box">
-                <div>
-                  <div class="craft-step-num">02</div>
-                  <h3 class="craft-step-title">El Torn</h3>
-                  <p class="craft-step-desc">Centrat i alçat de les parets mitjançant la força centrífuga i el tacte de les mans.</p>
-                </div>
-              </div>
-              <div class="craft-step-box">
-                <div>
-                  <div class="craft-step-num">03</div>
-                  <h3 class="craft-step-title">Estat de Cuir</h3>
-                  <p class="craft-step-desc">Retornejat i buidat de la base un cop la peça ha assolit la duresa òptima.</p>
-                </div>
-              </div>
-              <div class="craft-step-box">
-                <div>
-                  <div class="craft-step-num">04</div>
-                  <h3 class="craft-step-title">La Cuita</h3>
-                  <p class="craft-step-desc">Doble fornejada amb esmalts atòxics a alta temperatura. Apta per a rentavaixelles i microones.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ETAPA 4: MOTOR DE RESERVES FLOTANT (FONS 3: TALLER I COMUNITAT) -->
-      <section class="booking-scroll-stage scroll-step" data-bg-index="3" id="reserves">
-        <div class="container-minimal">
-          <div class="floating-panel">
-            <div class="panel-header-block">
-              <span class="tag-label">Planifica la teva Visita</span>
-              <h2 class="panel-title">Reserva la teva plaça al taller</h2>
-              <p class="panel-subtitle">
-                Obert de dimecres a diumenge. Dilluns i dimarts tancat per fornejades i descans.
-              </p>
-            </div>
-
-            <div class="booking-two-cols">
-              <!-- Columna Esquerra: Disciplina i Calendari -->
-              <div class="booking-col-left">
-                <h3 style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-terracotta); margin-bottom: 0.75rem;">
-                  1. Selecciona Activitat
-                </h3>
-                <div class="chips-activity-list" id="activityChips">
-                  <button type="button" class="chip-select-btn selected" data-act="torn">Torn (4 torns)</button>
-                  <button type="button" class="chip-select-btn" data-act="modelatge">Modelatge</button>
-                  <button type="button" class="chip-select-btn" data-act="pintar">Pintar Ceràmica</button>
-                  <button type="button" class="chip-select-btn" data-act="vidre">Fusió de Vidre</button>
-                </div>
-
-                <h3 style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-terracotta); margin-bottom: 0.75rem;">
-                  2. Tria el Dia
-                </h3>
-                <div class="cal-box-ui">
-                  <div class="cal-header-row">
-                    <span class="cal-month-text" id="calendarMonthYear">Setembre 2026</span>
-                    <div class="cal-arrows-wrap">
-                      <button type="button" class="cal-arrow-button" id="calPrevBtn" aria-label="Mes anterior">←</button>
-                      <button type="button" class="cal-arrow-button" id="calNextBtn" aria-label="Mes següent">→</button>
-                    </div>
-                  </div>
-
-                  <div class="cal-weekdays-grid">
-                    <span>Dl</span>
-                    <span>Dt</span>
-                    <span>Dc</span>
-                    <span>Dj</span>
-                    <span>Dv</span>
-                    <span>Ds</span>
-                    <span>Dg</span>
-                  </div>
-
-                  <div class="cal-days-grid" id="calDaysGrid">
-                    <!-- Generat per JS -->
-                  </div>
-                </div>
-
-                <div style="font-size: 0.78rem; color: var(--text-muted);">
-                  Plaça Rector Ferrer, 15 · Olot · Tel: +34 683 633 880
-                </div>
-              </div>
-
-              <!-- Columna Dreta: Torn i Formulari -->
-              <div>
-                <form id="bookingForm" class="form-input-stack">
-                  <div>
-                    <h3 style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-terracotta); margin-bottom: 0.75rem;">
-                      3. Tria Torn i Arribada
-                    </h3>
-                    <div class="shifts-grid-two">
-                      <div class="shift-tile-box selected" id="shiftMati" data-shift="mati">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <span class="shift-title-text">Torn de Matí</span>
-                          <span class="shift-hours-text">10:00 - 13:00</span>
-                        </div>
-                        <div style="margin-top: 0.5rem; display: flex; gap: 0.6rem;">
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="10:00" checked> 10:00</label>
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="10:30"> 10:30</label>
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="11:00"> 11:00</label>
-                        </div>
-                      </div>
-
-                      <div class="shift-tile-box" id="shiftTarda" data-shift="tarda">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                          <span class="shift-title-text">Torn de Tarda</span>
-                          <span class="shift-hours-text">17:00 - 20:00</span>
-                        </div>
-                        <div style="margin-top: 0.5rem; display: flex; gap: 0.6rem;">
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="17:00"> 17:00</label>
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="17:30"> 17:30</label>
-                          <label style="font-size: 0.76rem; font-weight: 600;"><input type="radio" name="horaEntrada" value="18:00"> 18:00</label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="two-inputs-row">
-                    <div class="input-item-wrap">
-                      <label for="numPersonsSelect">Nombre de Persones</label>
-                      <select id="numPersonsSelect" class="form-styled-field">
-                        <option value="1">1 persona</option>
-                        <option value="2">2 persones</option>
-                        <option value="3">3 persones</option>
-                        <option value="4">4 persones (aforament torn)</option>
-                      </select>
-                    </div>
-                    <div class="input-item-wrap">
-                      <label for="clientName">Nom i Cognoms</label>
-                      <input type="text" id="clientName" class="form-styled-field" placeholder="El teu nom" required>
-                    </div>
-                  </div>
-
-                  <div class="two-inputs-row">
-                    <div class="input-item-wrap">
-                      <label for="clientPhone">Telèfon Mòbil</label>
-                      <input type="tel" id="clientPhone" class="form-styled-field" placeholder="600 000 000" required>
-                    </div>
-                    <div class="input-item-wrap">
-                      <label for="clientEmail">Correu Electrònic</label>
-                      <input type="email" id="clientEmail" class="form-styled-field" placeholder="nom@exemple.cat" required>
-                    </div>
-                  </div>
-
-                  <div class="input-item-wrap">
-                    <label for="clientNotes">Observacions o Dubtes (Opcional)</label>
-                    <textarea id="clientNotes" class="form-styled-field" rows="2" placeholder="Ex: Volem fer un joc de tasses en parella..."></textarea>
-                  </div>
-
-                  <div class="summary-strip-card" id="bookingSummary">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
-                      <span>Activitat:</span>
-                      <strong id="sumActivity">Torn</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
-                      <span>Data:</span>
-                      <strong id="sumDate">Selecciona un dia al calendari</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                      <span>Torn:</span>
-                      <strong id="sumShift">Matí (10:00 h)</strong>
-                    </div>
-                  </div>
-
-                  <button type="submit" class="btn-cta-terracotta" style="width: 100%;">
-                    <span>Confirmar Sol·licitud de Reserva</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ETAPA 5: VAL REGAL AMB STRIPE DIRECTE (FONS 3) -->
-      <section class="gift-scroll-stage scroll-step" data-bg-index="3" id="val-regal">
-        <div class="container-minimal">
-          <div class="floating-panel">
-            <div class="panel-header-block">
-              <span class="tag-label">Regala Experiències</span>
-              <h2 class="panel-title">Val Regal de ceràmica</h2>
-              <p class="panel-subtitle">
-                Regala el plaer de crear amb fang a Olot. Compra directa a través de la passarel·la segura oficial de Stripe.
-              </p>
-            </div>
-
-            <div class="gift-cards-triplet">
-              <!-- TORN ADULTS -->
-              <div class="gift-minimal-card featured">
-                <div>
-                  <span class="gift-top-badge">Més Sol·licitat</span>
-                  <h3 class="gift-heading">Torn o Modelatge</h3>
-                  <p class="gift-text">Sessió completa per a adult. Inclou pastat, torn de terrissaire o modelatge manual, esmaltat i 2 fornejades.</p>
-                </div>
-                <a href="https://buy.stripe.com/3cI14n2BHdPH0KKg5vgIo0m" target="_blank" rel="noopener" class="btn-stripe-direct">
-                  <span>Comprar Val Adult a Stripe</span>
-                </a>
-              </div>
-
-              <!-- TORN INFANTS -->
-              <div class="gift-minimal-card">
-                <div>
-                  <span class="gift-top-badge">Fins a 12 anys</span>
-                  <h3 class="gift-heading">Torn o Modelatge Infantil</h3>
-                  <p class="gift-text">Sessió didàctica per a infants de fins a 12 anys per descobrir la màgia del torn de terrissaire.</p>
-                </div>
-                <a href="https://buy.stripe.com/6oUeVd1xDbHzbpof1rgIo0k" target="_blank" rel="noopener" class="btn-stripe-direct">
-                  <span>Comprar Val Infantil a Stripe</span>
-                </a>
-              </div>
-
-              <!-- PINTAR -->
-              <div class="gift-minimal-card">
-                <div>
-                  <span class="gift-top-badge">Per a tothom</span>
-                  <h3 class="gift-heading">Pintar Ceràmica</h3>
-                  <p class="gift-text">Val per triar una peça entre més de 50 models i decorar-la amb pigments ceràmics i esmaltat brillant.</p>
-                </div>
-                <a href="https://buy.stripe.com/aFacN5ekpfXPdxw8D3gIo0o" target="_blank" rel="noopener" class="btn-stripe-direct">
-                  <span>Comprar Pintar a Stripe</span>
-                </a>
-              </div>
-
-              <!-- PACK HORES ADULTS -->
-              <div class="gift-minimal-card">
-                <div>
-                  <span class="gift-top-badge">Alumnes Regulars</span>
-                  <h3 class="gift-heading">Hores de Taller (Adults)</h3>
-                  <p class="gift-text">Paquet d'hores de taller per a creadors que volen venir a treballar amb continuïtat i eines professionals.</p>
-                </div>
-                <a href="https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" target="_blank" rel="noopener" class="btn-stripe-direct">
-                  <span>Comprar Hores Adults a Stripe</span>
-                </a>
-              </div>
-
-              <!-- PACK HORES INFANTS -->
-              <div class="gift-minimal-card">
-                <div>
-                  <span class="gift-top-badge">Fins a 12 anys</span>
-                  <h3 class="gift-heading">Hores de Taller Infantil</h3>
-                  <p class="gift-text">Paquet d'hores per a petits artistes que volen desenvolupar la seva creativitat manual de forma regular.</p>
-                </div>
-                <a href="https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j" target="_blank" rel="noopener" class="btn-stripe-direct">
-                  <span>Comprar Hores Infantil a Stripe</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ETAPA 6: FAQ & CONTACTE FLOTANT (FONS 3) -->
-      <section class="faq-contact-stage scroll-step" data-bg-index="3" id="contacte">
-        <div class="container-minimal">
-          <div class="floating-panel">
-            <div class="two-panels-split">
-              <!-- FAQ Acordió -->
-              <div>
-                <div class="panel-header-block">
-                  <span class="tag-label">Preguntes Freqüents</span>
-                  <h2 class="panel-title" style="font-size: 1.8rem;">Dubtes habituals</h2>
-                </div>
-
-                <div class="faq-accordion-box" id="faqAccordion">
-                  <div class="faq-accordion-item">
-                    <button type="button" class="faq-accordion-btn">
-                      <span>Cal tenir experiència prèvia?</span>
-                      <span>+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                      <div class="faq-content-inner">
-                        No cal cap experiència prèvia. Totes les activitats estan guiades pas a pas adaptant-nos al teu nivell.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="faq-accordion-item">
-                    <button type="button" class="faq-accordion-btn">
-                      <span>Com cal venir vestit/da?</span>
-                      <span>+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                      <div class="faq-content-inner">
-                        Amb roba còmoda. Et proporcionem davantal de feina al taller i el fang marxa fàcilment amb aigua.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="faq-accordion-item">
-                    <button type="button" class="faq-accordion-btn">
-                      <span>Quan es recullen les peces?</span>
-                      <span>+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                      <div class="faq-content-inner">
-                        Després de l'assecat lent, la cuita de bescuit, l'esmaltat i la cuita a 1.000°C (normalment entre 2 i 4 setmanes). T'avisem per WhatsApp.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="faq-accordion-item">
-                    <button type="button" class="faq-accordion-btn">
-                      <span>Les peces són aptes per a menjar?</span>
-                      <span>+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                      <div class="faq-content-inner">
-                        Sí, estan vitrificades amb esmalts atòxics a alta temperatura. Aptes per a microones i rentavaixelles.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Dades de Contacte -->
-              <div>
-                <div class="panel-header-block">
-                  <span class="tag-label">Troba'ns a Olot</span>
-                  <h2 class="panel-title" style="font-size: 1.8rem;">Ubicació i Horaris</h2>
-                </div>
-
-                <div class="contact-meta-box">
-                  <div>
-                    <div class="contact-meta-entry">
-                      <div>
-                        <strong style="display: block; font-size: 0.74rem; text-transform: uppercase; color: var(--accent-terracotta);">Adreça</strong>
-                        <p style="font-size: 0.95rem;">Plaça Rector Ferrer, 15<br>17800 Olot (Girona)</p>
-                      </div>
-                    </div>
-
-                    <div class="contact-meta-entry">
-                      <div>
-                        <strong style="display: block; font-size: 0.74rem; text-transform: uppercase; color: var(--accent-terracotta);">Telèfon & WhatsApp</strong>
-                        <p style="font-size: 0.95rem;"><a href="https://wa.me/34683633880" target="_blank" rel="noopener">+34 683 633 880</a></p>
-                      </div>
-                    </div>
-
-                    <div class="contact-meta-entry">
-                      <div>
-                        <strong style="display: block; font-size: 0.74rem; text-transform: uppercase; color: var(--accent-terracotta);">Horari d'Obertura</strong>
-                        <p style="font-size: 0.95rem;">De Dimecres a Diumenge: 10h a 13h i 17h a 20h<br><span style="color: var(--text-muted); font-size: 0.85rem;">Dilluns i Dimarts tancat per fornejades</span></p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem;">
-                    <a href="https://wa.me/34683633880?text=Hola,%20voldria%20fer%20una%20consulta" target="_blank" rel="noopener" class="btn-cta-terracotta">
-                      <span>Escriure per WhatsApp</span>
-                    </a>
-                    <a href="https://maps.google.com/?q=Pla%C3%A7a+Rector+Ferrer+15+Olot" target="_blank" rel="noopener" class="btn-cta-outline">
-                      <span>Com Arribar-hi</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- PEU DE PAGINA (MINIMAL FOOTER) -->
-    <footer class="minimal-footer">
-      <div class="container-minimal footer-flex-bar">
-        <span>Roig de Coure · Plaça Rector Ferrer, 15 · 17800 Olot (Catalunya)</span>
-        <span>Disseny artesà contemporani · Tots els drets reservats</span>
       </div>
-    </footer>
+    </div>
+  </section>
 
-  </div>
-
-  <!-- MODAL DE CONFIRMACIO DE RESERVA -->
-  <div class="modal-confirm-backdrop" id="confirmModal" aria-hidden="true">
-    <div class="modal-white-card">
-      <button type="button" class="modal-close-trigger" id="modalCloseBtn" aria-label="Tancar finestra">✕</button>
-      <h3 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.85rem;">Sol·licitud Rebuda</h3>
-      <p style="font-size: 0.95rem; color: var(--text-body); line-height: 1.6; margin-bottom: 1.8rem;" id="modalSummaryContent">
-        Gràcies per la teva reserva. Hem registrat la teva sol·licitud amb èxit. Pots enviar la confirmació directa per WhatsApp al taller per agilitzar la plaça.
-      </p>
-      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a href="#" id="modalWhatsAppBtn" target="_blank" rel="noopener" class="btn-cta-terracotta" style="flex: 1;">
-          <span>Enviar Confirmació per WhatsApp</span>
-        </a>
-        <button type="button" class="btn-cta-outline" id="modalDoneBtn">
-          <span>Entesos</span>
-        </button>
+  <!-- ================================================================
+       6. FAQ
+       ================================================================ -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Dubtes</span>
+        <h2>Preguntes Frequents</h2>
       </div>
+      <div class="faq-accordion reveal">
+        <div class="faq-item">
+          <button class="faq-question" type="button">Cal experiencia previa per venir al taller?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">No! Totes les activitats estan pensades tant per a principiants com per a persones amb experiencia. T'acompanyem en cada pas del proces.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Com he de venir vestit/da?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Vine amb roba comoda que no et faci res embrutar. Proporcionem davantals, pero el fang i els esmalts poden esquitxar.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Quan podre recollir les meves peces cuites?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">El proces requereix dues fornejades (bescuit i esmaltada). Normalment les peces estan llestes entre 2 i 4 setmanes. T'avisarem per WhatsApp.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Les peces son aptes per al rentavaixelles i el microones?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Si! Les peces cuites amb esmalts ceramics a mes de 1000 graus son completament aptes per a us alimentari, rentavaixelles i microones.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Com funcionen les reserves per a grups?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Per a grups de mes de 4 persones o aniversaris, contacta'ns per WhatsApp i prepararem una sessio personalitzada.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Que es el Portal de l'Alumne?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Un espai digital per als alumnes regulars: consulta el saldo d'hores en temps real, carnet QR per al mobil i historial de sessions.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       7. CONTACTE & UBICACIO
+       ================================================================ -->
+  <section class="contact-section" id="contacte">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">On som</span>
+        <h2>Contacte & Ubicacio</h2>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info-card reveal-left">
+          <div class="contact-info-item">
+            <div class="contact-icon-box">ADR</div>
+            <div>
+              <div class="contact-detail-title">Adreca</div>
+              <div class="contact-detail-text">Plaça Rector Ferrer, 15<br>17800 Olot (Girona)</div>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <div class="contact-icon-box">HOR</div>
+            <div>
+              <div class="contact-detail-title">Horari</div>
+              <div class="contact-detail-text">De dimecres a diumenge<br>Mati: 10:00 - 13:00<br>Tarda: 17:00 - 20:00<br><em style="font-size: 12px; color: var(--muted);">Dilluns i dimarts tancat</em></div>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <div class="contact-icon-box">TEL</div>
+            <div>
+              <div class="contact-detail-title">Telefon & WhatsApp</div>
+              <div class="contact-detail-text"><a href="tel:+34683633880" style="color: var(--primary); font-weight: 600;">+34 683 633 880</a></div>
+            </div>
+          </div>
+          <div class="contact-info-item">
+            <div class="contact-icon-box">@</div>
+            <div>
+              <div class="contact-detail-title">Correu</div>
+              <div class="contact-detail-text"><a href="mailto:roigdecoure@gmail.com" style="color: var(--primary); font-weight: 600;">roigdecoure@gmail.com</a></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!" class="btn btn-primary" target="_blank" rel="noopener">WhatsApp Directe</a>
+            <a href="https://maps.google.com/?q=Pla%C3%A7a+Rector+Ferrer+15+Olot" class="btn btn-outline" target="_blank" rel="noopener">Com arribar</a>
+          </div>
+        </div>
+        <div class="reveal-right" style="border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); min-height: 400px;">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2930.8!2d2.4887!3d42.1808!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12ba91c7dc9e8b3b%3A0x3e0e0e0e0e0e0e0e!2sPla%C3%A7a%20Rector%20Ferrer%2C%2015%2C%2017800%20Olot%2C%20Girona!5e0!3m2!1sca!2ses!4v1693000000000!5m2!1sca!2ses"
+            width="100%" height="100%" style="border:0; min-height: 400px;" allowfullscreen loading="lazy" title="Ubicacio Roig de Coure a Olot"></iframe>
+        </div>
+      </div>
+      <div style="max-width: 620px; margin: 50px auto 0;" class="reveal">
+        <h3 style="font-family: var(--font-serif); font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 20px;">Envia'ns un Missatge</h3>
+        <form id="contact-quick-form">
+          <div class="booking-controls-row">
+            <div class="form-group">
+              <label class="form-label" for="c-nom">Nom *</label>
+              <input type="text" class="form-input" id="c-nom" placeholder="El teu nom" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-tel">Telefon</label>
+              <input type="tel" class="form-input" id="c-tel" placeholder="+34 600 000 000">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-msg">Missatge *</label>
+            <textarea class="form-input" id="c-msg" rows="4" placeholder="En que et podem ajudar?" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">Enviar per WhatsApp</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       8. FOOTER
+       ================================================================ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h4>Roig de Coure</h4>
+          <p>Espai de creacio ceramica i aprenentatge a Olot (Girona). Torn, modelatge, pintura i fusio de vidre.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Activitats</h5>
+          <ul>
+            <li><a href="#activitats">Torn</a></li>
+            <li><a href="#activitats">Modelatge</a></li>
+            <li><a href="#activitats">Pintar Ceramica</a></li>
+            <li><a href="#activitats">Fusio de Vidre</a></li>
+            <li><a href="#activitats">Grups i Families</a></li>
+            <li><a href="#activitats">Monogràfics</a></li>
+            <li><a href="#activitats">Casals</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Serveis</h5>
+          <ul>
+            <li><a href="#reserves">Reserves en Linia</a></li>
+            <li><a href="#val-regal">Val Regal</a></li>
+            <li><a href="#tarifes">Tarifes</a></li>
+            <li><a href="alumne.html">Portal Alumne</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contacte</h5>
+          <ul>
+            <li><a href="tel:+34683633880">+34 683 633 880</a></li>
+            <li><a href="mailto:roigdecoure@gmail.com">roigdecoure@gmail.com</a></li>
+            <li><a href="https://maps.google.com/?q=Pla%C3%A7a+Rector+Ferrer+15+Olot" target="_blank">Pl. Rector Ferrer 15, Olot</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>Roig de Coure &mdash; Taller de Ceramica a Olot</span>
+        <a href="admin.html" class="footer-admin-link">Acces intern</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL DE CONFIRMACIO -->
+  <div class="modal-overlay" id="booking-modal">
+    <div class="modal-card" style="position: relative;">
+      <button type="button" class="modal-close-btn" id="modal-close-btn">&times;</button>
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-family: var(--font-script); font-size: 30px; color: var(--primary); margin-bottom: 4px;">Roig de Coure</div>
+        <h3 style="font-family: var(--font-serif); font-size: 20px; font-weight: 700;">Reserva Confirmada</h3>
+      </div>
+      <div id="modal-summary-content"></div>
+      <div style="display: flex; gap: 12px; margin-top: 20px;">
+        <a href="#" id="modal-wa-btn" class="btn btn-primary btn-block" target="_blank" rel="noopener">Confirmar per WhatsApp</a>
+      </div>
+      <p style="font-size: 12px; color: var(--muted); text-align: center; margin-top: 12px;">T'enviarem un recordatori per WhatsApp.</p>
     </div>
   </div>
 
-    <!-- CONTROLADOR HUD FIX DELS 4 FONS (BOTTOM DOCK) -->
-  <aside class="fixed-backdrop-hud" id="backdropHud" aria-label="Controlador de fons fotogràfics">
-    <div class="hud-top-row">
-      <span class="hud-tag">Fons Fotogràfic Actiu</span>
-      <span class="hud-counter" id="hudCounter">01 / 04</span>
-    </div>
-    <div class="hud-title" id="hudTitle">Torn i mans treballant el fang</div>
-    <div class="hud-buttons">
-      <button class="hud-step-btn active" data-slide="0" aria-label="Fons 1: Torn">01 Torn</button>
-      <button class="hud-step-btn" data-slide="1" aria-label="Fons 2: Pintar">02 Pintar</button>
-      <button class="hud-step-btn" data-slide="2" aria-label="Fons 3: Peces">03 Peces</button>
-      <button class="hud-step-btn" data-slide="3" aria-label="Fons 4: Taller">04 Taller</button>
-    </div>
-  </aside>
-
-  <!-- Scripts -->
   <script src="js/roigdecoure-web.js"></script>
 </body>
 </html>
