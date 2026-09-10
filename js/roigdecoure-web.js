@@ -43,6 +43,7 @@
 
   // Inicialització al carregar el DOM
   document.addEventListener('DOMContentLoaded', function () {
+    initScrollProgressBar();
     initBackdropSwitcher();
     initScrollReveals();
     initHeaderScroll();
@@ -56,11 +57,24 @@
   });
 
   /* ==========================================================================
-     2. GESTOR DE FONS FIXES (CANVI SUAU DE FOTOGRAFIA AMB L'SCROLL)
+     2. GESTOR DE FONS FIXES & CONTROLADOR HUD INTERACTIU
      ========================================================================== */
+  const SLIDE_TITLES = [
+    "Torn i mans treballant el fang",
+    "Pintar peces ceràmiques",
+    "Exposició de peces vitrificades",
+    "El taller comunitari amb creadors i famílies"
+  ];
+
+  const STAGE_TARGETS = ["#inici", "#activitats", "#ofici", "#reserves"];
+
   function initBackdropSwitcher() {
     const slides = document.querySelectorAll('.backdrop-slide');
     const steps = document.querySelectorAll('.scroll-step');
+    const hudCounter = document.getElementById('hudCounter');
+    const hudTitle = document.getElementById('hudTitle');
+    const hudBtns = document.querySelectorAll('.hud-step-btn');
+
     if (!slides.length || !steps.length) return;
 
     function updateActiveBackdrop() {
@@ -80,11 +94,51 @@
       slides.forEach(function (slide, i) {
         slide.classList.toggle('active', i === currentBgIndex);
       });
+
+      // Actualitzar HUD
+      if (hudCounter) {
+        hudCounter.textContent = '0' + (currentBgIndex + 1) + ' / 04';
+      }
+      if (hudTitle) {
+        hudTitle.textContent = SLIDE_TITLES[currentBgIndex] || '';
+      }
+      hudBtns.forEach(function (btn, idx) {
+        btn.classList.toggle('active', idx === currentBgIndex);
+      });
     }
+
+    // Clics als botons del HUD per navegar directament a cada fons
+    hudBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const targetIdx = parseInt(btn.getAttribute('data-slide'), 10);
+        if (!isNaN(targetIdx) && STAGE_TARGETS[targetIdx]) {
+          const targetEl = document.querySelector(STAGE_TARGETS[targetIdx]);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
 
     window.addEventListener('scroll', updateActiveBackdrop, { passive: true });
     window.addEventListener('resize', updateActiveBackdrop, { passive: true });
     updateActiveBackdrop();
+  }
+
+  /* Barra de progrés de lectura superior */
+  function initScrollProgressBar() {
+    const bar = document.getElementById('scrollProgressBar');
+    if (!bar) return;
+
+    function updateProgress() {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      bar.style.width = Math.min(100, Math.max(0, progress)) + '%';
+    }
+
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
   }
 
   /* ==========================================================================

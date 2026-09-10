@@ -1,7 +1,9 @@
 /**
- * roigdecoure-web.css - Minimalisme Contemporani amb Fons Fixes
+ * roigdecoure-web.css - Minimalisme Arquitectònic & Fons Fixes Dinàmics
  * Roig de Coure · Taller i Botiga de Ceràmica i Vidre · Olot
  * 4 fons fotogràfics que canvien suaument + informació flotant que llisca a sobre.
+ * Zero marcs rodons: línies rectes pures (border-radius: 0), capçalera sòlida opaque,
+ * vel de contrast suau sense difuminat per veure les fotos nítides, i moviments continus.
  * Zero emojis. Tipografia Plus Jakarta Sans + Buffalo per a la signatura.
  */
 
@@ -18,40 +20,44 @@
 }
 
 /* ==========================================================================
-   1. VARIABLES & PALETA MINIMALISTA
+   1. VARIABLES & PALETA ARQUITECTÒNICA (ZERO MARCS RODONS)
    ========================================================================== */
 :root {
   --bg-page: #FAF8F5;
-  --card-surface: rgba(255, 255, 255, 0.94);
+  --card-surface: #FFFFFF;
   --card-surface-pure: #FFFFFF;
   --card-subtle: #F6F2EB;
 
   --text-main: #1C1816;
-  --text-body: #524B45;
-  --text-muted: #857C74;
+  --text-body: #4A443E;
+  --text-muted: #7A726A;
 
   --accent-terracotta: #C85A32;
-  --accent-terracotta-hover: #B04C27;
-  --accent-terracotta-subtle: rgba(200, 90, 50, 0.09);
+  --accent-terracotta-hover: #A84521;
+  --accent-terracotta-subtle: rgba(200, 90, 50, 0.08);
   --accent-terracotta-glow: rgba(200, 90, 50, 0.25);
   --accent-ochre: #BF8B44;
 
-  --border-card: rgba(255, 255, 255, 0.85);
-  --border-subtle: #EBE4DA;
-  --border-medium: #DDD4C7;
+  --border-dark: #1C1816;
+  --border-card: #1C1816;
+  --border-subtle: #E2DDD6;
+  --border-medium: #D0C9BF;
 
-  --radius-xs: 8px;
-  --radius-sm: 14px;
-  --radius-md: 20px;
-  --radius-lg: 28px;
-  --radius-full: 9999px;
+  /* TOTES LES VORES RECTES (ZERO CORBES) */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-full: 0px;
 
-  --shadow-floating: 0 25px 60px -15px rgba(28, 24, 22, 0.12), 0 8px 24px rgba(28, 24, 22, 0.04);
-  --shadow-card: 0 10px 30px -5px rgba(28, 24, 22, 0.06);
-  --shadow-terracotta: 0 12px 30px -4px rgba(200, 90, 50, 0.35);
+  /* OMBRES D'ALT CONTRAST ARQUITECTÒNIC */
+  --shadow-floating: 14px 14px 0px rgba(28, 24, 22, 0.88);
+  --shadow-card: 6px 6px 0px rgba(28, 24, 22, 0.12);
+  --shadow-terracotta: 4px 4px 0px #1C1816;
 
   --ease-minimal: cubic-bezier(0.16, 1, 0.3, 1);
-  --transition: all 0.35s var(--ease-minimal);
+  --transition: all 0.3s var(--ease-minimal);
 
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Verdana, sans-serif;
   --font-script: 'Buffalo', cursive;
@@ -64,11 +70,12 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  border-radius: 0 !important;
 }
 
 html {
   scroll-behavior: smooth;
-  background-color: var(--bg-page);
+  background-color: #14110F;
   color: var(--text-main);
   font-family: var(--font-sans);
   font-size: 15px;
@@ -77,7 +84,7 @@ html {
 }
 
 body {
-  background-color: var(--bg-page);
+  background-color: transparent;
   color: var(--text-main);
   position: relative;
   min-height: 100vh;
@@ -116,8 +123,20 @@ input, select, textarea {
   outline: none;
 }
 
+/* Barra superior de progrés de lectura */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background-color: var(--accent-terracotta);
+  z-index: 1001;
+  transition: width 0.08s linear;
+}
+
 /* ==========================================================================
-   3. GESTOR DE FONS FIXES FULLSCREEN (4 FONS QUE CANVIEN AMB L'SCROLL)
+   3. GESTOR DE FONS FIXES FULLSCREEN (4 FONS QUE ES VEUEN NÍTIDS)
    ========================================================================== */
 .fixed-backdrop-manager {
   position: fixed;
@@ -138,8 +157,8 @@ input, select, textarea {
   background-position: center center;
   background-repeat: no-repeat;
   opacity: 0;
-  transform: scale(1.05);
-  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: scale(1.08);
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.3s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
@@ -148,12 +167,12 @@ input, select, textarea {
   transform: scale(1);
 }
 
-/* Fons 1: Torn de terrissa */
+/* Fons 1: Torn de terrissa i mans al fang */
 .backdrop-slide-0 {
   background-image: url('../img/web/classes-torn-modelatge.png');
 }
 
-/* Fons 2: Pintar ceràmica i creació */
+/* Fons 2: Pintar ceràmica i creació artesana */
 .backdrop-slide-1 {
   background-image: url('../img/web/pintar-ceramica-original.png');
 }
@@ -163,22 +182,21 @@ input, select, textarea {
   background-image: url('../img/web/peces-expo.jpeg');
 }
 
-/* Fons 4: Taller i comunitat */
+/* Fons 4: Taller comunitari amb creadors i famílies */
 .backdrop-slide-3 {
   background-image: url('../img/web/grups-families-original.jpg');
 }
 
-/* Vel translúcid clar que permet veure la foto amb nitidesa i dóna contrast al text */
+/* Vel de contrast subtil: MAI difumina ni amaga les fotos, només dóna contrast cinematogràfic */
 .backdrop-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(250, 248, 245, 0.42) 0%, rgba(250, 248, 245, 0.68) 50%, rgba(250, 248, 245, 0.85) 100%);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: linear-gradient(180deg, rgba(16, 13, 11, 0.18) 0%, rgba(16, 13, 11, 0.28) 50%, rgba(16, 13, 11, 0.45) 100%);
+  pointer-events: none;
 }
 
 /* ==========================================================================
-   4. CAPA DE CONTINGUT FLOTANT QUE LLISCA A SOBRE
+   4. CAPA DE CONTINGUT FLOTANT
    ========================================================================== */
 .floating-content-layer {
   position: relative;
@@ -188,36 +206,30 @@ input, select, textarea {
 
 .container-minimal {
   width: 100%;
-  max-width: 1140px;
+  max-width: 1160px;
   margin-left: auto;
   margin-right: auto;
   padding-left: clamp(1.2rem, 3vw, 2.5rem);
   padding-right: clamp(1.2rem, 3vw, 2.5rem);
 }
 
-/* Targeta flotant minimalista principal */
+/* Panell flotant arquitectònic amb vora neta i ombra sòlida */
 .floating-panel {
-  background: var(--card-surface);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
+  background: #FFFFFF;
+  border: 2px solid var(--border-dark);
   box-shadow: var(--shadow-floating);
   padding: clamp(2rem, 4vw, 3.8rem);
-  margin-top: 4rem;
-  margin-bottom: 4rem;
-  transition: transform 0.6s var(--ease-minimal), opacity 0.6s var(--ease-minimal);
-}
-
-/* Animació d'entrada suau amb scroll */
-.reveal-item {
-  opacity: 1;
-  transform: translateY(0);
+  margin-top: 4.5rem;
+  margin-bottom: 4.5rem;
   transition: transform 0.5s var(--ease-minimal), box-shadow 0.5s var(--ease-minimal);
 }
 
+.floating-panel:hover {
+  box-shadow: 18px 18px 0px rgba(28, 24, 22, 0.95);
+}
+
 /* ==========================================================================
-   5. CAPÇALERA MINIMALISTA (FIXED GLASS)
+   5. CAPÇALERA SÒLIDA OPACA (MAI TRANSPARENT) + MARQUEE CONTINU
    ========================================================================== */
 .minimal-header {
   position: fixed;
@@ -225,18 +237,10 @@ input, select, textarea {
   left: 0;
   right: 0;
   z-index: 900;
-  padding: 1.2rem 0;
-  transition: padding 0.35s ease, background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-  border-bottom: 1px solid transparent;
-}
-
-.minimal-header.scrolled {
   padding: 0.85rem 0;
-  background-color: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom-color: var(--border-subtle);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  background: #FFFFFF !important;
+  border-bottom: 2px solid var(--border-dark);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .header-flex-row {
@@ -259,7 +263,7 @@ input, select, textarea {
 
 .brand-name {
   font-family: var(--font-script);
-  font-size: 2.1rem;
+  font-size: 2.15rem;
   line-height: 1;
   color: var(--text-main);
   display: block;
@@ -267,7 +271,7 @@ input, select, textarea {
 
 .brand-subline {
   font-size: 0.64rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent-terracotta);
@@ -284,10 +288,11 @@ input, select, textarea {
 
 .nav-menu-link {
   font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--text-body);
+  font-weight: 700;
+  color: var(--text-main);
   position: relative;
-  padding: 0.35rem 0;
+  padding: 0.4rem 0;
+  letter-spacing: 0.02em;
 }
 
 .nav-menu-link::after {
@@ -298,8 +303,7 @@ input, select, textarea {
   width: 0;
   height: 2px;
   background-color: var(--accent-terracotta);
-  border-radius: var(--radius-full);
-  transition: width 0.3s ease;
+  transition: width 0.25s ease;
 }
 
 .nav-menu-link:hover {
@@ -310,48 +314,50 @@ input, select, textarea {
   width: 100%;
 }
 
+/* Botó d'acció primari: rectangular, amb vora fosca i ombra arquitectònica */
 .btn-cta-terracotta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.5rem;
-  border-radius: var(--radius-full);
+  padding: 0.75rem 1.6rem;
   background: var(--accent-terracotta);
   color: #FFFFFF;
   font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: var(--shadow-terracotta);
-  transition: var(--transition);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 2px solid var(--border-dark);
+  box-shadow: 4px 4px 0px var(--border-dark);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .btn-cta-terracotta:hover {
   background: var(--accent-terracotta-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 16px 36px -4px rgba(200, 90, 50, 0.45);
   color: #FFFFFF;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--border-dark);
 }
 
 .btn-cta-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.7rem 1.5rem;
-  border-radius: var(--radius-full);
+  padding: 0.75rem 1.6rem;
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
+  border: 2px solid var(--border-dark);
   color: var(--text-main);
   font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: var(--shadow-card);
-  transition: var(--transition);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 4px 4px 0px var(--border-dark);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .btn-cta-outline:hover {
-  border-color: var(--text-main);
-  transform: translateY(-2px);
+  background: var(--card-subtle);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--border-dark);
 }
 
 .mobile-toggle-btn {
@@ -363,25 +369,63 @@ input, select, textarea {
   align-items: center;
   gap: 5px;
   background: #FFFFFF;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xs);
-  box-shadow: var(--shadow-card);
+  border: 2px solid var(--border-dark);
+  box-shadow: 3px 3px 0px var(--border-dark);
 }
 
 .mobile-toggle-btn span {
   display: block;
   width: 20px;
   height: 2px;
-  background-color: var(--text-main);
-  border-radius: var(--radius-full);
+  background-color: var(--border-dark);
+}
+
+/* Marquee d'alta velocitat / moviment continu sota la barra */
+.editorial-marquee-bar {
+  position: fixed;
+  top: 61px;
+  left: 0;
+  right: 0;
+  z-index: 890;
+  background: var(--border-dark);
+  color: #FAF8F5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0.4rem 0;
+  border-bottom: 2px solid var(--accent-terracotta);
+}
+
+.marquee-track {
+  display: inline-flex;
+  gap: 2.5rem;
+  animation: marquee-scroll 34s linear infinite;
+  will-change: transform;
+}
+
+.marquee-track span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.marquee-track .star-sep {
+  color: var(--accent-terracotta);
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* Drawer Mòbil */
 .mobile-nav-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(250, 248, 245, 0.98);
-  backdrop-filter: blur(20px);
+  background: #FFFFFF;
   z-index: 850;
   display: flex;
   flex-direction: column;
@@ -390,7 +434,7 @@ input, select, textarea {
   padding: 2rem;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.3s ease;
 }
 
 .mobile-nav-overlay.open {
@@ -410,59 +454,61 @@ input, select, textarea {
   font-size: 1.6rem;
   font-weight: 800;
   color: var(--text-main);
+  text-transform: uppercase;
 }
 
 /* ==========================================================================
-   6. SECCIO HERO FLOTANT
+   6. SECCIO HERO FLOTANT (FONS 0 EXPOSAT I NÍTID)
    ========================================================================== */
 .hero-scroll-stage {
-  min-height: 95vh;
-  min-height: 95dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
-  padding-top: 7rem;
+  padding-top: 8.5rem;
   padding-bottom: 4rem;
 }
 
+.hero-editorial-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 3rem;
+  align-items: center;
+}
+
 .hero-floating-card {
-  background: var(--card-surface);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
+  background: #FFFFFF;
+  border: 2px solid var(--border-dark);
   box-shadow: var(--shadow-floating);
-  padding: clamp(2.5rem, 5vw, 4.5rem);
-  max-width: 860px;
+  padding: clamp(2.2rem, 4vw, 3.8rem);
+  transition: transform 0.4s ease;
 }
 
 .hero-pill-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.4rem 1rem;
-  background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-full);
+  padding: 0.4rem 0.9rem;
+  background: var(--card-subtle);
+  border: 1px solid var(--border-dark);
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-main);
-  box-shadow: var(--shadow-card);
   margin-bottom: 1.5rem;
 }
 
 .pulsing-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
   background-color: var(--accent-terracotta);
 }
 
 .hero-headline {
-  font-size: clamp(2.6rem, 2.2rem + 3.8vw, 4.8rem);
+  font-size: clamp(2.4rem, 2rem + 3.4vw, 4.4rem);
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.06;
   letter-spacing: -0.035em;
   color: var(--text-main);
   margin-bottom: 1.4rem;
@@ -473,11 +519,10 @@ input, select, textarea {
 }
 
 .hero-subtext {
-  font-size: clamp(1.05rem, 0.98rem + 0.3vw, 1.25rem);
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.18rem);
   color: var(--text-body);
   line-height: 1.65;
   margin-bottom: 2.2rem;
-  max-width: 650px;
 }
 
 .hero-actions-row {
@@ -485,14 +530,14 @@ input, select, textarea {
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.2rem;
 }
 
 .hero-key-metrics {
   display: flex;
-  gap: 2.5rem;
+  gap: 2rem;
   padding-top: 1.8rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 2px solid var(--border-subtle);
   flex-wrap: wrap;
 }
 
@@ -511,15 +556,143 @@ input, select, textarea {
 
 .metric-label {
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
   margin-top: 0.3rem;
 }
 
+/* Targeta lateral dreta: posa en valor el Fons 1 i deixa respirar la imatge */
+.hero-live-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero-live-tag-card {
+  background: rgba(28, 24, 22, 0.90);
+  border: 2px solid #FFFFFF;
+  box-shadow: 10px 10px 0px var(--accent-terracotta);
+  padding: 2rem;
+  color: #FFFFFF;
+}
+
+.hero-live-tag-card .live-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-terracotta);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.hero-live-tag-card .live-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 0.6rem;
+  color: #FFFFFF;
+}
+
+.hero-live-tag-card .live-desc {
+  font-size: 0.86rem;
+  color: #DDD4C7;
+  line-height: 1.55;
+  margin-bottom: 1.2rem;
+}
+
+.hero-live-tag-card .live-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hero-live-tag-card .live-badges span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
 /* ==========================================================================
-   7. SECCIO ACTIVITATS FLOTANT (LES 7 DISCIPLINES)
+   7. CONTROLADOR HUD FIX DELS 4 FONS (BOTTOM DOCK)
+   ========================================================================== */
+.fixed-backdrop-hud {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 800;
+  background: #FFFFFF;
+  border: 2px solid var(--border-dark);
+  box-shadow: 6px 6px 0px var(--border-dark);
+  padding: 0.85rem 1.1rem;
+  max-width: 330px;
+  font-family: var(--font-sans);
+}
+
+.hud-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+
+.hud-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-terracotta);
+}
+
+.hud-counter {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.hud-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.65rem;
+  line-height: 1.25;
+}
+
+.hud-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.hud-step-btn {
+  border: 1px solid var(--border-dark);
+  background: #FFFFFF;
+  color: var(--text-main);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.4rem 0.2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.hud-step-btn:hover {
+  background: var(--card-subtle);
+}
+
+.hud-step-btn.active {
+  background: var(--accent-terracotta);
+  color: #FFFFFF;
+  border-color: var(--accent-terracotta);
+}
+
+/* ==========================================================================
+   8. SECCIO ACTIVITATS FLOTANT (LES 7 DISCIPLINES)
    ========================================================================== */
 .activities-scroll-stage {
   padding: 4rem 0;
@@ -534,7 +707,7 @@ input, select, textarea {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--accent-terracotta);
@@ -553,7 +726,7 @@ input, select, textarea {
 .panel-subtitle {
   font-size: 1.05rem;
   color: var(--text-body);
-  max-width: 620px;
+  max-width: 650px;
 }
 
 .activities-minimal-grid {
@@ -564,10 +737,9 @@ input, select, textarea {
 
 .activity-mini-card {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  transition: var(--transition);
+  border: 2px solid var(--border-dark);
+  box-shadow: 6px 6px 0px rgba(28, 24, 22, 0.12);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -575,9 +747,10 @@ input, select, textarea {
 
 .act-media-thumb {
   width: 100%;
-  height: 190px;
+  height: 200px;
   overflow: hidden;
   background-color: var(--card-subtle);
+  border-bottom: 2px solid var(--border-dark);
 }
 
 .act-media-thumb img {
@@ -588,7 +761,7 @@ input, select, textarea {
 }
 
 .activity-mini-card:hover .act-media-thumb img {
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
 .act-content-box {
@@ -603,9 +776,9 @@ input, select, textarea {
 .activity-mini-card.span-4 { grid-column: span 4; }
 
 .activity-mini-card:hover {
-  transform: translateY(-5px);
+  transform: translate(-3px, -3px);
   border-color: var(--accent-terracotta);
-  box-shadow: var(--shadow-floating);
+  box-shadow: 8px 8px 0px var(--accent-terracotta);
 }
 
 .act-badge-top {
@@ -635,7 +808,7 @@ input, select, textarea {
 
 .act-meta-row {
   font-size: 0.76rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
   border-top: 1px solid var(--border-subtle);
   padding-top: 0.85rem;
@@ -648,6 +821,7 @@ input, select, textarea {
   gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 800;
+  text-transform: uppercase;
   color: var(--accent-terracotta);
   transition: var(--transition);
 }
@@ -658,7 +832,7 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   8. SECCIO L'OFICI & FILOSOFIA FLOTANT
+   9. SECCIO L'OFICI (FONS 2: PECES EXPOSADES I FORN)
    ========================================================================== */
 .craft-scroll-stage {
   padding: 4rem 0;
@@ -673,24 +847,34 @@ input, select, textarea {
 
 .craft-step-box {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
-  padding: 1.6rem 1.4rem;
+  border: 2px solid var(--border-dark);
+  box-shadow: 6px 6px 0px rgba(28, 24, 22, 0.10);
+  padding: 1.8rem 1.4rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.craft-step-box:hover {
+  transform: translate(-3px, -3px);
+  border-color: var(--accent-terracotta);
+  box-shadow: 8px 8px 0px var(--accent-terracotta);
 }
 
 .craft-step-num {
-  font-size: 2rem;
+  display: inline-block;
+  font-size: 1.2rem;
   font-weight: 800;
-  color: var(--accent-terracotta);
+  background: var(--border-dark);
+  color: #FFFFFF;
+  padding: 0.25rem 0.6rem;
+  margin-bottom: 1rem;
   line-height: 1;
-  margin-bottom: 0.75rem;
 }
 
 .craft-step-title {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-main);
   margin-bottom: 0.5rem;
@@ -703,7 +887,7 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   9. SECCIO RESERVES FLOTANT
+   10. SECCIO RESERVES FLOTANT (FONS 3: TALLER COMUNITARI)
    ========================================================================== */
 .booking-scroll-stage {
   padding: 4rem 0;
@@ -717,7 +901,7 @@ input, select, textarea {
 
 .booking-col-left {
   background: var(--card-subtle);
-  border-radius: var(--radius-md);
+  border: 2px solid var(--border-dark);
   padding: 2rem;
 }
 
@@ -729,28 +913,34 @@ input, select, textarea {
 }
 
 .chip-select-btn {
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-full);
+  padding: 0.6rem 1rem;
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
+  border: 2px solid var(--border-dark);
   font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-body);
-  transition: var(--transition);
+  font-weight: 800;
+  color: var(--text-main);
+  box-shadow: 3px 3px 0px var(--border-dark);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chip-select-btn:hover {
+  background: #FFFFFF;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--border-dark);
 }
 
 .chip-select-btn.selected {
   background: var(--accent-terracotta);
-  border-color: var(--accent-terracotta);
+  border-color: var(--border-dark);
   color: #FFFFFF;
-  box-shadow: 0 4px 12px var(--accent-terracotta-glow);
+  box-shadow: 4px 4px 0px var(--border-dark);
 }
 
 /* Calendari */
 .cal-box-ui {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-dark);
+  box-shadow: 4px 4px 0px var(--border-dark);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
 }
@@ -760,6 +950,8 @@ input, select, textarea {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border-dark);
 }
 
 .cal-month-text {
@@ -774,21 +966,20 @@ input, select, textarea {
 }
 
 .cal-arrow-button {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--border-medium);
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-dark);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main);
   background: #FFFFFF;
-  transition: var(--transition);
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .cal-arrow-button:hover {
-  background: var(--text-main);
+  background: var(--border-dark);
   color: #FFFFFF;
 }
 
@@ -796,7 +987,7 @@ input, select, textarea {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -814,28 +1005,31 @@ input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-xs);
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main);
   transition: var(--transition);
   user-select: none;
+  border: 1px solid transparent;
 }
 
 .cal-day-cell.available {
   cursor: pointer;
   background: var(--card-subtle);
+  border: 1px solid var(--border-medium);
 }
 
 .cal-day-cell.available:hover {
   background: var(--accent-terracotta);
   color: #FFFFFF;
+  border-color: var(--border-dark);
 }
 
 .cal-day-cell.selected {
   background: var(--accent-terracotta) !important;
   color: #FFFFFF !important;
   font-weight: 800;
+  border: 2px solid var(--border-dark) !important;
 }
 
 .cal-day-cell.closed,
@@ -859,16 +1053,17 @@ input, select, textarea {
 
 .shift-tile-box {
   padding: 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--card-subtle);
-  border: 1px solid var(--border-medium);
+  background: #FFFFFF;
+  border: 2px solid var(--border-dark);
+  box-shadow: 3px 3px 0px var(--border-dark);
   cursor: pointer;
-  transition: var(--transition);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .shift-tile-box.selected {
   border-color: var(--accent-terracotta);
   background: var(--accent-terracotta-subtle);
+  box-shadow: 4px 4px 0px var(--accent-terracotta);
 }
 
 .shift-title-text {
@@ -904,7 +1099,7 @@ input, select, textarea {
 
 .input-item-wrap label {
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-body);
@@ -912,32 +1107,31 @@ input, select, textarea {
 
 .form-styled-field {
   width: 100%;
-  padding: 0.8rem 1rem;
-  background: var(--card-subtle);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-xs);
+  padding: 0.85rem 1rem;
+  background: #FFFFFF;
+  border: 2px solid var(--border-dark);
   color: var(--text-main);
   font-size: 0.88rem;
+  font-weight: 600;
   transition: var(--transition);
 }
 
 .form-styled-field:focus {
   border-color: var(--accent-terracotta);
-  box-shadow: 0 0 0 3px var(--accent-terracotta-glow);
-  background: #FFFFFF;
+  box-shadow: 3px 3px 0px var(--accent-terracotta);
 }
 
 .summary-strip-card {
   background: var(--card-subtle);
-  border-radius: var(--radius-sm);
-  padding: 1.1rem;
+  border: 2px solid var(--border-dark);
+  padding: 1.2rem;
   font-size: 0.84rem;
   color: var(--text-body);
   margin-bottom: 1.25rem;
 }
 
 /* ==========================================================================
-   10. SECCIO VAL REGAL STRIPE FLOTANT
+   11. SECCIO VAL REGAL STRIPE FLOTANT
    ========================================================================== */
 .gift-scroll-stage {
   padding: 4rem 0;
@@ -952,24 +1146,23 @@ input, select, textarea {
 
 .gift-minimal-card {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
+  border: 2px solid var(--border-dark);
   padding: 2.2rem 1.8rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: var(--shadow-card);
-  transition: var(--transition);
+  box-shadow: 6px 6px 0px rgba(28, 24, 22, 0.12);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .gift-minimal-card.featured {
   border-color: var(--accent-terracotta);
-  box-shadow: 0 15px 35px -5px rgba(200, 90, 50, 0.15);
+  box-shadow: 8px 8px 0px var(--accent-terracotta);
 }
 
 .gift-minimal-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-floating);
+  transform: translate(-3px, -3px);
+  box-shadow: 10px 10px 0px var(--border-dark);
 }
 
 .gift-top-badge {
@@ -999,8 +1192,7 @@ input, select, textarea {
 
 .btn-stripe-direct {
   width: 100%;
-  padding: 0.8rem 1.2rem;
-  border-radius: var(--radius-full);
+  padding: 0.85rem 1.2rem;
   background: var(--accent-terracotta);
   color: #FFFFFF;
   font-size: 0.78rem;
@@ -1010,18 +1202,20 @@ input, select, textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-terracotta);
-  transition: var(--transition);
+  border: 2px solid var(--border-dark);
+  box-shadow: 4px 4px 0px var(--border-dark);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .btn-stripe-direct:hover {
   background: var(--accent-terracotta-hover);
   color: #FFFFFF;
-  transform: translateY(-2px);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--border-dark);
 }
 
 /* ==========================================================================
-   11. SECCIO FAQ & CONTACTE FLOTANT
+   12. SECCIO FAQ & CONTACTE FLOTANT
    ========================================================================== */
 .faq-contact-stage {
   padding: 4rem 0 6rem 0;
@@ -1041,9 +1235,8 @@ input, select, textarea {
 
 .faq-accordion-item {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  border: 2px solid var(--border-dark);
+  box-shadow: 4px 4px 0px rgba(28, 24, 22, 0.08);
 }
 
 .faq-accordion-btn {
@@ -1054,8 +1247,10 @@ input, select, textarea {
   align-items: center;
   text-align: left;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-main);
+  background: #FFFFFF;
+  cursor: pointer;
 }
 
 .faq-accordion-content {
@@ -1078,8 +1273,8 @@ input, select, textarea {
 /* Contacte Info */
 .contact-meta-box {
   background: #FFFFFF;
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-dark);
+  box-shadow: 6px 6px 0px rgba(28, 24, 22, 0.10);
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -1097,11 +1292,11 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   12. PEU DE PAGINA (MINIMAL FOOTER)
+   13. PEU DE PAGINA (MINIMAL FOOTER)
    ========================================================================== */
 .minimal-footer {
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid var(--border-subtle);
+  background: #FFFFFF;
+  border-top: 2px solid var(--border-dark);
   padding: 3rem 0;
   position: relative;
   z-index: 10;
@@ -1118,14 +1313,12 @@ input, select, textarea {
 }
 
 /* ==========================================================================
-   13. MODAL CONFIRMACIO
+   14. MODAL CONFIRMACIO
    ========================================================================== */
 .modal-confirm-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(28, 24, 22, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(28, 24, 22, 0.7);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -1143,11 +1336,11 @@ input, select, textarea {
 
 .modal-white-card {
   background: #FFFFFF;
-  border-radius: var(--radius-md);
+  border: 2px solid var(--border-dark);
+  box-shadow: 12px 12px 0px var(--border-dark);
   padding: 2.5rem;
   max-width: 500px;
   width: 100%;
-  box-shadow: var(--shadow-floating);
   position: relative;
 }
 
@@ -1157,19 +1350,24 @@ input, select, textarea {
   right: 1.25rem;
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  background: var(--card-subtle);
+  border: 2px solid var(--border-dark);
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   color: var(--text-main);
+  cursor: pointer;
 }
 
 /* ==========================================================================
-   14. RESPONSIVE
+   15. RESPONSIVE
    ========================================================================== */
 @media (max-width: 1024px) {
+  .hero-editorial-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
   .activities-minimal-grid {
     grid-template-columns: 1fr;
   }
@@ -1203,5 +1401,8 @@ input, select, textarea {
   }
   .shifts-grid-two {
     grid-template-columns: 1fr;
+  }
+  .fixed-backdrop-hud {
+    display: none;
   }
 }

@@ -14,6 +14,9 @@
   <link rel="icon" type="image/png" href="img/logo.png">
 </head>
 <body>
+  <!-- BARRA SUPERIOR DE PROGRÉS DE LECTURA -->
+  <div class="scroll-progress-bar" id="scrollProgressBar" aria-hidden="true"></div>
+
 
   <!-- 4 FONS FOTOGRAFICS FIXES QUE CANVIEN AMB L'SCROLL -->
   <div class="fixed-backdrop-manager" id="backdropManager" aria-hidden="true">
@@ -61,6 +64,31 @@
       </div>
     </header>
 
+    <!-- MARQUEE CONTINU D'ALTA VELOCITAT EN MOVIMENT -->
+    <div class="editorial-marquee-bar" aria-hidden="true">
+      <div class="marquee-track">
+        <span><span class="star-sep">✦</span> ROIG DE COURE OLOT</span>
+        <span><span class="star-sep">✦</span> TALLER ARTESANAL</span>
+        <span><span class="star-sep">✦</span> CLASSES DE TORN</span>
+        <span><span class="star-sep">✦</span> MODELATGE MANUAL</span>
+        <span><span class="star-sep">✦</span> PINTAR CERÀMICA</span>
+        <span><span class="star-sep">✦</span> FUSIÓ DE VIDRE</span>
+        <span><span class="star-sep">✦</span> FORN A 1.300°C</span>
+        <span><span class="star-sep">✦</span> PEÇES ÚNIQUES</span>
+        <span><span class="star-sep">✦</span> PLAÇA RECTOR FERRER, 15</span>
+        <span><span class="star-sep">✦</span> ROIG DE COURE OLOT</span>
+        <span><span class="star-sep">✦</span> TALLER ARTESANAL</span>
+        <span><span class="star-sep">✦</span> CLASSES DE TORN</span>
+        <span><span class="star-sep">✦</span> MODELATGE MANUAL</span>
+        <span><span class="star-sep">✦</span> PINTAR CERÀMICA</span>
+        <span><span class="star-sep">✦</span> FUSIÓ DE VIDRE</span>
+        <span><span class="star-sep">✦</span> FORN A 1.300°C</span>
+        <span><span class="star-sep">✦</span> PEÇES ÚNIQUES</span>
+        <span><span class="star-sep">✦</span> PLAÇA RECTOR FERRER, 15</span>
+      </div>
+    </div>
+
+
     <!-- DRAWER MOBIL -->
     <div class="mobile-nav-overlay" id="mobileDrawer" aria-hidden="true">
       <ul class="mobile-nav-items">
@@ -76,7 +104,8 @@
       <!-- ETAPA 1: HERO FLOTANT (FONS 0: MANS AL TORN) -->
       <section class="hero-scroll-stage scroll-step" data-bg-index="0" id="inici">
         <div class="container-minimal">
-          <div class="hero-floating-card">
+          <div class="hero-editorial-grid">
+            <div class="hero-floating-card">
             <div class="hero-pill-badge">
               <span class="pulsing-dot"></span>
               <span>Obert de dimecres a diumenge · Plaça Rector Ferrer, 15</span>
@@ -116,16 +145,34 @@
               </div>
             </div>
 
-            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: gap;">
-              <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
-                Desplaça't avall per descobrir les activitats i fer la teva reserva
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+              <span style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted);">
+                Desplaça't avall per descobrir les activitats
               </span>
-              <a href="#activitats" style="font-size: 0.82rem; font-weight: 800; color: var(--accent-terracotta);">
+              <a href="#activitats" style="font-size: 0.82rem; font-weight: 800; color: var(--accent-terracotta); text-transform: uppercase;">
                 Explorar Taller ↓
               </a>
             </div>
           </div>
+
+          <!-- Targeta lateral dreta: posa en valor el Fons 1 i deixa respirar la foto -->
+          <div class="hero-live-aside">
+            <div class="hero-live-tag-card">
+              <span class="live-eyebrow">Fons 01 · Taller en Directe</span>
+              <h2 class="live-title">El torn de terrissaire en plena creació</h2>
+              <p class="live-desc">
+                Mentre fas scroll, les 4 fotografies d'alta resolució del taller canvien de fons per mostrar-te cada racó i ofici de Roig de Coure.
+              </p>
+              <div class="live-badges">
+                <span>4 Torns Elèctrics</span>
+                <span>Fang de la Garrotxa</span>
+                <span>Cuita a 1.300°C</span>
+                <span>Plaça Rector Ferrer, 15</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
       </section>
 
       <!-- ETAPA 2: ACTIVITATS FLOTANTS (FONS 1: PINTAR CERAMICA & CREACIO) -->
@@ -708,6 +755,21 @@
       </div>
     </div>
   </div>
+
+    <!-- CONTROLADOR HUD FIX DELS 4 FONS (BOTTOM DOCK) -->
+  <aside class="fixed-backdrop-hud" id="backdropHud" aria-label="Controlador de fons fotogràfics">
+    <div class="hud-top-row">
+      <span class="hud-tag">Fons Fotogràfic Actiu</span>
+      <span class="hud-counter" id="hudCounter">01 / 04</span>
+    </div>
+    <div class="hud-title" id="hudTitle">Torn i mans treballant el fang</div>
+    <div class="hud-buttons">
+      <button class="hud-step-btn active" data-slide="0" aria-label="Fons 1: Torn">01 Torn</button>
+      <button class="hud-step-btn" data-slide="1" aria-label="Fons 2: Pintar">02 Pintar</button>
+      <button class="hud-step-btn" data-slide="2" aria-label="Fons 3: Peces">03 Peces</button>
+      <button class="hud-step-btn" data-slide="3" aria-label="Fons 4: Taller">04 Taller</button>
+    </div>
+  </aside>
 
   <!-- Scripts -->
   <script src="js/roigdecoure-web.js"></script>
