@@ -9,6 +9,7 @@ import sys
 import unittest
 import sqlite3
 import json
+import io
 import re
 from datetime import datetime, timedelta
 
@@ -1294,6 +1295,182 @@ class TestCeramicsBackend(unittest.TestCase):
 
         c.execute("SELECT id FROM sessions WHERE id = ?", (sess_id,))
         self.assertIsNone(c.fetchone())
+
+    def test_33_dies_festius_i_restriccions_activitats(self):
+        """
+        Comprova la creació, consulta, validació de disponibilitat, bloqueig de reserves
+        i eliminació de dies de festa personalitzats i restriccions d'activitats.
+        """
+        # Neteja prèvia de seguretat
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM dies_festius WHERE nom LIKE '%Prova%'")
+            cur.execute("DELETE FROM restriccions_activitats WHERE motiu LIKE '%Monogràfic%'")
+            cur.execute("DELETE FROM reserves WHERE student_id LIKE 'CLI-TEST-%'")
+            conn.commit()
+
+        # 1. Crear dia de festa personalitzat (POST /api/festius)
+        body_festiu = json.dumps({
+            'data_inici': '2026-11-20',
+            'data_fi': '2026-11-20',
+            'nom': 'Festa Major de Prova',
+            'motiu': 'Celebració local'
+        }).encode('utf-8')
+        h_festiu = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_festiu.path = '/api/festius'
+        h_festiu.headers = {'Content-Length': str(len(body_festiu)), 'Content-Type': 'application/json'}
+        h_festiu.rfile = io.BytesIO(body_festiu)
+        h_festiu.wfile = io.BytesIO()
+        status_box = []
+        h_festiu.send_response = lambda code, msg=None: status_box.append(code)
+        h_festiu.send_header = lambda k, v: None
+        h_festiu.end_headers = lambda: None
+        h_festiu.do_POST()
+
+        self.assertEqual(status_box[0] if status_box else 200, 200)
+        res_festiu = json.loads(h_festiu.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_festiu.get('ok'))
+        festiu_id = res_festiu['id']
+
+        # 2. Comprovar que is_dia_tancat detecta el festiu
+        tancat_info = server.is_dia_tancat('2026-11-20')
+        self.assertTrue(tancat_info['tancat'])
+        self.assertTrue(tancat_info.get('es_personalitzat'))
+        self.assertIn('Festa Major de Prova', tancat_info['motiu'])
+
+        # 3. Intentar reservar en el dia de festa -> Rebutjada (HTTP 400)
+        body_res_festiu = json.dumps({
+            'student_id': 'CLI-TEST-FEST',
+            'nom': 'Client Festiu',
+            'telefon': '600112233',
+            'email': 'fest@test.cat',
+            'data': '2026-11-20',
+            'franja': 'M1',
+            'hora_inici': '10:00',
+            'hora_fi': '12:00',
+            'activitat': 'Torn',
+            'activitat_id': 'torn',
+            'places': 1
+        }).encode('utf-8')
+        h_res_f = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_res_f.path = '/api/reserves'
+        h_res_f.headers = {'Content-Length': str(len(body_res_festiu)), 'Content-Type': 'application/json'}
+        h_res_f.rfile = io.BytesIO(body_res_festiu)
+        h_res_f.wfile = io.BytesIO()
+        status_f = []
+        h_res_f.send_response = lambda code, msg=None: status_f.append(code)
+        h_res_f.send_header = lambda k, v: None
+        h_res_f.end_headers = lambda: None
+        h_res_f.do_POST()
+
+        self.assertEqual(status_f[0] if status_f else 400, 400)
+        res_fail_fest = json.loads(h_res_f.wfile.getvalue().decode('utf-8'))
+        self.assertFalse(res_fail_fest.get('ok'))
+
+        # 4. Crear restricció d'activitats per a una setmana (POST /api/restriccions-activitats)
+        # Nota: 2026-12-04 és Divendres (dia obert)
+        body_restr = json.dumps({
+            'data_inici': '2026-12-01',
+            'data_fi': '2026-12-07',
+            'tipus_abast': 'setmana',
+            'activitats_permeses': ['torn'],
+            'activitats_bloquejades': ['pintar', 'modelatge'],
+            'motiu': 'Monogràfic exclusiu de Torn'
+        }).encode('utf-8')
+        h_restr = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_restr.path = '/api/restriccions-activitats'
+        h_restr.headers = {'Content-Length': str(len(body_restr)), 'Content-Type': 'application/json'}
+        h_restr.rfile = io.BytesIO(body_restr)
+        h_restr.wfile = io.BytesIO()
+        status_restr = []
+        h_restr.send_response = lambda code, msg=None: status_restr.append(code)
+        h_restr.send_header = lambda k, v: None
+        h_restr.end_headers = lambda: None
+        h_restr.do_POST()
+
+        self.assertEqual(status_restr[0] if status_restr else 200, 200)
+        res_restr = json.loads(h_restr.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_restr.get('ok'))
+        restr_id = res_restr['id']
+
+        # 5. Comprovar get_restriccions_dia
+        restr_dia = server.get_restriccions_dia('2026-12-04')
+        self.assertTrue(restr_dia['te_restriccio'])
+        self.assertIn('pintar', restr_dia['bloquejades'])
+        self.assertIn('modelatge', restr_dia['bloquejades'])
+        self.assertIn('torn', restr_dia['permeses'])
+
+        # 6. Intentar reservar activitat bloquejada (pintar) -> Rebutjada amb 400
+        body_res_bloq = json.dumps({
+            'student_id': 'CLI-TEST-BLOQ',
+            'nom': 'Client Pintar',
+            'telefon': '600112233',
+            'email': 'pintar@test.cat',
+            'data': '2026-12-04',
+            'franja': 'M1',
+            'hora_inici': '10:00',
+            'hora_fi': '12:00',
+            'activitat': 'Pintar ceràmica',
+            'activitat_id': 'pintar',
+            'places': 1
+        }).encode('utf-8')
+        h_res_b = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_res_b.path = '/api/reserves'
+        h_res_b.headers = {'Content-Length': str(len(body_res_bloq)), 'Content-Type': 'application/json'}
+        h_res_b.rfile = io.BytesIO(body_res_bloq)
+        h_res_b.wfile = io.BytesIO()
+        status_b = []
+        h_res_b.send_response = lambda code, msg=None: status_b.append(code)
+        h_res_b.send_header = lambda k, v: None
+        h_res_b.end_headers = lambda: None
+        h_res_b.do_POST()
+
+        self.assertEqual(status_b[0] if status_b else 400, 400)
+        res_fail_bloq = json.loads(h_res_b.wfile.getvalue().decode('utf-8'))
+        self.assertFalse(res_fail_bloq.get('ok'))
+        self.assertIn('no està disponible', res_fail_bloq.get('error', '').lower())
+
+        # 7. Reservar activitat permesa (torn) -> Acceptada (HTTP 200)
+        body_res_ok = json.dumps({
+            'student_id': 'CLI-TEST-OK',
+            'nom': 'Client Torn Permès',
+            'telefon': '600112233',
+            'email': 'torn@test.cat',
+            'data': '2026-12-04',
+            'franja': 'M1',
+            'hora_inici': '10:00',
+            'hora_fi': '12:00',
+            'activitat': 'Torn',
+            'activitat_id': 'torn',
+            'places': 1
+        }).encode('utf-8')
+        h_res_ok = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_res_ok.path = '/api/reserves'
+        h_res_ok.headers = {'Content-Length': str(len(body_res_ok)), 'Content-Type': 'application/json'}
+        h_res_ok.rfile = io.BytesIO(body_res_ok)
+        h_res_ok.wfile = io.BytesIO()
+        status_ok = []
+        h_res_ok.send_response = lambda code, msg=None: status_ok.append(code)
+        h_res_ok.send_header = lambda k, v: None
+        h_res_ok.end_headers = lambda: None
+        h_res_ok.do_POST()
+
+        self.assertEqual(status_ok[0] if status_ok else 200, 200)
+        res_ok = json.loads(h_res_ok.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_ok.get('ok'))
+        reserva_creada_id = res_ok['reserva']['id']
+
+        # 8. Eliminar la restricció i el festiu
+        with server.get_db() as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM dies_festius WHERE id = ?", (festiu_id,))
+            cur.execute("DELETE FROM restriccions_activitats WHERE id = ?", (restr_id,))
+            cur.execute("DELETE FROM reserves WHERE id = ?", (reserva_creada_id,))
+            conn.commit()
+
+        # Comprovar que s'ha restablert
+        self.assertFalse(server.is_dia_tancat('2026-11-20')['tancat'])
+        self.assertFalse(server.get_restriccions_dia('2026-12-04')['te_restriccio'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -451,6 +451,32 @@ def init_db():
             )
         ''')
 
+        # Taula de dies festius i vacances personalitzats
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS dies_festius (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                data_inici TEXT NOT NULL,
+                data_fi TEXT NOT NULL,
+                nom TEXT NOT NULL,
+                motiu TEXT,
+                creat_el TEXT
+            )
+        ''')
+
+        # Taula de restriccions d'activitats / tallers per dia, setmana, mes o interval
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS restriccions_activitats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                data_inici TEXT NOT NULL,
+                data_fi TEXT NOT NULL,
+                tipus_abast TEXT NOT NULL,
+                activitats_permeses TEXT,
+                activitats_bloquejades TEXT,
+                motiu TEXT,
+                creat_el TEXT
+            )
+        ''')
+
         # Franges horàries oficials: Torn únic de matí de 2 hores (Roig de Coure)
         default_franges_json = json.dumps([
             {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
@@ -1176,13 +1202,107 @@ def is_dia_tancat(data_str):
                 'motiu': f"Tancat per festiu ({f['nom']})."
             }
 
+    # Festius i vacances personalitzats configurats a la base de dades
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, nom, motiu, data_inici, data_fi
+                FROM dies_festius
+                WHERE data_inici <= ? AND data_fi >= ?
+                ORDER BY id DESC LIMIT 1
+            ''', (data_str, data_str))
+            row = cursor.fetchone()
+            if row:
+                nom_festiu = row['nom']
+                motiu_festiu = (row['motiu'] or '').strip()
+                desc = f"{nom_festiu} ({motiu_festiu})" if motiu_festiu and motiu_festiu != nom_festiu else nom_festiu
+                return {
+                    'tancat': True,
+                    'motiu': f"Tancat per {desc}.",
+                    'es_personalitzat': True,
+                    'festiu_id': row['id'],
+                    'festiu_nom': nom_festiu
+                }
+    except Exception:
+        pass
+
     return {'tancat': False, 'motiu': ''}
 
-def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=4, skip_closed=True, max_search_steps=52):
+def get_restriccions_dia(data_str):
+    """
+    Retorna les restriccions d'activitats/tallers per a una data concreta.
+    """
+    res = {
+        'te_restriccio': False,
+        'permeses': [],
+        'bloquejades': [],
+        'motius': []
+    }
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu
+                FROM restriccions_activitats
+                WHERE data_inici <= ? AND data_fi >= ?
+                ORDER BY id ASC
+            ''', (data_str, data_str))
+            rows = cursor.fetchall()
+            if not rows:
+                return res
+
+            res['te_restriccio'] = True
+            bloquejades_set = set()
+            permeses_set = set()
+
+            for r in rows:
+                if r['motiu'] and r['motiu'].strip():
+                    res['motius'].append(r['motiu'].strip())
+
+                # Parsing activitats_bloquejades
+                bloq_raw = (r['activitats_bloquejades'] or '').strip()
+                if bloq_raw.startswith('['):
+                    try:
+                        for b in json.loads(bloq_raw):
+                            bloquejades_set.add(str(b).strip().lower())
+                    except Exception:
+                        pass
+                elif bloq_raw:
+                    for b in bloq_raw.split(','):
+                        if b.strip():
+                            bloquejades_set.add(b.strip().lower())
+
+                # Parsing activitats_permeses
+                perm_raw = (r['activitats_permeses'] or '').strip()
+                if perm_raw.startswith('['):
+                    try:
+                        for p in json.loads(perm_raw):
+                            permeses_set.add(str(p).strip().lower())
+                    except Exception:
+                        pass
+                elif perm_raw:
+                    for p in perm_raw.split(','):
+                        if p.strip():
+                            permeses_set.add(p.strip().lower())
+
+            all_acts = [a['id'].lower() for a in get_activitats_config()]
+            if permeses_set:
+                for act_id in all_acts:
+                    if act_id not in permeses_set:
+                        bloquejades_set.add(act_id)
+
+            res['bloquejades'] = list(bloquejades_set)
+            res['permeses'] = [a for a in all_acts if a not in bloquejades_set]
+    except Exception:
+        pass
+
+    return res
+
+def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=4, skip_closed=True, max_search_steps=52, activitat_id=None):
     """
     Genera una llista de dates ISO (YYYY-MM-DD) segons la freqüència i nombre de sessions.
-    Si skip_closed és True, avança en cicles de freqüència saltant els dies tancats fins a
-    aconseguir el total de sessions vàlides requerides.
+    Si skip_closed és True, avança en cicles de freqüència saltant els dies tancats (i dies amb l'activitat restringida si s'indica activitat_id).
     """
     try:
         cur_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
@@ -1200,10 +1320,13 @@ def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=
 
         if closed_info['tancat']:
             skipped_dates.append({'data': d_str, 'motiu': closed_info['motiu']})
-            if not skip_closed:
-                pass
         else:
-            valid_dates.append(d_str)
+            restr = get_restriccions_dia(d_str) if activitat_id else {'te_restriccio': False, 'bloquejades': []}
+            if restr['te_restriccio'] and activitat_id and activitat_id.lower() in restr['bloquejades']:
+                motiu_r = f"Activitat {activitat_id} restringida ({', '.join(restr['motius'])})" if restr['motius'] else f"Activitat {activitat_id} restringida"
+                skipped_dates.append({'data': d_str, 'motiu': motiu_r})
+            else:
+                valid_dates.append(d_str)
 
         if frequency == 'quinzenal':
             cur_date += timedelta(days=14)
@@ -1287,12 +1410,19 @@ def get_disponibilitat(data_str):
     for act in activitats_list:
         act_id = act['id']
         act_nom = act['nom'].lower()
+    restr_dia = get_restriccions_dia(data_str)
+    ocupacio_per_act = {}
+    activitats_franja = []
+    for act in activitats_list:
+        act_id = act['id']
+        act_nom = act['nom'].lower()
+        is_blocked = restr_dia['te_restriccio'] and act_id.lower() in restr_dia['bloquejades']
         ocupat_act = sum(int(r.get('places') or 1) for r in active_reserves if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
         ocupacio_per_act[act_id] = ocupat_act
         capacitat_max_act = act['capacitatMax']
         lliures_act = max(0, capacitat_max_act - ocupat_act)
-        # El límit efectiu és el mínim entre les places lliures globals del dia i les de l'activitat
-        places_efectives = min(lliures_dia, lliures_act)
+        # Si està bloquejada per restricció, 0 places disponibles
+        places_efectives = 0 if is_blocked else min(lliures_dia, lliures_act)
         activitats_franja.append({
             'id': act_id,
             'nom': act['nom'],
@@ -1301,7 +1431,9 @@ def get_disponibilitat(data_str):
             'capacitatMax': capacitat_max_act,
             'ocupat': ocupat_act,
             'placesDisponibles': places_efectives,
-            'complet': places_efectives == 0
+            'complet': places_efectives == 0,
+            'bloquejada': is_blocked,
+            'motiuRestriccio': f"Taller restringit ({', '.join(restr_dia['motius'])})" if (is_blocked and restr_dia['motius']) else ("Taller no disponible aquest dia" if is_blocked else "")
         })
 
     if lliures_dia == 0:
@@ -1355,7 +1487,11 @@ def get_disponibilitat(data_str):
         'placesLliuresDia': lliures_dia,
         'franges': result_franges,
         'intervals': intervals_list,
-        'activitats': activitats_franja
+        'activitats': activitats_franja,
+        'teRestriccio': restr_dia['te_restriccio'],
+        'activitatsPermeses': restr_dia['permeses'] if restr_dia['te_restriccio'] else [a['id'] for a in activitats_list],
+        'activitatsBloquejades': restr_dia['bloquejades'] if restr_dia['te_restriccio'] else [],
+        'motiusRestriccio': restr_dia['motius']
     }
 
 def get_disponibilitat_mes(year, month):
@@ -1376,6 +1512,22 @@ def get_disponibilitat_mes(year, month):
         ''', (start_date, end_date))
         month_reserves = [row_to_dict(x) for x in cursor.fetchall()]
 
+        cursor.execute('''
+            SELECT id, data_inici, data_fi, nom, motiu
+            FROM dies_festius
+            WHERE (data_inici <= ? AND data_fi >= ?)
+            ORDER BY data_inici ASC
+        ''', (end_date, start_date))
+        month_festius = [row_to_dict(x) for x in cursor.fetchall()]
+
+        cursor.execute('''
+            SELECT id, data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu
+            FROM restriccions_activitats
+            WHERE (data_inici <= ? AND data_fi >= ?)
+            ORDER BY data_inici ASC
+        ''', (end_date, start_date))
+        month_restr = [row_to_dict(x) for x in cursor.fetchall()]
+
     activitats_list = get_activitats_config()
     days_dict = {}
     for day in range(1, num_days + 1):
@@ -1386,14 +1538,22 @@ def get_disponibilitat_mes(year, month):
                 'data': data_str,
                 'tancat': True,
                 'motiu': estat_dia['motiu'],
+                'esFestiuPersonalitzat': estat_dia.get('es_personalitzat', False),
+                'festiuId': estat_dia.get('festiu_id'),
+                'festiuNom': estat_dia.get('festiu_nom'),
                 'placesTotals': 0,
                 'placesOcupades': 0,
                 'placesLliures': 0,
                 'estat': 'tancat',
-                'activitatsAmbPlaces': []
+                'activitatsAmbPlaces': [],
+                'teRestriccio': False,
+                'activitatsPermeses': [],
+                'activitatsBloquejades': [a['id'] for a in activitats_list],
+                'motiusRestriccio': [estat_dia['motiu']]
             }
             continue
 
+        restr_dia = get_restriccions_dia(data_str)
         day_res = [r for r in month_reserves if r.get('data') == data_str]
         total_ocupat_dia = sum(int(r.get('places') or 1) for r in day_res)
         total_places_dia = max_cap * len(franges)
@@ -1403,6 +1563,9 @@ def get_disponibilitat_mes(year, month):
         for act in activitats_list:
             act_id = act['id']
             act_nom = act['nom'].lower()
+            if restr_dia['te_restriccio'] and act_id.lower() in restr_dia['bloquejades']:
+                continue
+
             if total_lliures_dia > 0:
                 ocupat_act = sum(int(r.get('places') or 1) for r in day_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
                 if ocupat_act < act['capacitatMax']:
@@ -1410,6 +1573,8 @@ def get_disponibilitat_mes(year, month):
 
         if total_lliures_dia == 0:
             estat = 'complet'
+        elif not acts_amb_places and total_places_dia > 0:
+            estat = 'restringit'
         elif total_lliures_dia <= 3:
             estat = 'ultimes_places'
         else:
@@ -1423,7 +1588,11 @@ def get_disponibilitat_mes(year, month):
             'placesOcupades': total_ocupat_dia,
             'placesLliures': total_lliures_dia,
             'estat': estat,
-            'activitatsAmbPlaces': acts_amb_places
+            'activitatsAmbPlaces': acts_amb_places,
+            'teRestriccio': restr_dia['te_restriccio'],
+            'activitatsPermeses': restr_dia['permeses'] if restr_dia['te_restriccio'] else [a['id'] for a in activitats_list],
+            'activitatsBloquejades': restr_dia['bloquejades'] if restr_dia['te_restriccio'] else [],
+            'motiusRestriccio': restr_dia['motius']
         }
 
     return {
@@ -1431,7 +1600,9 @@ def get_disponibilitat_mes(year, month):
         'mes': month,
         'aforamentMaximFranja': max_cap,
         'dies': days_dict,
-        'activitats': activitats_list
+        'activitats': activitats_list,
+        'festiusPersonalitzats': month_festius,
+        'restriccionsActivitats': month_restr
     }
 
 def find_student_by_code(cursor, code, actiu_only=False):
@@ -1989,6 +2160,49 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'activitats': get_activitats_config()})
                 return
 
+            elif path == '/api/festius':
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM dies_festius ORDER BY data_inici ASC')
+                    custom_festius = [row_to_dict(r) for r in cursor.fetchall()]
+                self.send_json({
+                    'ok': True,
+                    'festius_oficials': FESTIUS_CATALUNYA,
+                    'festius_personalitzats': custom_festius
+                })
+                return
+
+            elif path == '/api/restriccions-activitats':
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM restriccions_activitats ORDER BY data_inici ASC')
+                    rows = [row_to_dict(r) for r in cursor.fetchall()]
+                    for r in rows:
+                        raw_p = (r.get('activitats_permeses') or '').strip()
+                        if raw_p.startswith('['):
+                            try:
+                                r['activitats_permeses'] = json.loads(raw_p)
+                            except Exception:
+                                r['activitats_permeses'] = []
+                        elif raw_p:
+                            r['activitats_permeses'] = [x.strip() for x in raw_p.split(',') if x.strip()]
+                        else:
+                            r['activitats_permeses'] = []
+
+                        raw_b = (r.get('activitats_bloquejades') or '').strip()
+                        if raw_b.startswith('['):
+                            try:
+                                r['activitats_bloquejades'] = json.loads(raw_b)
+                            except Exception:
+                                r['activitats_bloquejades'] = []
+                        elif raw_b:
+                            r['activitats_bloquejades'] = [x.strip() for x in raw_b.split(',') if x.strip()]
+                        else:
+                            r['activitats_bloquejades'] = []
+
+                self.send_json({'ok': True, 'restriccions': rows})
+                return
+
             elif path == '/api/config':
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -2037,6 +2251,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     sessions = [row_to_dict(r) for r in cursor.fetchall()]
                     cursor.execute('SELECT * FROM reserves')
                     reserves = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM dies_festius')
+                    dies_festius = [row_to_dict(r) for r in cursor.fetchall()]
+                    cursor.execute('SELECT * FROM restriccions_activitats')
+                    restriccions = [row_to_dict(r) for r in cursor.fetchall()]
                     cursor.execute('SELECT * FROM configuracio')
                     config = {r['clau']: r['valor'] for r in cursor.fetchall() if r['clau'] != 'admin_pin'}
                 self.send_json({
@@ -2046,6 +2264,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'paquets': paquets,
                     'sessions': sessions,
                     'reserves': reserves,
+                    'dies_festius': dies_festius,
+                    'restriccions_activitats': restriccions,
                     'config': config
                 })
                 return
@@ -2665,6 +2885,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 activitat_id = act_obj['id']
                 activitat_nom = act_obj['nom']
 
+                # Validar restricció d'activitats per a la data
+                restr_dia = get_restriccions_dia(data_res)
+                if restr_dia['te_restriccio'] and activitat_id.lower() in restr_dia['bloquejades']:
+                    motiu_txt = f" ({', '.join(restr_dia['motius'])})" if restr_dia['motius'] else ""
+                    self.send_json({
+                        'ok': False,
+                        'error': f"L'activitat '{activitat_nom}' no està disponible per a la data seleccionada{motiu_txt}."
+                    }, 400)
+                    return
+
                 if val_regal and 'VAL REGAL' not in notes.upper():
                     val_str = f"[VAL REGAL: {codi_val_regal}]" if codi_val_regal else f"[VAL REGAL: {activitat_nom.upper()}]"
                     notes = f"{notes} {val_str}".strip()
@@ -2839,7 +3069,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if not act_obj:
                     act_obj = act_list[0]
 
-                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats)
+                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats, activitat_id=act_obj['id'])
                 max_cap = get_aforament_maxim()
 
                 preview = []
@@ -2936,7 +3166,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     franja_obj = franges[0] if franges else {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
 
                 # Calcular dates
-                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats)
+                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats, activitat_id=activitat_id)
                 if not dates_valides:
                     self.send_json({'ok': False, 'error': "No s'ha trobat cap data vàlida oberta per a aquest període"}, 400)
                     return
@@ -3226,6 +3456,86 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'message': 'Configuració actualitzada'})
                 return
 
+            elif path == '/api/festius':
+                data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
+                data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
+                nom = (data.get('nom') or 'Dia de Festa').strip()
+                motiu = (data.get('motiu') or '').strip()
+                if not data_inici:
+                    self.send_json({'ok': False, 'error': "Cal indicar la data d'inici"}, 400)
+                    return
+                if data_fi < data_inici:
+                    data_fi = data_inici
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO dies_festius (data_inici, data_fi, nom, motiu, creat_el)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (data_inici, data_fi, nom, motiu, get_now().isoformat()))
+                    new_id = cursor.lastrowid
+                    conn.commit()
+                self.send_json({'ok': True, 'id': new_id, 'message': 'Dia de festa desat amb èxit'})
+                return
+
+            elif path in ('/api/festius/delete', '/api/festius/eliminar'):
+                festiu_id = data.get('id')
+                if not festiu_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID del festiu"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM dies_festius WHERE id = ?', (festiu_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Festiu eliminat'})
+                return
+
+            elif path == '/api/restriccions-activitats':
+                data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
+                data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
+                tipus_abast = (data.get('tipus_abast') or data.get('tipusAbast') or 'dia').strip()
+                act_perm = data.get('activitats_permeses') or data.get('activitatsPermeses') or []
+                act_bloq = data.get('activitats_bloquejades') or data.get('activitatsBloquejades') or []
+                motiu = (data.get('motiu') or '').strip()
+
+                if isinstance(act_perm, list):
+                    act_perm_json = json.dumps(act_perm)
+                else:
+                    act_perm_json = str(act_perm)
+
+                if isinstance(act_bloq, list):
+                    act_bloq_json = json.dumps(act_bloq)
+                else:
+                    act_bloq_json = str(act_bloq)
+
+                if not data_inici:
+                    self.send_json({'ok': False, 'error': "Cal indicar la data d'inici"}, 400)
+                    return
+                if data_fi < data_inici:
+                    data_fi = data_inici
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO restriccions_activitats (data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, creat_el)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''', (data_inici, data_fi, tipus_abast, act_perm_json, act_bloq_json, motiu, get_now().isoformat()))
+                    new_id = cursor.lastrowid
+                    conn.commit()
+                self.send_json({'ok': True, 'id': new_id, 'message': 'Restricció de tallers desada'})
+                return
+
+            elif path in ('/api/restriccions-activitats/delete', '/api/restriccions-activitats/eliminar'):
+                restr_id = data.get('id')
+                if not restr_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de la restricció"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM restriccions_activitats WHERE id = ?', (restr_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Restricció eliminada'})
+                return
+
             elif path == '/api/import':
                 # Restauració de backup
                 alumnes = data.get('alumnes', [])
@@ -3262,6 +3572,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     for k, v in config.items():
                         cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
+
+                    for df in data.get('dies_festius', []):
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO dies_festius (id, data_inici, data_fi, nom, motiu, creat_el)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (df.get('id'), df.get('data_inici'), df.get('data_fi'), df.get('nom'), df.get('motiu'), df.get('creat_el')))
+
+                    for ra in data.get('restriccions_activitats', []):
+                        p_str = json.dumps(ra.get('activitats_permeses', [])) if isinstance(ra.get('activitats_permeses'), list) else str(ra.get('activitats_permeses') or '')
+                        b_str = json.dumps(ra.get('activitats_bloquejades', [])) if isinstance(ra.get('activitats_bloquejades'), list) else str(ra.get('activitats_bloquejades') or '')
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO restriccions_activitats (id, data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, creat_el)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (ra.get('id'), ra.get('data_inici'), ra.get('data_fi'), ra.get('tipus_abast', 'dia'), p_str, b_str, ra.get('motiu'), ra.get('creat_el')))
 
                     conn.commit()
                 self.send_json({'ok': True, 'message': 'Dades restaurades amb èxit'})
@@ -3367,6 +3691,24 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 sync_to_google_sheets_async('delete_paquet', {'id': pack_id})
                 self.send_json({'ok': True, 'message': 'Paquet eliminat', 'balanc': balanc})
+                return
+
+            elif path.startswith('/api/festius/'):
+                festiu_id = path.replace('/api/festius/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM dies_festius WHERE id = ?', (festiu_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Festiu eliminat'})
+                return
+
+            elif path.startswith('/api/restriccions-activitats/'):
+                restr_id = path.replace('/api/restriccions-activitats/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM restriccions_activitats WHERE id = ?', (restr_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Restricció eliminada'})
                 return
 
             else:

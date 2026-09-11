@@ -578,6 +578,31 @@
   margin-top: 2px;
 }
 
+.cal-day-cell.custom-holiday-day {
+  background-color: #FFFDF5;
+  border-color: #FDE68A;
+}
+
+.cal-day-cell.custom-holiday-day:hover {
+  background-color: #FEF3C7;
+}
+
+.cal-day-cell.restricted-day {
+  background-color: #F8FAFC;
+}
+
+.cal-day-restr-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cal-day-badge.secondary {
   background: #5E7E6F;
   color: #FFFFFF;

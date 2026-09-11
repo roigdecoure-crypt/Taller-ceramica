@@ -951,6 +951,26 @@ const Store = {
       };
     }
 
+    // Comprovar si hi ha dia de festa personalitzat
+    const customFestiu = (data.dies_festius || []).find(f => dataStr >= f.data_inici && dataStr <= (f.data_fi || f.data_inici));
+    if (customFestiu) {
+      return {
+        data: dataStr,
+        tancat: true,
+        festiuPersonalitzat: customFestiu,
+        motiu: `Tancat per ${customFestiu.nom}${customFestiu.motiu ? ': ' + customFestiu.motiu : ''}`,
+        aforamentMaxim: maxCap,
+        totalPlacesDia: 0,
+        totalOcupadesDia: 0,
+        franges: [],
+        activitats: activitats
+      };
+    }
+
+    // Comprovar restriccions d'activitats
+    const restr = (data.restriccions_activitats || []).find(r => dataStr >= r.data_inici && dataStr <= (r.data_fi || r.data_inici));
+    const bloqIds = restr ? (restr.activitats_bloquejades || []).map(x => String(x).toLowerCase()) : [];
+
     const reservesDia = (data.reserves || []).filter(r => r.data === dataStr && r.estat === 'confirmada');
     let totalOcupadesDia = 0;
 
@@ -961,10 +981,11 @@ const Store = {
       const lliures = Math.max(0, maxCap - ocupades);
 
       const activitatsFranja = activitats.map(act => {
+        const isBlocked = bloqIds.includes(act.id.toLowerCase());
         const ocupatAct = fRes.filter(r => (r.activitat_id || '').toLowerCase() === act.id || (r.activitat || '').toLowerCase() === act.nom.toLowerCase())
                               .reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
-        const lliuresAct = Math.max(0, act.capacitatMax - ocupatAct);
-        const placesEfectives = Math.min(lliures, lliuresAct);
+        const lliuresAct = isBlocked ? 0 : Math.max(0, act.capacitatMax - ocupatAct);
+        const placesEfectives = isBlocked ? 0 : Math.min(lliures, lliuresAct);
         return {
           id: act.id,
           nom: act.nom,
@@ -973,6 +994,8 @@ const Store = {
           capacitatMax: act.capacitatMax,
           ocupat: ocupatAct,
           placesDisponibles: placesEfectives,
+          bloquejada: isBlocked,
+          motiuBloqueig: isBlocked ? (restr.motiu || 'Activitat no disponible per restricció de calendari') : '',
           complet: placesEfectives === 0
         };
       });
@@ -1052,6 +1075,23 @@ const Store = {
 
     const data = this._getLocalData();
     if (!data.reserves) data.reserves = [];
+
+    // Validar dia de festa
+    const customFestiu = (data.dies_festius || []).find(f => reservaData.data >= f.data_inici && reservaData.data <= (f.data_fi || f.data_inici));
+    if (customFestiu) {
+      return { ok: false, error: `El taller està tancat en aquesta data: ${customFestiu.nom}${customFestiu.motiu ? ' (' + customFestiu.motiu + ')' : ''}.` };
+    }
+
+    // Validar restricció d'activitats
+    const actId = (reservaData.activitat_id || reservaData.activitat || '').toLowerCase();
+    const restr = (data.restriccions_activitats || []).find(r => reservaData.data >= r.data_inici && reservaData.data <= (r.data_fi || r.data_inici));
+    if (restr) {
+      const bloq = (restr.activitats_bloquejades || []).map(x => String(x).toLowerCase());
+      if (bloq.includes(actId)) {
+        return { ok: false, error: `L'activitat triada no es pot impartir en aquesta data (${restr.motiu || 'activitat restringida per calendari'}).` };
+      }
+    }
+
     const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
     const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
     const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
@@ -1318,6 +1358,141 @@ const Store = {
       reader.onerror = () => reject(new Error('Error llegint el fitxer.'));
       reader.readAsText(file);
     });
+  },
+
+  async getFestius() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/festius?t=${Date.now()}`);
+        const data = await res.json();
+        if (data.ok) return data;
+      } catch (e) {
+        console.warn('Error obtenint festius de l\'API:', e);
+      }
+    }
+    const local = this._getLocalData();
+    return {
+      ok: true,
+      festius_oficials: [],
+      festius_personalitzats: local.dies_festius || []
+    };
+  },
+
+  async crearFestiu(festiuData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/festius`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(festiuData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error creant festiu a l\'API, intentant localment:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (!local.dies_festius) local.dies_festius = [];
+    const newFestiu = {
+      id: Date.now(),
+      data_inici: festiuData.data_inici || festiuData.dataInici,
+      data_fi: festiuData.data_fi || festiuData.dataFi || festiuData.data_inici,
+      nom: festiuData.nom || 'Dia de Festa',
+      motiu: festiuData.motiu || '',
+      creat_el: new Date().toISOString()
+    };
+    local.dies_festius.push(newFestiu);
+    this._saveLocalData(local);
+    return { ok: true, id: newFestiu.id, message: 'Dia de festa desat' };
+  },
+
+  async eliminarFestiu(id) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/festius/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error eliminant festiu a l\'API, intentant localment:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (local.dies_festius) {
+      local.dies_festius = local.dies_festius.filter(f => String(f.id) !== String(id));
+      this._saveLocalData(local);
+    }
+    return { ok: true, message: 'Festiu eliminat' };
+  },
+
+  async getRestriccionsActivitats() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/restriccions-activitats?t=${Date.now()}`);
+        const data = await res.json();
+        if (data.ok) return data;
+      } catch (e) {
+        console.warn('Error obtenint restriccions de l\'API:', e);
+      }
+    }
+    const local = this._getLocalData();
+    return {
+      ok: true,
+      restriccions: local.restriccions_activitats || []
+    };
+  },
+
+  async crearRestriccioActivitats(restriccioData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/restriccions-activitats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(restriccioData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error creant restricció a l\'API, intentant localment:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (!local.restriccions_activitats) local.restriccions_activitats = [];
+    const newRestr = {
+      id: Date.now(),
+      data_inici: restriccioData.data_inici || restriccioData.dataInici,
+      data_fi: restriccioData.data_fi || restriccioData.dataFi || restriccioData.data_inici,
+      tipus_abast: restriccioData.tipus_abast || restriccioData.tipusAbast || 'dia',
+      activitats_permeses: restriccioData.activitats_permeses || restriccioData.activitatsPermeses || [],
+      activitats_bloquejades: restriccioData.activitats_bloquejades || restriccioData.activitatsBloquejades || [],
+      motiu: restriccioData.motiu || '',
+      creat_el: new Date().toISOString()
+    };
+    local.restriccions_activitats.push(newRestr);
+    this._saveLocalData(local);
+    return { ok: true, id: newRestr.id, message: 'Restricció de tallers desada' };
+  },
+
+  async eliminarRestriccioActivitats(id) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/restriccions-activitats/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error eliminant restricció a l\'API, intentant localment:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (local.restriccions_activitats) {
+      local.restriccions_activitats = local.restriccions_activitats.filter(r => String(r.id) !== String(id));
+      this._saveLocalData(local);
+    }
+    return { ok: true, message: 'Restricció eliminada' };
   }
 };
 

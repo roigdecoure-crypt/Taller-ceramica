@@ -2186,6 +2186,27 @@ function formatCatalanFullDate(dateStr) {
   }
 }
 
+function formatCatalanShortDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const parts = dateStr.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return `${d.getDate()} ${CATALAN_MONTHS[d.getMonth()].toLowerCase().slice(0, 3)}. ${d.getFullYear()}`;
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function initAppointmentsDashboard() {
   // Navegació mes anterior / següent / avui
   document.getElementById('btn-cal-prev')?.addEventListener('click', async () => {
@@ -2222,6 +2243,45 @@ async function initAppointmentsDashboard() {
 
   document.getElementById('btn-nova-reserva-dia')?.addEventListener('click', () => {
     openAdminNovaReservaModal(adminSelectedDate);
+  });
+
+  // Botons de Gestió de Festius i Restriccions a la barra superior
+  document.getElementById('btn-admin-festius')?.addEventListener('click', () => {
+    openAdminFestiusModal();
+  });
+
+  document.getElementById('btn-admin-restriccions')?.addEventListener('click', () => {
+    openAdminRestriccionsModal();
+  });
+
+  // Botons ràpids sobre el dia seleccionat
+  document.getElementById('btn-admin-dia-festiu-quick')?.addEventListener('click', () => {
+    openAdminFestiusModal(adminSelectedDate);
+  });
+
+  document.getElementById('btn-admin-dia-restr-quick')?.addEventListener('click', () => {
+    openAdminRestriccionsModal(adminSelectedDate);
+  });
+
+  // Listeners del Modal de Festius
+  document.getElementById('btn-refresh-festius')?.addEventListener('click', () => {
+    loadAdminFestiusList();
+  });
+  document.getElementById('form-admin-festiu')?.addEventListener('submit', handleCreateFestiu);
+
+  // Listeners del Modal de Restriccions
+  document.getElementById('btn-refresh-restriccions')?.addEventListener('click', () => {
+    loadAdminRestriccionsList();
+  });
+  document.getElementById('form-admin-restriccio')?.addEventListener('submit', handleCreateRestriccio);
+
+  document.querySelectorAll('input[name="restr-abast"]').forEach(r => {
+    r.addEventListener('change', (e) => updateRestriccionsAbastView(e.target.value));
+  });
+  document.getElementById('restr-input-setmana-base')?.addEventListener('input', updateSetmanaPreview);
+  document.getElementById('restr-input-mes')?.addEventListener('input', updateMesPreview);
+  ['torn', 'modelatge', 'pintar', 'vidre'].forEach(act => {
+    document.getElementById(`restr-act-${act}`)?.addEventListener('change', updateRestriccionsSummary);
   });
 
   // Render inicial del calendari i llista del dia seleccionat
@@ -2294,16 +2354,37 @@ async function renderAdminCalendar() {
     const dayRes = adminMonthReservesMap[dateStr] || [];
     const count = dayRes.length;
 
+    const isCustomHoliday = isClosed && (dayDisp?.esFestiuPersonalitzat || (dayDisp?.motiu && !dayDisp.motiu.includes('descans setmanal')));
+    const hasRestrictions = dayDisp?.teRestriccio || dayDisp?.restriccions?.te_restriccio;
+
     let cellClasses = ['cal-day-cell'];
     if (isSelected) cellClasses.push('active-day');
     if (isToday) cellClasses.push('today-day');
     if (isClosed) cellClasses.push('closed-day');
+    if (isCustomHoliday) cellClasses.push('custom-holiday-day');
+    if (hasRestrictions) cellClasses.push('restricted-day');
+
+    let badgesHtml = '';
+    if (count > 0) {
+      badgesHtml += `<div class="cal-day-badge" title="${count} ${count === 1 ? 'reserva' : 'reserves'}"><span class="badge-full">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</span><span class="badge-short">${count} res.</span></div>`;
+    }
+    if (isClosed && count === 0) {
+      if (isCustomHoliday) {
+        badgesHtml += `<div class="cal-day-closed-label" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; border-radius: 3px; font-weight: 700; font-size: 10px; padding: 1px 3px;" title="${escapeHtml(dayDisp.motiu || 'Festiu')}">Festiu</div>`;
+      } else {
+        badgesHtml += `<div class="cal-day-closed-label">Tancat</div>`;
+      }
+    }
+    if (hasRestrictions) {
+      const bloqList = dayDisp?.activitatsBloquejades || dayDisp?.restriccions?.bloquejades || [];
+      const bloqTitle = bloqList.length ? `Tallers limitats: ${bloqList.join(', ')}` : 'Tallers limitats';
+      badgesHtml += `<div class="cal-day-restr-label" style="background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; border-radius: 3px; font-weight: 700; font-size: 9.5px; padding: 1px 3px; margin-top: 2px; text-align: center;" title="${escapeHtml(bloqTitle)}">Tallers limitats</div>`;
+    }
 
     html += `
       <div class="${cellClasses.join(' ')}" data-date="${dateStr}">
         <div class="cal-day-num">${day}</div>
-        ${count > 0 ? `<div class="cal-day-badge" title="${count} ${count === 1 ? 'reserva' : 'reserves'}"><span class="badge-full">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</span><span class="badge-short">${count} res.</span></div>` : ''}
-        ${isClosed && count === 0 ? `<div class="cal-day-closed-label">Tancat</div>` : ''}
+        ${badgesHtml}
       </div>
     `;
   }
@@ -2337,9 +2418,85 @@ async function renderAdminDayAppointments(dateStr) {
   const dateDisplay = document.getElementById('app-selected-date-display');
   const countDisplay = document.getElementById('app-list-count');
   const tableBody = document.getElementById('app-table-body');
+  const statusBanner = document.getElementById('app-day-status-banner');
+  const btnFestiuQuick = document.getElementById('btn-admin-dia-festiu-quick');
+  const btnRestrQuick = document.getElementById('btn-admin-dia-restr-quick');
 
   if (dateDisplay) {
     dateDisplay.textContent = formatCatalanFullDate(dateStr);
+  }
+
+  // Comprovar estat del dia (Festiu o Restriccions)
+  const dayDisp = adminMonthDisponibilitat?.dies?.[dateStr];
+  let bannerHtml = '';
+
+  if (dayDisp?.tancat) {
+    const isCustomFest = dayDisp.esFestiuPersonalitzat || (dayDisp.motiu && !dayDisp.motiu.includes('descans setmanal'));
+    const festNom = dayDisp.motiu || (isCustomFest ? 'Dia de Festa' : 'Tancat per descans setmanal');
+    bannerHtml += `
+      <div style="background: #FFFBEB; border: 1.5px solid #FCD34D; color: #92400E; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <div>
+          <strong style="font-size: 13.5px;">Tancat / Festiu:</strong> <span style="font-weight: 600;">${escapeHtml(festNom)}</span>
+          <div style="font-size: 12px; color: #B45309; margin-top: 2px;">Les reserves públiques estan blocades per a aquesta data.</div>
+        </div>
+        ${isCustomFest && dayDisp.festiuId ? `
+          <button type="button" class="btn btn-sm btn-outline" onclick="eliminarFestiuDesDeDia(${dayDisp.festiuId})" style="border-color: #DC2626; color: #DC2626; background: #FFFFFF; font-size: 11.5px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">
+            Treure festiu
+          </button>
+        ` : ''}
+      </div>
+    `;
+    if (btnFestiuQuick) {
+      btnFestiuQuick.style.display = 'inline-block';
+      btnFestiuQuick.textContent = isCustomFest ? 'Editar Festiu' : 'Festiu';
+    }
+  } else {
+    if (btnFestiuQuick) {
+      btnFestiuQuick.style.display = 'inline-block';
+      btnFestiuQuick.textContent = '+ Marcar Festiu';
+    }
+  }
+
+  const hasRestr = dayDisp?.teRestriccio || dayDisp?.restriccions?.te_restriccio;
+  if (hasRestr) {
+    const permList = dayDisp.activitatsPermeses || dayDisp.restriccions?.permeses || [];
+    const bloqList = dayDisp.activitatsBloquejades || dayDisp.restriccions?.bloquejades || [];
+    const motiusList = dayDisp.motiusRestriccio || dayDisp.restriccions?.motius || (dayDisp.restriccions?.motiu ? [dayDisp.restriccions.motiu] : []);
+    const permText = permList.length ? permList.join(', ') : 'Cap';
+    const bloqText = bloqList.length ? bloqList.join(', ') : 'Cap';
+    const motiuDesc = motiusList.filter(Boolean).join('; ');
+
+    bannerHtml += `
+      <div style="background: #EEF2FF; border: 1.5px solid #C7D2FE; color: #3730A3; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <div>
+          <strong style="font-size: 13.5px;">Tallers restringits:</strong>
+          <span style="font-size: 12.5px; margin-left: 6px;">
+            Permesos: <strong style="color: #047857;">${escapeHtml(permText)}</strong> &bull; Bloquejats: <strong style="color: #DC2626;">${escapeHtml(bloqText)}</strong>
+          </span>
+          ${motiuDesc ? `<div style="font-size: 12px; color: #4338CA; margin-top: 2px;">Motiu: ${escapeHtml(motiuDesc)}</div>` : ''}
+        </div>
+        <button type="button" class="btn btn-sm btn-outline" onclick="openAdminRestriccionsModal('${dateStr}')" style="border-color: #6366F1; color: #4338CA; background: #FFFFFF; font-size: 11.5px; padding: 4px 10px; font-weight: 600; white-space: nowrap;">
+          Configurar
+        </button>
+      </div>
+    `;
+    if (btnRestrQuick) {
+      btnRestrQuick.textContent = 'Tallers limitats';
+    }
+  } else {
+    if (btnRestrQuick) {
+      btnRestrQuick.textContent = 'Restringir tallers';
+    }
+  }
+
+  if (statusBanner) {
+    if (bannerHtml) {
+      statusBanner.innerHTML = bannerHtml;
+      statusBanner.style.display = 'block';
+    } else {
+      statusBanner.innerHTML = '';
+      statusBanner.style.display = 'none';
+    }
   }
 
   if (tableBody) {
@@ -2369,11 +2526,18 @@ async function renderAdminDayAppointments(dateStr) {
   if (!tableBody) return;
 
   if (reserves.length === 0) {
+    let emptySubtext = 'Totes les places estan disponibles (12 places).';
+    if (dayDisp?.tancat) {
+      emptySubtext = escapeHtml(dayDisp.motiu || 'Taller tancat en aquesta data.');
+    } else if (hasRestr) {
+      const p = (dayDisp.activitatsPermeses || dayDisp.restriccions?.permeses || []).join(', ');
+      emptySubtext = `Tallers permesos: ${escapeHtml(p || 'Cap')}.`;
+    }
     tableBody.innerHTML = `
       <tr>
         <td colspan="4" class="app-empty-state" style="padding: 32px 16px; text-align: center;">
           <div style="font-weight: 700; color: #374151; margin-bottom: 4px; font-size: 14px;">No hi ha cap reserva per aquest dia</div>
-          <div style="color: #6B7280; font-size: 13px;">Totes les places estan disponibles (12 places).</div>
+          <div style="color: #6B7280; font-size: 13px;">${emptySubtext}</div>
         </td>
       </tr>
     `;
@@ -3616,8 +3780,501 @@ if (typeof window !== 'undefined') {
   window.openStudentInlineDetail = openStudentInlineDetail;
   window.closeStudentInlineDetail = closeStudentInlineDetail;
   window.openStudentDrawer = openStudentDrawer;
+  window.openAdminFestiusModal = openAdminFestiusModal;
+  window.openAdminRestriccionsModal = openAdminRestriccionsModal;
+  window.handleDeleteFestiu = handleDeleteFestiu;
+  window.handleDeleteRestriccio = handleDeleteRestriccio;
+  window.eliminarFestiuDesDeDia = eliminarFestiuDesDeDia;
+  window.eliminarRestriccioDesDeDia = eliminarRestriccioDesDeDia;
 }
 
+// ==================== GESTIÓ DE DIES DE FESTA I VACANCES ====================
+let adminFestiusList = [];
 
+async function openAdminFestiusModal(preselectedDate) {
+  const modal = document.getElementById('modal-admin-festius-backdrop');
+  if (!modal) return;
+  modal.classList.add('active');
 
+  const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
+  const inputInici = document.getElementById('festiu-data-inici');
+  const inputFi = document.getElementById('festiu-data-fi');
+  const inputNom = document.getElementById('festiu-nom');
+  const inputMotiu = document.getElementById('festiu-motiu');
 
+  if (inputInici) inputInici.value = defaultDate;
+  if (inputFi) inputFi.value = defaultDate;
+  if (inputNom) inputNom.value = '';
+  if (inputMotiu) inputMotiu.value = '';
+
+  await loadAdminFestiusList();
+}
+
+async function loadAdminFestiusList() {
+  const container = document.getElementById('festius-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant dies de festa...</div>';
+
+  try {
+    const data = await Store.getFestius();
+    adminFestiusList = (data && data.festius_personalitzats) || [];
+
+    if (adminFestiusList.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
+          No hi ha cap dia de festa personalitzat configurat.<br>
+          <span style="font-size: 12px; color: #9CA3AF;">Utilitza el formulari superior per afegir un tancament o període de vacances.</span>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <table class="data-table" style="width: 100%; font-size: 12.5px;">
+        <thead>
+          <tr style="background: #F9FAFB;">
+            <th style="padding: 8px 10px;">Dates</th>
+            <th style="padding: 8px 10px;">Nom / Celebració</th>
+            <th style="padding: 8px 10px;">Motiu</th>
+            <th style="padding: 8px 10px; text-align: right;">Acció</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    adminFestiusList.forEach(f => {
+      const datesDesc = (f.data_inici === f.data_fi || !f.data_fi) 
+        ? formatCatalanShortDate(f.data_inici) 
+        : `Del ${formatCatalanShortDate(f.data_inici)} al ${formatCatalanShortDate(f.data_fi)}`;
+      html += `
+        <tr>
+          <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
+          <td style="padding: 8px 10px; font-weight: 700; color: #92400E;">${escapeHtml(f.nom || 'Festa')}</td>
+          <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(f.motiu || '-')}</td>
+          <td style="padding: 8px 10px; text-align: right;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteFestiu(${f.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<div style="padding: 16px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant dies de festa: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function handleCreateFestiu(e) {
+  if (e) e.preventDefault();
+  const inputInici = document.getElementById('festiu-data-inici');
+  const inputFi = document.getElementById('festiu-data-fi');
+  const inputNom = document.getElementById('festiu-nom');
+  const inputMotiu = document.getElementById('festiu-motiu');
+
+  const dataInici = inputInici?.value;
+  const dataFi = inputFi?.value || dataInici;
+  const nom = inputNom?.value?.trim();
+  const motiu = inputMotiu?.value?.trim() || '';
+
+  if (!dataInici) {
+    showToast('Si us plau, introdueix la data d\'inici.', 'warning');
+    return;
+  }
+  if (!nom) {
+    showToast('Si us plau, indica un nom per a la festivitat o tancament.', 'warning');
+    return;
+  }
+  if (dataFi < dataInici) {
+    showToast('La data final no pot ser anterior a la d\'inici.', 'warning');
+    return;
+  }
+
+  const btnSubmit = document.getElementById('btn-submit-festiu');
+  if (btnSubmit) btnSubmit.disabled = true;
+
+  try {
+    const res = await Store.crearFestiu({
+      data_inici: dataInici,
+      data_fi: dataFi,
+      nom: nom,
+      motiu: motiu
+    });
+
+    if (res && res.ok) {
+      showToast('Dia de festa / vacances afegit correctament.', 'success');
+      if (inputNom) inputNom.value = '';
+      if (inputMotiu) inputMotiu.value = '';
+      await loadAdminFestiusList();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'Error desant el dia de festa.', 'error');
+    }
+  } catch (err) {
+    showToast('Error desant dia de festa: ' + err.message, 'error');
+  } finally {
+    if (btnSubmit) btnSubmit.disabled = false;
+  }
+}
+
+async function handleDeleteFestiu(id) {
+  if (!confirm('Vols eliminar aquest dia de festa o tancament? El taller tornarà a estar disponible per a reserves en aquestes dates.')) {
+    return;
+  }
+  try {
+    const res = await Store.eliminarFestiu(id);
+    if (res && res.ok) {
+      showToast('Festiu eliminat correctament.', 'info');
+      await loadAdminFestiusList();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'No s\'ha pogut eliminar el festiu.', 'error');
+    }
+  } catch (err) {
+    showToast('Error eliminant festiu: ' + err.message, 'error');
+  }
+}
+
+async function eliminarFestiuDesDeDia(id) {
+  await handleDeleteFestiu(id);
+}
+
+// ==================== GESTIÓ DE RESTRICCIONS D'ACTIVITATS ====================
+let adminRestriccionsList = [];
+
+async function openAdminRestriccionsModal(preselectedDate) {
+  const modal = document.getElementById('modal-admin-restriccions-backdrop');
+  if (!modal) return;
+  modal.classList.add('active');
+
+  const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
+  
+  // Reset date fields
+  const inputDia = document.getElementById('restr-input-dia');
+  const inputSetmana = document.getElementById('restr-input-setmana-base');
+  const inputMes = document.getElementById('restr-input-mes');
+  const inputRangInici = document.getElementById('restr-input-rang-inici');
+  const inputRangFi = document.getElementById('restr-input-rang-fi');
+  const inputMotiu = document.getElementById('restr-input-motiu');
+
+  if (inputDia) inputDia.value = defaultDate;
+  if (inputSetmana) inputSetmana.value = defaultDate;
+  if (inputMes) {
+    const parts = defaultDate.split('-');
+    inputMes.value = `${parts[0]}-${parts[1]}`;
+  }
+  if (inputRangInici) inputRangInici.value = defaultDate;
+  if (inputRangFi) inputRangFi.value = defaultDate;
+  if (inputMotiu) inputMotiu.value = '';
+
+  // Reset checkboxes to checked
+  ['torn', 'modelatge', 'pintar', 'vidre'].forEach(act => {
+    const chk = document.getElementById(`restr-act-${act}`);
+    if (chk) chk.checked = true;
+  });
+
+  // Set default radio: "dia"
+  const rDia = document.querySelector('input[name="restr-abast"][value="dia"]');
+  if (rDia) {
+    rDia.checked = true;
+    updateRestriccionsAbastView('dia');
+  }
+
+  updateRestriccionsSummary();
+  await loadAdminRestriccionsList();
+}
+
+function updateRestriccionsAbastView(abast) {
+  const rowDia = document.getElementById('restr-row-dia');
+  const rowSetmana = document.getElementById('restr-row-setmana');
+  const rowMes = document.getElementById('restr-row-mes');
+  const rowRang = document.getElementById('restr-row-rang');
+
+  if (rowDia) rowDia.style.display = abast === 'dia' ? 'block' : 'none';
+  if (rowSetmana) rowSetmana.style.display = abast === 'setmana' ? 'block' : 'none';
+  if (rowMes) rowMes.style.display = abast === 'mes' ? 'block' : 'none';
+  if (rowRang) rowRang.style.display = abast === 'rang' ? 'block' : 'none';
+
+  if (abast === 'setmana') updateSetmanaPreview();
+  if (abast === 'mes') updateMesPreview();
+}
+
+function updateSetmanaPreview() {
+  const input = document.getElementById('restr-input-setmana-base');
+  const preview = document.getElementById('restr-preview-setmana');
+  if (!input || !preview) return;
+  const val = input.value;
+  if (!val) {
+    preview.textContent = '';
+    return;
+  }
+  try {
+    const parts = val.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const dayOfWeek = (d.getDay() + 6) % 7; // 0=Dl, 6=Dg
+    const dl = new Date(parts[0], parts[1] - 1, parts[2] - dayOfWeek);
+    const dg = new Date(parts[0], parts[1] - 1, parts[2] - dayOfWeek + 6);
+
+    const dlStr = `${dl.getFullYear()}-${String(dl.getMonth() + 1).padStart(2, '0')}-${String(dl.getDate()).padStart(2, '0')}`;
+    const dgStr = `${dg.getFullYear()}-${String(dg.getMonth() + 1).padStart(2, '0')}-${String(dg.getDate()).padStart(2, '0')}`;
+    preview.textContent = `Setmana completa: Del Dilluns ${formatCatalanShortDate(dlStr)} al Diumenge ${formatCatalanShortDate(dgStr)}`;
+  } catch (e) {
+    preview.textContent = '';
+  }
+}
+
+function updateMesPreview() {
+  const input = document.getElementById('restr-input-mes');
+  const preview = document.getElementById('restr-preview-mes');
+  if (!input || !preview) return;
+  const val = input.value; // YYYY-MM
+  if (!val) {
+    preview.textContent = '';
+    return;
+  }
+  try {
+    const [yStr, mStr] = val.split('-');
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    const lastDay = new Date(y, m, 0).getDate();
+    const mName = CATALAN_MONTHS[m - 1] || val;
+    preview.textContent = `Mes complet: de l'1 al ${lastDay} de ${mName} de ${y}`;
+  } catch (e) {
+    preview.textContent = '';
+  }
+}
+
+function updateRestriccionsSummary() {
+  const summary = document.getElementById('restr-act-summary');
+  if (!summary) return;
+
+  const acts = [
+    { id: 'torn', nom: 'Torn' },
+    { id: 'modelatge', nom: 'Modelatge' },
+    { id: 'pintar', nom: 'Pintar ceràmica' },
+    { id: 'vidre', nom: 'Fusió de vidre' }
+  ];
+
+  const allowed = [];
+  const blocked = [];
+
+  acts.forEach(a => {
+    const chk = document.getElementById(`restr-act-${a.id}`);
+    const lbl = document.getElementById(`lbl-act-${a.id}`);
+    if (chk && chk.checked) {
+      allowed.push(a.nom);
+      if (lbl) {
+        lbl.style.borderColor = '#10B981';
+        lbl.style.background = '#ECFDF5';
+      }
+    } else {
+      blocked.push(a.nom);
+      if (lbl) {
+        lbl.style.borderColor = '#F87171';
+        lbl.style.background = '#FEF2F2';
+      }
+    }
+  });
+
+  if (blocked.length === 0) {
+    summary.innerHTML = '<span style="color: #047857; font-weight: 600;">Tots els tallers estan permesos. Desmarca algun taller per restringir-lo.</span>';
+  } else if (allowed.length === 0) {
+    summary.innerHTML = '<span style="color: #DC2626; font-weight: 600;">Tots els tallers quedaran bloquejats (dia sense cap taller disponible).</span>';
+  } else {
+    summary.innerHTML = `
+      Tallers que <strong>es podran fer</strong>: <span style="color: #047857; font-weight: 600;">${escapeHtml(allowed.join(', '))}</span><br>
+      Tallers que <strong>quedaran bloquejats</strong>: <span style="color: #DC2626; font-weight: 600;">${escapeHtml(blocked.join(', '))}</span>
+    `;
+  }
+}
+
+async function loadAdminRestriccionsList() {
+  const container = document.getElementById('restriccions-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant restriccions...</div>';
+
+  try {
+    const data = await Store.getRestriccionsActivitats();
+    adminRestriccionsList = (data && data.restriccions) || [];
+
+    if (adminRestriccionsList.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
+          No hi ha cap restricció de tallers configurada.<br>
+          <span style="font-size: 12px; color: #9CA3AF;">Tots els tallers estan actius segons el calendari habitual.</span>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <table class="data-table" style="width: 100%; font-size: 12px;">
+        <thead>
+          <tr style="background: #F9FAFB;">
+            <th style="padding: 8px 10px;">Dates / Període</th>
+            <th style="padding: 8px 10px;">Abast</th>
+            <th style="padding: 8px 10px;">Permesos</th>
+            <th style="padding: 8px 10px;">Bloquejats</th>
+            <th style="padding: 8px 10px;">Motiu</th>
+            <th style="padding: 8px 10px; text-align: right;">Acció</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    adminRestriccionsList.forEach(r => {
+      const datesDesc = (r.data_inici === r.data_fi || !r.data_fi) 
+        ? formatCatalanShortDate(r.data_inici) 
+        : `Del ${formatCatalanShortDate(r.data_inici)} al ${formatCatalanShortDate(r.data_fi)}`;
+      const permText = (r.activitats_permeses && r.activitats_permeses.length) ? r.activitats_permeses.join(', ') : '-';
+      const bloqText = (r.activitats_bloquejades && r.activitats_bloquejades.length) ? r.activitats_bloquejades.join(', ') : '-';
+      
+      let abastLabel = 'Dia';
+      if (r.tipus_abast === 'setmana') abastLabel = 'Setmana';
+      else if (r.tipus_abast === 'mes') abastLabel = 'Mes';
+      else if (r.tipus_abast === 'rang') abastLabel = 'Interval';
+
+      html += `
+        <tr>
+          <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
+          <td style="padding: 8px 10px;"><span class="badge badge-neutral" style="font-size: 10.5px;">${abastLabel}</span></td>
+          <td style="padding: 8px 10px; color: #047857; font-weight: 600;">${escapeHtml(permText)}</td>
+          <td style="padding: 8px 10px; color: #DC2626; font-weight: 600;">${escapeHtml(bloqText)}</td>
+          <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(r.motiu || '-')}</td>
+          <td style="padding: 8px 10px; text-align: right;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteRestriccio(${r.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = `<div style="padding: 16px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant restriccions: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function handleCreateRestriccio(e) {
+  if (e) e.preventDefault();
+
+  const abastRadio = document.querySelector('input[name="restr-abast"]:checked');
+  const abast = abastRadio ? abastRadio.value : 'dia';
+
+  let dataInici = '';
+  let dataFi = '';
+
+  if (abast === 'dia') {
+    dataInici = document.getElementById('restr-input-dia')?.value;
+    dataFi = dataInici;
+  } else if (abast === 'setmana') {
+    const val = document.getElementById('restr-input-setmana-base')?.value;
+    if (!val) {
+      showToast('Si us plau, tria una data per a la setmana.', 'warning');
+      return;
+    }
+    const parts = val.split('-').map(Number);
+    const dayOfWeek = (new Date(parts[0], parts[1] - 1, parts[2]).getDay() + 6) % 7;
+    const dl = new Date(parts[0], parts[1] - 1, parts[2] - dayOfWeek);
+    const dg = new Date(parts[0], parts[1] - 1, parts[2] - dayOfWeek + 6);
+    dataInici = `${dl.getFullYear()}-${String(dl.getMonth() + 1).padStart(2, '0')}-${String(dl.getDate()).padStart(2, '0')}`;
+    dataFi = `${dg.getFullYear()}-${String(dg.getMonth() + 1).padStart(2, '0')}-${String(dg.getDate()).padStart(2, '0')}`;
+  } else if (abast === 'mes') {
+    const val = document.getElementById('restr-input-mes')?.value; // YYYY-MM
+    if (!val) {
+      showToast('Si us plau, tria un mes.', 'warning');
+      return;
+    }
+    const [yStr, mStr] = val.split('-');
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    const lastDay = new Date(y, m, 0).getDate();
+    dataInici = `${val}-01`;
+    dataFi = `${val}-${String(lastDay).padStart(2, '0')}`;
+  } else if (abast === 'rang') {
+    dataInici = document.getElementById('restr-input-rang-inici')?.value;
+    dataFi = document.getElementById('restr-input-rang-fi')?.value;
+  }
+
+  if (!dataInici || !dataFi) {
+    showToast('Si us plau, especifica les dates de la restricció.', 'warning');
+    return;
+  }
+  if (dataFi < dataInici) {
+    showToast('La data final no pot ser anterior a la d\'inici.', 'warning');
+    return;
+  }
+
+  const allActs = ['torn', 'modelatge', 'pintar', 'vidre'];
+  const permeses = [];
+  const bloquejades = [];
+
+  allActs.forEach(act => {
+    const chk = document.getElementById(`restr-act-${act}`);
+    if (chk && chk.checked) {
+      permeses.push(act);
+    } else {
+      bloquejades.push(act);
+    }
+  });
+
+  if (bloquejades.length === 0) {
+    showToast('Has de bloquejar com a mínim un taller per crear una restricció.', 'warning');
+    return;
+  }
+
+  const motiu = document.getElementById('restr-input-motiu')?.value?.trim() || '';
+
+  const btnSubmit = document.getElementById('btn-submit-restriccio');
+  if (btnSubmit) btnSubmit.disabled = true;
+
+  try {
+    const res = await Store.crearRestriccioActivitats({
+      data_inici: dataInici,
+      data_fi: dataFi,
+      tipus_abast: abast,
+      activitats_permeses: permeses,
+      activitats_bloquejades: bloquejades,
+      motiu: motiu
+    });
+
+    if (res && res.ok) {
+      showToast('Restricció de tallers desada correctament.', 'success');
+      if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
+      await loadAdminRestriccionsList();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'Error desant la restricció.', 'error');
+    }
+  } catch (err) {
+    showToast('Error desant restricció: ' + err.message, 'error');
+  } finally {
+    if (btnSubmit) btnSubmit.disabled = false;
+  }
+}
+
+async function handleDeleteRestriccio(id) {
+  if (!confirm('Vols eliminar aquesta restricció de tallers? Tots els tallers tornaran a estar disponibles en aquestes dates.')) {
+    return;
+  }
+  try {
+    const res = await Store.eliminarRestriccioActivitats(id);
+    if (res && res.ok) {
+      showToast('Restricció eliminada correctament.', 'info');
+      await loadAdminRestriccionsList();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'No s\'ha pogut eliminar la restricció.', 'error');
+    }
+  } catch (err) {
+    showToast('Error eliminant restricció: ' + err.message, 'error');
+  }
+}
+
+async function eliminarRestriccioDesDeDia(id) {
+  await handleDeleteRestriccio(id);
+}

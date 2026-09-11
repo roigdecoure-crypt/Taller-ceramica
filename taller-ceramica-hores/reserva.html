@@ -1108,6 +1108,19 @@
 
       const franja = (data.franges && data.franges[0]) ? data.franges[0] : {};
       const actObj = (franja.activitats || data.activitats || []).find(a => a.id === state.activitatId);
+
+      if (actObj && actObj.bloquejada) {
+        slotsContainer.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #FFFBEB; border: 1.5px solid #FCD34D; color: #92400E; padding: 14px 16px; border-radius: 8px; font-size: 13.5px; text-align: center; line-height: 1.4;">
+            <strong>Activitat no disponible per a aquesta data:</strong><br>
+            El taller de <strong>${actObj.nom || state.activitat}</strong> no es pot impartir el dia seleccionat ${actObj.motiuBloqueig ? `(${actObj.motiuBloqueig})` : ''}.<br>
+            <span style="font-size: 12.5px; color: #B45309; margin-top: 4px; display: inline-block;">Si us plau, tria una altra data o un altre dels nostres tallers.</span>
+          </div>
+        `;
+        document.getElementById('btn-submit').disabled = true;
+        return;
+      }
+
       const lliuresAct = actObj ? actObj.placesDisponibles : (franja.placesLliures !== undefined ? franja.placesLliures : 12);
       const isComplet = lliuresAct <= 0;
 
@@ -1345,6 +1358,11 @@
         let isSpecialClosed = !isRest && dData && dData.tancat;
         let specialMotiu = dData && dData.motiu ? dData.motiu : 'Tancat';
 
+        let isActRestricted = false;
+        if (!isPast && !isRest && !isSpecialClosed && state.activitatId && dData && Array.isArray(dData.activitatsBloquejades)) {
+          isActRestricted = dData.activitatsBloquejades.map(x => String(x).toLowerCase()).includes(state.activitatId.toLowerCase());
+        }
+
         if (isPast) {
           html += `
             <div class="inline-cal-day disabled" title="Data anterior">
@@ -1363,6 +1381,13 @@
             <div class="inline-cal-day closed-special" title="${specialMotiu}">
               <span class="day-num">${d}</span>
               <span class="day-status">Festiu</span>
+            </div>
+          `;
+        } else if (isActRestricted) {
+          html += `
+            <div class="inline-cal-day disabled" style="opacity: 0.55; background: #F3F4F6;" title="Aquest taller no es pot impartir en aquesta data">
+              <span class="day-num">${d}</span>
+              <span class="day-status" style="font-size: 9.5px; color: #9CA3AF;">No disp.</span>
             </div>
           `;
         } else {
