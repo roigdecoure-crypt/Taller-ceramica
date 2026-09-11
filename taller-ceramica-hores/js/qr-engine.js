@@ -9,37 +9,187 @@ const QREngine = {
   availableCameras: [],
 
   /**
+   * Obté el model matemàtic del codi QR (instància amb getModuleCount i isDark)
+   * @param {string} textText
+   * @param {number} level
+   */
+  getQRModel(textText, level) {
+    const cleanText = String(textText || '').trim();
+    if (!cleanText) return null;
+
+    const qrLevel = (typeof level !== 'undefined')
+      ? level
+      : ((typeof QRCode !== 'undefined' && QRCode.CorrectLevel && QRCode.CorrectLevel.M !== undefined) ? QRCode.CorrectLevel.M : 0);
+
+    // Mètode directe ultra-ràpid sense tocar el DOM
+    if (typeof QRCode !== 'undefined' && typeof QRCode.createModel === 'function') {
+      try {
+        return QRCode.createModel(cleanText, qrLevel);
+      } catch (err) {
+        console.warn('Avís createModel QRCode:', err);
+      }
+    }
+
+    // Fallback instanciant QRCode en element desacoblat
+    if (typeof QRCode !== 'undefined') {
+      try {
+        const dummy = document.createElement('div');
+        const q = new QRCode(dummy, {
+          text: cleanText,
+          width: 100,
+          height: 100,
+          correctLevel: qrLevel
+        });
+        if (q && q._oQRCode) return q._oQRCode;
+      } catch (err2) {
+        console.warn('Avís instanciant QRCode dummy:', err2);
+      }
+    }
+
+    return null;
+  },
+
+  /**
    * Genera un codi QR en un element contenidor (DOM element o ID)
+   * Prioritza representació vectorial SVG pura (nítida a pantalles Retina, immediata, sense toDataURL)
    * @param {string|HTMLElement} container
    * @param {string} textText Codi d'identificació de l'alumne (ex: "TC-101")
    * @param {number} size Mida en píxels (per defecte 180)
+   * @param {object} options Opcions de personalització (colorDark, colorLight, correctLevel)
    */
-  generateQR(container, textText, size = 180) {
+  generateQR(container, textText, size = 180, options = {}) {
     const el = typeof container === 'string' ? document.getElementById(container) : container;
     if (!el) return null;
 
+    const cleanText = String(textText || '').trim();
+    if (!cleanText) {
+      el.innerHTML = '';
+      return null;
+    }
+
     el.innerHTML = ''; // Netejar contingut previ
 
+    const colorDark = options.colorDark || '#000000';
+    const colorLight = options.colorLight || '#FFFFFF';
+
+    // 1. Generació d'alta precisió vectorial SVG (instantània, suportada a tots els navegadors)
+    const model = this.getQRModel(cleanText, options.correctLevel);
+    if (model) {
+      const count = model.getModuleCount();
+      const rects = [];
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (model.isDark(r, c)) {
+            rects.push(`<rect x="${c}" y="${r}" width="1" height="1"/>`);
+          }
+        }
+      }
+      const svgMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${count} ${count}" width="${size}" height="${size}" style="display:block; width:${size}px; height:${size}px; max-width:100%; max-height:100%; margin:0 auto;" shape-rendering="crispEdges" role="img" aria-label="Codi QR ${cleanText}">
+          <rect width="${count}" height="${count}" fill="${colorLight}"/>
+          <g fill="${colorDark}">
+            ${rects.join('')}
+          </g>
+        </svg>
+      `.trim();
+      el.innerHTML = svgMarkup;
+      return { svg: svgMarkup, model, count };
+    }
+
+    // 2. Si la llibreria QRCode no està disponible, provar càrrega dinàmica o avís suau
     if (typeof QRCode === 'undefined') {
-      console.error('La llibreria QRCode no està carregada.');
-      el.innerHTML = `<div style="padding:10px; font-size:12px; color:red;">Error carregant QR</div>`;
+      if (typeof document !== 'undefined' && !document.getElementById('lib-qrcode-dyn')) {
+        const s = document.createElement('script');
+        s.id = 'lib-qrcode-dyn';
+        s.src = 'lib/qrcode.min.js?v=9.2';
+        s.onload = () => {
+          this.generateQR(el, cleanText, size, options);
+        };
+        document.head.appendChild(s);
+      }
+      el.innerHTML = `<div style="padding:8px; font-size:11px; color:var(--brand-primary, #831D1D); text-align:center;">Carregant QR...</div>`;
       return null;
     }
 
+    // 3. Fallback clàssic QRCode amb canvas / img protegits
     try {
       const qrcode = new QRCode(el, {
-        text: textText,
+        text: cleanText,
         width: size,
         height: size,
-        colorDark: '#000000',
-        colorLight: '#FFFFFF',
-        correctLevel: QRCode.CorrectLevel.M
+        colorDark: colorDark,
+        colorLight: colorLight,
+        correctLevel: (typeof QRCode.CorrectLevel !== 'undefined' && QRCode.CorrectLevel.M !== undefined) ? QRCode.CorrectLevel.M : 0
       });
+
+      const fixVisibility = () => {
+        const cvs = el.querySelector('canvas');
+        const img = el.querySelector('img');
+        if (img && img.src && img.src.length > 30) {
+          img.style.display = 'block';
+          img.style.width = `${size}px`;
+          img.style.height = `${size}px`;
+          img.style.maxWidth = '100%';
+          img.style.margin = '0 auto';
+          if (cvs) cvs.style.display = 'none';
+        } else if (cvs) {
+          cvs.style.display = 'block';
+          cvs.style.width = `${size}px`;
+          cvs.style.height = `${size}px`;
+          cvs.style.maxWidth = '100%';
+          cvs.style.margin = '0 auto';
+        }
+      };
+      fixVisibility();
+      setTimeout(fixVisibility, 50);
+      setTimeout(fixVisibility, 200);
+
       return qrcode;
     } catch (err) {
-      console.error('Error generant el codi QR:', err);
+      console.error('Error generant QR fallback:', err);
+      el.innerHTML = `<div style="padding:8px; font-size:11px; color:#831D1D; text-align:center;">Codi: <strong>${cleanText}</strong></div>`;
       return null;
     }
+  },
+
+  /**
+   * Dibuixa el codi QR directament sobre un context Canvas 2D (ex: per descarregar imatges de rellotge o carnet)
+   * @param {CanvasRenderingContext2D} ctx Context 2D del canvas
+   * @param {string} textText Codi d'identificació
+   * @param {number} x Coordenada X
+   * @param {number} y Coordenada Y
+   * @param {number} size Mida en píxels
+   * @param {string} colorDark Color dels mòduls
+   * @param {string} colorLight Color de fons (o 'transparent')
+   */
+  drawQRToCanvas(ctx, textText, x, y, size, colorDark = '#000000', colorLight = '#FFFFFF') {
+    const cleanText = String(textText || '').trim();
+    if (!cleanText || !ctx) return false;
+
+    const model = this.getQRModel(cleanText);
+    if (!model) return false;
+
+    const count = model.getModuleCount();
+    const cellSize = size / count;
+
+    if (colorLight && colorLight !== 'transparent') {
+      ctx.fillStyle = colorLight;
+      ctx.fillRect(x, y, size, size);
+    }
+
+    ctx.fillStyle = colorDark;
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        if (model.isDark(r, c)) {
+          const px = Math.round(x + c * cellSize);
+          const py = Math.round(y + r * cellSize);
+          const pw = Math.round(x + (c + 1) * cellSize) - px;
+          const ph = Math.round(y + (r + 1) * cellSize) - py;
+          ctx.fillRect(px, py, pw, ph);
+        }
+      }
+    }
+    return true;
   },
 
   /**

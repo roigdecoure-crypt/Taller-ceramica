@@ -264,10 +264,10 @@ async function loginStudent(identifier, password, isAutoLogin = false) {
     localStorage.setItem('logged_student_pin', cleanPin);
     sessionStorage.setItem('logged_student_pin', cleanPin);
 
-    renderDashboard(res);
-
     document.getElementById('section-login').style.display = 'none';
     document.getElementById('section-dashboard').style.display = 'block';
+
+    renderDashboard(res);
 
     const pwdInput = document.getElementById('login-student-password');
     if (pwdInput) pwdInput.value = '';
@@ -1072,6 +1072,15 @@ function setupEventListeners() {
     btnOpenQrZoom.addEventListener('click', () => {
       modalQrZoom.style.display = 'flex';
       document.body.style.overflow = 'hidden';
+      if (currentStudent) {
+        const s = currentStudent.alumne || currentStudent;
+        if (s && s.id) {
+          const zoomQrBox = document.getElementById('modal-qr-zoom-box');
+          if (zoomQrBox) {
+            QREngine.generateQR(zoomQrBox, s.id, 216);
+          }
+        }
+      }
     });
 
     const closeQrModal = () => {
@@ -1219,10 +1228,6 @@ async function downloadWatchQrImage(student, isMatte = true) {
     }
   }
 
-  const tempContainer = document.createElement('div');
-  tempContainer.style.display = 'none';
-  document.body.appendChild(tempContainer);
-
   if (isMatte) {
     // 1. Fons fosc AMOLED: els píxels perimetrals estan apagats (0 nits)
     ctx.fillStyle = '#181514';
@@ -1238,33 +1243,15 @@ async function downloadWatchQrImage(student, isMatte = true) {
     ctx.fillStyle = '#DDD7CE';
     drawRoundRect(ctx, 75, 70, 450, 450, 24);
 
-    // 4. QR amb mòduls negres purs sobre el to ceràmic mat
-    const qrObj = new QRCode(tempContainer, {
-      text: id,
-      width: 390,
-      height: 390,
-      colorDark: '#000000',
-      colorLight: '#DDD7CE',
-      correctLevel: QRCode.CorrectLevel.M
-    });
+    // 4. QR amb mòduls negres purs sobre el to ceràmic mat (dibuixat directament i instantani)
+    QREngine.drawQRToCanvas(ctx, id, 105, 100, 390, '#000000', '#DDD7CE');
 
-    setTimeout(async () => {
-      const qrCanvas = tempContainer.querySelector('canvas');
-      const qrImg = tempContainer.querySelector('img');
-      const source = qrCanvas || qrImg;
+    // 5. Peu d'alumne en to suau sobre fosc
+    ctx.fillStyle = '#C8C1B6';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(`${id} • ${name}`, 300, 562);
 
-      if (source) {
-        ctx.drawImage(source, 105, 100, 390, 390);
-      }
-      document.body.removeChild(tempContainer);
-
-      // 5. Peu d'alumne en to suau sobre fosc
-      ctx.fillStyle = '#C8C1B6';
-      ctx.font = 'bold 20px monospace';
-      ctx.fillText(`${id} • ${name}`, 300, 562);
-
-      saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Mat_Rellotge.png`, 'QR ceràmic mat desat correctament!');
-    }, 150);
+    saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Mat_Rellotge.png`, 'QR ceràmic mat desat correctament!');
 
   } else {
     // Fons blanc clàssic
@@ -1276,31 +1263,14 @@ async function downloadWatchQrImage(student, isMatte = true) {
     ctx.textAlign = 'center';
     ctx.fillText('ROIG DE COURE', 300, 52);
 
-    const qrObj = new QRCode(tempContainer, {
-      text: id,
-      width: 420,
-      height: 420,
-      colorDark: '#000000',
-      colorLight: '#FFFFFF',
-      correctLevel: QRCode.CorrectLevel.M
-    });
+    // QR sobre blanc clàssic (420x420 a 90, 85)
+    QREngine.drawQRToCanvas(ctx, id, 90, 85, 420, '#000000', '#FFFFFF');
 
-    setTimeout(async () => {
-      const qrCanvas = tempContainer.querySelector('canvas');
-      const qrImg = tempContainer.querySelector('img');
-      const source = qrCanvas || qrImg;
+    ctx.fillStyle = '#2C221E';
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText(`${id} • ${name}`, 300, 545);
 
-      if (source) {
-        ctx.drawImage(source, 90, 85, 420, 420);
-      }
-      document.body.removeChild(tempContainer);
-
-      ctx.fillStyle = '#2C221E';
-      ctx.font = 'bold 22px monospace';
-      ctx.fillText(`${id} • ${name}`, 300, 545);
-
-      saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Rellotge.png`, 'QR fons blanc desat correctament!');
-    }, 150);
+    saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Rellotge.png`, 'QR fons blanc desat correctament!');
   }
 
   function saveCanvasAsFile(canvasEl, filename, successMsg) {

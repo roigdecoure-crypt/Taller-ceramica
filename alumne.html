@@ -58,6 +58,18 @@
     #btn-open-qr-zoom:active {
       transform: scale(0.98);
     }
+    #portal-top-qr canvas,
+    #portal-top-qr img,
+    #portal-top-qr svg,
+    #modal-qr-zoom-box canvas,
+    #modal-qr-zoom-box img,
+    #modal-qr-zoom-box svg {
+      max-width: 100%;
+      max-height: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
     .btn-action-hero {
       display: flex;
       align-items: center;
@@ -420,7 +432,7 @@
 
         <!-- Codi QR a dalt, destacat i ampliable al clic -->
         <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR o desar-lo al Wallet" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
-          <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; display: flex; align-items: center; justify-content: center;">
+          <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;">
             <!-- QR generat per QREngine -->
           </div>
           <div style="font-size: 11px; font-weight: 700; color: var(--brand-primary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -605,7 +617,7 @@
         Codi: <strong id="qr-zoom-student-id" style="color: var(--brand-primary); font-size: 16px; letter-spacing: 0.5px;">TC-101</strong>
       </div>
       
-      <div id="modal-qr-zoom-box" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 16px; padding: 12px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--color-border); width: 240px; height: 240px; box-sizing: border-box;">
+      <div id="modal-qr-zoom-box" style="display: flex; justify-content: center; align-items: center; margin: 0 auto 16px; padding: 12px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--color-border); width: 240px; height: 240px; box-sizing: border-box; overflow: hidden;">
         <!-- Codi QR gran (216px) generat dinàmicament -->
       </div>
       
@@ -888,13 +900,13 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=9.0"></script>
-  <script src="js/time-utils.js?v=9.0"></script>
-  <script src="js/sound.js?v=9.0"></script>
-  <script src="js/qr-engine.js?v=9.0"></script>
-  <script src="js/api-config.js?v=9.0"></script>
-  <script src="js/store.js?v=9.0"></script>
-  <script src="js/reserves-calendar.js?v=9.0"></script>
-  <script src="js/alumne.js?v=9.0"></script>
+  <script src="lib/qrcode.min.js?v=9.2"></script>
+  <script src="js/time-utils.js?v=9.2"></script>
+  <script src="js/sound.js?v=9.2"></script>
+  <script src="js/qr-engine.js?v=9.2"></script>
+  <script src="js/api-config.js?v=9.2"></script>
+  <script src="js/store.js?v=9.2"></script>
+  <script src="js/reserves-calendar.js?v=9.2"></script>
+  <script src="js/alumne.js?v=9.2"></script>
 </body>
 </html>
