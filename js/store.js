@@ -694,11 +694,16 @@ const Store = {
   async getConfig() {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/config`);
+        const res = await fetch(`${this.apiBase}/api/config?t=${Date.now()}`, { cache: 'no-cache' });
         const json = await res.json();
-        if (json.ok) return json.config;
+        if (json.ok && json.config) {
+          const data = this._getLocalData();
+          data.config = { ...(data.config || {}), ...json.config };
+          this._saveLocalData(data);
+          return json.config;
+        }
       } catch (e) {
-        this.mode = 'local';
+        console.warn('Error obtenint configuració:', e);
       }
     }
     const data = this._getLocalData();
@@ -1176,7 +1181,11 @@ const Store = {
   },
 
   async guardarAforamentMaxim(num) {
-    const val = parseInt(num, 10) || 8;
+    const val = parseInt(num, 10) || 12;
+    const data = this._getLocalData();
+    data.config = { ...(data.config || {}), aforament_maxim_per_franja: String(val) };
+    this._saveLocalData(data);
+
     if (this.mode === 'api') {
       try {
         const res = await fetch(`${this.apiBase}/api/reserves/config-aforament`, {
@@ -1185,9 +1194,13 @@ const Store = {
           body: JSON.stringify({ aforamentMaxim: val })
         });
         const json = await res.json();
-        const data = this._getLocalData();
-        data.config = { ...(data.config || {}), aforament_maxim_per_franja: String(val) };
-        this._saveLocalData(data);
+        try {
+          await fetch(`${this.apiBase}/api/config`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ aforament_maxim_per_franja: String(val) })
+          });
+        } catch (ignored) {}
         return json;
       } catch (e) {
         console.warn('Error guardant aforament:', e);

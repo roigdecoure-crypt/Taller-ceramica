@@ -441,7 +441,7 @@ class ReservesCalendar {
     }
 
     const franges = day.franges || [];
-    const maxCapFranja = 12; // Aforament màxim oficial del taller (12 places)
+    const maxCapFranja = parseInt(this.config?.aforament_maxim_per_franja || 12, 10);
     const todayISO = this._formatDateISO(new Date());
     const isToday = dateStr === todayISO;
     const lliuresTotal = Math.max(0, maxCapFranja - (day.totalOcupadesDia || 0));

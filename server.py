@@ -496,7 +496,7 @@ def init_db():
         # Migració de valors antics a configuració oficial si cal
         cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de Ceràmica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "#831D1D" WHERE clau = "brand_primary" AND (valor = "#C25E3A" OR valor = "#7A3026" OR valor IS NULL OR valor = "")')
-        cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND (valor = "8" OR valor = "15" OR valor = "" OR valor IS NULL)')
+        cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND (valor LIKE "%mati_1%" OR valor LIKE "%F1%")', (default_franges_json,))
         cursor.execute('UPDATE configuracio SET valor = "02:00:00" WHERE clau = "hores_per_defecte_oblit" AND valor = "01:30:00"')
         cursor.execute('UPDATE configuracio SET valor = "https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n" WHERE clau = "stripe_url_adults" AND (valor = "" OR valor IS NULL)')
@@ -801,7 +801,7 @@ def hydrate_from_google_sheets(target_url=None):
             # 5. Bolcar configuració
             for k, v in config.items():
                 if k:
-                    if k == 'aforament_maxim_per_franja' and str(v) in ('8', '15', ''):
+                    if k == 'aforament_maxim_per_franja' and (str(v).strip() == '' or v is None):
                         v = '12'
                     if k == 'taller_nom' and str(v) in ('Taller de Ceràmica', 'Taller de Ceramica', ''):
                         v = 'Roig de Coure'

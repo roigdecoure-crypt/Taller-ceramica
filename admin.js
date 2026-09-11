@@ -34,6 +34,24 @@ if (typeof document !== 'undefined') {
     setupEventListeners();
     startLiveClock();
 
+    // Carregar aforament i capacitats desades localment de forma immediata per evitar salts visuals
+    try {
+      if (typeof Store !== 'undefined' && typeof Store._getLocalData === 'function') {
+        const localCfg = Store._getLocalData()?.config || {};
+        if (localCfg.aforament_maxim_per_franja) {
+          const mCap = parseInt(localCfg.aforament_maxim_per_franja, 10);
+          ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = mCap;
+          });
+          ['admin-display-aforament-val', 'modal-admin-display-aforament-val'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = `${mCap} places simultànies`;
+          });
+        }
+      }
+    } catch (e) {}
+
     const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
     if (isAuth) {
       await loadAdminDashboardData();
@@ -2009,6 +2027,18 @@ function initReservesAdmin() {
   document.getElementById('btn-admin-save-aforament')?.addEventListener('click', () => saveAforamentGlobal('admin-input-aforament', 'btn-admin-save-aforament'));
   document.getElementById('btn-modal-save-aforament')?.addEventListener('click', () => saveAforamentGlobal('modal-admin-input-aforament', 'btn-modal-save-aforament'));
 
+  ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveAforamentGlobal(id, id === 'admin-input-aforament' ? 'btn-admin-save-aforament' : 'btn-modal-save-aforament');
+        }
+      });
+    }
+  });
+
   // Desar capacitats per activitat (Torn, Modelatge, Pintar ceràmica)
   const saveCapacitatsActivitats = async (prefix = '', btnId = '') => {
     const btn = btnId ? document.getElementById(btnId) : null;
@@ -2052,6 +2082,20 @@ function initReservesAdmin() {
 
   document.getElementById('btn-admin-save-capacitats-act')?.addEventListener('click', () => saveCapacitatsActivitats('', 'btn-admin-save-capacitats-act'));
   document.getElementById('btn-modal-save-capacitats-act')?.addEventListener('click', () => saveCapacitatsActivitats('modal-', 'btn-modal-save-capacitats-act'));
+
+  ['admin-cap-torn', 'admin-cap-modelatge', 'admin-cap-pintar', 'modal-admin-cap-torn', 'modal-admin-cap-modelatge', 'modal-admin-cap-pintar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const prefix = id.startsWith('modal-') ? 'modal-' : '';
+          const btnId = prefix ? 'btn-modal-save-capacitats-act' : 'btn-admin-save-capacitats-act';
+          saveCapacitatsActivitats(prefix, btnId);
+        }
+      });
+    }
+  });
 }
 
 async function openReservesModal(preselectedDate) {
