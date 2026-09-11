@@ -2,18 +2,52 @@
  * store.js - Gestor de dades híbrid (API Python/SQLite amb suport LocalStorage i Google Sheets)
  */
 
+// Detecció de la URL del backend (Render quan està allotjat a OVH / extern, o relativa quan és local/Render)
+function getRoigApiBase() {
+  if (typeof window !== 'undefined') {
+    if (window.ROIG_API_BASE !== undefined && window.ROIG_API_BASE !== null && window.ROIG_API_BASE !== '') {
+      return String(window.ROIG_API_BASE).replace(/\/+$/, '');
+    }
+    try {
+      if (window.localStorage) {
+        var custom = window.localStorage.getItem('roig_custom_api_base');
+        if (custom) return custom.trim().replace(/\/+$/, '');
+      }
+    } catch (e) {}
+
+    if (window.location) {
+      var host = window.location.hostname;
+      if (!host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+        return '';
+      }
+    }
+  }
+  return 'https://taller-ceramica-nb96.onrender.com';
+}
+
+if (typeof window !== 'undefined') {
+  window.getRoigApiBase = getRoigApiBase;
+  if (!window.ROIG_API_BASE) {
+    window.ROIG_API_BASE = getRoigApiBase();
+  }
+}
+
 const Store = {
   // Mode: 'api' (servidor actiu) o 'local' (offline/standalone)
   mode: 'api',
-  apiBase: '',
+  apiBase: typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com',
 
   // Clau de localStorage per a mode offline
   STORAGE_KEY: 'taller_ceramica_v1',
 
   async init() {
+    if (!this.apiBase && typeof getRoigApiBase === 'function') {
+      this.apiBase = getRoigApiBase();
+    }
     try {
       const res = await fetch(`${this.apiBase}/api/status`, { cache: 'no-cache' });
-      if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
         this.mode = 'api';
         return 'api';
       }

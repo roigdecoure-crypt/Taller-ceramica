@@ -2,6 +2,25 @@
  * admin.js - Lògica del Panell d'Administració 360° per al Taller de Ceràmica
  */
 
+function getAdminApiBase() {
+  if (typeof Store !== 'undefined' && Store.apiBase !== undefined && Store.apiBase !== null) {
+    return Store.apiBase;
+  }
+  if (typeof window !== 'undefined') {
+    if (typeof window.getRoigApiBase === 'function') {
+      return window.getRoigApiBase();
+    }
+    if (window.ROIG_API_BASE !== undefined) {
+      return window.ROIG_API_BASE;
+    }
+    const host = window.location.hostname;
+    if (!host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+      return '';
+    }
+  }
+  return 'https://taller-ceramica-nb96.onrender.com';
+}
+
 let allStudents = [];
 let currentViewingStudent = null;
 let liveTimerInterval = null;
@@ -1426,7 +1445,8 @@ function setupEventListeners() {
   document.getElementById('btn-create-snapshot')?.addEventListener('click', async () => {
     try {
       showToast('Creant snapshot de la base de dades...', 'info');
-      const res = await fetch('/api/admin/backups', { method: 'POST' });
+      const apiBase = getAdminApiBase();
+      const res = await fetch(`${apiBase}/api/admin/backups`, { method: 'POST' });
       const data = await res.json();
       if (data.ok) {
         showToast(data.message || 'Snapshot creat correctament!', 'success');
@@ -1458,7 +1478,8 @@ function setupEventListeners() {
     }
 
     try {
-      const res = await fetch('/api/admin/change-pin', {
+      const apiBase = getAdminApiBase();
+      const res = await fetch(`${apiBase}/api/admin/change-pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oldPin, newPin })
@@ -2836,11 +2857,16 @@ function initAdminAuth() {
       if (pinError) pinError.style.display = 'none';
 
       try {
-        const res = await fetch('/api/admin/auth', {
+        const apiBase = getAdminApiBase();
+        const res = await fetch(`${apiBase}/api/admin/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pin })
         });
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('El servidor no ha retornat JSON. Comprova que el backend de Render estigui actiu.');
+        }
         const data = await res.json();
         if (data.ok) {
           sessionStorage.setItem('roig_admin_auth', '1');
@@ -2889,7 +2915,14 @@ async function loadSnapshotsList() {
   container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-muted); font-size: 12px;">Carregant còpies de seguretat...</div>';
 
   try {
-    const res = await fetch('/api/admin/backups');
+    const apiBase = getAdminApiBase();
+    const btnDl = document.getElementById('btn-download-sqlite-db');
+    if (btnDl) btnDl.href = `${apiBase}/api/admin/backups/download?file=ceramica.db`;
+    const res = await fetch(`${apiBase}/api/admin/backups`);
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('El servidor no ha retornat JSON.');
+    }
     const data = await res.json();
     if (!data.ok || !data.backups || data.backups.length === 0) {
       container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-muted); font-size: 12px;">No hi ha cap còpia de seguretat disponible.</div>';
@@ -2914,7 +2947,7 @@ async function loadSnapshotsList() {
         : (b.tipus === 'diari' ? '<span style="color: #1976D2;">[Diari]</span>'
         : (b.tipus === 'pre_restauracio' ? '<span style="color: #E65100;">[Pre-restauració]</span>' : '<span style="color: #5D4037;">[Manual]</span>'));
 
-      const downloadUrl = `/api/admin/backups/download?file=${encodeURIComponent(b.filename)}`;
+      const downloadUrl = `${apiBase}/api/admin/backups/download?file=${encodeURIComponent(b.filename)}`;
       
       let actionsHtml = `<a href="${downloadUrl}" class="btn btn-outline btn-sm" style="font-size: 11px; padding: 3px 7px; text-decoration: none;" download>Descarregar</a>`;
       if (b.isRestoreable) {
@@ -2949,7 +2982,7 @@ async function loadSnapshotsList() {
 
         try {
           showToast('Restaurant base de dades...', 'info');
-          const restoreRes = await fetch('/api/admin/backups/restore', {
+          const restoreRes = await fetch(`${apiBase}/api/admin/backups/restore`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename: fileToRestore })

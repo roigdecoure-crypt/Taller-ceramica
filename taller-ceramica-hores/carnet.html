@@ -338,6 +338,7 @@
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js"></script>
+  <script src="js/api-config.js?v=7.5"></script>
   <script src="js/store.js?v=7.1"></script>
   <script src="js/qr-engine.js?v=7.1"></script>
   <script>
@@ -391,11 +392,12 @@
         QREngine.generateQR(qrMountEl, id, 220);
 
         // Actualitzar enllaç .pkpass
-        btnWallet.href = `/api/wallet/pass?id=${encodeURIComponent(id)}`;
+        const apiBase = (typeof Store !== 'undefined' && Store.apiBase) ? Store.apiBase : '';
+        btnWallet.href = `${apiBase}/api/wallet/pass?id=${encodeURIComponent(id)}`;
 
         const btnSvg = document.getElementById('btn-svg-download');
         if (btnSvg) {
-          btnSvg.href = `/api/carnet/export-svg?id=${encodeURIComponent(id)}`;
+          btnSvg.href = `${apiBase}/api/carnet/export-svg?id=${encodeURIComponent(id)}`;
           btnSvg.setAttribute('download', `carnet-${id}.svg`);
         }
 
@@ -445,7 +447,7 @@
         }
 
         try {
-          const res = await fetch(`/api/alumnes/${encodeURIComponent(id)}`);
+          const res = await fetch(`${apiBase}/api/alumnes/${encodeURIComponent(id)}`);
           if (res.ok) {
             const data = await res.json();
             if (data.ok && data.alumne) {

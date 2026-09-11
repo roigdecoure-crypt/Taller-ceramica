@@ -1004,7 +1004,10 @@
     <div style="font-size: 12px; color: #9CA3AF;">Horari: Dilluns a dissabte de 10h a 13h i de 17h a 20h</div>
   </footer>
 
+  <script src="js/api-config.js?v=7.5"></script>
   <script>
+    const ROIG_API_BASE = (typeof window.getRoigApiBase === 'function' ? window.getRoigApiBase() : (window.ROIG_API_BASE || 'https://taller-ceramica-nb96.onrender.com'));
+
     // Detecció d'integració <iframe> (Elementor / WordPress)
     if (window.self !== window.top) {
       document.body.classList.add('in-iframe');
@@ -1047,7 +1050,7 @@
     // Carregar activitats i capacitats des de l'API
     async function loadActivitatsConfig() {
       try {
-        const res = await fetch('/api/reserves/activitats?t=' + Date.now());
+        const res = await fetch(`${ROIG_API_BASE}/api/reserves/activitats?t=` + Date.now());
         const data = await res.json();
         if (data.ok && data.activitats) {
           data.activitats.forEach(act => {
@@ -1055,8 +1058,10 @@
               state.activitatCapMax = act.capacitatMax;
               document.getElementById('badge-cap-torn').textContent = `Màx. ${act.capacitatMax} torns`;
             } else if (act.id === 'modelatge') {
+              state.activitatCapMax = act.capacitatMax;
               document.getElementById('badge-cap-modelatge').textContent = `Fins a ${act.capacitatMax} places`;
             } else if (act.id === 'pintar') {
+              state.activitatCapMax = act.capacitatMax;
               document.getElementById('badge-cap-pintar').textContent = `Fins a ${act.capacitatMax} places`;
             }
           });
@@ -1075,7 +1080,7 @@
       slotsContainer.innerHTML = `<div style="grid-column: 1 / -1; padding: 12px; color: var(--muted); text-align: center; font-size: 13px;">Comprovant disponibilitat...</div>`;
 
       try {
-        const res = await fetch(`/api/reserves/disponibilitat?data=${encodeURIComponent(dateVal)}&t=${Date.now()}`);
+        const res = await fetch(`${ROIG_API_BASE}/api/reserves/disponibilitat?data=${encodeURIComponent(dateVal)}&t=${Date.now()}`);
         const data = await res.json();
 
         if (data.tancat) {
@@ -1302,7 +1307,7 @@
       const cacheKey = `${year}-${month}`;
       const monthInfo = calMonthCache[cacheKey] || null;
       if (!monthInfo) {
-        fetch(`/api/reserves/mes?any=${year}&mes=${month}&t=${Date.now()}`)
+        fetch(`${ROIG_API_BASE}/api/reserves/mes?any=${year}&mes=${month}&t=${Date.now()}`)
           .then(res => res.json())
           .then(data => {
             if (data.ok) {
@@ -1568,7 +1573,7 @@
         if (errorEl) errorEl.style.display = 'none';
 
         try {
-          const res = await fetch(`/api/alumnes/verificar?q=${encodeURIComponent(query)}`);
+          const res = await fetch(`${ROIG_API_BASE}/api/alumnes/verificar?q=${encodeURIComponent(query)}`);
           const data = await res.json();
           if (data.ok && data.found && data.alumne) {
             if (errorEl) errorEl.style.display = 'none';
@@ -1774,7 +1779,7 @@
         };
 
         try {
-          const res = await fetch('/api/reserves', {
+          const res = await fetch(`${ROIG_API_BASE}/api/reserves`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

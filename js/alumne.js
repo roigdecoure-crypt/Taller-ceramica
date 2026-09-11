@@ -364,7 +364,7 @@ function renderDashboard(details) {
   // Actualitzar enllaços del Wallet i Carnet Digital
   const btnLinkPkpass = document.getElementById('btn-link-download-pkpass');
   if (btnLinkPkpass) {
-    btnLinkPkpass.href = `/api/wallet/pass?id=${encodeURIComponent(a.id)}`;
+    btnLinkPkpass.href = `${Store.apiBase || ''}/api/wallet/pass?id=${encodeURIComponent(a.id)}`;
   }
   const btnOpenCarnetWeb = document.getElementById('btn-open-carnet-web');
   if (btnOpenCarnetWeb) {
@@ -1105,7 +1105,7 @@ function setupEventListeners() {
     if (s && s.id) {
       const btnLinkPkpass = document.getElementById('btn-link-download-pkpass');
       if (btnLinkPkpass) {
-        btnLinkPkpass.href = `/api/wallet/pass?id=${encodeURIComponent(s.id)}`;
+        btnLinkPkpass.href = `${Store.apiBase || ''}/api/wallet/pass?id=${encodeURIComponent(s.id)}`;
       }
       const btnCarnetWeb = document.getElementById('btn-wallet-modal-carnet-link');
       if (btnCarnetWeb) {

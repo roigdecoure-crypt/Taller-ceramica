@@ -332,13 +332,26 @@
     el.textContent = dn[d.getDay()] + ', ' + p[2] + ' de ' + mn[d.getMonth()] + ' de ' + p[0];
   }
 
+  function getWebApiBase() {
+    if (typeof window.getRoigApiBase === 'function') {
+      return window.getRoigApiBase();
+    }
+    if (window.ROIG_API_BASE) return window.ROIG_API_BASE;
+    var host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+      return '';
+    }
+    return 'https://taller-ceramica-nb96.onrender.com';
+  }
+
   async function updateShiftSpots() {
     var sm = document.getElementById('spots-mati');
     var st = document.getElementById('spots-tarda');
     var max = CFG.capacities[booking.activity] || 4;
     if (!sm || !st || !booking.date) return;
     try {
-      var res = await fetch('/api/reserves/disponibilitat?data=' + booking.date + '&activitat=' + booking.activity);
+      var apiBase = getWebApiBase();
+      var res = await fetch(apiBase + '/api/reserves/disponibilitat?data=' + booking.date + '&activitat=' + booking.activity);
       if (res.ok) {
         var data = await res.json();
         if (data.ok && data.franges) {
@@ -378,7 +391,8 @@
       soc_alumne: isAlu ? 1 : 0, student_id: aluId.trim()
     };
     try {
-      var res = await fetch('/api/reserves', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      var apiBase = getWebApiBase();
+      var res = await fetch(apiBase + '/api/reserves', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       var r = await res.json();
       if (res.ok && r.ok) {
         showModal({ nom: nom, tel: tel, act: CFG.names[booking.activity], places: booking.numPersons,
