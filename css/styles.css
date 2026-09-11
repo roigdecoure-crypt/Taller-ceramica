@@ -222,6 +222,7 @@ button {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+  box-sizing: border-box;
 }
 .modal-backdrop.active {
   opacity: 1;
@@ -238,6 +239,7 @@ button {
   transform: translateY(20px);
   transition: transform 0.25s ease;
   padding: 24px;
+  box-sizing: border-box;
 }
 .modal-backdrop.active .modal-dialog {
   transform: translateY(0);
@@ -248,9 +250,25 @@ button {
   box-sizing: border-box;
 }
 @media (max-width: 600px) {
+  .modal-backdrop {
+    padding: 6px 3px !important;
+  }
+  .modal-dialog {
+    padding: 12px 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 12px) !important;
+    max-height: calc(100vh - 12px);
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+  }
   .modal-dialog-reserves {
-    width: 98% !important;
-    padding: 12px 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 8px 3px !important;
+    box-sizing: border-box !important;
+    max-height: calc(100dvh - 12px) !important;
+    max-height: calc(100vh - 12px);
   }
 }
 .modal-header {
@@ -600,26 +618,38 @@ table.data-table tr:hover td {
   color: var(--color-primary, #831D1D);
 }
 
-/* Adaptacions responsive per a mòbils (evita que el calendari sobresurti) */
+/* Adaptacions responsive per a mòbils (evita que el calendari o els modals sobresurtin) */
 @media (max-width: 600px) {
   .modal-dialog {
-    padding: 12px 6px !important;
-    width: 98% !important;
-    max-width: 98% !important;
+    padding: 12px 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 12px) !important;
+    max-height: calc(100vh - 12px);
+    box-sizing: border-box !important;
+  }
+  .res-booking-dialog {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 14px 10px !important;
+    box-sizing: border-box !important;
   }
   .res-calendar-card {
-    padding: 10px 4px !important;
+    padding: 8px 2px !important;
     border-radius: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    overflow-x: hidden;
   }
   .res-calendar-header {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
   .res-calendar-title {
-    font-size: 15px;
+    font-size: 14px;
     justify-content: center;
   }
   .res-calendar-nav-btns {
@@ -629,7 +659,7 @@ table.data-table tr:hover td {
   }
   .res-calendar-nav-btn {
     flex: 1;
-    padding: 6px 4px;
+    padding: 5px 3px;
     font-size: 11px;
     text-align: center;
   }
@@ -641,62 +671,101 @@ table.data-table tr:hover td {
   }
 
   .res-calendar-weekdays {
-    gap: 2px;
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 2px !important;
     margin-bottom: 4px;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
   }
   .res-calendar-weekday {
-    font-size: 9.5px;
-    padding: 4px 0;
-    letter-spacing: 0;
+    font-size: 9.5px !important;
+    font-weight: 700;
+    padding: 3px 0 !important;
+    letter-spacing: 0 !important;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
   }
   .res-calendar-weekday .wd-tag {
-    display: none;
+    display: none !important;
   }
 
   .res-calendar-grid {
-    gap: 2px;
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
   }
   .res-cal-day {
-    min-height: 52px;
-    padding: 3px 2px;
+    min-height: 48px !important;
+    padding: 2px 1px !important;
     border-radius: 4px;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden;
   }
   .res-cal-day .day-num {
-    font-size: 11px;
+    font-size: 10px !important;
+    font-weight: 700;
   }
   .res-cal-day.is-today .day-num {
-    width: 18px;
-    height: 18px;
-    font-size: 9px;
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 8px !important;
   }
   .res-cal-day .day-today-label {
-    font-size: 7px;
+    font-size: 6.5px !important;
     letter-spacing: -0.2px;
+    line-height: 1;
   }
   .res-cal-day .day-badge {
-    font-size: 8px;
-    padding: 1px 2px;
+    font-size: 7.5px !important;
+    padding: 1px 1px !important;
     letter-spacing: -0.2px;
+    border-radius: 3px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
   }
 }
 
 @media (max-width: 380px) {
+  .modal-backdrop {
+    padding: 4px 2px !important;
+  }
+  .modal-dialog {
+    padding: 10px 4px !important;
+  }
+  .modal-dialog-reserves {
+    padding: 6px 2px !important;
+  }
   .res-calendar-card {
-    padding: 8px 2px !important;
+    padding: 6px 1px !important;
   }
   .res-calendar-grid {
-    gap: 1.5px;
+    gap: 1.5px !important;
   }
   .res-cal-day {
-    min-height: 48px;
-    padding: 2px 1px;
+    min-height: 44px !important;
+    padding: 2px 0.5px !important;
   }
   .res-cal-day .day-num {
-    font-size: 10px;
+    font-size: 9.5px !important;
   }
   .res-cal-day .day-badge {
-    font-size: 7px;
-    padding: 1px 1px;
+    font-size: 6.5px !important;
+    padding: 0.5px 0.5px !important;
   }
 }
 .res-cal-day.empty {
