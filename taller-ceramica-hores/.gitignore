@@ -1,5 +1,0 @@
-*.xlsx
-__pycache__/
-*.pyc
-.DS_Store
-data/backups/*.db

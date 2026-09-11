@@ -1,13 +1,18 @@
 // sw.js - Service Worker per al Taller de Ceramica (Suport Offline, PWA i Notificacions Push)
-const CACHE_NAME = "taller-ceramica-v9.2";
+const CACHE_NAME = "taller-ceramica-v9.5";
 const ASSETS_TO_CACHE = [
   "./index.html",
+  "./reserva.html",
+  "./admin.html",
   "./alumne.html",
   "./carnet.html",
   "./scanner.html",
   "./manifest.json",
+  "./manifest-alumne.json",
   "./css/styles.css",
   "./css/card.css",
+  "./css/admin.css",
+  "./css/roigdecoure-web.css",
   "./fonts/buffalo.woff2",
   "./lib/qrcode.min.js",
   "./lib/html5-qrcode.min.js",
@@ -18,6 +23,8 @@ const ASSETS_TO_CACHE = [
   "./js/store.js",
   "./js/reserves-calendar.js",
   "./js/alumne.js",
+  "./js/admin.js",
+  "./js/roigdecoure-web.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

@@ -1,8 +1,0 @@
-{
-  "name": "taller-ceramica",
-  "private": true,
-  "scripts": {
-    "dev": "node dev-server.js",
-    "build": "echo 'No build step needed'"
-  }
-}
