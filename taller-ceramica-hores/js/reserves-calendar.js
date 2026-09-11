@@ -361,7 +361,7 @@ class ReservesCalendar {
         <div class="${cellClasses.join(' ')}" data-date="${dateStr}" ${isRest ? 'title="Tancat per descans setmanal (Dilluns i Dimarts). Obrim de Dimecres a Diumenge."' : ''}>
           <div class="day-header">
             <span class="day-num">${d}</span>
-            ${isToday ? '<span style="font-size:9px; font-weight:800; color:var(--color-primary);">AVUI</span>' : ''}
+            ${isToday ? '<span class="day-today-label">AVUI</span>' : ''}
           </div>
           <div>
             ${badgeHtml}
@@ -378,20 +378,20 @@ class ReservesCalendar {
             <span>${monthTitle}</span>
           </div>
           <div class="res-calendar-nav-btns">
-            <button type="button" class="res-calendar-nav-btn" id="btn-res-mes-ant">‹ Mes Anterior</button>
+            <button type="button" class="res-calendar-nav-btn" id="btn-res-mes-ant"><span class="btn-text-full">‹ Mes Anterior</span><span class="btn-text-short">‹ Ant.</span></button>
             <button type="button" class="res-calendar-nav-btn" id="btn-res-mes-avui">Avui</button>
-            <button type="button" class="res-calendar-nav-btn" id="btn-res-mes-seg">Mes Següent ›</button>
+            <button type="button" class="res-calendar-nav-btn" id="btn-res-mes-seg"><span class="btn-text-full">Mes Següent ›</span><span class="btn-text-short">Seg. ›</span></button>
           </div>
         </div>
 
         <div class="res-calendar-weekdays">
-          <div class="res-calendar-weekday closed">Dl (Tancat)</div>
-          <div class="res-calendar-weekday closed">Dt (Tancat)</div>
-          <div class="res-calendar-weekday">Dc (Obert)</div>
-          <div class="res-calendar-weekday">Dj (Obert)</div>
-          <div class="res-calendar-weekday">Dv (Obert)</div>
-          <div class="res-calendar-weekday">Ds (Obert)</div>
-          <div class="res-calendar-weekday">Dg (Obert)</div>
+          <div class="res-calendar-weekday closed" title="Dilluns tancat">Dl<span class="wd-tag"> (Tancat)</span></div>
+          <div class="res-calendar-weekday closed" title="Dimarts tancat">Dt<span class="wd-tag"> (Tancat)</span></div>
+          <div class="res-calendar-weekday" title="Dimecres obert">Dc<span class="wd-tag"> (Obert)</span></div>
+          <div class="res-calendar-weekday" title="Dijous obert">Dj<span class="wd-tag"> (Obert)</span></div>
+          <div class="res-calendar-weekday" title="Divendres obert">Dv<span class="wd-tag"> (Obert)</span></div>
+          <div class="res-calendar-weekday" title="Dissabte obert">Ds<span class="wd-tag"> (Obert)</span></div>
+          <div class="res-calendar-weekday" title="Diumenge obert">Dg<span class="wd-tag"> (Obert)</span></div>
         </div>
 
         <div class="res-calendar-grid">
@@ -1017,10 +1017,8 @@ class ReservesCalendar {
           ReservesCalendar.sendBookingPush(reservaObj);
 
           // 2. So de confirmació
-          if (typeof SoundEngine !== 'undefined' && SoundEngine.playSuccess) {
-            SoundEngine.playSuccess();
-          } else if (typeof Sound !== 'undefined' && Sound.playSuccess) {
-            Sound.playSuccess();
+          if (typeof SoundEngine !== 'undefined') {
+            SoundEngine.playCheckin();
           }
 
           // 3. Mostrar modal d'èxit amb coordinació de calendaris (Google Calendar / .ics)

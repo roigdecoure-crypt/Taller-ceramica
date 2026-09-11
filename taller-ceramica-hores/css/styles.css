@@ -242,6 +242,17 @@ button {
 .modal-backdrop.active .modal-dialog {
   transform: translateY(0);
 }
+.modal-dialog-reserves {
+  width: 96%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .modal-dialog-reserves {
+    width: 98% !important;
+    padding: 12px 6px !important;
+  }
+}
 .modal-header {
   display: flex;
   align-items: center;
@@ -485,6 +496,10 @@ table.data-table tr:hover td {
   padding: 18px;
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 .res-calendar-header {
   display: flex;
@@ -518,6 +533,10 @@ table.data-table tr:hover td {
   color: var(--color-dark);
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+}
+.res-calendar-nav-btn .btn-text-short {
+  display: none;
 }
 .res-calendar-nav-btn:hover {
   background: var(--color-primary-light);
@@ -528,10 +547,12 @@ table.data-table tr:hover td {
 /* Capçalera de Dies de la Setmana */
 .res-calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
   text-align: center;
   margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .res-calendar-weekday {
   font-size: 11px;
@@ -540,6 +561,9 @@ table.data-table tr:hover td {
   letter-spacing: 0.5px;
   color: var(--color-muted);
   padding: 6px 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .res-calendar-weekday.closed {
   color: #B0BEC5;
@@ -548,17 +572,14 @@ table.data-table tr:hover td {
 /* Graella de Cel·les del Calendari */
 .res-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-@media (max-width: 500px) {
-  .res-calendar-grid {
-    gap: 3px;
-  }
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  width: 100%;
+  box-sizing: border-box;
 }
 .res-cal-day {
   min-height: 72px;
-  padding: 6px;
+  padding: 5px 3px;
   border-radius: var(--radius-sm);
   border: 1px solid #ECE7E1;
   background: #FAFAFA;
@@ -569,11 +590,113 @@ table.data-table tr:hover td {
   transition: var(--transition);
   position: relative;
   text-align: left;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
 }
-@media (max-width: 500px) {
+.res-cal-day .day-today-label {
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--color-primary, #831D1D);
+}
+
+/* Adaptacions responsive per a mòbils (evita que el calendari sobresurti) */
+@media (max-width: 600px) {
+  .modal-dialog {
+    padding: 12px 6px !important;
+    width: 98% !important;
+    max-width: 98% !important;
+  }
+  .res-calendar-card {
+    padding: 10px 4px !important;
+    border-radius: 12px;
+    margin-bottom: 14px;
+  }
+  .res-calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .res-calendar-title {
+    font-size: 15px;
+    justify-content: center;
+  }
+  .res-calendar-nav-btns {
+    justify-content: space-between;
+    width: 100%;
+    gap: 4px;
+  }
+  .res-calendar-nav-btn {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 11px;
+    text-align: center;
+  }
+  .res-calendar-nav-btn .btn-text-full {
+    display: none;
+  }
+  .res-calendar-nav-btn .btn-text-short {
+    display: inline;
+  }
+
+  .res-calendar-weekdays {
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .res-calendar-weekday {
+    font-size: 9.5px;
+    padding: 4px 0;
+    letter-spacing: 0;
+  }
+  .res-calendar-weekday .wd-tag {
+    display: none;
+  }
+
+  .res-calendar-grid {
+    gap: 2px;
+  }
   .res-cal-day {
-    min-height: 60px;
-    padding: 4px;
+    min-height: 52px;
+    padding: 3px 2px;
+    border-radius: 4px;
+  }
+  .res-cal-day .day-num {
+    font-size: 11px;
+  }
+  .res-cal-day.is-today .day-num {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+  }
+  .res-cal-day .day-today-label {
+    font-size: 7px;
+    letter-spacing: -0.2px;
+  }
+  .res-cal-day .day-badge {
+    font-size: 8px;
+    padding: 1px 2px;
+    letter-spacing: -0.2px;
+  }
+}
+
+@media (max-width: 380px) {
+  .res-calendar-card {
+    padding: 8px 2px !important;
+  }
+  .res-calendar-grid {
+    gap: 1.5px;
+  }
+  .res-cal-day {
+    min-height: 48px;
+    padding: 2px 1px;
+  }
+  .res-cal-day .day-num {
+    font-size: 10px;
+  }
+  .res-cal-day .day-badge {
+    font-size: 7px;
+    padding: 1px 1px;
   }
 }
 .res-cal-day.empty {
