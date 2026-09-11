@@ -1184,7 +1184,11 @@ const Store = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ aforamentMaxim: val })
         });
-        return await res.json();
+        const json = await res.json();
+        const data = this._getLocalData();
+        data.config = { ...(data.config || {}), aforament_maxim_per_franja: String(val) };
+        this._saveLocalData(data);
+        return json;
       } catch (e) {
         console.warn('Error guardant aforament:', e);
       }
@@ -1220,7 +1224,15 @@ const Store = {
           body: JSON.stringify(dataToSend)
         });
         const json = await res.json();
-        if (json.ok) return json;
+        const data = this._getLocalData();
+        data.config = {
+          ...(data.config || {}),
+          capacitat_max_torn: String(dataToSend.capacitat_max_torn),
+          capacitat_max_modelatge: String(dataToSend.capacitat_max_modelatge),
+          capacitat_max_pintar: String(dataToSend.capacitat_max_pintar)
+        };
+        this._saveLocalData(data);
+        return json;
       } catch (e) {
         console.warn('Error guardant capacitats:', e);
       }
