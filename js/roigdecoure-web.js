@@ -54,7 +54,7 @@
 
     var currentIdx = 0;
     var timer = null;
-    var intervalDuration = 4500;
+    var intervalDuration = 9000;
 
     function goToSlide(idx) {
       slides.forEach(function (s, i) {
@@ -124,7 +124,7 @@
 
       var currentIdx = 0;
       var timer = null;
-      var intervalDuration = 4800 + (secIdx % 3) * 500;
+      var intervalDuration = 9500 + (secIdx % 3) * 1000;
 
       function nextSlide() {
         slides[currentIdx].classList.remove('active');
@@ -166,6 +166,7 @@
   function initNavigation() {
     var header = document.querySelector('.site-header');
     var toggle = document.getElementById('menu-toggle');
+    var backdrop = document.getElementById('nav-mobile-backdrop');
 
     window.addEventListener('scroll', function () {
       if (header) {
@@ -176,13 +177,23 @@
 
     if (toggle) {
       toggle.addEventListener('click', function () {
-        document.body.classList.toggle('nav-mobile-open');
-        this.setAttribute('aria-expanded', document.body.classList.contains('nav-mobile-open'));
+        var isOpen = document.body.classList.toggle('nav-mobile-open');
+        this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
     }
 
-    document.querySelectorAll('.nav-link').forEach(function (link) {
-      link.addEventListener('click', function () { document.body.classList.remove('nav-mobile-open'); });
+    if (backdrop) {
+      backdrop.addEventListener('click', function () {
+        document.body.classList.remove('nav-mobile-open');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    document.querySelectorAll('.nav-link, .nav-mobile-action-item a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        document.body.classList.remove('nav-mobile-open');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      });
     });
 
     document.querySelectorAll('[data-book-act]').forEach(function (btn) {

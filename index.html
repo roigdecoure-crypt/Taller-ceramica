@@ -29,15 +29,26 @@
           <li><a href="#tarifes" class="nav-link">Tarifes</a></li>
           <li><a href="#faq" class="nav-link">FAQ</a></li>
           <li><a href="#contacte" class="nav-link">Contacte</a></li>
+          <li class="nav-mobile-action-item">
+            <a href="#reserves" class="btn btn-primary btn-block">Reservar Plaça</a>
+          </li>
+          <li class="nav-mobile-action-item">
+            <a href="alumne.html" class="btn btn-outline btn-block">Portal de l'Alumne</a>
+          </li>
         </ul>
       </nav>
       <div class="nav-actions">
         <a href="alumne.html" class="btn btn-outline btn-sm">Portal Alumne</a>
         <a href="#reserves" class="btn btn-primary btn-sm">Reservar</a>
-        <button class="menu-toggle" id="menu-toggle" aria-label="Obrir menu" aria-expanded="false">Menu</button>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Menú de navegació" aria-expanded="false">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
       </div>
     </div>
   </header>
+  <div class="nav-mobile-backdrop" id="nav-mobile-backdrop" aria-hidden="true"></div>
 
   <section class="hero-section" id="inici">
     <div class="hero-bg-slider" id="hero-bg-slider">
@@ -99,13 +110,7 @@
   <!-- ================================================================
        2. ACTIVITATS - CARDS AMB REVEAL ESCALONAT
        ================================================================ -->
-  <section class="activities-section section-with-bg" id="activitats">
-    <div class="section-bg-slider">
-      <div class="section-bg-slide active" style="background-image: url('img/web/modelatge-escultura.jpg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/vidre-original.jpeg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/monografics-tetera.png');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/peces-pintar.png');"></div>
-    </div>
+  <section class="activities-section section-fixed-bg" id="activitats" style="background-image: url('img/web/classes-torn-modelatge.png');">
     <div class="section-bg-overlay"></div>
     <div class="container">
       <div class="section-header reveal">
@@ -224,20 +229,21 @@
         <!-- Monogràfics -->
         <div class="activity-card card-span-6 reveal delay-1">
           <div class="activity-card-media">
-            <img src="img/web/monografics-tetera.png" alt="Cursos monografics a Roig de Coure" class="activity-card-img" loading="lazy">
+            <img src="img/web/monografics-tetera.png" alt="Cursos monogràfics de ceràmica" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Monogràfics</span>
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Monogràfics</h3>
-            <p class="activity-card-desc">
-              Tallers tematics especialitzats per aprofundir en tecniques concretes:
-              construccio de teteres, peces escultoriques, esmaltatges i processos ceramica d'autor.
+            <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin: -4px 0 10px;">Què són els nostres monogràfics?</h4>
+            <p class="activity-card-desc" style="margin-bottom: 12px;">
+              Els monogràfics són cursos intensius on aprofundim en tècniques i temàtiques concretes de la ceràmica. Cada monogràfic té una durada determinada, normalment d’un a tres dies, i se centra en una àrea específica, com ara el modelat a mà, l’esmaltat, el torn o la creació de peces decoratives i utilitàries.
             </p>
-            <ul class="activity-features-list">
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Construccio de tetera artesanal</li>
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Tecniques especifiques i escultura</li>
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Places limitades per curs</li>
-            </ul>
+            <p style="font-size: 14px; font-weight: 600; color: var(--secondary); margin-bottom: 8px;">
+              En aquest espai anirem publicant els monogràfics que anem fent
+            </p>
+            <p style="font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 20px;">
+              Endinsa’t en el món de la ceràmica i descobreix tot el que pots crear amb les teves mans!
+            </p>
             <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20cursos%20monografics." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Monogràfics</a>
           </div>
         </div>
@@ -414,12 +420,7 @@
   <!-- ================================================================
        4. VAL REGAL
        ================================================================ -->
-  <section class="gift-section section-with-bg" id="val-regal">
-    <div class="section-bg-slider">
-      <div class="section-bg-slide active" style="background-image: url('img/web/peces-expo.jpeg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/vidre-fusing.jpeg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/monografics-tetera.png');"></div>
-    </div>
+  <section class="gift-section section-fixed-bg" id="val-regal" style="background-image: url('img/web/peces-expo.jpeg');">
     <div class="section-bg-overlay"></div>
     <div class="container">
       <div class="section-header reveal">
@@ -532,12 +533,7 @@
   <!-- ================================================================
        6. FAQ
        ================================================================ -->
-  <section class="faq-section section-with-bg" id="faq">
-    <div class="section-bg-slider">
-      <div class="section-bg-slide active" style="background-image: url('img/web/casals-infants.webp');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/grups-families-original.jpg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/pintar-ceramica-original.png');"></div>
-    </div>
+  <section class="faq-section section-fixed-bg" id="faq" style="background-image: url('img/web/casals-infants.webp');">
     <div class="section-bg-overlay"></div>
     <div class="container">
       <div class="section-header reveal">
@@ -576,12 +572,7 @@
   <!-- ================================================================
        7. CONTACTE & UBICACIO
        ================================================================ -->
-  <section class="contact-section section-with-bg" id="contacte">
-    <div class="section-bg-slider">
-      <div class="section-bg-slide active" style="background-image: url('img/web/taller-grups.jpg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/torn-banner.jpg');"></div>
-      <div class="section-bg-slide" style="background-image: url('img/web/peces-expo.jpeg');"></div>
-    </div>
+  <section class="contact-section section-fixed-bg" id="contacte" style="background-image: url('img/web/taller-grups.jpg');">
     <div class="section-bg-overlay"></div>
     <div class="container">
       <div class="section-header reveal">
