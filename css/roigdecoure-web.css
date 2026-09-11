@@ -198,20 +198,18 @@ img { max-width: 100%; height: auto; display: block; }
   box-shadow: 0 4px 24px rgba(42,36,33,0.12);
 }
 .nav-container { display: flex; align-items: center; justify-content: space-between; height: 74px; }
-.brand-wrapper { display: flex; align-items: center; text-decoration: none; }
+.brand-wrapper { display: flex; align-items: center; gap: 12px; text-decoration: none; }
 .brand-logo-img {
-  height: 48px; width: auto; max-width: 60px; object-fit: contain; display: block;
+  height: 44px; width: auto; max-width: 56px; object-fit: contain; display: block;
   transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
 }
-.brand-wrapper:hover .brand-logo-img { transform: scale(1.08); }
+.brand-wrapper:hover .brand-logo-img { transform: scale(1.06); }
 .brand-title {
-  font-family: var(--font-script); font-size: 28px; line-height: 1;
+  font-family: var(--font-script); font-size: 30px; line-height: 1;
   color: var(--primary); transition: var(--transition);
+  margin-top: 2px; white-space: nowrap;
 }
-.brand-subtitle {
-  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-  text-transform: uppercase; color: var(--secondary); margin-top: 2px;
-}
+.brand-wrapper:hover .brand-title { color: var(--primary-dark); }
 .main-nav {
   display: flex;
   align-items: center;
@@ -797,6 +795,8 @@ img { max-width: 100%; height: auto; display: block; }
 @media (max-width: 960px) {
   .nav-links { display: none; }
   .menu-toggle { display: flex; }
+  .brand-title { display: none !important; }
+  .brand-logo-img { height: 40px; max-width: 50px; }
 
   /* Teló de fons obscur per enfocar el menú desplegat */
   .nav-mobile-backdrop {
