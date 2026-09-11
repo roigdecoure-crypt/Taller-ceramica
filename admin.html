@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=9.0">
-  <link rel="stylesheet" href="css/admin.css?v=9.7">
+  <link rel="stylesheet" href="css/admin.css?v=9.8">
   <link rel="stylesheet" href="css/card.css?v=9.0">
   <script>
     function triggerOpenModal(modalId, specificFnName) {
@@ -269,14 +269,17 @@
         <div class="reserves-capacitats-group">
           <span style="font-size: 12px; font-weight: 700; color: #4B5563;">Activitats:</span>
           <div class="cap-act-item">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #B91C1C; display: inline-block;"></span>
             <span>Torn:</span>
             <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
           </div>
           <div class="cap-act-item">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #047857; display: inline-block;"></span>
             <span>Modelatge:</span>
             <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
           </div>
           <div class="cap-act-item">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: #1D4ED8; display: inline-block;"></span>
             <span>Pintar:</span>
             <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
           </div>
@@ -314,6 +317,21 @@
                   <button type="button" class="btn-cal-arrow" id="btn-cal-prev" title="Mes anterior">&lt;</button>
                   <button type="button" class="btn-cal-arrow" id="btn-cal-next" title="Mes següent">&gt;</button>
                 </div>
+              </div>
+              <!-- Llegenda visual d'activitats -->
+              <div class="cal-legend-row" style="display: flex; gap: 12px; align-items: center; padding: 5px 8px; background: rgba(0,0,0,0.12); border-radius: 5px; margin-top: 8px; font-size: 11px; flex-wrap: wrap;">
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #FFFFFF; font-weight: 600;">
+                  <span style="width: 10px; height: 10px; border-radius: 2px; background: #B91C1C; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
+                  Torn
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #FFFFFF; font-weight: 600;">
+                  <span style="width: 10px; height: 10px; border-radius: 2px; background: #047857; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
+                  Modelatge
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #FFFFFF; font-weight: 600;">
+                  <span style="width: 10px; height: 10px; border-radius: 2px; background: #1D4ED8; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
+                  Pintar ceràmica
+                </span>
               </div>
             </div>
             <div class="cal-grid-container">
@@ -2085,8 +2103,8 @@
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.1"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.7"></script>
-  <script src="js/reserves-calendar.js?v=9.7"></script>
-  <script src="js/admin.js?v=9.7"></script>
+  <script src="js/store.js?v=9.8"></script>
+  <script src="js/reserves-calendar.js?v=9.8"></script>
+  <script src="js/admin.js?v=9.8"></script>
 </body>
 </html>

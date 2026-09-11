@@ -953,9 +953,9 @@ def get_student_balance(student_id):
         }
 
 DEFAULT_ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#831D1D"},
-    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "", "color": "#5E7E6F"},
-    {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#831D1D"}
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#B91C1C"},
+    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "", "color": "#047857"},
+    {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#1D4ED8"}
 ]
 
 def get_activitats_config():
@@ -980,9 +980,9 @@ def get_activitats_config():
         pass
 
     return [
-        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "", "color": "#3B82F6"},
-        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "", "color": "#10B981"},
-        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "", "color": "#F59E0B"}
+        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "", "color": "#B91C1C"},
+        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "", "color": "#047857"},
+        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "", "color": "#1D4ED8"}
     ]
 
 # Propietat retrocompatible

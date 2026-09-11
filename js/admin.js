@@ -2661,13 +2661,13 @@ async function renderAdminDayAppointments(dateStr) {
     else if (aNom.includes('casal')) { actNom = 'Casal'; }
     else if (r.activitat) { actNom = r.activitat.trim(); }
 
-    let actBadgeStyle = 'background: #FEE2E2; color: #831D1D; border: 1px solid #FECACA;';
+    let actBadgeStyle = 'background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;';
     if (actNom === 'Modelatge') {
-      actBadgeStyle = 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;';
+      actBadgeStyle = 'background: #D1FAE5; color: #047857; border: 1px solid #A7F3D0;';
     } else if (actNom.toLowerCase().includes('pinta')) {
-      actBadgeStyle = 'background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE;';
+      actBadgeStyle = 'background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE;';
     } else if (actNom !== 'Torn') {
-      actBadgeStyle = 'background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;';
+      actBadgeStyle = 'background: #EDE9FE; color: #7C3AED; border: 1px solid #DDD6FE;';
     }
     const actBadge = `<span class="badge" style="${actBadgeStyle} font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 4px;">${escapeHtml(actNom)}</span>`;
 
