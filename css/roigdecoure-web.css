@@ -197,17 +197,18 @@ img { max-width: 100%; height: auto; display: block; }
   background: rgba(255,255,255,0.98);
   box-shadow: 0 4px 24px rgba(42,36,33,0.12);
 }
-.nav-container { display: flex; align-items: center; justify-content: space-between; height: 74px; }
-.brand-wrapper { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.nav-container { display: flex; align-items: center; justify-content: space-between; height: 78px; }
+.brand-wrapper { display: flex; align-items: center; gap: 14px; text-decoration: none; }
 .brand-logo-img {
-  height: 44px; width: auto; max-width: 56px; object-fit: contain; display: block;
+  height: 48px; width: auto; max-width: 60px; object-fit: contain; display: block;
   transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
 }
-.brand-wrapper:hover .brand-logo-img { transform: scale(1.06); }
+.brand-wrapper:hover .brand-logo-img { transform: scale(1.05); }
 .brand-title {
-  font-family: var(--font-script); font-size: 30px; line-height: 1;
+  font-family: var(--font-script); font-size: 50px; font-weight: 700; line-height: 1;
   color: var(--primary); transition: var(--transition);
-  margin-top: 2px; white-space: nowrap;
+  margin-top: 2px; white-space: nowrap; letter-spacing: 0.5px;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 .brand-wrapper:hover .brand-title { color: var(--primary-dark); }
 .main-nav {
@@ -830,8 +831,12 @@ img { max-width: 100%; height: auto; display: block; }
 
   .nav-links { display: none; }
   .menu-toggle { display: flex !important; }
-  .brand-title { display: none !important; }
-  .brand-logo-img { height: 40px !important; max-width: 50px !important; }
+  .brand-title {
+    display: inline-block !important;
+    font-size: 34px !important;
+    margin-top: 1px !important;
+  }
+  .brand-logo-img { height: 42px !important; max-width: 52px !important; }
 
   /* Teló de fons obscur per enfocar el menú desplegat */
   .nav-mobile-backdrop {
@@ -1027,11 +1032,16 @@ img { max-width: 100%; height: auto; display: block; }
   .hero-stats { gap: 24px; }
 }
 @media (max-width: 520px) {
-  .brand-logo-img { height: 38px; max-width: 48px; }
+  .brand-logo-img { height: 38px !important; max-width: 48px !important; }
+  .brand-title { font-size: 28px !important; }
   .nav-actions .btn-outline { display: none; }
   .footer-top { grid-template-columns: 1fr; }
   .shifts-grid { grid-template-columns: 1fr; }
   .hero-stats { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 360px) {
+  .brand-logo-img { height: 34px !important; max-width: 40px !important; }
+  .brand-title { font-size: 24px !important; }
 }
 @media print {
   .site-header, .hero-section, .activities-section, .marquee-section, .booking-section,
