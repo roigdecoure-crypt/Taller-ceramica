@@ -662,7 +662,8 @@ img { max-width: 100%; height: auto; display: block; }
 .gift-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
 .gift-preview-card {
   background: linear-gradient(135deg, #FAF7F4 0%, #F4EBE9 100%);
-  border: 2px dashed var(--primary); border-radius: var(--radius-md);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(42, 36, 33, 0.08);
   padding: 40px 32px; text-align: center; position: relative;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
 }
