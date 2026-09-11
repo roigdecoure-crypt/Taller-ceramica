@@ -309,6 +309,19 @@ function renderDashboard(details) {
   document.getElementById('portal-total-bought').textContent = bal.formatBought;
   document.getElementById('portal-total-spent').textContent = bal.formatSpent;
 
+  // Requadre de saldo: verd corporatiu si positiu, coure/roig si negatiu
+  const balanceCard = document.getElementById('portal-balance-card');
+  if (balanceCard) {
+    const isNeg = Boolean(bal.isNegative || (bal.balanceSeconds !== undefined && bal.balanceSeconds < 0));
+    if (isNeg) {
+      balanceCard.classList.remove('is-positive');
+      balanceCard.classList.add('is-negative');
+    } else {
+      balanceCard.classList.remove('is-negative');
+      balanceCard.classList.add('is-positive');
+    }
+  }
+
   // Estat al taller en viu
   const liveStatusEl = document.getElementById('portal-live-status');
   if (liveSessionInterval) clearInterval(liveSessionInterval);

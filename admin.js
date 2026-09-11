@@ -2,14 +2,6 @@
  * admin.js - Lògica del Panell d'Administració 360° per al Taller de Ceràmica
  */
 
-// SoundEngine stub - evita errors quan es criden sons no implementats
-const SoundEngine = {
-  playCheckin: function() {},
-  playCheckout: function() {},
-  playSuccess: function() {},
-  playError: function() {}
-};
-
 let allStudents = [];
 let currentViewingStudent = null;
 let liveTimerInterval = null;
@@ -1884,7 +1876,7 @@ function updateBrandPreview() {
   }
   const balanceCard = document.getElementById('preview-balance-card');
   if (balanceCard) {
-    balanceCard.style.background = prim;
+    balanceCard.style.background = 'var(--color-secondary, #5E7E6F)';
   }
   const btnSample = document.getElementById('preview-btn-sample');
   if (btnSample) {
@@ -2730,7 +2722,7 @@ async function handleAdminSubmitNovaReserva(e) {
 
       if (res && res.ok) {
         showToast(res.message || `Sèrie de ${res.total_creades} reserves recurrents creada amb èxit!`, 'success');
-        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
         closeAdminNovaReservaModal();
 
         adminSelectedDate = dataRes;
@@ -2769,7 +2761,7 @@ async function handleAdminSubmitNovaReserva(e) {
 
       if (res && res.ok) {
         showToast(`Reserva confirmada amb èxit per a ${studentNom}!`, 'success');
-        if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+        if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
         closeAdminNovaReservaModal();
 
         adminSelectedDate = dataRes;

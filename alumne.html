@@ -22,7 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="css/styles.css?v=7.3">
+  <link rel="stylesheet" href="css/styles.css?v=7.4">
   <link rel="stylesheet" href="css/card.css">
   <style>
     @font-face {
@@ -171,12 +171,19 @@
       text-align: center;
     }
     .balance-card-student {
-      background: var(--color-primary, #831D1D);
+      background: var(--color-secondary, #5E7E6F);
       color: #FFF;
       border-radius: var(--radius-lg);
       padding: 24px;
       margin-bottom: 24px;
       box-shadow: var(--shadow-md);
+      transition: background 0.35s ease, box-shadow 0.35s ease;
+    }
+    .balance-card-student.is-positive {
+      background: var(--color-secondary, #5E7E6F);
+    }
+    .balance-card-student.is-negative {
+      background: var(--color-primary, #831D1D);
     }
     .balance-main-num {
       font-size: 40px;
@@ -423,14 +430,14 @@
       </div>
 
       <!-- Resum de Saldo Hero -->
-      <div class="balance-card-student">
-        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #D3CBC4; margin-bottom: 4px;">
+      <div class="balance-card-student is-positive" id="portal-balance-card">
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.85); margin-bottom: 4px;">
           El Teu Saldo d'Hores Disponible
         </div>
         <div class="balance-main-num" id="portal-balance-hms">00:00:00</div>
-        <div style="font-size: 16px; color: #F7EAE5; margin-bottom: 16px;" id="portal-balance-human">0h 0m 0s restants</div>
+        <div style="font-size: 16px; color: rgba(255,255,255,0.95); margin-bottom: 16px;" id="portal-balance-human">0h 0m 0s restants</div>
         
-        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #D3CBC4; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.85); border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px;">
           <span>Hores Totals Adquirides: <strong id="portal-total-bought" style="color:#FFF;">00:00:00</strong></span>
           <span>Hores Consumides: <strong id="portal-total-spent" style="color:#FFF;">00:00:00</strong></span>
         </div>
@@ -884,6 +891,6 @@
   <script src="js/qr-engine.js?v=7.1"></script>
   <script src="js/store.js?v=7.1"></script>
   <script src="js/reserves-calendar.js?v=7.3"></script>
-  <script src="js/alumne.js?v=7.3"></script>
+  <script src="js/alumne.js?v=7.4"></script>
 </body>
 </html>

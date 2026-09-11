@@ -1876,7 +1876,7 @@ function updateBrandPreview() {
   }
   const balanceCard = document.getElementById('preview-balance-card');
   if (balanceCard) {
-    balanceCard.style.background = prim;
+    balanceCard.style.background = 'var(--color-secondary, #5E7E6F)';
   }
   const btnSample = document.getElementById('preview-btn-sample');
   if (btnSample) {
