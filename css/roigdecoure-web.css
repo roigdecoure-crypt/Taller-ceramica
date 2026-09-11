@@ -197,7 +197,7 @@ img { max-width: 100%; height: auto; display: block; }
   background: rgba(255,255,255,0.98);
   box-shadow: 0 4px 24px rgba(42,36,33,0.12);
 }
-.nav-container { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+.nav-container { display: flex; align-items: center; justify-content: space-between; height: 74px; }
 .brand-wrapper { display: flex; align-items: center; text-decoration: none; }
 .brand-logo-img {
   height: 44px; width: auto; max-width: 220px; object-fit: contain; display: block;
@@ -212,10 +212,18 @@ img { max-width: 100%; height: auto; display: block; }
   font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
   text-transform: uppercase; color: var(--secondary); margin-top: 2px;
 }
-.nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+.main-nav {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 42px;
+}
+.nav-links { display: flex; align-items: center; gap: 36px; list-style: none; margin: 0; padding: 0; }
 .nav-link {
-  font-size: 14px; font-weight: 600; color: var(--dark);
-  transition: var(--transition); position: relative; padding: 6px 0;
+  font-size: 16px; font-weight: 700; color: var(--primary);
+  transition: var(--transition); position: relative; padding: 8px 0;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+  letter-spacing: -0.1px;
 }
 .nav-link::after {
   content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
@@ -223,8 +231,92 @@ img { max-width: 100%; height: auto; display: block; }
   transition: left 0.3s ease, right 0.3s ease;
 }
 .nav-link:hover::after, .nav-link.active::after { left: 0; right: 0; }
-.nav-link:hover { color: var(--primary); }
-.nav-actions { display: flex; align-items: center; gap: 10px; }
+.nav-link:hover { color: var(--primary-dark); }
+
+/* Activitats Dropdown */
+.nav-item-dropdown {
+  position: relative;
+}
+.dropdown-chevron {
+  stroke: currentColor;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 1px;
+}
+.nav-item-dropdown:hover .dropdown-chevron,
+.nav-item-dropdown.open .dropdown-chevron {
+  transform: rotate(180deg);
+}
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 16px 36px rgba(42, 36, 33, 0.12);
+  min-width: 220px;
+  padding: 8px 0;
+  list-style: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
+  z-index: 1005;
+}
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+.nav-item-dropdown:hover .dropdown-menu,
+.nav-item-dropdown.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.dropdown-item {
+  display: block;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+  text-decoration: none;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.dropdown-item:hover {
+  background-color: #FAF7F4;
+  color: var(--primary);
+  padding-left: 26px;
+}
+
+/* Nav Actions (WhatsApp icon & Mobile Toggle) */
+.nav-actions { display: flex; align-items: center; gap: 14px; }
+.nav-whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  text-decoration: none;
+  padding: 3px;
+  border-radius: 50%;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease, filter 0.25s ease;
+}
+.nav-whatsapp-link:hover {
+  transform: scale(1.12);
+  color: var(--primary-dark);
+  filter: drop-shadow(0 4px 10px rgba(113, 22, 33, 0.25));
+}
+.nav-whatsapp-svg {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
 .menu-toggle {
   display: none;
   background: #FFFFFF;
@@ -768,6 +860,39 @@ img { max-width: 100%; height: auto; display: block; }
     background-color: #F8F5F1;
     color: var(--primary) !important;
     padding-left: 18px;
+  }
+
+  /* Desplegable d'activitats al menú mòbil */
+  .main-nav { margin: 0; }
+  .nav-mobile-open .nav-item-dropdown .dropdown-menu {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    background: #FAF7F4;
+    padding: 6px 0 10px 18px;
+    display: none;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .nav-mobile-open .nav-item-dropdown.open .dropdown-menu {
+    display: block;
+  }
+  .nav-mobile-open .nav-item-dropdown.open .dropdown-chevron {
+    transform: rotate(180deg);
+  }
+  .nav-mobile-open .dropdown-item {
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dark);
+    display: block;
+  }
+  .nav-mobile-open .dropdown-item:hover {
+    color: var(--primary);
+    background: transparent;
   }
 
   /* Botons d'acció al desplegable mòbil */

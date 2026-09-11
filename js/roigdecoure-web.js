@@ -139,11 +139,37 @@
       });
     }
 
-    document.querySelectorAll('.nav-link, .nav-mobile-action-item a').forEach(function (link) {
+    // Dropdown toggle for Activitats
+    var actToggle = document.getElementById('activitats-toggle');
+    var actDropdown = document.querySelector('.nav-item-dropdown');
+
+    if (actToggle && actDropdown) {
+      actToggle.addEventListener('click', function (e) {
+        if (window.innerWidth <= 960) {
+          e.preventDefault();
+          actDropdown.classList.toggle('open');
+          var isOpen = actDropdown.classList.contains('open');
+          actToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+      });
+    }
+
+    document.querySelectorAll('.nav-link:not(.dropdown-toggle), .dropdown-item, .nav-mobile-action-item a').forEach(function (link) {
       link.addEventListener('click', function () {
         document.body.classList.remove('nav-mobile-open');
         if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (actDropdown) {
+          actDropdown.classList.remove('open');
+          if (actToggle) actToggle.setAttribute('aria-expanded', 'false');
+        }
       });
+    });
+
+    document.addEventListener('click', function (e) {
+      if (actDropdown && !actDropdown.contains(e.target)) {
+        actDropdown.classList.remove('open');
+        if (actToggle) actToggle.setAttribute('aria-expanded', 'false');
+      }
     });
 
     document.querySelectorAll('[data-book-act]').forEach(function (btn) {
