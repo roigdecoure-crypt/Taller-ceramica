@@ -2885,6 +2885,7 @@ function initAdminAuth() {
   const pinInput = document.getElementById('input-admin-pin');
   const pinError = document.getElementById('admin-pin-error');
   const logoutBtn = document.getElementById('btn-sidebar-logout');
+  const submitBtn = document.getElementById('btn-submit-admin-pin');
 
   const togglePinBtn = document.getElementById('btn-toggle-admin-pin');
   if (togglePinBtn && pinInput) {
