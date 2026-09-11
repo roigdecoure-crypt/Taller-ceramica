@@ -461,14 +461,12 @@
   function initGiftVoucher() {
     var expSel = document.getElementById('gift-exp-select');
     var prevExp = document.getElementById('preview-gift-exp');
-    var prevCode = document.getElementById('preview-gift-code');
 
     function upd() {
       if (prevExp && expSel) prevExp.textContent = expSel.options[expSel.selectedIndex].text;
     }
 
     if (expSel) expSel.addEventListener('change', upd);
-    if (prevCode) prevCode.textContent = 'RDC-' + new Date().getFullYear() + '-' + (1000 + Math.floor(Math.random() * 9000));
 
     var payBtn = document.getElementById('gift-pay-btn');
     if (payBtn) payBtn.addEventListener('click', function (e) {
