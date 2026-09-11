@@ -2366,7 +2366,88 @@ async function renderAdminCalendar() {
 
     let badgesHtml = '';
     if (count > 0) {
-      badgesHtml += `<div class="cal-day-badge" title="${count} ${count === 1 ? 'reserva' : 'reserves'}"><span class="badge-full">${count} ${count === 1 ? 'Reserva' : 'Reserves'}</span><span class="badge-short">${count} res.</span></div>`;
+      // Agrupar reserves del dia per activitat
+      const actBreakdown = {};
+      dayRes.forEach(r => {
+        let act = 'Torn';
+        const aId = (r.activitat_id || '').toLowerCase();
+        const aNom = (r.activitat || '').toLowerCase();
+        if (aId === 'modelatge' || aNom.includes('modelat')) act = 'Modelatge';
+        else if (aId === 'pintar' || aNom.includes('pinta')) act = 'Pintar';
+        else if (aId === 'torn' || aNom.includes('torn')) act = 'Torn';
+        else if (aNom.includes('monogr')) act = 'Monogràfic';
+        else if (aNom.includes('casal')) act = 'Casal';
+        else if (r.activitat) act = r.activitat.trim();
+
+        if (!actBreakdown[act]) {
+          actBreakdown[act] = { count: 0, places: 0 };
+        }
+        actBreakdown[act].count++;
+        actBreakdown[act].places += (parseInt(r.places, 10) || 1);
+      });
+
+      const actKeys = Object.keys(actBreakdown);
+      const summaryParts = actKeys.map(k => {
+        const item = actBreakdown[k];
+        return `${item.count} ${k}${item.places > item.count ? ` (${item.places} pl.)` : ''}`;
+      });
+      const titleAttr = `${count} ${count === 1 ? 'reserva' : 'reserves'}: ${summaryParts.join(', ')}`;
+
+      const getActClass = (act) => {
+        const a = act.toLowerCase();
+        if (a.includes('torn')) return 'act-torn';
+        if (a.includes('modelat')) return 'act-modelatge';
+        if (a.includes('pinta')) return 'act-pintar';
+        return 'act-altres';
+      };
+
+      const getActShort = (act) => {
+        const a = act.toLowerCase();
+        if (a.includes('torn')) return 'T';
+        if (a.includes('modelat')) return 'M';
+        if (a.includes('pinta')) return 'P';
+        return act.charAt(0).toUpperCase();
+      };
+
+      badgesHtml += `<div class="cal-day-badges-wrap" title="${escapeHtml(titleAttr)}">`;
+
+      if (actKeys.length <= 3) {
+        actKeys.forEach(act => {
+          const item = actBreakdown[act];
+          const actCls = getActClass(act);
+          const shortCode = getActShort(act);
+          const fullLabel = `${item.count} ${act}`;
+          const shortLabel = `${item.count}${shortCode}`;
+
+          badgesHtml += `
+            <div class="cal-day-badge ${actCls}" title="${item.count} ${item.count === 1 ? 'reserva' : 'reserves'} de ${escapeHtml(act)}">
+              <span class="badge-full">${escapeHtml(fullLabel)}</span>
+              <span class="badge-short">${escapeHtml(shortLabel)}</span>
+            </div>
+          `;
+        });
+      } else {
+        actKeys.slice(0, 2).forEach(act => {
+          const item = actBreakdown[act];
+          const actCls = getActClass(act);
+          const shortCode = getActShort(act);
+          badgesHtml += `
+            <div class="cal-day-badge ${actCls}">
+              <span class="badge-full">${item.count} ${escapeHtml(act)}</span>
+              <span class="badge-short">${item.count}${shortCode}</span>
+            </div>
+          `;
+        });
+        const restCount = actKeys.slice(2).reduce((acc, k) => acc + actBreakdown[k].count, 0);
+        badgesHtml += `
+          <div class="cal-day-badge act-altres">
+            <span class="badge-full">+${restCount} altres</span>
+            <span class="badge-short">+${restCount}</span>
+          </div>
+        `;
+      }
+
+      badgesHtml += `</div>`;
     }
     if (isClosed && count === 0) {
       if (isCustomHoliday) {
@@ -2520,7 +2601,26 @@ async function renderAdminDayAppointments(dateStr) {
 
   const activeReserves = reserves.filter(r => r.estat !== 'cancel·lada');
   if (countDisplay) {
-    countDisplay.textContent = `Llista de Reserves (${activeReserves.length})`;
+    if (activeReserves.length > 0) {
+      const actBreakdown = {};
+      activeReserves.forEach(r => {
+        let act = 'Torn';
+        const aId = (r.activitat_id || '').toLowerCase();
+        const aNom = (r.activitat || '').toLowerCase();
+        if (aId === 'modelatge' || aNom.includes('modelat')) act = 'Modelatge';
+        else if (aId === 'pintar' || aNom.includes('pinta')) act = 'Pintar ceràmica';
+        else if (aId === 'torn' || aNom.includes('torn')) act = 'Torn';
+        else if (aNom.includes('monogr')) act = 'Monogràfic';
+        else if (aNom.includes('casal')) act = 'Casal';
+        else if (r.activitat) act = r.activitat.trim();
+
+        actBreakdown[act] = (actBreakdown[act] || 0) + (parseInt(r.places, 10) || 1);
+      });
+      const parts = Object.entries(actBreakdown).map(([act, n]) => `${n} ${act}`);
+      countDisplay.textContent = `Llista de Reserves (${activeReserves.length}) \u2014 ${parts.join(', ')}`;
+    } else {
+      countDisplay.textContent = `Llista de Reserves (0)`;
+    }
   }
 
   if (!tableBody) return;
@@ -2552,8 +2652,24 @@ async function renderAdminDayAppointments(dateStr) {
     const slotDesc = (r.hora_inici && r.hora_fi) ? `${r.hora_inici} - ${r.hora_fi}` : (r.franja_id || '');
 
     let actNom = 'Torn';
-    if (r.activitat_id === 'modelatge') { actNom = 'Modelatge'; }
-    else if (r.activitat_id === 'pintar') { actNom = 'Pintar ceràmica'; }
+    const aId = (r.activitat_id || '').toLowerCase();
+    const aNom = (r.activitat || '').toLowerCase();
+    if (aId === 'modelatge' || aNom.includes('modelat')) { actNom = 'Modelatge'; }
+    else if (aId === 'pintar' || aNom.includes('pinta')) { actNom = 'Pintar ceràmica'; }
+    else if (aId === 'torn' || aNom.includes('torn')) { actNom = 'Torn'; }
+    else if (aNom.includes('monogr')) { actNom = 'Monogràfic'; }
+    else if (aNom.includes('casal')) { actNom = 'Casal'; }
+    else if (r.activitat) { actNom = r.activitat.trim(); }
+
+    let actBadgeStyle = 'background: #FEE2E2; color: #831D1D; border: 1px solid #FECACA;';
+    if (actNom === 'Modelatge') {
+      actBadgeStyle = 'background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;';
+    } else if (actNom.toLowerCase().includes('pinta')) {
+      actBadgeStyle = 'background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE;';
+    } else if (actNom !== 'Torn') {
+      actBadgeStyle = 'background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;';
+    }
+    const actBadge = `<span class="badge" style="${actBadgeStyle} font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 4px;">${escapeHtml(actNom)}</span>`;
 
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
     const isValRegal = r.val_regal === 1 || (r.notes && r.notes.includes('VAL REGAL'));
@@ -2567,7 +2683,7 @@ async function renderAdminDayAppointments(dateStr) {
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actNom} ${placesBadge} ${valRegalBadge} ${recurrentBadge}
+            ${slotDesc} &bull; ${actBadge} ${placesBadge} ${valRegalBadge} ${recurrentBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>
