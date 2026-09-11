@@ -386,126 +386,14 @@ img { max-width: 100%; height: auto; display: block; }
 .scroll-text { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.5); }
 
 /* ==========================================================================
-   FONS FOTOGRÀFIC DINÀMIC PER A TOTES LES SECCIONS
+   FORMULARIS ESPECÍFICS (VAL REGAL I CONTACTE)
    ========================================================================== */
-.section-with-bg {
-  position: relative;
-  overflow: hidden;
-  background: #201B18 !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-.section-with-bg > .container,
-.section-fixed-bg > .container {
-  position: relative;
-  z-index: 2;
-}
-.section-bg-slider {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.section-bg-slide {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  opacity: 0;
-  transform: scale(1.04);
-  transition: opacity 2.8s cubic-bezier(0.4, 0, 0.2, 1), transform 16s ease-out;
-  will-change: opacity, transform;
-}
-.section-bg-slide.active {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Seccions amb fons fotogràfic fix (alternança calmada i serena) */
-.section-fixed-bg {
-  position: relative;
-  overflow: hidden;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: #201B18;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-@media (max-width: 768px) {
-  .section-fixed-bg {
-    background-attachment: scroll;
-  }
-}
-
-/* Capa de fons: MENYS vermellosa, més clara i lluminosa */
-.section-bg-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(170deg, rgba(26, 22, 19, 0.58) 0%, rgba(35, 30, 26, 0.50) 50%, rgba(22, 18, 16, 0.62) 100%);
-}
-
-/* Encapçalaments sobre fons fotogràfic */
-.section-with-bg .section-header h2,
-.section-fixed-bg .section-header h2 {
-  color: #FFFFFF !important;
-  text-shadow: 0 2px 14px rgba(0,0,0,0.5);
-}
-.section-with-bg .section-header p,
-.section-fixed-bg .section-header p {
-  color: rgba(255, 255, 255, 0.92) !important;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.4);
-}
-.section-with-bg .eyebrow,
-.section-fixed-bg .eyebrow {
-  background: rgba(255, 255, 255, 0.16) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #FFD2C2 !important;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  padding: 6px 16px;
-  border-radius: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-
-/* Targetes i blocs sobre fons fotogràfic */
-.section-with-bg .activity-card,
-.section-fixed-bg .activity-card {
-  background: #FFFFFF !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
-}
-.section-with-bg .booking-wrapper,
-.section-fixed-bg .booking-wrapper {
-  background: #FFFFFF !important;
-  box-shadow: 0 16px 44px rgba(0,0,0,0.28);
-}
 .gift-form-card {
   background: #FFFFFF;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 36px 32px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
-}
-.section-with-bg .gift-preview-card {
-  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
-}
-.section-with-bg .pricing-card {
-  background: #FFFFFF !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.22);
-}
-.section-with-bg .pricing-included-box {
-  background: #FFFFFF !important;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
-}
-.section-with-bg .faq-accordion {
-  background: #FFFFFF;
-  border-radius: var(--radius-md);
-  padding: 12px 32px;
-  box-shadow: 0 14px 36px rgba(0,0,0,0.25);
-  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 .contact-form-card {
   max-width: 620px;
@@ -514,7 +402,7 @@ img { max-width: 100%; height: auto; display: block; }
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 36px 32px;
-  box-shadow: 0 14px 36px rgba(0,0,0,0.25);
+  box-shadow: var(--shadow-sm);
 }
 .contact-form-card h3 {
   color: var(--dark);
