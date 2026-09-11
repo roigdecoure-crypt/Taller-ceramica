@@ -1717,7 +1717,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/scanner.html' + query_str
             elif clean_path == '/landing':
                 self.path = '/landing.html' + query_str
-            elif clean_path in ('/web', '/torn', '/pintar', '/vidre', '/grups', '/casals', '/val-regal', '/tarifes', '/contacte', '/faq'):
+            elif clean_path in ('/web', '/activitats', '/torn', '/modelatge', '/pintar', '/vidre', '/grups', '/monografics', '/casals', '/val-regal', '/tarifes', '/contacte', '/faq'):
                 self.path = '/index.html' + query_str
             return super().do_GET()
 

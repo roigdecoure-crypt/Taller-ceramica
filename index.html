@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <meta name="theme-color" content="#831D1D">
-  <link rel="stylesheet" href="css/roigdecoure-web.css">
+  <link rel="stylesheet" href="css/roigdecoure-web.css?v=2.1">
 </head>
 <body>
 
@@ -32,13 +32,13 @@
               </svg>
             </a>
             <ul class="dropdown-menu" id="activitats-dropdown-menu" aria-label="Llista d'activitats">
-              <li><a href="#activitats" class="dropdown-item" data-book-act="torn">Torn</a></li>
-              <li><a href="#activitats" class="dropdown-item" data-book-act="modelatge">Modelatge</a></li>
-              <li><a href="#activitats" class="dropdown-item" data-book-act="pintar">Pintar Ceràmica</a></li>
-              <li><a href="#activitats" class="dropdown-item" data-book-act="vidre">Fusió de Vidre</a></li>
-              <li><a href="#activitats" class="dropdown-item">Grups i Famílies</a></li>
-              <li><a href="#activitats" class="dropdown-item">Monogràfics</a></li>
-              <li><a href="#activitats" class="dropdown-item">Casals</a></li>
+              <li><a href="#torn" class="dropdown-item">Torn</a></li>
+              <li><a href="#modelatge" class="dropdown-item">Modelatge</a></li>
+              <li><a href="#pintar" class="dropdown-item">Pintar Ceràmica</a></li>
+              <li><a href="#vidre" class="dropdown-item">Fusió de Vidre</a></li>
+              <li><a href="#grups" class="dropdown-item">Grups i Famílies</a></li>
+              <li><a href="#monografics" class="dropdown-item">Monogràfics</a></li>
+              <li><a href="#casals" class="dropdown-item">Casals</a></li>
             </ul>
           </li>
           <li><a href="#val-regal" class="nav-link">Val regal</a></li>
@@ -143,7 +143,7 @@
       <div class="activities-grid-showcase">
 
         <!-- Torn -->
-        <div class="activity-card card-span-6 reveal delay-1">
+        <div class="activity-card card-span-6 reveal delay-1" id="torn">
           <div class="activity-card-media">
             <img src="img/web/classes-torn-modelatge.png" alt="Torn i Modelatge al taller Roig de Coure" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Fins a 4 torns</span>
@@ -164,7 +164,7 @@
         </div>
 
         <!-- Modelatge -->
-        <div class="activity-card card-span-6 reveal delay-2">
+        <div class="activity-card card-span-6 reveal delay-2" id="modelatge">
           <div class="activity-card-media">
             <img src="img/web/modelatge-escultura.jpg" alt="Modelatge ceràmic al taller" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Fins a 8 places</span>
@@ -185,7 +185,7 @@
         </div>
 
         <!-- Pintar -->
-        <div class="activity-card card-span-4 reveal delay-3">
+        <div class="activity-card card-span-4 reveal delay-3" id="pintar">
           <div class="activity-card-media">
             <img src="img/web/pintar-ceramica-original.png" alt="Pintar ceramica al taller" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Fins a 12 places</span>
@@ -206,7 +206,7 @@
         </div>
 
         <!-- Vidre -->
-        <div class="activity-card card-span-4 reveal delay-4">
+        <div class="activity-card card-span-4 reveal delay-4" id="vidre">
           <div class="activity-card-media">
             <img src="img/web/vidre-fusing.jpeg" alt="Fusio de vidre al taller" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Fins a 6 places</span>
@@ -227,7 +227,7 @@
         </div>
 
         <!-- Grups i Famílies -->
-        <div class="activity-card card-span-4 reveal delay-5">
+        <div class="activity-card card-span-4 reveal delay-5" id="grups">
           <div class="activity-card-media">
             <img src="img/web/grups-families-original.jpg" alt="Grups i families al taller Roig de Coure" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Grups de 4 a 15</span>
@@ -248,7 +248,7 @@
         </div>
 
         <!-- Monogràfics -->
-        <div class="activity-card card-span-6 reveal delay-1">
+        <div class="activity-card card-span-6 reveal delay-1" id="monografics">
           <div class="activity-card-media">
             <img src="img/web/monografics-tetera.png" alt="Cursos monogràfics de ceràmica" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">Monogràfics</span>
@@ -270,7 +270,7 @@
         </div>
 
         <!-- Casals -->
-        <div class="activity-card card-span-6 reveal delay-2">
+        <div class="activity-card card-span-6 reveal delay-2" id="casals">
           <div class="activity-card-media">
             <img src="img/web/casals-infants.webp" alt="Casals infantils de ceramica i vidre a Olot" class="activity-card-img" loading="lazy">
             <span class="activity-card-capacity">De 6 a 15 anys</span>
@@ -661,13 +661,13 @@
         <div class="footer-col">
           <h5>Activitats</h5>
           <ul>
-            <li><a href="#activitats">Torn</a></li>
-            <li><a href="#activitats">Modelatge</a></li>
-            <li><a href="#activitats">Pintar Ceramica</a></li>
-            <li><a href="#activitats">Fusio de Vidre</a></li>
-            <li><a href="#activitats">Grups i Families</a></li>
-            <li><a href="#activitats">Monogràfics</a></li>
-            <li><a href="#activitats">Casals</a></li>
+            <li><a href="#torn">Torn</a></li>
+            <li><a href="#modelatge">Modelatge</a></li>
+            <li><a href="#pintar">Pintar Ceràmica</a></li>
+            <li><a href="#vidre">Fusió de Vidre</a></li>
+            <li><a href="#grups">Grups i Famílies</a></li>
+            <li><a href="#monografics">Monogràfics</a></li>
+            <li><a href="#casals">Casals</a></li>
           </ul>
         </div>
         <div class="footer-col">
@@ -712,6 +712,6 @@
   </div>
 
   <script src="js/api-config.js?v=7.5"></script>
-  <script src="js/roigdecoure-web.js"></script>
+  <script src="js/roigdecoure-web.js?v=2.1"></script>
 </body>
 </html>

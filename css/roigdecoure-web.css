@@ -42,7 +42,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; scroll-padding-top: 85px; }
 
 body {
   font-family: var(--font-sans);
@@ -526,6 +526,7 @@ img { max-width: 100%; height: auto; display: block; }
 }
 
 .activity-card {
+  scroll-margin-top: 90px;
   background: var(--light); border: 1px solid var(--border); border-radius: var(--radius-md);
   overflow: hidden; display: flex; flex-direction: column;
   transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s ease;
@@ -534,6 +535,11 @@ img { max-width: 100%; height: auto; display: block; }
 .activity-card:hover {
   transform: translateY(-10px) scale(1.02);
   box-shadow: var(--shadow-xl);
+}
+.activity-card:target {
+  opacity: 1 !important;
+  box-shadow: 0 0 0 3px var(--primary), var(--shadow-xl);
+  transform: translateY(-6px);
 }
 .activity-card-media {
   position: relative; height: 240px; overflow: hidden; background: #DDD5CD;

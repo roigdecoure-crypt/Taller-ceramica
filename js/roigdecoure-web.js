@@ -162,8 +162,25 @@
           actDropdown.classList.remove('open');
           if (actToggle) actToggle.setAttribute('aria-expanded', 'false');
         }
+
+        var href = this.getAttribute('href');
+        if (href && href.startsWith('#') && href.length > 1) {
+          try {
+            var targetEl = document.querySelector(href);
+            if (targetEl) {
+              targetEl.classList.add('visible');
+            }
+          } catch (err) {}
+        }
       });
     });
+
+    if (window.location.hash) {
+      try {
+        var initialHashEl = document.querySelector(window.location.hash);
+        if (initialHashEl) initialHashEl.classList.add('visible');
+      } catch (err) {}
+    }
 
     document.addEventListener('click', function (e) {
       if (actDropdown && !actDropdown.contains(e.target)) {
