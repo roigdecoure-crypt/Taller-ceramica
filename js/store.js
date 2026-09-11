@@ -16,8 +16,8 @@ function getRoigApiBase() {
     } catch (e) {}
 
     if (window.location) {
-      var host = window.location.hostname;
-      if (!host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+      var host = (window.location.hostname || '').toLowerCase();
+      if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
         return '';
       }
     }
@@ -122,7 +122,7 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/alumnes?t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
-        if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
+        if (json.ok && Array.isArray(json.data)) {
           return json.data;
         }
       } catch (e) {

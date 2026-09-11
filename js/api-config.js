@@ -23,9 +23,9 @@
 
       // 3. Detecció intel·ligent segons el domini actual
       if (window.location) {
-        var host = window.location.hostname;
+        var host = (window.location.hostname || '').toLowerCase();
         // Si estem en desenvolupament local o directament al domini de Render, usem ruta relativa
-        if (!host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+        if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
           return '';
         }
       }

@@ -3,18 +3,20 @@
  */
 
 function getAdminApiBase() {
-  if (typeof Store !== 'undefined' && Store.apiBase !== undefined && Store.apiBase !== null) {
-    return Store.apiBase;
-  }
   if (typeof window !== 'undefined') {
     if (typeof window.getRoigApiBase === 'function') {
       return window.getRoigApiBase();
     }
-    if (window.ROIG_API_BASE !== undefined) {
-      return window.ROIG_API_BASE;
+    if (window.ROIG_API_BASE !== undefined && window.ROIG_API_BASE !== null && window.ROIG_API_BASE !== '') {
+      return String(window.ROIG_API_BASE).replace(/\/+$/, '');
     }
-    const host = window.location.hostname;
-    if (!host || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
+  }
+  if (typeof Store !== 'undefined' && Store.apiBase) {
+    return Store.apiBase;
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const host = (window.location.hostname || '').toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.onrender.com')) {
       return '';
     }
   }
@@ -2835,6 +2837,16 @@ function initAdminAuth() {
   const pinError = document.getElementById('admin-pin-error');
   const logoutBtn = document.getElementById('btn-sidebar-logout');
 
+  const togglePinBtn = document.getElementById('btn-toggle-admin-pin');
+  if (togglePinBtn && pinInput) {
+    togglePinBtn.addEventListener('click', () => {
+      const isPwd = pinInput.type === 'password';
+      pinInput.type = isPwd ? 'text' : 'password';
+      togglePinBtn.textContent = isPwd ? 'Amagar' : 'Veure';
+      pinInput.focus();
+    });
+  }
+
   const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
   if (isAuth) {
     if (lockScreen) lockScreen.style.display = 'none';
@@ -2849,15 +2861,21 @@ function initAdminAuth() {
       const pin = pinInput ? pinInput.value.trim() : '';
       if (!pin) return;
 
-      const submitBtn = document.getElementById('btn-submit-admin-pin');
+      let timerMsg = null;
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Comprovant...';
+        timerMsg = setTimeout(() => {
+          if (submitBtn && submitBtn.disabled) {
+            submitBtn.textContent = 'Despertant servidor de Render (pot trigar ~30s)...';
+          }
+        }, 2500);
       }
       if (pinError) pinError.style.display = 'none';
 
+      let apiBase = '';
       try {
-        const apiBase = getAdminApiBase();
+        apiBase = getAdminApiBase();
         const res = await fetch(`${apiBase}/api/admin/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2865,17 +2883,21 @@ function initAdminAuth() {
         });
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
-          throw new Error('El servidor no ha retornat JSON. Comprova que el backend de Render estigui actiu.');
+          throw new Error(`El servidor (${apiBase || 'local'}) no ha retornat una resposta vàlida en JSON.`);
         }
         const data = await res.json();
         if (data.ok) {
           sessionStorage.setItem('roig_admin_auth', '1');
           if (lockScreen) lockScreen.style.display = 'none';
           showToast('Sessió d\'administrador iniciada', 'success');
-          await loadAdminDashboardData();
+          try {
+            await loadAdminDashboardData();
+          } catch (dashErr) {
+            console.warn('Avís carregant dades del panell:', dashErr);
+          }
         } else {
           if (pinError) {
-            pinError.textContent = data.error || 'PIN incorrecte. Torna-ho a provar.';
+            pinError.textContent = data.error || 'PIN incorrecte. (El PIN inicial per defecte és 1234)';
             pinError.style.display = 'block';
           }
           if (pinInput) {
@@ -2885,10 +2907,11 @@ function initAdminAuth() {
         }
       } catch (err) {
         if (pinError) {
-          pinError.textContent = 'Error de connexió: ' + err.message;
+          pinError.textContent = `Error de connexió [${apiBase || 'local'}]: ${err.message}`;
           pinError.style.display = 'block';
         }
       } finally {
+        if (timerMsg) clearTimeout(timerMsg);
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Desbloquejar Panell \u2192';

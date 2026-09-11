@@ -10,12 +10,15 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="shortcut icon" href="icons/favicon-32x32.png">
   <meta name="theme-color" content="#831D1D">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=8.0">
-  <link rel="stylesheet" href="css/admin.css?v=8.0">
-  <link rel="stylesheet" href="css/card.css?v=8.0">
+  <link rel="stylesheet" href="css/styles.css?v=9.0">
+  <link rel="stylesheet" href="css/admin.css?v=9.0">
+  <link rel="stylesheet" href="css/card.css?v=9.0">
   <script>
     function triggerOpenModal(modalId, specificFnName) {
       if (specificFnName && typeof window[specificFnName] === 'function') {
@@ -43,7 +46,11 @@
       <p style="font-size: 13px; color: #8C827A; margin-bottom: 22px; line-height: 1.4;">Introdueix el PIN mestre per gestionar el taller.</p>
       
       <form id="form-admin-auth">
-        <input type="password" id="input-admin-pin" class="form-control" placeholder="PIN (ex: 1234)" autofocus style="font-size: 22px; text-align: center; letter-spacing: 6px; padding: 12px; margin-bottom: 10px; border-radius: 12px;" maxlength="12" required>
+        <div style="position: relative; margin-bottom: 6px;">
+          <input type="password" id="input-admin-pin" class="form-control" placeholder="PIN (ex: 1234)" autofocus style="font-size: 22px; text-align: center; letter-spacing: 6px; padding: 12px 50px 12px 12px; border-radius: 12px;" maxlength="12" required>
+          <button type="button" id="btn-toggle-admin-pin" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8C827A; font-size: 11px; font-weight: 600; padding: 6px;" title="Mostrar o amagar PIN">Veure</button>
+        </div>
+        <div style="font-size: 11px; color: #8C827A; margin-bottom: 12px;">PIN mestre inicial per defecte: <strong>1234</strong></div>
         <div id="admin-pin-error" style="color: #D32F2F; font-size: 13px; font-weight: 600; margin-bottom: 12px; display: none;">PIN incorrecte. Torna-ho a provar.</div>
         <button type="submit" class="btn btn-primary btn-block" id="btn-submit-admin-pin" style="padding: 13px; font-size: 15px; font-weight: 700; border-radius: 12px;">Desbloquejar Panell &rarr;</button>
       </form>
@@ -1799,13 +1806,13 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=8.0"></script>
-  <script src="js/time-utils.js?v=8.0"></script>
-  <script src="js/sound.js?v=8.0"></script>
-  <script src="js/qr-engine.js?v=8.0"></script>
-  <script src="js/api-config.js?v=8.0"></script>
-  <script src="js/store.js?v=8.0"></script>
-  <script src="js/reserves-calendar.js?v=8.0"></script>
-  <script src="js/admin.js?v=8.0"></script>
+  <script src="lib/qrcode.min.js?v=9.0"></script>
+  <script src="js/time-utils.js?v=9.0"></script>
+  <script src="js/sound.js?v=9.0"></script>
+  <script src="js/qr-engine.js?v=9.0"></script>
+  <script src="js/api-config.js?v=9.0"></script>
+  <script src="js/store.js?v=9.0"></script>
+  <script src="js/reserves-calendar.js?v=9.0"></script>
+  <script src="js/admin.js?v=9.0"></script>
 </body>
 </html>
