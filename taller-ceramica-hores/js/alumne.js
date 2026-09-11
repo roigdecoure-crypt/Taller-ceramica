@@ -981,36 +981,6 @@ function setupEventListeners() {
     });
   }
 
-  // Desplegable i simulació Pagament de Prova
-  const btnShowTestPay = document.getElementById('btn-portal-show-testpay');
-  if (btnShowTestPay) {
-    btnShowTestPay.addEventListener('click', () => {
-      const box = document.getElementById('portal-testpay-box');
-      if (box) {
-        box.style.display = box.style.display === 'none' ? 'block' : 'none';
-      }
-    });
-  }
-
-  const btnConfirmTestPay = document.getElementById('btn-portal-confirm-testpay');
-  if (btnConfirmTestPay) {
-    btnConfirmTestPay.addEventListener('click', async () => {
-      if (!currentStudent) return;
-      const inputH = document.getElementById('testpay-input-hours');
-      let hores = parseFloat(inputH ? inputH.value : 4);
-      if (isNaN(hores) || hores < 4) hores = 4;
-      btnConfirmTestPay.disabled = true;
-      btnConfirmTestPay.textContent = 'Sumant hores...';
-      try {
-        await processSuccessfulPayment(hores, `Adquisició ${hores} Hores (Mode Prova)`, 0, 'Stripe (Test)');
-        const box = document.getElementById('portal-testpay-box');
-        if (box) box.style.display = 'none';
-      } finally {
-        btnConfirmTestPay.disabled = false;
-        btnConfirmTestPay.textContent = 'Simular Pagament i Sumar Hores';
-      }
-    });
-  }
 
   // Desplegable i confirmació Bizum (mínim 4h)
   const btnPortalShowBizum = document.getElementById('btn-portal-show-bizum');
