@@ -1441,14 +1441,9 @@
 }
 
 .taller-row-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
   border-bottom: 1px solid #F3F4F6;
   background: #FFFFFF;
   transition: background 0.15s ease;
-  gap: 12px;
 }
 .taller-row-item:last-child {
   border-bottom: none;

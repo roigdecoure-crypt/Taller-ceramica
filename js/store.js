@@ -1256,7 +1256,11 @@ const Store = {
   async getActivitatsConfig(includeInactive = false) {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/activitats?tots=${includeInactive ? '1' : '0'}&t=${Date.now()}`);
+        const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+        const fetchOpts = controller ? { signal: controller.signal } : {};
+        const res = await fetch(`${this.apiBase}/api/activitats?tots=${includeInactive ? '1' : '0'}&t=${Date.now()}`, fetchOpts);
+        if (timeoutId) clearTimeout(timeoutId);
         const json = await res.json();
         if (json.ok && json.activitats) {
           const local = this._getLocalData();
@@ -1265,7 +1269,7 @@ const Store = {
           return json.activitats;
         }
       } catch (e) {
-        console.warn('Error obtenint activitats:', e);
+        console.warn('Error o timeout obtenint activitats:', e);
       }
     }
     const local = this._getLocalData();

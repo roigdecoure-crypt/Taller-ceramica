@@ -3964,6 +3964,11 @@ if (typeof window !== 'undefined') {
   window.openAdminFestiusModal = openAdminFestiusModal;
   window.openAdminRestriccionsModal = openAdminRestriccionsModal;
   window.openAdminTallersModal = openAdminTallersModal;
+  window.closeAdminTallersModal = closeAdminTallersModal;
+  window.selectPaletteColor = selectPaletteColor;
+  window.handleSaveAdminTaller = handleSaveAdminTaller;
+  window.resetAdminTallerForm = resetAdminTallerForm;
+  window.loadAndRenderAdminTallers = loadAndRenderAdminTallers;
   window.handleEditTaller = handleEditTaller;
   window.handleToggleTallerActiu = handleToggleTallerActiu;
   window.handleDeleteTaller = handleDeleteTaller;
@@ -4601,12 +4606,30 @@ async function populateNovaReservaActivitats() {
   }
 }
 
-async function openAdminTallersModal() {
+function closeAdminTallersModal() {
+  const modal = document.getElementById('modal-admin-tallers-backdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+function openAdminTallersModal() {
   const modal = document.getElementById('modal-admin-tallers-backdrop');
   if (!modal) return;
   modal.classList.add('active');
-  resetAdminTallerForm();
-  await loadAndRenderAdminTallers();
+  try {
+    resetAdminTallerForm();
+    loadAndRenderAdminTallers();
+  } catch (err) {
+    console.warn('Avís inicialitzant formulari de tallers:', err);
+  }
+}
+
+function selectPaletteColor(col) {
+  if (!col) return;
+  const colInp = document.getElementById('admin-taller-color');
+  if (colInp) colInp.value = col;
+  document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(b => {
+    b.classList.toggle('active', (b.dataset.color || '').toLowerCase() === col.toLowerCase());
+  });
 }
 
 function resetAdminTallerForm() {
@@ -4634,90 +4657,115 @@ function resetAdminTallerForm() {
   document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(b => b.classList.remove('active'));
 }
 
+function renderTallersTableHtml(container, tallersList) {
+  if (!container) return;
+  const list = Array.isArray(tallersList) ? tallersList : [];
+  if (list.length === 0) {
+    container.innerHTML = '<div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">No hi ha cap taller registrat.</div>';
+    return;
+  }
+
+  let html = `
+    <table class="data-table" style="width: 100%; font-size: 13px; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #F9FAFB; border-bottom: 1px solid #E5E7EB;">
+          <th style="padding: 8px 12px; text-align: left;">Taller</th>
+          <th style="padding: 8px 12px; text-align: center;">Aforament</th>
+          <th style="padding: 8px 12px; text-align: center;">Estat</th>
+          <th style="padding: 8px 12px; text-align: right;">Accions</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  list.forEach(t => {
+    if (!t) return;
+    const tId = String(t.id || '');
+    const tNom = String(t.nom || tId || 'Taller');
+    const isBase = ['torn', 'modelatge', 'pintar'].includes(tId.toLowerCase());
+    const rowClass = t.actiu === false ? 'taller-row-item inactive' : 'taller-row-item';
+    const statusBadge = t.actiu === false 
+      ? '<span class="badge badge-neutral" style="font-size: 11px;">Inactiu</span>'
+      : '<span class="badge badge-success" style="font-size: 11px;">Actiu</span>';
+    const cap = t.capacitatMax || t.capacitat_max || 4;
+
+    html += `
+      <tr class="${rowClass}">
+        <td style="padding: 10px 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="taller-color-indicator" style="background: ${t.color || '#B91C1C'}; width: 14px; height: 14px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></span>
+            <div>
+              <strong style="color: #111827;">${escapeHtml(tNom)}</strong>
+              <span style="font-size: 11px; color: #6B7280; margin-left: 4px;">(${escapeHtml(tId)})</span>
+              ${t.descripcio ? `<div style="font-size: 11.5px; color: #6B7280; margin-top: 2px;">${escapeHtml(t.descripcio)}</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td style="padding: 10px 12px; text-align: center;">
+          <span class="badge badge-neutral" style="font-size: 12px; font-weight: 700; padding: 3px 8px;">
+            ${cap} places
+          </span>
+        </td>
+        <td style="padding: 10px 12px; text-align: center;">
+          ${statusBadge}
+        </td>
+        <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleEditTaller('${escapeHtml(tId)}')" style="font-size: 11px; padding: 3px 8px; margin-right: 4px;">
+            Editar
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleToggleTallerActiu('${escapeHtml(tId)}', ${t.actiu !== false})" style="font-size: 11px; padding: 3px 8px; margin-right: 4px; ${t.actiu === false ? 'color: #047857; border-color: #10B981;' : 'color: #92400E; border-color: #F59E0B;'}">
+            ${t.actiu === false ? 'Activar' : 'Desactivar'}
+          </button>
+          ${!isBase ? `
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteTaller('${escapeHtml(tId)}')" style="font-size: 11px; padding: 3px 8px; color: #B91C1C; border-color: #F87171;">
+              Eliminar
+            </button>
+          ` : ''}
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
 async function loadAndRenderAdminTallers() {
   const container = document.getElementById('tallers-list-container');
   if (!container) return;
-  container.innerHTML = '<div style="padding: 18px; text-align: center; color: #6B7280; font-size: 12px;">Carregant tallers...</div>';
 
+  // 1. Renderització immediata amb les dades disponibles (0 ms de retard, mai es bloqueja)
+  const immediateList = (adminTallersList && adminTallersList.length > 0)
+    ? adminTallersList
+    : (typeof Store !== 'undefined' ? Store.getActivitats() : []);
+
+  if (immediateList && immediateList.length > 0) {
+    renderTallersTableHtml(container, immediateList);
+  } else {
+    container.innerHTML = '<div style="padding: 18px; text-align: center; color: #6B7280; font-size: 12px;">Carregant tallers...</div>';
+  }
+
+  // 2. Consulta de dades fresques al servidor en segon terme
   try {
     const acts = await Store.getActivitatsConfig(true);
-    adminTallersList = Array.isArray(acts) ? acts : [];
-    adminTallersMap = {};
-    adminTallersList.forEach(a => {
-      adminTallersMap[a.id.toLowerCase()] = a;
-      adminTallersMap[a.nom.toLowerCase()] = a;
-    });
-
-    if (adminTallersList.length === 0) {
-      container.innerHTML = '<div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">No hi ha cap taller registrat.</div>';
-      return;
+    if (Array.isArray(acts) && acts.length > 0) {
+      adminTallersList = acts;
+      adminTallersMap = {};
+      adminTallersList.forEach(a => {
+        if (!a) return;
+        const aid = (a.id ? String(a.id) : '').toLowerCase();
+        const anom = (a.nom ? String(a.nom) : '').toLowerCase();
+        if (aid) adminTallersMap[aid] = a;
+        if (anom) adminTallersMap[anom] = a;
+      });
+      renderTallersTableHtml(container, adminTallersList);
     }
-
-    let html = `
-      <table class="data-table" style="width: 100%; font-size: 13px;">
-        <thead>
-          <tr style="background: #F9FAFB;">
-            <th style="padding: 8px 12px;">Taller</th>
-            <th style="padding: 8px 12px; text-align: center;">Aforament</th>
-            <th style="padding: 8px 12px; text-align: center;">Estat</th>
-            <th style="padding: 8px 12px; text-align: right;">Accions</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    adminTallersList.forEach(t => {
-      const isBase = ['torn', 'modelatge', 'pintar'].includes(t.id);
-      const rowClass = t.actiu === false ? 'taller-row-item inactive' : 'taller-row-item';
-      const statusBadge = t.actiu === false 
-        ? '<span class="badge badge-neutral" style="font-size: 11px;">Inactiu</span>'
-        : '<span class="badge badge-success" style="font-size: 11px;">Actiu</span>';
-
-      html += `
-        <tr class="${rowClass}">
-          <td style="padding: 10px 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="taller-color-indicator" style="background: ${t.color || '#B91C1C'}; width: 14px; height: 14px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></span>
-              <div>
-                <strong style="color: #111827;">${escapeHtml(t.nom)}</strong>
-                <span style="font-size: 11px; color: #6B7280; margin-left: 4px;">(${t.id})</span>
-                ${t.descripcio ? `<div style="font-size: 11.5px; color: #6B7280; margin-top: 2px;">${escapeHtml(t.descripcio)}</div>` : ''}
-              </div>
-            </div>
-          </td>
-          <td style="padding: 10px 12px; text-align: center;">
-            <span class="badge badge-neutral" style="font-size: 12px; font-weight: 700; padding: 3px 8px;">
-              ${t.capacitatMax} places
-            </span>
-          </td>
-          <td style="padding: 10px 12px; text-align: center;">
-            ${statusBadge}
-          </td>
-          <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleEditTaller('${t.id}')" style="font-size: 11px; padding: 3px 8px; margin-right: 4px;">
-              Editar
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleToggleTallerActiu('${t.id}', ${t.actiu !== false})" style="font-size: 11px; padding: 3px 8px; margin-right: 4px; ${t.actiu === false ? 'color: #047857; border-color: #10B981;' : 'color: #92400E; border-color: #F59E0B;'}">
-              ${t.actiu === false ? 'Activar' : 'Desactivar'}
-            </button>
-            ${!isBase ? `
-              <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteTaller('${t.id}')" style="font-size: 11px; padding: 3px 8px; color: #B91C1C; border-color: #F87171;">
-                Eliminar
-              </button>
-            ` : ''}
-          </td>
-        </tr>
-      `;
-    });
-
-    html += `
-        </tbody>
-      </table>
-    `;
-
-    container.innerHTML = html;
-  } catch (e) {
-    container.innerHTML = '<div style="padding: 18px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant la llista de tallers.</div>';
+  } catch (err) {
+    console.warn('Avís sincronitzant tallers remots:', err);
   }
 }
 

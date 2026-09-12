@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=9.0">
-  <link rel="stylesheet" href="css/admin.css?v=9.8">
+  <link rel="stylesheet" href="css/admin.css?v=9.9">
   <link rel="stylesheet" href="css/card.css?v=9.0">
   <script>
     function triggerOpenModal(modalId, specificFnName) {
@@ -34,6 +34,17 @@
         m.classList.add('active');
       }
     }
+    function closeAdminTallersModal() {
+      var m = document.getElementById('modal-admin-tallers-backdrop');
+      if (m) m.classList.remove('active');
+    }
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.active').forEach(function(m) {
+          m.classList.remove('active');
+        });
+      }
+    });
   </script>
 </head>
 <body class="admin-app-layout">
@@ -2113,14 +2124,14 @@
   </div>
 
   <!-- MODAL: GESTIÓ DE TALLERS I AFORAMENT -->
-  <div class="modal-backdrop" id="modal-admin-tallers-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+  <div class="modal-backdrop" id="modal-admin-tallers-backdrop" onclick="if(event.target===this) closeAdminTallersModal();">
     <div class="modal-dialog" style="max-width: 760px;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Gestió de Tallers i Activitats</h3>
           <p style="margin: 4px 0 0; font-size: 12.5px; color: #6B7280;">Crea nous tallers per al taller de ceràmica, defineix els seus aforaments màxims i assigna colors identificatius.</p>
         </div>
-        <button type="button" class="modal-close" data-close="modal-admin-tallers-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAdminTallersModal();" data-close="modal-admin-tallers-backdrop" aria-label="Tancar">&times;</button>
       </div>
 
       <div style="padding: 16px 0; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
@@ -2128,7 +2139,7 @@
         <!-- Formulari per afegir / editar taller -->
         <div class="card" style="padding: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px;">
           <h4 id="admin-taller-form-title" style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #065F46;">+ Crear Nou Taller / Activitat</h4>
-          <form id="form-admin-taller" onsubmit="return false;">
+          <form id="form-admin-taller" onsubmit="handleSaveAdminTaller(); return false;">
             <input type="hidden" id="admin-taller-edit-id" value="">
             
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
@@ -2147,15 +2158,15 @@
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <input type="color" id="admin-taller-color" value="#EA580C" style="width: 44px; height: 36px; padding: 2px; border: 1px solid #D1D5DB; border-radius: 6px; cursor: pointer;">
                 <div class="taller-color-palette" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                  <button type="button" class="color-palette-btn" data-color="#B91C1C" title="Roig Terracota" style="background:#B91C1C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#EA580C" title="Taronja Raku" style="background:#EA580C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#D97706" title="Ocre Daurat" style="background:#D97706; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#047857" title="Verd Maragda" style="background:#047857; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#0891B2" title="Cian Vidre" style="background:#0891B2; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#1D4ED8" title="Blau Cobalt" style="background:#1D4ED8; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#7C3AED" title="Lila Amatista" style="background:#7C3AED; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#DB2777" title="Rosa Magma" style="background:#DB2777; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
-                  <button type="button" class="color-palette-btn" data-color="#475569" title="Pissarra" style="background:#475569; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#B91C1C" title="Roig Terracota" onclick="selectPaletteColor(this.dataset.color);" style="background:#B91C1C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#EA580C" title="Taronja Raku" onclick="selectPaletteColor(this.dataset.color);" style="background:#EA580C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#D97706" title="Ocre Daurat" onclick="selectPaletteColor(this.dataset.color);" style="background:#D97706; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#047857" title="Verd Maragda" onclick="selectPaletteColor(this.dataset.color);" style="background:#047857; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#0891B2" title="Cian Vidre" onclick="selectPaletteColor(this.dataset.color);" style="background:#0891B2; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#1D4ED8" title="Blau Cobalt" onclick="selectPaletteColor(this.dataset.color);" style="background:#1D4ED8; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#7C3AED" title="Lila Amatista" onclick="selectPaletteColor(this.dataset.color);" style="background:#7C3AED; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#DB2777" title="Rosa Magma" onclick="selectPaletteColor(this.dataset.color);" style="background:#DB2777; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#475569" title="Pissarra" onclick="selectPaletteColor(this.dataset.color);" style="background:#475569; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
                 </div>
               </div>
             </div>
@@ -2166,8 +2177,8 @@
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 8px;">
-              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-edit-taller" style="display: none;">Cancel·lar edició</button>
-              <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-taller" style="background: #047857; border-color: #047857; font-weight: 600;">Desar Taller</button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-edit-taller" onclick="resetAdminTallerForm();" style="display: none;">Cancel·lar edició</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-taller" onclick="handleSaveAdminTaller();" style="background: #047857; border-color: #047857; font-weight: 600;">Desar Taller</button>
             </div>
           </form>
         </div>
@@ -2176,7 +2187,7 @@
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #111827;">Tallers Disponibles al Sistema</h4>
-            <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-tallers" style="font-size: 11px; padding: 3px 8px;">Refrescar</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-tallers" onclick="loadAndRenderAdminTallers();" style="font-size: 11px; padding: 3px 8px;">Refrescar</button>
           </div>
           <div id="tallers-list-container" style="max-height: 280px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 6px;">
             <div style="padding: 18px; text-align: center; color: #6B7280; font-size: 12px;">Carregant tallers...</div>
@@ -2186,7 +2197,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; border-top: 1px solid #E5E7EB; padding-top: 12px; margin-top: 8px;">
-        <button type="button" class="btn btn-outline" data-close="modal-admin-tallers-backdrop">Tancar</button>
+        <button type="button" class="btn btn-outline" onclick="closeAdminTallersModal();" data-close="modal-admin-tallers-backdrop">Tancar</button>
       </div>
     </div>
   </div>
@@ -2200,8 +2211,8 @@
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.1"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.9"></script>
-  <script src="js/reserves-calendar.js?v=9.9"></script>
-  <script src="js/admin.js?v=9.9"></script>
+  <script src="js/store.js?v=9.9.1"></script>
+  <script src="js/reserves-calendar.js?v=9.9.1"></script>
+  <script src="js/admin.js?v=9.9.1"></script>
 </body>
 </html>
