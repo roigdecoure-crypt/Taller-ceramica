@@ -56,6 +56,12 @@
     window.forcarNetejaMemoriaCau = forcarNetejaMemoriaCau;
 
     function triggerOpenModal(modalId, specificFnName) {
+      var activeModals = document.querySelectorAll('.modal-backdrop.active');
+      for (var i = 0; i < activeModals.length; i++) {
+        if (activeModals[i].id !== modalId) {
+          closeAnyModal(activeModals[i].id);
+        }
+      }
       var m = document.getElementById(modalId);
       if (m) {
         m.classList.add('active');
@@ -85,21 +91,52 @@
       }
     }
 
+    function closeStudentDrawer() {
+      var d = document.getElementById('student-drawer-backdrop');
+      if (d) {
+        d.classList.remove('active');
+        d.style.setProperty('display', 'none', 'important');
+        d.style.setProperty('opacity', '0', 'important');
+        d.style.setProperty('pointer-events', 'none', 'important');
+        d.style.setProperty('visibility', 'hidden', 'important');
+      }
+      if (typeof currentViewingStudent !== 'undefined') {
+        currentViewingStudent = null;
+      }
+    }
+
     function closeAdminFestiusModal() { closeAnyModal('modal-admin-festius-backdrop'); }
     function closeAdminRestriccionsModal() { closeAnyModal('modal-admin-restriccions-backdrop'); }
     function closeAdminTallersModal() { closeAnyModal('modal-admin-tallers-backdrop'); }
+    function closeAdminNovaReservaModal() { closeAnyModal('modal-admin-nova-reserva-backdrop'); }
+    function closeReservesModal() { closeAnyModal('modal-reserves-backdrop'); }
+    function closeAdminManualCheckinModal() { closeAnyModal('modal-admin-manual-backdrop'); }
+    function closeConfigModal() { closeAnyModal('modal-config-backdrop'); }
+    function closeBrandStudioModal() { closeAnyModal('modal-branding-backdrop'); }
+    function closeBackupModal() { closeAnyModal('modal-backup-backdrop'); }
+    function closeNewStudentModal() { closeAnyModal('modal-alumne-backdrop'); }
 
+    window.triggerOpenModal = triggerOpenModal;
     window.closeAnyModal = closeAnyModal;
+    window.closeStudentDrawer = closeStudentDrawer;
     window.closeAdminFestiusModal = closeAdminFestiusModal;
     window.closeAdminRestriccionsModal = closeAdminRestriccionsModal;
     window.closeAdminTallersModal = closeAdminTallersModal;
-    window.triggerOpenModal = triggerOpenModal;
+    window.closeAdminNovaReservaModal = closeAdminNovaReservaModal;
+    window.closeReservesModal = closeReservesModal;
+    window.closeAdminManualCheckinModal = closeAdminManualCheckinModal;
+    window.closeConfigModal = closeConfigModal;
+    window.closeBrandStudioModal = closeBrandStudioModal;
+    window.closeBackupModal = closeBackupModal;
+    window.closeNewStudentModal = closeNewStudentModal;
 
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-backdrop').forEach(function(m) {
-          closeAnyModal(m.id);
-        });
+        var openModals = document.querySelectorAll('.modal-backdrop');
+        for (var i = 0; i < openModals.length; i++) {
+          closeAnyModal(openModals[i].id);
+        }
+        closeStudentDrawer();
       }
     });
   </script>
@@ -210,7 +247,7 @@
           <span class="nav-text">Web Pública & Reserves</span>
         </a>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca">
+      <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
@@ -222,7 +259,7 @@
         </span>
         <span class="nav-text">Disseny & Marca</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-config" title="Configuració">
+      <li class="sidebar-item" id="btn-sidebar-config" title="Configuració" onclick="triggerOpenModal('modal-config-backdrop', 'openConfigModal');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
@@ -259,7 +296,7 @@
         </span>
         <span class="nav-text">Gestió de Tallers</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup">
+      <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
@@ -917,14 +954,14 @@
   </div>
 
   <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
-  <div class="drawer-backdrop" id="student-drawer-backdrop">
+  <div class="drawer-backdrop" id="student-drawer-backdrop" style="display: none;" onclick="if(event.target===this) closeStudentDrawer();">
     <div class="student-drawer">
       <div class="drawer-header">
         <div>
           <span class="badge badge-neutral" id="drawer-student-id">TC-100</span>
           <h3 id="drawer-student-fullname" style="margin-top: 4px;">Nom de l'Alumne</h3>
         </div>
-        <button class="modal-close" id="btn-close-drawer">&times;</button>
+        <button type="button" class="modal-close" id="btn-close-drawer" onclick="closeStudentDrawer();">&times;</button>
       </div>
 
       <div class="drawer-body">
@@ -1027,11 +1064,11 @@
   </div>
 
   <!-- MODAL: NOU / EDITAR ALUMNE -->
-  <div class="modal-backdrop" id="modal-alumne-backdrop">
+  <div class="modal-backdrop" id="modal-alumne-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog">
       <div class="modal-header">
         <h3 id="modal-alumne-title">Donar d'Alta Nou Alumne</h3>
-        <button class="modal-close" data-close="modal-alumne-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-alumne-backdrop');" data-close="modal-alumne-backdrop">&times;</button>
       </div>
       <form id="form-alumne">
         <input type="hidden" id="alumne-form-id">
@@ -1066,7 +1103,7 @@
           <textarea id="alumne-form-notes" class="form-control" rows="2" placeholder="Observacions o curs que realitza..."></textarea>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" data-close="modal-alumne-backdrop">Cancel·lar</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-alumne-backdrop');" data-close="modal-alumne-backdrop">Cancel·lar</button>
           <button type="submit" class="btn btn-primary">Desar Alumne</button>
         </div>
       </form>
@@ -1074,11 +1111,11 @@
   </div>
 
   <!-- MODAL: AFEGIR COMPRA DE PAQUET D'HORES -->
-  <div class="modal-backdrop" id="modal-paquet-backdrop">
+  <div class="modal-backdrop" id="modal-paquet-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog">
       <div class="modal-header">
         <h3>Afegir Compra de Paquet d'Hores</h3>
-        <button class="modal-close" data-close="modal-paquet-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-paquet-backdrop');" data-close="modal-paquet-backdrop">&times;</button>
       </div>
       <form id="form-paquet">
         <input type="hidden" id="paquet-form-student-id">
@@ -1112,7 +1149,7 @@
           <input type="datetime-local" id="paquet-form-data" class="form-control">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" data-close="modal-paquet-backdrop">Cancel·lar</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-paquet-backdrop');" data-close="modal-paquet-backdrop">Cancel·lar</button>
           <button type="submit" class="btn btn-primary">Sumar Hores al Compte</button>
         </div>
       </form>
@@ -1120,11 +1157,11 @@
   </div>
 
   <!-- MODAL: REGISTRAR SESSIÓ MANUAL -->
-  <div class="modal-backdrop" id="modal-manual-sessio-backdrop">
+  <div class="modal-backdrop" id="modal-manual-sessio-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog">
       <div class="modal-header">
         <h3 id="modal-manual-title">Registrar Sessió Manual</h3>
-        <button class="modal-close" data-close="modal-manual-sessio-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-manual-sessio-backdrop');" data-close="modal-manual-sessio-backdrop">&times;</button>
       </div>
       <form id="form-manual-sessio">
         <input type="hidden" id="manual-sessio-id">
@@ -1150,7 +1187,7 @@
           <input type="text" id="manual-sessio-notes" class="form-control" placeholder="ex: Pràctica de modelatge">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" data-close="modal-manual-sessio-backdrop">Cancel·lar</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-manual-sessio-backdrop');" data-close="modal-manual-sessio-backdrop">Cancel·lar</button>
           <button type="submit" class="btn btn-primary">Desar Sessió</button>
         </div>
       </form>
@@ -1158,11 +1195,11 @@
   </div>
 
   <!-- MODAL: TANCAR CICLE OBLIDAT -->
-  <div class="modal-backdrop" id="modal-tancar-cicle-backdrop">
+  <div class="modal-backdrop" id="modal-tancar-cicle-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog">
       <div class="modal-header">
         <h3>Tancar Cicle Oblidat (Forçar Sortida)</h3>
-        <button class="modal-close" data-close="modal-tancar-cicle-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-tancar-cicle-backdrop');" data-close="modal-tancar-cicle-backdrop">&times;</button>
       </div>
       <form id="form-tancar-cicle">
         <input type="hidden" id="tancar-cicle-session-id">
@@ -1199,7 +1236,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" data-close="modal-tancar-cicle-backdrop">Cancel·lar</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-tancar-cicle-backdrop');" data-close="modal-tancar-cicle-backdrop">Cancel·lar</button>
           <button type="submit" class="btn btn-danger">Tancar Cicle i Descomptar Saldo</button>
         </div>
       </form>
@@ -1207,11 +1244,11 @@
   </div>
 
   <!-- MODAL: CARNET D'ALUMNE (VISUALITZAR / IMPRIMIR / DESCARREGAR) -->
-  <div class="modal-backdrop" id="modal-carnet-backdrop">
+  <div class="modal-backdrop" id="modal-carnet-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 480px;">
       <div class="modal-header">
         <h3>Carnet d'Alumne Oficial</h3>
-        <button class="modal-close" data-close="modal-carnet-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-carnet-backdrop');" data-close="modal-carnet-backdrop">&times;</button>
       </div>
       
       <div class="student-card-container">
@@ -1259,11 +1296,11 @@
   </div>
 
   <!-- MODAL: CONFIGURACIÓ (STRIPE, GOOGLE SHEETS I TALLER) -->
-  <div class="modal-backdrop" id="modal-config-backdrop">
+  <div class="modal-backdrop" id="modal-config-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog">
       <div class="modal-header">
         <h3>Configuració del Taller, Stripe i Google Sheets</h3>
-        <button class="modal-close" data-close="modal-config-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-config-backdrop');" data-close="modal-config-backdrop">&times;</button>
       </div>
       <form id="form-config">
         <h4 style="margin-bottom: 10px; color: var(--color-primary);">Dades del Taller</h4>
@@ -1410,7 +1447,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-          <button type="button" class="btn btn-outline" data-close="modal-config-backdrop">Tancar</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-config-backdrop');" data-close="modal-config-backdrop">Tancar</button>
           <button type="submit" class="btn btn-primary">Desar Configuració</button>
         </div>
       </form>
@@ -1418,7 +1455,7 @@
   </div>
 
   <!-- MODAL: ESTUDI DE DISSENY I MARCA (CUSTOMITZADOR) -->
-  <div class="modal-backdrop" id="modal-branding-backdrop">
+  <div class="modal-backdrop" id="modal-branding-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 960px; width: 95%;">
       <div class="modal-header">
         <div>
@@ -1429,7 +1466,7 @@
             Personalitza els colors, el logotip i la tipografia de l'App de l'Alumne i del Carnet Digital en temps real.
           </p>
         </div>
-        <button class="modal-close" data-close="modal-branding-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-branding-backdrop');" data-close="modal-branding-backdrop">&times;</button>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-top: 14px;">
@@ -1532,7 +1569,7 @@
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
-            <button type="button" class="btn btn-outline" data-close="modal-branding-backdrop">Tancar</button>
+            <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-branding-backdrop');" data-close="modal-branding-backdrop">Tancar</button>
             <button type="submit" class="btn btn-primary" style="padding: 10px 24px; font-weight: 700;">Desar Disseny i Aplicar</button>
           </div>
         </form>
@@ -1609,7 +1646,7 @@
   </div>
 
   <!-- MODAL: GESTIÓ DE RESERVES & CONTROL D'AFORAMENT -->
-  <div class="modal-backdrop" id="modal-reserves-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+  <div class="modal-backdrop" id="modal-reserves-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog modal-lg" style="max-width: 920px;">
       <div class="modal-header">
         <div>
@@ -1620,7 +1657,7 @@
           <button type="button" class="btn-roig-coure btn-sm" id="btn-modal-reserves-add-reserva" onclick="openAdminNovaReservaModal(adminReservesCalendar ? adminReservesCalendar.selectedDate : null);" style="padding: 5px 12px; font-size: 13px; font-weight: 700; cursor: pointer;">
             + Nova Reserva d'Alumne
           </button>
-          <button type="button" class="modal-close" id="btn-close-modal-reserves" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">&times;</button>
+          <button type="button" class="modal-close" id="btn-close-modal-reserves" onclick="closeAnyModal('modal-reserves-backdrop');" data-close="modal-reserves-backdrop">&times;</button>
         </div>
       </div>
 
@@ -1680,20 +1717,20 @@
         <span style="font-size: 12px; color: var(--color-muted);">
           Les reserves s'emmagatzemen a SQLite i es sincronitzen amb Google Sheets i Google Calendar.
         </span>
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" data-close="modal-reserves-backdrop" onclick="document.getElementById('modal-reserves-backdrop').classList.remove('active');">Tancar</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-modal-reserves-footer" onclick="closeAnyModal('modal-reserves-backdrop');" data-close="modal-reserves-backdrop">Tancar</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL: NOVA RESERVA D'ALUMNE (ADMIN DIRECTE) -->
-  <div class="modal-backdrop" id="modal-admin-nova-reserva-backdrop" onclick="if(event.target===this) closeAdminNovaReservaModal();">
+  <div class="modal-backdrop" id="modal-admin-nova-reserva-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 560px;">
       <div class="modal-header" style="border-bottom: 1px solid #E5E7EB; padding: 16px 20px;">
         <div>
           <h3 style="margin: 0; font-size: 18px; color: #831D1D; font-weight: 700;">+ Nova Reserva d'Alumne</h3>
           <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Crear una reserva per a un alumne o nou client amb sessió de 2 hores</p>
         </div>
-        <button type="button" class="modal-close" onclick="closeAdminNovaReservaModal();">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-admin-nova-reserva-backdrop');">&times;</button>
       </div>
       <form id="form-admin-nova-reserva" onsubmit="handleAdminSubmitNovaReserva(event);">
         <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
@@ -1846,7 +1883,7 @@
         </div>
 
         <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAdminNovaReservaModal();">Cancel·lar</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAnyModal('modal-admin-nova-reserva-backdrop');">Cancel·lar</button>
           <button type="submit" class="btn-roig-coure" id="btn-admin-submit-nova-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
             Confirmar Reserva
           </button>
@@ -1856,11 +1893,11 @@
   </div>
 
   <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
-  <div class="modal-backdrop" id="modal-admin-manual-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+  <div class="modal-backdrop" id="modal-admin-manual-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 440px;">
       <div class="modal-header">
         <h3>Marcar Entrada o Sortida Manual</h3>
-        <button type="button" class="modal-close" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-admin-manual-backdrop');" data-close="modal-admin-manual-backdrop">&times;</button>
       </div>
       <form id="form-admin-manual-checkin">
         <div class="form-group">
@@ -1895,7 +1932,7 @@
               Registrar SORTIDA
             </button>
           </div>
-          <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('modal-admin-manual-backdrop').classList.remove('active');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
+          <button type="button" class="btn btn-outline btn-block" onclick="closeAnyModal('modal-admin-manual-backdrop');" data-close="modal-admin-manual-backdrop" style="margin-top: 10px;">
             Cancel·lar
           </button>
         </div>
@@ -1904,11 +1941,11 @@
   </div>
 
   <!-- MODAL: DADES I BACKUP -->
-  <div class="modal-backdrop" id="modal-backup-backdrop">
+  <div class="modal-backdrop" id="modal-backup-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 620px;">
       <div class="modal-header">
         <h3>Gestió de Dades i Còpies de Seguretat</h3>
-        <button class="modal-close" data-close="modal-backup-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-backup-backdrop');" data-close="modal-backup-backdrop">&times;</button>
       </div>
       <div style="flex-direction: column; display: flex; gap: 16px; max-height: 70vh; overflow-y: auto; padding-right: 4px;">
         
@@ -1969,7 +2006,7 @@
 
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 16px; border-top: 1px solid var(--color-border); padding-top: 12px;">
-        <button class="btn btn-outline" data-close="modal-backup-backdrop">Tancar</button>
+        <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-backup-backdrop');" data-close="modal-backup-backdrop">Tancar</button>
       </div>
     </div>
   </div>

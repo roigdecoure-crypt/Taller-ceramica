@@ -885,18 +885,28 @@
 
 /* Drawer 360 Alumne */
 .drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(30, 26, 24, 0.5);
-  backdrop-filter: blur(3px);
-  z-index: 1000;
-  opacity: 0;
-  pointer-events: none;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(30, 26, 24, 0.5) !important;
+  backdrop-filter: blur(3px) !important;
+  z-index: 1000 !important;
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
   transition: opacity 0.25s ease;
 }
 .drawer-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+.drawer-backdrop:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 .student-drawer {
   position: fixed;
@@ -1465,18 +1475,19 @@
 
 /* Regles de seguretat per a backdrops de modals */
 .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(30, 26, 24, 0.65);
-  backdrop-filter: blur(4px);
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(30, 26, 24, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
   display: none !important;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
   z-index: 99999 !important;
-  opacity: 0;
-  pointer-events: none;
-  box-sizing: border-box;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .modal-backdrop.active {
@@ -1491,6 +1502,19 @@
   opacity: 0 !important;
   pointer-events: none !important;
   visibility: hidden !important;
+}
+
+.modal-dialog {
+  background: #FFFFFF !important;
+  border-radius: 16px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35) !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 100000 !important;
 }
 
 

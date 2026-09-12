@@ -627,7 +627,11 @@ async function showStudentBadgeModal(studentId) {
     btnPng.onclick = () => downloadCardAsPNG(student, cfg);
   }
 
-  document.getElementById('modal-carnet-backdrop').classList.add('active');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-carnet-backdrop', 'Carnet');
+  } else {
+    document.getElementById('modal-carnet-backdrop')?.classList.add('active');
+  }
 }
 
 // Obrir modal de registre manual (Admin)
@@ -636,7 +640,15 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
   if (!modal) return;
 
   // Obrir el modal immediatament
-  modal.classList.add('active');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-manual-backdrop', 'Entrada / Sortida Manual');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   const select = document.getElementById('admin-manual-student-select');
   const customTimeInput = document.getElementById('admin-manual-custom-time');
@@ -681,8 +693,24 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
   if (radioNow) radioNow.checked = true;
 }
 
+function closeAdminManualCheckinModal() {
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-admin-manual-backdrop');
+  } else {
+    const modal = document.getElementById('modal-admin-manual-backdrop');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.openAdminManualCheckinModal = openAdminManualCheckinModal;
+  window.closeAdminManualCheckinModal = closeAdminManualCheckinModal;
 }
 
 // Modal Nou Alumne (Funció global i des de la capçalera)
@@ -700,17 +728,162 @@ function openNewStudentModal() {
   const agePrev = document.getElementById('alumne-form-age-preview');
   if (agePrev) agePrev.textContent = '';
   const modal = document.getElementById('modal-alumne-backdrop');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    if (typeof triggerOpenModal === 'function') {
+      triggerOpenModal('modal-alumne-backdrop', 'Nou Alumne');
+    } else {
+      modal.classList.add('active');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+    }
+  }
 }
+
+function closeNewStudentModal() {
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-alumne-backdrop');
+  } else {
+    const modal = document.getElementById('modal-alumne-backdrop');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.openNewStudentModal = openNewStudentModal;
+  window.closeNewStudentModal = closeNewStudentModal;
+}
+
+// Modal Configuració (Àmbit global)
+async function openConfigModal() {
+  const modal = document.getElementById('modal-config-backdrop');
+  if (modal) {
+    if (typeof triggerOpenModal === 'function') {
+      triggerOpenModal('modal-config-backdrop', 'Configuració');
+    } else {
+      modal.classList.add('active');
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('opacity', '1', 'important');
+      modal.style.setProperty('pointer-events', 'auto', 'important');
+      modal.style.setProperty('visibility', 'visible', 'important');
+      modal.style.setProperty('z-index', '99999', 'important');
+    }
+  }
+  try {
+    const cfg = await Store.getConfig();
+    const elNom = document.getElementById('cfg-taller-nom');
+    if (elNom) elNom.value = cfg.taller_nom || '';
+    const elTel = document.getElementById('cfg-taller-telefon');
+    if (elTel) elTel.value = cfg.taller_telefon || '';
+    const elOblit = document.getElementById('cfg-durada-oblit');
+    if (elOblit) elOblit.value = cfg.hores_per_defecte_oblit || '01:30:00';
+    if (document.getElementById('cfg-edat-tall')) {
+      document.getElementById('cfg-edat-tall').value = cfg.edat_tall_infantil || '12';
+    }
+    if (document.getElementById('cfg-stripe-adults')) {
+      document.getElementById('cfg-stripe-adults').value = cfg.stripe_url_adults || '';
+    }
+    if (document.getElementById('cfg-stripe-infantil')) {
+      document.getElementById('cfg-stripe-infantil').value = cfg.stripe_url_infantil || '';
+    }
+    if (document.getElementById('cfg-sheets-url')) {
+      document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
+    }
+    if (document.getElementById('cfg-calendar-name')) {
+      const calName = (cfg.google_calendar_name && cfg.google_calendar_name !== 'Roig de Coure' && cfg.google_calendar_name !== 'roigdecoure') ? cfg.google_calendar_name : 'reserves';
+      document.getElementById('cfg-calendar-name').value = calName;
+    }
+    if (document.getElementById('cfg-whatsapp-enabled')) {
+      document.getElementById('cfg-whatsapp-enabled').checked = (cfg.whatsapp_enabled === '1' || cfg.whatsapp_enabled === 'true' || cfg.whatsapp_enabled === true);
+    }
+    if (document.getElementById('cfg-whatsapp-phone-id')) {
+      document.getElementById('cfg-whatsapp-phone-id').value = cfg.whatsapp_meta_phone_id || '';
+    }
+    if (document.getElementById('cfg-whatsapp-token')) {
+      document.getElementById('cfg-whatsapp-token').value = cfg.whatsapp_meta_token || '';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-confirm')) {
+      document.getElementById('cfg-whatsapp-tpl-confirm').value = cfg.whatsapp_meta_template_confirmacio || 'reserva_confirmada';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-48h')) {
+      document.getElementById('cfg-whatsapp-tpl-48h').value = cfg.whatsapp_meta_template_48h || 'recordatori_48h';
+    }
+    if (document.getElementById('cfg-whatsapp-tpl-dia')) {
+      document.getElementById('cfg-whatsapp-tpl-dia').value = cfg.whatsapp_meta_template_dia || 'recordatori_dia';
+    }
+  } catch (e) {
+    console.warn('Avís carregant dades de configuració:', e);
+  }
+}
+
+function closeConfigModal() {
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-config-backdrop');
+  } else {
+    const modal = document.getElementById('modal-config-backdrop');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+}
+
+// Modal Còpia de Seguretat i Exportació (Àmbit global)
+function openBackupModal() {
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-backup-backdrop', 'Còpia de Seguretat');
+  } else {
+    const m = document.getElementById('modal-backup-backdrop');
+    if (m) {
+      m.classList.add('active');
+      m.style.setProperty('display', 'flex', 'important');
+      m.style.setProperty('pointer-events', 'auto', 'important');
+      m.style.setProperty('opacity', '1', 'important');
+      m.style.setProperty('visibility', 'visible', 'important');
+    }
+  }
+  if (typeof loadSnapshotsList === 'function') {
+    loadSnapshotsList();
+  }
+}
+
+function closeBackupModal() {
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-backup-backdrop');
+  } else {
+    const m = document.getElementById('modal-backup-backdrop');
+    if (m) {
+      m.classList.remove('active');
+      m.style.setProperty('display', 'none', 'important');
+      m.style.setProperty('pointer-events', 'none', 'important');
+      m.style.setProperty('opacity', '0', 'important');
+      m.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.openConfigModal = openConfigModal;
+  window.closeConfigModal = closeConfigModal;
+  window.openBackupModal = openBackupModal;
+  window.closeBackupModal = closeBackupModal;
 }
 
 // SETUP D'ESDEVENIMENTS
 function setupEventListeners() {
-  initBrandStudio();
-  initReservesAdmin();
-  initCardDesigner();
+  try { initBrandStudio(); } catch (e) { console.warn('Avís initBrandStudio:', e); }
+  try { initReservesAdmin(); } catch (e) { console.warn('Avís initReservesAdmin:', e); }
+  try { initCardDesigner(); } catch (e) { console.warn('Avís initCardDesigner:', e); }
 
   // Navegació de la barra lateral (Estil WordPress)
   document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
@@ -767,21 +940,35 @@ function setupEventListeners() {
   }
 
   // Botons modals des de la barra lateral
-  document.getElementById('btn-sidebar-branding')?.addEventListener('click', () => {
-    if (typeof openBrandStudioModal === 'function') openBrandStudioModal();
-    else document.getElementById('modal-branding-backdrop')?.classList.add('active');
-  });
-  document.getElementById('btn-sidebar-config')?.addEventListener('click', () => {
-    openConfigModal();
-  });
-  document.getElementById('btn-sidebar-export')?.addEventListener('click', () => {
-    document.getElementById('modal-backup-backdrop')?.classList.add('active');
-  });
+  const btnSbBranding = document.getElementById('btn-sidebar-branding');
+  if (btnSbBranding && !btnSbBranding.getAttribute('onclick')) {
+    btnSbBranding.addEventListener('click', () => {
+      if (typeof openBrandStudioModal === 'function') openBrandStudioModal();
+      else if (typeof triggerOpenModal === 'function') triggerOpenModal('modal-branding-backdrop', 'Disseny & Marca');
+      else document.getElementById('modal-branding-backdrop')?.classList.add('active');
+    });
+  }
+
+  const btnSbConfig = document.getElementById('btn-sidebar-config');
+  if (btnSbConfig && !btnSbConfig.getAttribute('onclick')) {
+    btnSbConfig.addEventListener('click', () => {
+      openConfigModal();
+    });
+  }
+
+  const btnSbExport = document.getElementById('btn-sidebar-export');
+  if (btnSbExport && !btnSbExport.getAttribute('onclick')) {
+    btnSbExport.addEventListener('click', () => {
+      if (typeof openBackupModal === 'function') openBackupModal();
+      else if (typeof triggerOpenModal === 'function') triggerOpenModal('modal-backup-backdrop', 'Dades & Backup');
+      else document.getElementById('modal-backup-backdrop')?.classList.add('active');
+    });
+  }
 
   // Modals de Gestió de Festius, Restriccions i Tallers (Barra superior, Panell i Barra lateral)
   const attachModalOpener = (btnId, modalId, fnName) => {
     const el = document.getElementById(btnId);
-    if (el) {
+    if (el && !el.getAttribute('onclick')) {
       el.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -813,13 +1000,17 @@ function setupEventListeners() {
   attachModalOpener('btn-admin-tallers', 'modal-admin-tallers-backdrop', 'openAdminTallersModal');
 
   // Cerca d'alumnes en temps real
-  document.getElementById('search-students-input').addEventListener('input', () => {
+  document.getElementById('search-students-input')?.addEventListener('input', () => {
     renderStudentsTable(allStudents);
   });
 
   // Tancar Drawer
-  document.getElementById('btn-close-drawer').addEventListener('click', () => {
-    document.getElementById('student-drawer-backdrop').classList.remove('active');
+  document.getElementById('btn-close-drawer')?.addEventListener('click', () => {
+    if (typeof window.closeStudentDrawer === 'function') {
+      window.closeStudentDrawer();
+    } else {
+      document.getElementById('student-drawer-backdrop')?.classList.remove('active');
+    }
     currentViewingStudent = null;
   });
 
@@ -1361,48 +1552,7 @@ function setupEventListeners() {
   });
 
   // Modal Configuració
-  async function openConfigModal() {
-    const cfg = await Store.getConfig();
-    document.getElementById('cfg-taller-nom').value = cfg.taller_nom || '';
-    document.getElementById('cfg-taller-telefon').value = cfg.taller_telefon || '';
-    document.getElementById('cfg-durada-oblit').value = cfg.hores_per_defecte_oblit || '01:30:00';
-    if (document.getElementById('cfg-edat-tall')) {
-      document.getElementById('cfg-edat-tall').value = cfg.edat_tall_infantil || '12';
-    }
-    if (document.getElementById('cfg-stripe-adults')) {
-      document.getElementById('cfg-stripe-adults').value = cfg.stripe_url_adults || '';
-    }
-    if (document.getElementById('cfg-stripe-infantil')) {
-      document.getElementById('cfg-stripe-infantil').value = cfg.stripe_url_infantil || '';
-    }
-    document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
-    if (document.getElementById('cfg-calendar-name')) {
-      const calName = (cfg.google_calendar_name && cfg.google_calendar_name !== 'Roig de Coure' && cfg.google_calendar_name !== 'roigdecoure') ? cfg.google_calendar_name : 'reserves';
-      document.getElementById('cfg-calendar-name').value = calName;
-    }
-    if (document.getElementById('cfg-whatsapp-enabled')) {
-      document.getElementById('cfg-whatsapp-enabled').checked = (cfg.whatsapp_enabled === '1' || cfg.whatsapp_enabled === 'true' || cfg.whatsapp_enabled === true);
-    }
-    if (document.getElementById('cfg-whatsapp-phone-id')) {
-      document.getElementById('cfg-whatsapp-phone-id').value = cfg.whatsapp_meta_phone_id || '';
-    }
-    if (document.getElementById('cfg-whatsapp-token')) {
-      document.getElementById('cfg-whatsapp-token').value = cfg.whatsapp_meta_token || '';
-    }
-    if (document.getElementById('cfg-whatsapp-tpl-confirm')) {
-      document.getElementById('cfg-whatsapp-tpl-confirm').value = cfg.whatsapp_meta_template_confirmacio || 'reserva_confirmada';
-    }
-    if (document.getElementById('cfg-whatsapp-tpl-48h')) {
-      document.getElementById('cfg-whatsapp-tpl-48h').value = cfg.whatsapp_meta_template_48h || 'recordatori_48h';
-    }
-    if (document.getElementById('cfg-whatsapp-tpl-dia')) {
-      document.getElementById('cfg-whatsapp-tpl-dia').value = cfg.whatsapp_meta_template_dia || 'recordatori_dia';
-    }
-    document.getElementById('modal-config-backdrop').classList.add('active');
-  }
-
   document.getElementById('btn-configuracio')?.addEventListener('click', openConfigModal);
-  document.getElementById('btn-sidebar-config')?.addEventListener('click', openConfigModal);
 
   document.getElementById('form-config').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1425,7 +1575,11 @@ function setupEventListeners() {
     try {
       await Store.saveConfig(newCfg);
       showToast('Configuració desada correctament', 'success');
-      document.getElementById('modal-config-backdrop').classList.remove('active');
+      if (typeof window.closeAnyModal === 'function') {
+        window.closeAnyModal('modal-config-backdrop');
+      } else {
+        document.getElementById('modal-config-backdrop').classList.remove('active');
+      }
       await loadConfig();
     } catch (err) {
       showToast(err.message, 'error');
@@ -1523,12 +1677,10 @@ function setupEventListeners() {
 
   // Modal Backup & Export
   document.getElementById('btn-exportar')?.addEventListener('click', () => {
-    document.getElementById('modal-backup-backdrop').classList.add('active');
-    loadSnapshotsList();
+    openBackupModal();
   });
   document.getElementById('btn-sidebar-export')?.addEventListener('click', () => {
-    document.getElementById('modal-backup-backdrop').classList.add('active');
-    loadSnapshotsList();
+    openBackupModal();
   });
 
   // Botó per crear snapshot manual immediat
@@ -1561,36 +1713,31 @@ function setupEventListeners() {
     const newPin = newInput.value.trim();
 
     if (!oldPin || !newPin) {
-      statusEl.textContent = 'Cal omplir el PIN actual i el nou PIN.';
-      statusEl.style.color = '#D32F2F';
+      statusEl.style.color = '#831D1D';
+      statusEl.textContent = 'Omple tant el PIN actual com el nou.';
       statusEl.style.display = 'block';
       return;
     }
 
     try {
-      const apiBase = getAdminApiBase();
-      const res = await fetch(`${apiBase}/api/admin/change-pin`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oldPin, newPin })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        statusEl.textContent = data.message || 'PIN actualitzat correctament!';
-        statusEl.style.color = '#2E7D32';
-        statusEl.style.display = 'block';
+      statusEl.style.color = '#6B7280';
+      statusEl.textContent = 'Comprovant i canviant PIN...';
+      statusEl.style.display = 'block';
+
+      const res = await Store.changeAdminPin(oldPin, newPin);
+      if (res.ok) {
+        statusEl.style.color = '#2E6F40';
+        statusEl.textContent = res.message || 'PIN canviat amb èxit!';
         curInput.value = '';
         newInput.value = '';
-        showToast('PIN d\'administrador actualitzat!', 'success');
+        showToast('PIN d\'administració actualitzat!', 'success');
       } else {
-        statusEl.textContent = data.error || 'Error actualitzant el PIN.';
-        statusEl.style.color = '#D32F2F';
-        statusEl.style.display = 'block';
+        statusEl.style.color = '#831D1D';
+        statusEl.textContent = res.error || 'Error canviant el PIN.';
       }
     } catch (err) {
-      statusEl.textContent = 'Error de connexió: ' + err.message;
-      statusEl.style.color = '#D32F2F';
-      statusEl.style.display = 'block';
+      statusEl.style.color = '#831D1D';
+      statusEl.textContent = 'Error: ' + err.message;
     }
   });
 
@@ -1606,7 +1753,7 @@ function setupEventListeners() {
       try {
         const res = await Store.importBackupJson(file);
         showToast(res.message, 'success');
-        document.getElementById('modal-backup-backdrop').classList.remove('active');
+        closeBackupModal();
         await refreshStudentsList();
       } catch (err) {
         showToast(err.message, 'error');
@@ -1846,7 +1993,12 @@ function initBrandStudio() {
         document.documentElement.style.setProperty('--color-primary', prim);
         document.documentElement.style.setProperty('--brand-secondary', sec);
 
-        modalBranding.classList.remove('active');
+        if (typeof closeAnyModal === 'function') {
+          closeAnyModal('modal-branding-backdrop');
+        } else {
+          modalBranding.classList.remove('active');
+          modalBranding.style.setProperty('display', 'none', 'important');
+        }
         showToast('Imatge de marca actualitzada i sincronitzada amb èxit!', 'success');
       } catch (err) {
         showToast('Error desant el disseny: ' + err.message, 'error');
@@ -1858,6 +2010,16 @@ function initBrandStudio() {
 async function openBrandStudioModal() {
   const modal = document.getElementById('modal-branding-backdrop');
   if (!modal) return;
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-branding-backdrop', 'Disseny & Marca');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   try {
     const cfg = await Store.getConfig();
@@ -1904,7 +2066,6 @@ async function openBrandStudioModal() {
     }
 
     updateBrandPreview();
-    modal.classList.add('active');
   } catch (err) {
     console.warn('Error obrint estudi de disseny:', err);
   }
@@ -2029,10 +2190,10 @@ function initReservesAdmin() {
   }
 
   document.getElementById('btn-close-modal-reserves')?.addEventListener('click', () => {
-    modal?.classList.remove('active');
+    closeReservesModal();
   });
   document.getElementById('btn-close-modal-reserves-footer')?.addEventListener('click', () => {
-    modal?.classList.remove('active');
+    closeReservesModal();
   });
 
   // Desar aforament màxim global
@@ -2156,10 +2317,38 @@ function initReservesAdmin() {
   });
 }
 
+function closeReservesModal() {
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-reserves-backdrop');
+  } else {
+    const modal = document.getElementById('modal-reserves-backdrop');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.closeReservesModal = closeReservesModal;
+}
+
 async function openReservesModal(preselectedDate) {
   const modal = document.getElementById('modal-reserves-backdrop');
   if (!modal) return;
-  modal.classList.add('active');
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-reserves-backdrop', 'Reserves');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   const targetDate = preselectedDate || null;
 
@@ -2903,7 +3092,15 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
     return;
   }
   // Obrir el modal immediatament
-  modal.classList.add('active');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-nova-reserva-backdrop', 'Nova Reserva');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   // Selector d'alumnes
   const studentSelect = document.getElementById('admin-res-student-select');
@@ -2991,8 +3188,18 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
 }
 
 function closeAdminNovaReservaModal() {
-  const modal = document.getElementById('modal-admin-nova-reserva-backdrop');
-  if (modal) modal.classList.remove('active');
+  if (typeof closeAnyModal === 'function') {
+    closeAnyModal('modal-admin-nova-reserva-backdrop');
+  } else {
+    const modal = document.getElementById('modal-admin-nova-reserva-backdrop');
+    if (modal) {
+      modal.classList.remove('active');
+      modal.style.setProperty('display', 'none', 'important');
+      modal.style.setProperty('pointer-events', 'none', 'important');
+      modal.style.setProperty('opacity', '0', 'important');
+      modal.style.setProperty('visibility', 'hidden', 'important');
+    }
+  }
 }
 
 function toggleAdminReservaClientType() {
@@ -4007,12 +4214,42 @@ if (typeof window !== 'undefined') {
   window.openStudentInlineDetail = openStudentInlineDetail;
   window.closeStudentInlineDetail = closeStudentInlineDetail;
   window.openStudentDrawer = openStudentDrawer;
+  window.closeStudentDrawer = function() {
+    if (typeof closeAnyModal === 'function') closeAnyModal('student-drawer-backdrop');
+    else {
+      const d = document.getElementById('student-drawer-backdrop');
+      if (d) {
+        d.classList.remove('active');
+        d.style.setProperty('display', 'none', 'important');
+        d.style.setProperty('pointer-events', 'none', 'important');
+      }
+    }
+    currentViewingStudent = null;
+  };
+  window.openBrandStudioModal = openBrandStudioModal;
+  window.closeBrandStudioModal = function() {
+    if (typeof closeAnyModal === 'function') closeAnyModal('modal-branding-backdrop');
+  };
+  window.openConfigModal = openConfigModal;
+  window.closeConfigModal = function() {
+    if (typeof closeAnyModal === 'function') closeAnyModal('modal-config-backdrop');
+  };
   window.openAdminFestiusModal = openAdminFestiusModal;
   window.closeAdminFestiusModal = closeAdminFestiusModal;
   window.openAdminRestriccionsModal = openAdminRestriccionsModal;
   window.closeAdminRestriccionsModal = closeAdminRestriccionsModal;
   window.openAdminTallersModal = openAdminTallersModal;
   window.closeAdminTallersModal = closeAdminTallersModal;
+  window.openReservesModal = openReservesModal;
+  window.closeReservesModal = closeReservesModal;
+  window.openAdminNovaReservaModal = openAdminNovaReservaModal;
+  window.closeAdminNovaReservaModal = closeAdminNovaReservaModal;
+  window.openAdminManualCheckinModal = openAdminManualCheckinModal;
+  window.closeAdminManualCheckinModal = closeAdminManualCheckinModal;
+  window.openNewStudentModal = openNewStudentModal;
+  window.closeNewStudentModal = closeNewStudentModal;
+  window.openBackupModal = openBackupModal;
+  window.closeBackupModal = closeBackupModal;
   window.selectPaletteColor = selectPaletteColor;
   window.handleSaveAdminTaller = handleSaveAdminTaller;
   window.resetAdminTallerForm = resetAdminTallerForm;
@@ -4047,8 +4284,15 @@ function closeAdminFestiusModal() {
 async function openAdminFestiusModal(preselectedDate) {
   const modal = document.getElementById('modal-admin-festius-backdrop');
   if (!modal) return;
-  modal.classList.add('active');
-  modal.style.setProperty('display', 'flex', 'important');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-festius-backdrop', 'Festius');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
   const inputInici = document.getElementById('festiu-data-inici');
@@ -4238,8 +4482,15 @@ function closeAdminRestriccionsModal() {
 async function openAdminRestriccionsModal(preselectedDate) {
   const modal = document.getElementById('modal-admin-restriccions-backdrop');
   if (!modal) return;
-  modal.classList.add('active');
-  modal.style.setProperty('display', 'flex', 'important');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-restriccions-backdrop', 'Restriccions');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
 
   const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
   
@@ -4748,8 +4999,15 @@ function closeAdminTallersModal() {
 function openAdminTallersModal() {
   const modal = document.getElementById('modal-admin-tallers-backdrop');
   if (!modal) return;
-  modal.classList.add('active');
-  modal.style.setProperty('display', 'flex', 'important');
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-tallers-backdrop', 'Gestió de Tallers');
+  } else {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+  }
   try {
     resetAdminTallerForm();
     loadAndRenderAdminTallers();
