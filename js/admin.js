@@ -778,6 +778,40 @@ function setupEventListeners() {
     document.getElementById('modal-backup-backdrop')?.classList.add('active');
   });
 
+  // Modals de Gestió de Festius, Restriccions i Tallers (Barra superior, Panell i Barra lateral)
+  const attachModalOpener = (btnId, modalId, fnName) => {
+    const el = document.getElementById(btnId);
+    if (el) {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.triggerOpenModal === 'function') {
+          window.triggerOpenModal(modalId, fnName);
+        } else if (typeof window[fnName] === 'function') {
+          window[fnName]();
+        } else {
+          const m = document.getElementById(modalId);
+          if (m) {
+            m.classList.add('active');
+            m.style.setProperty('display', 'flex', 'important');
+          }
+        }
+      });
+    }
+  };
+
+  attachModalOpener('btn-sidebar-festius', 'modal-admin-festius-backdrop', 'openAdminFestiusModal');
+  attachModalOpener('btn-sidebar-restriccions', 'modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');
+  attachModalOpener('btn-sidebar-tallers', 'modal-admin-tallers-backdrop', 'openAdminTallersModal');
+
+  attachModalOpener('btn-admin-festius-top', 'modal-admin-festius-backdrop', 'openAdminFestiusModal');
+  attachModalOpener('btn-admin-restriccions-top', 'modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');
+  attachModalOpener('btn-admin-tallers-top', 'modal-admin-tallers-backdrop', 'openAdminTallersModal');
+
+  attachModalOpener('btn-admin-festius', 'modal-admin-festius-backdrop', 'openAdminFestiusModal');
+  attachModalOpener('btn-admin-restriccions', 'modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');
+  attachModalOpener('btn-admin-tallers', 'modal-admin-tallers-backdrop', 'openAdminTallersModal');
+
   // Cerca d'alumnes en temps real
   document.getElementById('search-students-input').addEventListener('input', () => {
     renderStudentsTable(allStudents);
@@ -3962,7 +3996,9 @@ if (typeof window !== 'undefined') {
   window.closeStudentInlineDetail = closeStudentInlineDetail;
   window.openStudentDrawer = openStudentDrawer;
   window.openAdminFestiusModal = openAdminFestiusModal;
+  window.closeAdminFestiusModal = closeAdminFestiusModal;
   window.openAdminRestriccionsModal = openAdminRestriccionsModal;
+  window.closeAdminRestriccionsModal = closeAdminRestriccionsModal;
   window.openAdminTallersModal = openAdminTallersModal;
   window.closeAdminTallersModal = closeAdminTallersModal;
   window.selectPaletteColor = selectPaletteColor;
@@ -3981,10 +4017,19 @@ if (typeof window !== 'undefined') {
 // ==================== GESTIÓ DE DIES DE FESTA I VACANCES ====================
 let adminFestiusList = [];
 
+function closeAdminFestiusModal() {
+  const modal = document.getElementById('modal-admin-festius-backdrop');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.setProperty('display', 'none', 'important');
+  }
+}
+
 async function openAdminFestiusModal(preselectedDate) {
   const modal = document.getElementById('modal-admin-festius-backdrop');
   if (!modal) return;
   modal.classList.add('active');
+  modal.style.setProperty('display', 'flex', 'important');
 
   const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
   const inputInici = document.getElementById('festiu-data-inici');
@@ -4000,60 +4045,82 @@ async function openAdminFestiusModal(preselectedDate) {
   await loadAdminFestiusList();
 }
 
+function renderFestiusTableHtml(container, list) {
+  if (!container) return;
+  const festius = Array.isArray(list) ? list : [];
+  if (festius.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
+        No hi ha cap dia de festa personalitzat configurat.<br>
+        <span style="font-size: 12px; color: #9CA3AF;">Utilitza el formulari superior per afegir un tancament o període de vacances.</span>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <table class="data-table" style="width: 100%; font-size: 12.5px;">
+      <thead>
+        <tr style="background: #F9FAFB;">
+          <th style="padding: 8px 10px;">Dates</th>
+          <th style="padding: 8px 10px;">Nom / Celebració</th>
+          <th style="padding: 8px 10px;">Motiu</th>
+          <th style="padding: 8px 10px; text-align: right;">Acció</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  festius.forEach(f => {
+    if (!f) return;
+    const datesDesc = (f.data_inici === f.data_fi || !f.data_fi) 
+      ? formatCatalanShortDate(f.data_inici) 
+      : `Del ${formatCatalanShortDate(f.data_inici)} al ${formatCatalanShortDate(f.data_fi)}`;
+    html += `
+      <tr>
+        <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
+        <td style="padding: 8px 10px; font-weight: 700; color: #92400E;">${escapeHtml(f.nom || 'Festa')}</td>
+        <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(f.motiu || '-')}</td>
+        <td style="padding: 8px 10px; text-align: right;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteFestiu(${f.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
+            Eliminar
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 async function loadAdminFestiusList() {
   const container = document.getElementById('festius-list-container');
   if (!container) return;
-  container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant dies de festa...</div>';
 
+  // 1. Renderització immediata amb les dades disponibles (0 ms retard)
+  if (adminFestiusList && adminFestiusList.length > 0) {
+    renderFestiusTableHtml(container, adminFestiusList);
+  } else {
+    const local = (typeof Store !== 'undefined' && typeof Store._getLocalData === 'function') ? Store._getLocalData() : null;
+    const localFestius = (local && local.dies_festius) || [];
+    if (localFestius.length > 0) {
+      adminFestiusList = localFestius;
+      renderFestiusTableHtml(container, adminFestiusList);
+    } else {
+      container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant dies de festa...</div>';
+    }
+  }
+
+  // 2. Consulta al servidor
   try {
     const data = await Store.getFestius();
-    adminFestiusList = (data && data.festius_personalitzats) || [];
-
-    if (adminFestiusList.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
-          No hi ha cap dia de festa personalitzat configurat.<br>
-          <span style="font-size: 12px; color: #9CA3AF;">Utilitza el formulari superior per afegir un tancament o període de vacances.</span>
-        </div>
-      `;
-      return;
+    if (data && Array.isArray(data.festius_personalitzats)) {
+      adminFestiusList = data.festius_personalitzats;
+      renderFestiusTableHtml(container, adminFestiusList);
     }
-
-    let html = `
-      <table class="data-table" style="width: 100%; font-size: 12.5px;">
-        <thead>
-          <tr style="background: #F9FAFB;">
-            <th style="padding: 8px 10px;">Dates</th>
-            <th style="padding: 8px 10px;">Nom / Celebració</th>
-            <th style="padding: 8px 10px;">Motiu</th>
-            <th style="padding: 8px 10px; text-align: right;">Acció</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    adminFestiusList.forEach(f => {
-      const datesDesc = (f.data_inici === f.data_fi || !f.data_fi) 
-        ? formatCatalanShortDate(f.data_inici) 
-        : `Del ${formatCatalanShortDate(f.data_inici)} al ${formatCatalanShortDate(f.data_fi)}`;
-      html += `
-        <tr>
-          <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
-          <td style="padding: 8px 10px; font-weight: 700; color: #92400E;">${escapeHtml(f.nom || 'Festa')}</td>
-          <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(f.motiu || '-')}</td>
-          <td style="padding: 8px 10px; text-align: right;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteFestiu(${f.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      `;
-    });
-
-    html += '</tbody></table>';
-    container.innerHTML = html;
   } catch (err) {
-    container.innerHTML = `<div style="padding: 16px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant dies de festa: ${escapeHtml(err.message)}</div>`;
+    console.warn('Avís sincronitzant festius remots:', err);
   }
 }
 
@@ -4134,10 +4201,19 @@ async function eliminarFestiuDesDeDia(id) {
 // ==================== GESTIÓ DE RESTRICCIONS D'ACTIVITATS ====================
 let adminRestriccionsList = [];
 
+function closeAdminRestriccionsModal() {
+  const modal = document.getElementById('modal-admin-restriccions-backdrop');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.setProperty('display', 'none', 'important');
+  }
+}
+
 async function openAdminRestriccionsModal(preselectedDate) {
   const modal = document.getElementById('modal-admin-restriccions-backdrop');
   if (!modal) return;
   modal.classList.add('active');
+  modal.style.setProperty('display', 'flex', 'important');
 
   const defaultDate = preselectedDate || adminSelectedDate || new Date().toISOString().split('T')[0];
   
@@ -4159,12 +4235,12 @@ async function openAdminRestriccionsModal(preselectedDate) {
   if (inputRangFi) inputRangFi.value = defaultDate;
   if (inputMotiu) inputMotiu.value = '';
 
-  // Generar dinàmicament els checkboxes de tallers actius
+  // Generar dinàmicament els checkboxes de tallers actius (renderització immediata)
   const chkContainer = document.getElementById('restr-tallers-checkboxes-container');
   if (chkContainer) {
     const acts = (adminTallersList && adminTallersList.length > 0)
       ? adminTallersList.filter(a => a.actiu !== false)
-      : await Store.getActivitatsConfig(false);
+      : (typeof Store !== 'undefined' ? Store.getActivitats() : []);
 
     chkContainer.innerHTML = acts.map(a => `
       <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 6px 10px; border: 1px solid #10B981; border-radius: 6px; background: #ECFDF5;" id="lbl-act-${a.id}">
@@ -4321,72 +4397,94 @@ function updateRestriccionsSummary() {
   }
 }
 
+function renderRestriccionsTableHtml(container, list) {
+  if (!container) return;
+  const restriccions = Array.isArray(list) ? list : [];
+  if (restriccions.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
+        No hi ha cap restricció de tallers configurada.<br>
+        <span style="font-size: 12px; color: #9CA3AF;">Tots els tallers estan actius segons el calendari habitual.</span>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <table class="data-table" style="width: 100%; font-size: 12px;">
+      <thead>
+        <tr style="background: #F9FAFB;">
+          <th style="padding: 8px 10px;">Dates / Període</th>
+          <th style="padding: 8px 10px;">Abast</th>
+          <th style="padding: 8px 10px;">Permesos</th>
+          <th style="padding: 8px 10px;">Bloquejats</th>
+          <th style="padding: 8px 10px;">Motiu</th>
+          <th style="padding: 8px 10px; text-align: right;">Acció</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  restriccions.forEach(r => {
+    if (!r) return;
+    const datesDesc = (r.data_inici === r.data_fi || !r.data_fi) 
+      ? formatCatalanShortDate(r.data_inici) 
+      : `Del ${formatCatalanShortDate(r.data_inici)} al ${formatCatalanShortDate(r.data_fi)}`;
+    const permText = (r.activitats_permeses && r.activitats_permeses.length) ? r.activitats_permeses.join(', ') : '-';
+    const bloqText = (r.activitats_bloquejades && r.activitats_bloquejades.length) ? r.activitats_bloquejades.join(', ') : '-';
+    
+    let abastLabel = 'Dia';
+    if (r.tipus_abast === 'setmana') abastLabel = 'Setmana';
+    else if (r.tipus_abast === 'mes') abastLabel = 'Mes';
+    else if (r.tipus_abast === 'rang') abastLabel = 'Interval';
+
+    html += `
+      <tr>
+        <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
+        <td style="padding: 8px 10px;"><span class="badge badge-neutral" style="font-size: 10.5px;">${abastLabel}</span></td>
+        <td style="padding: 8px 10px; color: #047857; font-weight: 600;">${escapeHtml(permText)}</td>
+        <td style="padding: 8px 10px; color: #DC2626; font-weight: 600;">${escapeHtml(bloqText)}</td>
+        <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(r.motiu || '-')}</td>
+        <td style="padding: 8px 10px; text-align: right;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteRestriccio(${r.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
+            Eliminar
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 async function loadAdminRestriccionsList() {
   const container = document.getElementById('restriccions-list-container');
   if (!container) return;
-  container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant restriccions...</div>';
 
+  // 1. Renderització immediata amb les dades disponibles (0 ms retard)
+  if (adminRestriccionsList && adminRestriccionsList.length > 0) {
+    renderRestriccionsTableHtml(container, adminRestriccionsList);
+  } else {
+    const local = (typeof Store !== 'undefined' && typeof Store._getLocalData === 'function') ? Store._getLocalData() : null;
+    const localRestr = (local && local.restriccions_activitats) || [];
+    if (localRestr.length > 0) {
+      adminRestriccionsList = localRestr;
+      renderRestriccionsTableHtml(container, adminRestriccionsList);
+    } else {
+      container.innerHTML = '<div style="padding: 16px; text-align: center; color: #6B7280; font-size: 12px;">Carregant restriccions...</div>';
+    }
+  }
+
+  // 2. Consulta de dades actualitzades al servidor
   try {
     const data = await Store.getRestriccionsActivitats();
-    adminRestriccionsList = (data && data.restriccions) || [];
-
-    if (adminRestriccionsList.length === 0) {
-      container.innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">
-          No hi ha cap restricció de tallers configurada.<br>
-          <span style="font-size: 12px; color: #9CA3AF;">Tots els tallers estan actius segons el calendari habitual.</span>
-        </div>
-      `;
-      return;
+    if (data && Array.isArray(data.restriccions)) {
+      adminRestriccionsList = data.restriccions;
+      renderRestriccionsTableHtml(container, adminRestriccionsList);
     }
-
-    let html = `
-      <table class="data-table" style="width: 100%; font-size: 12px;">
-        <thead>
-          <tr style="background: #F9FAFB;">
-            <th style="padding: 8px 10px;">Dates / Període</th>
-            <th style="padding: 8px 10px;">Abast</th>
-            <th style="padding: 8px 10px;">Permesos</th>
-            <th style="padding: 8px 10px;">Bloquejats</th>
-            <th style="padding: 8px 10px;">Motiu</th>
-            <th style="padding: 8px 10px; text-align: right;">Acció</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    adminRestriccionsList.forEach(r => {
-      const datesDesc = (r.data_inici === r.data_fi || !r.data_fi) 
-        ? formatCatalanShortDate(r.data_inici) 
-        : `Del ${formatCatalanShortDate(r.data_inici)} al ${formatCatalanShortDate(r.data_fi)}`;
-      const permText = (r.activitats_permeses && r.activitats_permeses.length) ? r.activitats_permeses.join(', ') : '-';
-      const bloqText = (r.activitats_bloquejades && r.activitats_bloquejades.length) ? r.activitats_bloquejades.join(', ') : '-';
-      
-      let abastLabel = 'Dia';
-      if (r.tipus_abast === 'setmana') abastLabel = 'Setmana';
-      else if (r.tipus_abast === 'mes') abastLabel = 'Mes';
-      else if (r.tipus_abast === 'rang') abastLabel = 'Interval';
-
-      html += `
-        <tr>
-          <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
-          <td style="padding: 8px 10px;"><span class="badge badge-neutral" style="font-size: 10.5px;">${abastLabel}</span></td>
-          <td style="padding: 8px 10px; color: #047857; font-weight: 600;">${escapeHtml(permText)}</td>
-          <td style="padding: 8px 10px; color: #DC2626; font-weight: 600;">${escapeHtml(bloqText)}</td>
-          <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(r.motiu || '-')}</td>
-          <td style="padding: 8px 10px; text-align: right;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteRestriccio(${r.id})" style="color: #DC2626; border-color: #FCA5A5; padding: 2px 8px; font-size: 11px;">
-              Eliminar
-            </button>
-          </td>
-        </tr>
-      `;
-    });
-
-    html += '</tbody></table>';
-    container.innerHTML = html;
   } catch (err) {
-    container.innerHTML = `<div style="padding: 16px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant restriccions: ${escapeHtml(err.message)}</div>`;
+    console.warn('Avís sincronitzant restriccions remotes:', err);
   }
 }
 
@@ -4608,13 +4706,17 @@ async function populateNovaReservaActivitats() {
 
 function closeAdminTallersModal() {
   const modal = document.getElementById('modal-admin-tallers-backdrop');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.setProperty('display', 'none', 'important');
+  }
 }
 
 function openAdminTallersModal() {
   const modal = document.getElementById('modal-admin-tallers-backdrop');
   if (!modal) return;
   modal.classList.add('active');
+  modal.style.setProperty('display', 'flex', 'important');
   try {
     resetAdminTallerForm();
     loadAndRenderAdminTallers();

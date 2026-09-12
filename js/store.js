@@ -1379,11 +1379,15 @@ const Store = {
   async getFestius() {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/festius?t=${Date.now()}`);
+        const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+        const fetchOpts = controller ? { signal: controller.signal } : {};
+        const res = await fetch(`${this.apiBase}/api/festius?t=${Date.now()}`, fetchOpts);
+        if (timeoutId) clearTimeout(timeoutId);
         const data = await res.json();
         if (data.ok) return data;
       } catch (e) {
-        console.warn('Error obtenint festius de l\'API:', e);
+        console.warn('Error o timeout obtenint festius de l\'API:', e);
       }
     }
     const local = this._getLocalData();
@@ -1446,11 +1450,15 @@ const Store = {
   async getRestriccionsActivitats() {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/restriccions-activitats?t=${Date.now()}`);
+        const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
+        const fetchOpts = controller ? { signal: controller.signal } : {};
+        const res = await fetch(`${this.apiBase}/api/restriccions-activitats?t=${Date.now()}`, fetchOpts);
+        if (timeoutId) clearTimeout(timeoutId);
         const data = await res.json();
         if (data.ok) return data;
       } catch (e) {
-        console.warn('Error obtenint restriccions de l\'API:', e);
+        console.warn('Error o timeout obtenint restriccions de l\'API:', e);
       }
     }
     const local = this._getLocalData();

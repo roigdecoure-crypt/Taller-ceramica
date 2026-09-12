@@ -212,21 +212,29 @@ button {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(30, 26, 24, 0.6);
+  background: rgba(30, 26, 24, 0.65);
   backdrop-filter: blur(4px);
-  display: flex;
+  display: none !important;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  z-index: 1000;
+  z-index: 99999 !important;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
   box-sizing: border-box;
 }
 .modal-backdrop.active {
-  opacity: 1;
-  pointer-events: auto;
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+.modal-backdrop:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 .modal-dialog {
   background: var(--color-card);

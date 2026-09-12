@@ -16,32 +16,59 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=9.0">
-  <link rel="stylesheet" href="css/admin.css?v=9.9">
-  <link rel="stylesheet" href="css/card.css?v=9.0">
+  <link rel="stylesheet" href="css/styles.css?v=9.9.2">
+  <link rel="stylesheet" href="css/admin.css?v=9.9.2">
+  <link rel="stylesheet" href="css/card.css?v=9.9.2">
   <script>
     function triggerOpenModal(modalId, specificFnName) {
+      var m = document.getElementById(modalId);
+      if (m) {
+        m.classList.add('active');
+        m.style.setProperty('display', 'flex', 'important');
+      }
       if (specificFnName && typeof window[specificFnName] === 'function') {
         try {
           window[specificFnName]();
-          return;
         } catch (e) {
           console.warn('Avís cridant ' + specificFnName + ':', e);
         }
       }
-      var m = document.getElementById(modalId);
+    }
+
+    function closeAdminFestiusModal() {
+      var m = document.getElementById('modal-admin-festius-backdrop');
       if (m) {
-        m.classList.add('active');
+        m.classList.remove('active');
+        m.style.setProperty('display', 'none', 'important');
       }
     }
+
+    function closeAdminRestriccionsModal() {
+      var m = document.getElementById('modal-admin-restriccions-backdrop');
+      if (m) {
+        m.classList.remove('active');
+        m.style.setProperty('display', 'none', 'important');
+      }
+    }
+
     function closeAdminTallersModal() {
       var m = document.getElementById('modal-admin-tallers-backdrop');
-      if (m) m.classList.remove('active');
+      if (m) {
+        m.classList.remove('active');
+        m.style.setProperty('display', 'none', 'important');
+      }
     }
+
+    window.closeAdminFestiusModal = closeAdminFestiusModal;
+    window.closeAdminRestriccionsModal = closeAdminRestriccionsModal;
+    window.closeAdminTallersModal = closeAdminTallersModal;
+    window.triggerOpenModal = triggerOpenModal;
+
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         document.querySelectorAll('.modal-backdrop.active').forEach(function(m) {
           m.classList.remove('active');
+          m.style.setProperty('display', 'none', 'important');
         });
       }
     });
@@ -1914,14 +1941,14 @@
   </div>
 
   <!-- MODAL: GESTIÓ DE DIES DE FESTA I VACANCES -->
-  <div class="modal-backdrop" id="modal-admin-festius-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+  <div class="modal-backdrop" id="modal-admin-festius-backdrop" onclick="if(event.target===this) closeAdminFestiusModal();">
     <div class="modal-dialog" style="max-width: 680px;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Dies de Festa i Vacances</h3>
           <p style="margin: 4px 0 0; font-size: 12.5px; color: #6B7280;">Configura dies tancats o períodes de vacances. Les reserves públiques quedaran blocades.</p>
         </div>
-        <button type="button" class="modal-close" data-close="modal-admin-festius-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAdminFestiusModal();" data-close="modal-admin-festius-backdrop" aria-label="Tancar">&times;</button>
       </div>
 
       <div style="padding: 16px 0; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
@@ -1979,20 +2006,20 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; border-top: 1px solid #E5E7EB; padding-top: 12px; margin-top: 8px;">
-        <button type="button" class="btn btn-outline" data-close="modal-admin-festius-backdrop">Tancar</button>
+        <button type="button" class="btn btn-outline" onclick="closeAdminFestiusModal();" data-close="modal-admin-festius-backdrop">Tancar</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL: RESTRICCIÓ DE TALLERS I ACTIVITATS -->
-  <div class="modal-backdrop" id="modal-admin-restriccions-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+  <div class="modal-backdrop" id="modal-admin-restriccions-backdrop" onclick="if(event.target===this) closeAdminRestriccionsModal();">
     <div class="modal-dialog" style="max-width: 720px;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Restricció de Tallers i Activitats</h3>
           <p style="margin: 4px 0 0; font-size: 12.5px; color: #6B7280;">Configura quins tallers es poden fer i quins queden blocats per a un dia, setmana o mes.</p>
         </div>
-        <button type="button" class="modal-close" data-close="modal-admin-restriccions-backdrop">&times;</button>
+        <button type="button" class="modal-close" onclick="closeAdminRestriccionsModal();" data-close="modal-admin-restriccions-backdrop" aria-label="Tancar">&times;</button>
       </div>
 
       <div style="padding: 16px 0; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
@@ -2118,7 +2145,7 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; border-top: 1px solid #E5E7EB; padding-top: 12px; margin-top: 8px;">
-        <button type="button" class="btn btn-outline" data-close="modal-admin-restriccions-backdrop">Tancar</button>
+        <button type="button" class="btn btn-outline" onclick="closeAdminRestriccionsModal();" data-close="modal-admin-restriccions-backdrop">Tancar</button>
       </div>
     </div>
   </div>
@@ -2211,8 +2238,8 @@
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.1"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.9.1"></script>
-  <script src="js/reserves-calendar.js?v=9.9.1"></script>
-  <script src="js/admin.js?v=9.9.1"></script>
+  <script src="js/store.js?v=9.9.2"></script>
+  <script src="js/reserves-calendar.js?v=9.9.2"></script>
+  <script src="js/admin.js?v=9.9.2"></script>
 </body>
 </html>
