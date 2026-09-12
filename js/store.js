@@ -901,13 +901,16 @@ const Store = {
 
   getActivitats() {
     const data = this._getLocalData();
+    if (data.activitats && Array.isArray(data.activitats) && data.activitats.length > 0) {
+      return data.activitats.filter(a => a.actiu !== false);
+    }
     const capTorn = parseInt(data.config?.capacitat_max_torn || 4, 10);
     const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
     const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
     return [
-      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "", color: "#831D1D" },
-      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "", color: "#5E7E6F" },
-      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "", color: "#831D1D" }
+      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "", color: "#B91C1C", actiu: true },
+      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "", color: "#047857", actiu: true },
+      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "", color: "#1D4ED8", actiu: true }
     ];
   },
 
@@ -1250,15 +1253,24 @@ const Store = {
     return { ok: true, aforamentMaxim: val };
   },
 
-  async getActivitatsConfig() {
+  async getActivitatsConfig(includeInactive = false) {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/reserves/activitats?t=${Date.now()}`);
+        const res = await fetch(`${this.apiBase}/api/activitats?tots=${includeInactive ? '1' : '0'}&t=${Date.now()}`);
         const json = await res.json();
-        if (json.ok && json.activitats) return json.activitats;
+        if (json.ok && json.activitats) {
+          const local = this._getLocalData();
+          local.activitats = json.activitats;
+          this._saveLocalData(local);
+          return json.activitats;
+        }
       } catch (e) {
         console.warn('Error obtenint activitats:', e);
       }
+    }
+    const local = this._getLocalData();
+    if (local.activitats && Array.isArray(local.activitats) && local.activitats.length > 0) {
+      return includeInactive ? local.activitats : local.activitats.filter(a => a.actiu !== false);
     }
     return this.getActivitats();
   },
@@ -1493,6 +1505,100 @@ const Store = {
       this._saveLocalData(local);
     }
     return { ok: true, message: 'Restricció eliminada' };
+  },
+
+  async crearTaller(tallerData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/activitats`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tallerData)
+        });
+        const json = await res.json();
+        if (json.ok && json.activitats) {
+          const local = this._getLocalData();
+          local.activitats = json.activitats;
+          this._saveLocalData(local);
+        }
+        return json;
+      } catch (e) {
+        console.warn('Error creant taller a l\'API:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (!local.activitats) local.activitats = this.getActivitats();
+    const id = tallerData.id || (tallerData.nom || 'taller').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const newAct = {
+      id,
+      nom: tallerData.nom,
+      descripcio: tallerData.descripcio || '',
+      capacitatMax: parseInt(tallerData.capacitat_max || tallerData.capacitatMax || 4, 10),
+      color: tallerData.color || '#B91C1C',
+      actiu: true,
+      ordre: local.activitats.length + 1
+    };
+    local.activitats.push(newAct);
+    this._saveLocalData(local);
+    return { ok: true, activitat: newAct, activitats: local.activitats };
+  },
+
+  async actualitzarTaller(id, tallerData) {
+    const payload = { id, ...tallerData };
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/activitats/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.ok && json.activitats) {
+          const local = this._getLocalData();
+          local.activitats = json.activitats;
+          this._saveLocalData(local);
+        }
+        return json;
+      } catch (e) {
+        console.warn('Error actualitzant taller a l\'API:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (!local.activitats) local.activitats = this.getActivitats();
+    const idx = local.activitats.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      local.activitats[idx] = { ...local.activitats[idx], ...tallerData };
+      this._saveLocalData(local);
+      return { ok: true, activitat: local.activitats[idx], activitats: local.activitats };
+    }
+    return { ok: false, error: 'Taller no trobat' };
+  },
+
+  async eliminarTaller(id) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/activitats/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const json = await res.json();
+        if (json.ok && json.activitats) {
+          const local = this._getLocalData();
+          local.activitats = json.activitats;
+          this._saveLocalData(local);
+        }
+        return json;
+      } catch (e) {
+        console.warn('Error eliminant taller a l\'API:', e);
+      }
+    }
+    const local = this._getLocalData();
+    if (local.activitats) {
+      local.activitats = local.activitats.filter(a => a.id !== id);
+      this._saveLocalData(local);
+    }
+    return { ok: true, message: 'Taller suprimit' };
   }
 };
 

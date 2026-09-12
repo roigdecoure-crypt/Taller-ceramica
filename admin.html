@@ -183,6 +183,14 @@
         </span>
         <span class="nav-text">Restriccions Tallers</span>
       </li>
+      <li class="sidebar-item" id="btn-sidebar-tallers" title="Gestió de Tallers i Aforament" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Gestió de Tallers</span>
+      </li>
       <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -238,6 +246,10 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
           Restriccions Tallers
         </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-tallers-top" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="border-color: #059669; color: #065F46; background: #ECFDF5; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+          Gestió de Tallers
+        </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');">
           Control Aforament
         </button>
@@ -266,22 +278,24 @@
           </div>
         </div>
 
-        <div class="reserves-capacitats-group">
+        <div class="reserves-capacitats-group" id="admin-capacitats-group">
           <span style="font-size: 12px; font-weight: 700; color: #4B5563;">Activitats:</span>
-          <div class="cap-act-item">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #B91C1C; display: inline-block;"></span>
-            <span>Torn:</span>
-            <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
-          </div>
-          <div class="cap-act-item">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #047857; display: inline-block;"></span>
-            <span>Modelatge:</span>
-            <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
-          </div>
-          <div class="cap-act-item">
-            <span style="width: 8px; height: 8px; border-radius: 50%; background: #1D4ED8; display: inline-block;"></span>
-            <span>Pintar:</span>
-            <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
+          <div id="admin-capacitats-dinamiques-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="cap-act-item">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #B91C1C; display: inline-block;"></span>
+              <span>Torn:</span>
+              <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
+            </div>
+            <div class="cap-act-item">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #047857; display: inline-block;"></span>
+              <span>Modelatge:</span>
+              <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
+            </div>
+            <div class="cap-act-item">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #1D4ED8; display: inline-block;"></span>
+              <span>Pintar:</span>
+              <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
+            </div>
           </div>
           <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px; background: #831D1D; border-color: #831D1D;">
             Desar capacitats
@@ -296,6 +310,10 @@
           <button type="button" class="btn btn-sm" id="btn-admin-restriccions" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border: 1px solid #6366F1; color: #3730A3; background: #EEF2FF; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
             Restringir Tallers
+          </button>
+          <button type="button" class="btn btn-sm" id="btn-admin-tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border: 1px solid #059669; color: #065F46; background: #ECFDF5; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+            Gestió de Tallers
           </button>
         </div>
       </div>
@@ -319,7 +337,7 @@
                 </div>
               </div>
               <!-- Llegenda visual d'activitats -->
-              <div class="cal-legend-row" style="display: flex; gap: 12px; align-items: center; padding: 5px 8px; background: rgba(0,0,0,0.12); border-radius: 5px; margin-top: 8px; font-size: 11px; flex-wrap: wrap;">
+              <div class="cal-legend-row" id="admin-cal-legend-row" style="display: flex; gap: 12px; align-items: center; padding: 5px 8px; background: rgba(0,0,0,0.12); border-radius: 5px; margin-top: 8px; font-size: 11px; flex-wrap: wrap;">
                 <span style="display: inline-flex; align-items: center; gap: 5px; color: #FFFFFF; font-weight: 600;">
                   <span style="width: 10px; height: 10px; border-radius: 2px; background: #B91C1C; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
                   Torn
@@ -2032,7 +2050,7 @@
               <label style="display: block; font-size: 12.5px; font-weight: 700; color: #1E1B4B; margin-bottom: 8px;">
                 Estat dels tallers en aquest període (marca els que ES PERMETEN fer):
               </label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="restr-tallers-checkboxes-container">
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; background: #F9FAFB;" id="lbl-act-torn">
                   <input type="checkbox" id="restr-act-torn" value="torn" checked>
                   <div>
@@ -2094,6 +2112,85 @@
     </div>
   </div>
 
+  <!-- MODAL: GESTIÓ DE TALLERS I AFORAMENT -->
+  <div class="modal-backdrop" id="modal-admin-tallers-backdrop" onclick="if(event.target===this) this.classList.remove('active');">
+    <div class="modal-dialog" style="max-width: 760px;">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Gestió de Tallers i Activitats</h3>
+          <p style="margin: 4px 0 0; font-size: 12.5px; color: #6B7280;">Crea nous tallers per al taller de ceràmica, defineix els seus aforaments màxims i assigna colors identificatius.</p>
+        </div>
+        <button type="button" class="modal-close" data-close="modal-admin-tallers-backdrop">&times;</button>
+      </div>
+
+      <div style="padding: 16px 0; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Formulari per afegir / editar taller -->
+        <div class="card" style="padding: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px;">
+          <h4 id="admin-taller-form-title" style="margin: 0 0 12px; font-size: 14px; font-weight: 700; color: #065F46;">+ Crear Nou Taller / Activitat</h4>
+          <form id="form-admin-taller" onsubmit="return false;">
+            <input type="hidden" id="admin-taller-edit-id" value="">
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Nom del Taller *</label>
+                <input type="text" id="admin-taller-nom" class="form-control" placeholder="Ex: Raku tradicional, Fusió de vidre, Casal d'estiu..." style="width: 100%; font-size: 13px; padding: 7px 10px;" required>
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Aforament Màxim *</label>
+                <input type="number" id="admin-taller-capacitat" class="form-control" min="1" max="50" value="4" style="width: 100%; font-size: 13px; padding: 7px 10px; text-align: center;" required>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Color identificatiu (calendari i reserves):</label>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input type="color" id="admin-taller-color" value="#EA580C" style="width: 44px; height: 36px; padding: 2px; border: 1px solid #D1D5DB; border-radius: 6px; cursor: pointer;">
+                <div class="taller-color-palette" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                  <button type="button" class="color-palette-btn" data-color="#B91C1C" title="Roig Terracota" style="background:#B91C1C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#EA580C" title="Taronja Raku" style="background:#EA580C; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#D97706" title="Ocre Daurat" style="background:#D97706; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#047857" title="Verd Maragda" style="background:#047857; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#0891B2" title="Cian Vidre" style="background:#0891B2; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#1D4ED8" title="Blau Cobalt" style="background:#1D4ED8; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#7C3AED" title="Lila Amatista" style="background:#7C3AED; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#DB2777" title="Rosa Magma" style="background:#DB2777; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                  <button type="button" class="color-palette-btn" data-color="#475569" title="Pissarra" style="background:#475569; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFFFFF; box-shadow: 0 0 0 1px #D1D5DB; cursor: pointer;"></button>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Descripció breu (opcional)</label>
+              <input type="text" id="admin-taller-descripcio" class="form-control" placeholder="Taller monogràfic de cap de setmana..." style="width: 100%; font-size: 13px; padding: 7px 10px;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-cancel-edit-taller" style="display: none;">Cancel·lar edició</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-guardar-taller" style="background: #047857; border-color: #047857; font-weight: 600;">Desar Taller</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Llistat de tallers existents -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #111827;">Tallers Disponibles al Sistema</h4>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-tallers" style="font-size: 11px; padding: 3px 8px;">Refrescar</button>
+          </div>
+          <div id="tallers-list-container" style="max-height: 280px; overflow-y: auto; border: 1px solid #E5E7EB; border-radius: 6px;">
+            <div style="padding: 18px; text-align: center; color: #6B7280; font-size: 12px;">Carregant tallers...</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; border-top: 1px solid #E5E7EB; padding-top: 12px; margin-top: 8px;">
+        <button type="button" class="btn btn-outline" data-close="modal-admin-tallers-backdrop">Tancar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Contenidor per a Toasts -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -2103,8 +2200,8 @@
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.1"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.8"></script>
-  <script src="js/reserves-calendar.js?v=9.8"></script>
-  <script src="js/admin.js?v=9.8"></script>
+  <script src="js/store.js?v=9.9"></script>
+  <script src="js/reserves-calendar.js?v=9.9"></script>
+  <script src="js/admin.js?v=9.9"></script>
 </body>
 </html>

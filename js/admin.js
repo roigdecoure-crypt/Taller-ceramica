@@ -2056,6 +2056,17 @@ function initReservesAdmin() {
         capacitat_max_pintar: pintar
       });
       if (res && res.ok === false) throw new Error(res.error || 'Error desant');
+
+      // Desar capacitats de tallers personalitzats si n'hi ha
+      const customInputs = document.querySelectorAll('.admin-custom-cap-input');
+      for (const inp of customInputs) {
+        const customId = inp.dataset.actId;
+        const customCap = parseInt(inp.value, 10);
+        if (customId && customCap > 0) {
+          await Store.actualitzarTaller(customId, { capacitat_max: customCap });
+        }
+      }
+
       showToast(`Capacitats desades: Torn (${torn}), Modelatge (${modelatge}), Pintar (${pintar}).`, 'success');
       ['', 'modal-'].forEach(p => {
         const tEl = document.getElementById(`${p}admin-cap-torn`);
@@ -2066,6 +2077,7 @@ function initReservesAdmin() {
         if (pEl) pEl.value = pintar;
       });
       if (btn) btn.textContent = 'Desat!';
+      await loadAndSyncAdminTallers();
       if (adminReservesCalendar) await adminReservesCalendar.refresh();
       await refreshAppointmentsDashboard();
     } catch (err) {
@@ -2284,6 +2296,49 @@ async function initAppointmentsDashboard() {
     document.getElementById(`restr-act-${act}`)?.addEventListener('change', updateRestriccionsSummary);
   });
 
+  // Botons de Gestió de Tallers
+  document.getElementById('btn-admin-tallers')?.addEventListener('click', () => {
+    openAdminTallersModal();
+  });
+  document.getElementById('btn-admin-tallers-top')?.addEventListener('click', () => {
+    openAdminTallersModal();
+  });
+  document.getElementById('btn-sidebar-tallers')?.addEventListener('click', () => {
+    openAdminTallersModal();
+  });
+
+  // Listeners del Modal de Tallers
+  document.getElementById('btn-refresh-tallers')?.addEventListener('click', () => {
+    loadAndRenderAdminTallers();
+  });
+  document.getElementById('form-admin-taller')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    handleSaveAdminTaller();
+  });
+  document.getElementById('btn-guardar-taller')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleSaveAdminTaller();
+  });
+  document.getElementById('btn-cancel-edit-taller')?.addEventListener('click', () => {
+    resetAdminTallerForm();
+  });
+
+  // Paleta de colors
+  document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const col = btn.dataset.color;
+      const colInp = document.getElementById('admin-taller-color');
+      if (colInp && col) {
+        colInp.value = col;
+      }
+      document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Sincronització inicial de tallers
+  await loadAndSyncAdminTallers();
+
   // Render inicial del calendari i llista del dia seleccionat
   await renderAdminCalendar();
   await renderAdminDayAppointments(adminSelectedDate);
@@ -2419,8 +2474,11 @@ async function renderAdminCalendar() {
           const fullLabel = `${item.count} ${act}`;
           const shortLabel = `${item.count}${shortCode}`;
 
+          const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
+          const customStyle = (actObj && actObj.color) ? `background: ${actObj.color} !important; color: #FFFFFF !important;` : '';
+
           badgesHtml += `
-            <div class="cal-day-badge ${actCls}" title="${item.count} ${item.count === 1 ? 'reserva' : 'reserves'} de ${escapeHtml(act)}">
+            <div class="cal-day-badge ${actCls}" style="${customStyle}" title="${item.count} ${item.count === 1 ? 'reserva' : 'reserves'} de ${escapeHtml(act)}">
               <span class="badge-full">${escapeHtml(fullLabel)}</span>
               <span class="badge-short">${escapeHtml(shortLabel)}</span>
             </div>
@@ -2431,8 +2489,10 @@ async function renderAdminCalendar() {
           const item = actBreakdown[act];
           const actCls = getActClass(act);
           const shortCode = getActShort(act);
+          const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
+          const customStyle = (actObj && actObj.color) ? `background: ${actObj.color} !important; color: #FFFFFF !important;` : '';
           badgesHtml += `
-            <div class="cal-day-badge ${actCls}">
+            <div class="cal-day-badge ${actCls}" style="${customStyle}">
               <span class="badge-full">${item.count} ${escapeHtml(act)}</span>
               <span class="badge-short">${item.count}${shortCode}</span>
             </div>
@@ -2661,8 +2721,12 @@ async function renderAdminDayAppointments(dateStr) {
     else if (aNom.includes('casal')) { actNom = 'Casal'; }
     else if (r.activitat) { actNom = r.activitat.trim(); }
 
+    const actObj = (adminTallersList || []).find(a => a.id.toLowerCase() === aId || a.nom.toLowerCase() === aNom || a.nom.toLowerCase() === actNom.toLowerCase());
     let actBadgeStyle = 'background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;';
-    if (actNom === 'Modelatge') {
+    if (actObj && actObj.color) {
+      const c = actObj.color;
+      actBadgeStyle = `background: ${c}18; color: ${c}; border: 1px solid ${c}44;`;
+    } else if (actNom === 'Modelatge') {
       actBadgeStyle = 'background: #D1FAE5; color: #047857; border: 1px solid #A7F3D0;';
     } else if (actNom.toLowerCase().includes('pinta')) {
       actBadgeStyle = 'background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE;';
@@ -2857,6 +2921,7 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   handleAdminResDataChange();
 
   // Activitat
+  await populateNovaReservaActivitats();
   const actSelect = document.getElementById('admin-res-activitat');
   if (actSelect) {
     actSelect.value = (preselectedActId || 'torn').toLowerCase();
@@ -3898,6 +3963,10 @@ if (typeof window !== 'undefined') {
   window.openStudentDrawer = openStudentDrawer;
   window.openAdminFestiusModal = openAdminFestiusModal;
   window.openAdminRestriccionsModal = openAdminRestriccionsModal;
+  window.openAdminTallersModal = openAdminTallersModal;
+  window.handleEditTaller = handleEditTaller;
+  window.handleToggleTallerActiu = handleToggleTallerActiu;
+  window.handleDeleteTaller = handleDeleteTaller;
   window.handleDeleteFestiu = handleDeleteFestiu;
   window.handleDeleteRestriccio = handleDeleteRestriccio;
   window.eliminarFestiuDesDeDia = eliminarFestiuDesDeDia;
@@ -4085,11 +4154,32 @@ async function openAdminRestriccionsModal(preselectedDate) {
   if (inputRangFi) inputRangFi.value = defaultDate;
   if (inputMotiu) inputMotiu.value = '';
 
-  // Reset checkboxes to checked
-  ['torn', 'modelatge', 'pintar', 'vidre'].forEach(act => {
-    const chk = document.getElementById(`restr-act-${act}`);
-    if (chk) chk.checked = true;
-  });
+  // Generar dinàmicament els checkboxes de tallers actius
+  const chkContainer = document.getElementById('restr-tallers-checkboxes-container');
+  if (chkContainer) {
+    const acts = (adminTallersList && adminTallersList.length > 0)
+      ? adminTallersList.filter(a => a.actiu !== false)
+      : await Store.getActivitatsConfig(false);
+
+    chkContainer.innerHTML = acts.map(a => `
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 6px 10px; border: 1px solid #10B981; border-radius: 6px; background: #ECFDF5;" id="lbl-act-${a.id}">
+        <input type="checkbox" id="restr-act-${a.id}" value="${a.id}" data-nom="${escapeHtml(a.nom)}" checked>
+        <span style="width: 10px; height: 10px; border-radius: 2px; background: ${a.color || '#B91C1C'}; display: inline-block;"></span>
+        <div>
+          <strong>${escapeHtml(a.nom)}</strong> <span style="font-size: 11px; color: #6B7280;">(${a.capacitatMax} pl.)</span>
+        </div>
+      </label>
+    `).join('');
+
+    chkContainer.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener('change', updateRestriccionsSummary);
+    });
+  } else {
+    ['torn', 'modelatge', 'pintar', 'vidre'].forEach(act => {
+      const chk = document.getElementById(`restr-act-${act}`);
+      if (chk) chk.checked = true;
+    });
+  }
 
   // Set default radio: "dia"
   const rDia = document.querySelector('input[name="restr-abast"][value="dia"]');
@@ -4166,33 +4256,53 @@ function updateRestriccionsSummary() {
   const summary = document.getElementById('restr-act-summary');
   if (!summary) return;
 
-  const acts = [
-    { id: 'torn', nom: 'Torn' },
-    { id: 'modelatge', nom: 'Modelatge' },
-    { id: 'pintar', nom: 'Pintar ceràmica' },
-    { id: 'vidre', nom: 'Fusió de vidre' }
-  ];
-
+  const chks = document.querySelectorAll('#restr-tallers-checkboxes-container input[type="checkbox"]');
   const allowed = [];
   const blocked = [];
 
-  acts.forEach(a => {
-    const chk = document.getElementById(`restr-act-${a.id}`);
-    const lbl = document.getElementById(`lbl-act-${a.id}`);
-    if (chk && chk.checked) {
-      allowed.push(a.nom);
-      if (lbl) {
-        lbl.style.borderColor = '#10B981';
-        lbl.style.background = '#ECFDF5';
+  if (chks.length > 0) {
+    chks.forEach(chk => {
+      const lbl = chk.closest('label');
+      const actNom = chk.dataset.nom || chk.value;
+      if (chk.checked) {
+        allowed.push(actNom);
+        if (lbl) {
+          lbl.style.borderColor = '#10B981';
+          lbl.style.background = '#ECFDF5';
+        }
+      } else {
+        blocked.push(actNom);
+        if (lbl) {
+          lbl.style.borderColor = '#F87171';
+          lbl.style.background = '#FEF2F2';
+        }
       }
-    } else {
-      blocked.push(a.nom);
-      if (lbl) {
-        lbl.style.borderColor = '#F87171';
-        lbl.style.background = '#FEF2F2';
+    });
+  } else {
+    const acts = [
+      { id: 'torn', nom: 'Torn' },
+      { id: 'modelatge', nom: 'Modelatge' },
+      { id: 'pintar', nom: 'Pintar ceràmica' },
+      { id: 'vidre', nom: 'Fusió de vidre' }
+    ];
+    acts.forEach(a => {
+      const chk = document.getElementById(`restr-act-${a.id}`);
+      const lbl = document.getElementById(`lbl-act-${a.id}`);
+      if (chk && chk.checked) {
+        allowed.push(a.nom);
+        if (lbl) {
+          lbl.style.borderColor = '#10B981';
+          lbl.style.background = '#ECFDF5';
+        }
+      } else {
+        blocked.push(a.nom);
+        if (lbl) {
+          lbl.style.borderColor = '#F87171';
+          lbl.style.background = '#FEF2F2';
+        }
       }
-    }
-  });
+    });
+  }
 
   if (blocked.length === 0) {
     summary.innerHTML = '<span style="color: #047857; font-weight: 600;">Tots els tallers estan permesos. Desmarca algun taller per restringir-lo.</span>';
@@ -4325,18 +4435,30 @@ async function handleCreateRestriccio(e) {
     return;
   }
 
-  const allActs = ['torn', 'modelatge', 'pintar', 'vidre'];
+  const chks = document.querySelectorAll('#restr-tallers-checkboxes-container input[type="checkbox"]');
   const permeses = [];
   const bloquejades = [];
 
-  allActs.forEach(act => {
-    const chk = document.getElementById(`restr-act-${act}`);
-    if (chk && chk.checked) {
-      permeses.push(act);
-    } else {
-      bloquejades.push(act);
-    }
-  });
+  if (chks.length > 0) {
+    chks.forEach(chk => {
+      const actId = chk.value;
+      if (chk.checked) {
+        permeses.push(actId);
+      } else {
+        bloquejades.push(actId);
+      }
+    });
+  } else {
+    const allActs = ['torn', 'modelatge', 'pintar', 'vidre'];
+    allActs.forEach(act => {
+      const chk = document.getElementById(`restr-act-${act}`);
+      if (chk && chk.checked) {
+        permeses.push(act);
+      } else {
+        bloquejades.push(act);
+      }
+    });
+  }
 
   if (bloquejades.length === 0) {
     showToast('Has de bloquejar com a mínim un taller per crear una restricció.', 'warning');
@@ -4393,4 +4515,338 @@ async function handleDeleteRestriccio(id) {
 
 async function eliminarRestriccioDesDeDia(id) {
   await handleDeleteRestriccio(id);
+}
+
+// ==================== GESTIÓ DINÀMICA DE TALLERS I ACTIVITATS ====================
+let adminTallersList = [];
+let adminTallersMap = {};
+
+async function loadAndSyncAdminTallers() {
+  try {
+    const acts = await Store.getActivitatsConfig(true);
+    adminTallersList = Array.isArray(acts) ? acts : [];
+    adminTallersMap = {};
+    adminTallersList.forEach(a => {
+      adminTallersMap[a.id.toLowerCase()] = a;
+      adminTallersMap[a.nom.toLowerCase()] = a;
+    });
+    renderAdminCapacitatsBanner(adminTallersList);
+    renderCalendarLegend(adminTallersList);
+    await populateNovaReservaActivitats();
+  } catch (err) {
+    console.warn('Error sincronitzant tallers dinàmics:', err);
+  }
+}
+
+function renderAdminCapacitatsBanner(tallers) {
+  const container = document.getElementById('admin-capacitats-dinamiques-container');
+  if (!container) return;
+  const acts = (tallers || adminTallersList || []).filter(a => a.actiu !== false);
+  if (!acts || acts.length === 0) return;
+
+  let html = '';
+  acts.forEach(a => {
+    let inputAttr = '';
+    if (a.id === 'torn') inputAttr = 'id="admin-cap-torn"';
+    else if (a.id === 'modelatge') inputAttr = 'id="admin-cap-modelatge"';
+    else if (a.id === 'pintar') inputAttr = 'id="admin-cap-pintar"';
+    else inputAttr = `data-act-id="${a.id}" class="admin-custom-cap-input"`;
+
+    html += `
+      <div class="cap-act-item" title="${escapeHtml(a.descripcio || a.nom)}">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: ${a.color || '#B91C1C'}; display: inline-block;"></span>
+        <span>${escapeHtml(a.nom)}:</span>
+        <input type="number" ${inputAttr} min="1" max="50" value="${a.capacitatMax}" style="width: 44px; text-align: center; padding: 2px 4px; font-size: 12px; border: 1px solid #D1D5DB; border-radius: 4px;">
+      </div>
+    `;
+  });
+
+  html += `
+    <button type="button" class="btn btn-outline btn-sm" onclick="openAdminTallersModal()" style="font-size: 11px; padding: 3px 8px; color: #065F46; border-color: #059669; background: #ECFDF5; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;" title="Crea un taller nou o edita capacitats">
+      + Nou Taller
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderCalendarLegend(tallers) {
+  const legendRow = document.getElementById('admin-cal-legend-row');
+  if (!legendRow) return;
+  const acts = (tallers || adminTallersList || []).filter(a => a.actiu !== false);
+  if (!acts || acts.length === 0) return;
+
+  legendRow.innerHTML = acts.map(a => `
+    <span style="display: inline-flex; align-items: center; gap: 5px; color: #FFFFFF; font-weight: 600;">
+      <span style="width: 10px; height: 10px; border-radius: 2px; background: ${a.color || '#B91C1C'}; display: inline-block; border: 1px solid rgba(255,255,255,0.5);"></span>
+      ${escapeHtml(a.nom)}
+    </span>
+  `).join('');
+}
+
+async function populateNovaReservaActivitats() {
+  const actSelect = document.getElementById('admin-res-activitat');
+  if (!actSelect) return;
+  const currentVal = actSelect.value;
+  const acts = (adminTallersList && adminTallersList.length > 0)
+    ? adminTallersList.filter(a => a.actiu !== false)
+    : await Store.getActivitatsConfig(false);
+
+  actSelect.innerHTML = acts.map(a => `
+    <option value="${a.id}">${escapeHtml(a.nom)} (màx ${a.capacitatMax})</option>
+  `).join('');
+
+  if (currentVal && acts.some(a => a.id === currentVal)) {
+    actSelect.value = currentVal;
+  }
+}
+
+async function openAdminTallersModal() {
+  const modal = document.getElementById('modal-admin-tallers-backdrop');
+  if (!modal) return;
+  modal.classList.add('active');
+  resetAdminTallerForm();
+  await loadAndRenderAdminTallers();
+}
+
+function resetAdminTallerForm() {
+  const formTitle = document.getElementById('admin-taller-form-title');
+  const editId = document.getElementById('admin-taller-edit-id');
+  const nomInp = document.getElementById('admin-taller-nom');
+  const capInp = document.getElementById('admin-taller-capacitat');
+  const colInp = document.getElementById('admin-taller-color');
+  const descInp = document.getElementById('admin-taller-descripcio');
+  const cancelBtn = document.getElementById('btn-cancel-edit-taller');
+  const saveBtn = document.getElementById('btn-guardar-taller');
+
+  if (formTitle) formTitle.textContent = '+ Crear Nou Taller / Activitat';
+  if (editId) editId.value = '';
+  if (nomInp) nomInp.value = '';
+  if (capInp) capInp.value = 4;
+  if (colInp) colInp.value = '#EA580C';
+  if (descInp) descInp.value = '';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (saveBtn) {
+    saveBtn.textContent = 'Desar Taller';
+    saveBtn.style.background = '#047857';
+    saveBtn.style.borderColor = '#047857';
+  }
+  document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(b => b.classList.remove('active'));
+}
+
+async function loadAndRenderAdminTallers() {
+  const container = document.getElementById('tallers-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="padding: 18px; text-align: center; color: #6B7280; font-size: 12px;">Carregant tallers...</div>';
+
+  try {
+    const acts = await Store.getActivitatsConfig(true);
+    adminTallersList = Array.isArray(acts) ? acts : [];
+    adminTallersMap = {};
+    adminTallersList.forEach(a => {
+      adminTallersMap[a.id.toLowerCase()] = a;
+      adminTallersMap[a.nom.toLowerCase()] = a;
+    });
+
+    if (adminTallersList.length === 0) {
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: #6B7280; font-size: 13px;">No hi ha cap taller registrat.</div>';
+      return;
+    }
+
+    let html = `
+      <table class="data-table" style="width: 100%; font-size: 13px;">
+        <thead>
+          <tr style="background: #F9FAFB;">
+            <th style="padding: 8px 12px;">Taller</th>
+            <th style="padding: 8px 12px; text-align: center;">Aforament</th>
+            <th style="padding: 8px 12px; text-align: center;">Estat</th>
+            <th style="padding: 8px 12px; text-align: right;">Accions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    adminTallersList.forEach(t => {
+      const isBase = ['torn', 'modelatge', 'pintar'].includes(t.id);
+      const rowClass = t.actiu === false ? 'taller-row-item inactive' : 'taller-row-item';
+      const statusBadge = t.actiu === false 
+        ? '<span class="badge badge-neutral" style="font-size: 11px;">Inactiu</span>'
+        : '<span class="badge badge-success" style="font-size: 11px;">Actiu</span>';
+
+      html += `
+        <tr class="${rowClass}">
+          <td style="padding: 10px 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="taller-color-indicator" style="background: ${t.color || '#B91C1C'}; width: 14px; height: 14px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);"></span>
+              <div>
+                <strong style="color: #111827;">${escapeHtml(t.nom)}</strong>
+                <span style="font-size: 11px; color: #6B7280; margin-left: 4px;">(${t.id})</span>
+                ${t.descripcio ? `<div style="font-size: 11.5px; color: #6B7280; margin-top: 2px;">${escapeHtml(t.descripcio)}</div>` : ''}
+              </div>
+            </div>
+          </td>
+          <td style="padding: 10px 12px; text-align: center;">
+            <span class="badge badge-neutral" style="font-size: 12px; font-weight: 700; padding: 3px 8px;">
+              ${t.capacitatMax} places
+            </span>
+          </td>
+          <td style="padding: 10px 12px; text-align: center;">
+            ${statusBadge}
+          </td>
+          <td style="padding: 10px 12px; text-align: right; white-space: nowrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleEditTaller('${t.id}')" style="font-size: 11px; padding: 3px 8px; margin-right: 4px;">
+              Editar
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="handleToggleTallerActiu('${t.id}', ${t.actiu !== false})" style="font-size: 11px; padding: 3px 8px; margin-right: 4px; ${t.actiu === false ? 'color: #047857; border-color: #10B981;' : 'color: #92400E; border-color: #F59E0B;'}">
+              ${t.actiu === false ? 'Activar' : 'Desactivar'}
+            </button>
+            ${!isBase ? `
+              <button type="button" class="btn btn-outline btn-sm" onclick="handleDeleteTaller('${t.id}')" style="font-size: 11px; padding: 3px 8px; color: #B91C1C; border-color: #F87171;">
+                Eliminar
+              </button>
+            ` : ''}
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div style="padding: 18px; text-align: center; color: #DC2626; font-size: 12px;">Error carregant la llista de tallers.</div>';
+  }
+}
+
+async function handleSaveAdminTaller() {
+  const editId = document.getElementById('admin-taller-edit-id')?.value?.trim();
+  const nom = document.getElementById('admin-taller-nom')?.value?.trim();
+  const capacitatMax = parseInt(document.getElementById('admin-taller-capacitat')?.value || 4, 10);
+  const color = document.getElementById('admin-taller-color')?.value?.trim() || '#EA580C';
+  const descripcio = document.getElementById('admin-taller-descripcio')?.value?.trim() || '';
+  const btn = document.getElementById('btn-guardar-taller');
+
+  if (!nom) {
+    showToast('El nom del taller és obligatori.', 'warning');
+    return;
+  }
+  if (capacitatMax < 1) {
+    showToast('L\'aforament màxim ha de ser d\'almenys 1 persona.', 'warning');
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+
+  try {
+    let res;
+    if (editId) {
+      res = await Store.actualitzarTaller(editId, {
+        nom,
+        capacitat_max: capacitatMax,
+        color,
+        descripcio
+      });
+      if (res && res.ok) {
+        showToast(`Taller '${nom}' actualitzat correctament.`, 'success');
+      } else {
+        showToast(res?.error || 'No s\'ha pogut actualitzar el taller.', 'error');
+      }
+    } else {
+      res = await Store.crearTaller({
+        nom,
+        capacitat_max: capacitatMax,
+        color,
+        descripcio
+      });
+      if (res && res.ok) {
+        showToast(`Taller '${nom}' creat correctament.`, 'success');
+      } else {
+        showToast(res?.error || 'No s\'ha pogut crear el taller.', 'error');
+      }
+    }
+
+    resetAdminTallerForm();
+    await loadAndRenderAdminTallers();
+    await loadAndSyncAdminTallers();
+    await refreshAppointmentsDashboard();
+  } catch (err) {
+    showToast('Error desant el taller: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function handleEditTaller(id) {
+  const t = adminTallersList.find(a => a.id === id);
+  if (!t) return;
+
+  const formTitle = document.getElementById('admin-taller-form-title');
+  const editIdInp = document.getElementById('admin-taller-edit-id');
+  const nomInp = document.getElementById('admin-taller-nom');
+  const capInp = document.getElementById('admin-taller-capacitat');
+  const colInp = document.getElementById('admin-taller-color');
+  const descInp = document.getElementById('admin-taller-descripcio');
+  const cancelBtn = document.getElementById('btn-cancel-edit-taller');
+  const saveBtn = document.getElementById('btn-guardar-taller');
+
+  if (formTitle) formTitle.textContent = `Editar Taller: ${t.nom}`;
+  if (editIdInp) editIdInp.value = t.id;
+  if (nomInp) nomInp.value = t.nom;
+  if (capInp) capInp.value = t.capacitatMax;
+  if (colInp) colInp.value = t.color || '#EA580C';
+  if (descInp) descInp.value = t.descripcio || '';
+  if (cancelBtn) cancelBtn.style.display = 'inline-block';
+  if (saveBtn) {
+    saveBtn.textContent = 'Actualitzar Taller';
+    saveBtn.style.background = '#2563EB';
+    saveBtn.style.borderColor = '#2563EB';
+  }
+
+  document.querySelectorAll('#modal-admin-tallers-backdrop .color-palette-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.color?.toLowerCase() === t.color?.toLowerCase());
+  });
+
+  document.querySelector('#modal-admin-tallers-backdrop .modal-dialog > div:nth-child(2)')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function handleToggleTallerActiu(id, currentStatus) {
+  const newStatus = !currentStatus;
+  try {
+    const res = await Store.actualitzarTaller(id, { actiu: newStatus });
+    if (res && res.ok) {
+      showToast(`Estat del taller actualitzat: ${newStatus ? 'Actiu' : 'Desactivat'}.`, 'info');
+      await loadAndRenderAdminTallers();
+      await loadAndSyncAdminTallers();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'No s\'ha pogut canviar l\'estat.', 'error');
+    }
+  } catch (err) {
+    showToast('Error canviant estat: ' + err.message, 'error');
+  }
+}
+
+async function handleDeleteTaller(id) {
+  const t = adminTallersList.find(a => a.id === id);
+  const nom = t ? t.nom : id;
+  if (!confirm(`Vols eliminar el taller '${nom}'? Si té reserves registrades, es desactivarà per preservar l'historial.`)) {
+    return;
+  }
+
+  try {
+    const res = await Store.eliminarTaller(id);
+    if (res && res.ok) {
+      showToast(res.message || `Taller '${nom}' eliminat o desactivat.`, 'info');
+      await loadAndRenderAdminTallers();
+      await loadAndSyncAdminTallers();
+      await refreshAppointmentsDashboard();
+    } else {
+      showToast(res?.error || 'No s\'ha pogut eliminar el taller.', 'error');
+    }
+  } catch (err) {
+    showToast('Error eliminant el taller: ' + err.message, 'error');
+  }
 }

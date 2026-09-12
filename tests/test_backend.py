@@ -21,8 +21,19 @@ class TestCeramicsBackend(unittest.TestCase):
     def setUp(self):
         server.init_db()
         self.conn = server.get_db()
+        c = self.conn.cursor()
+        c.execute("DELETE FROM reserves WHERE activitat_id LIKE 'raku%'")
+        c.execute("DELETE FROM activitats WHERE id LIKE 'raku%'")
+        self.conn.commit()
 
     def tearDown(self):
+        try:
+            c = self.conn.cursor()
+            c.execute("DELETE FROM reserves WHERE activitat_id LIKE 'raku%'")
+            c.execute("DELETE FROM activitats WHERE id LIKE 'raku%'")
+            self.conn.commit()
+        except Exception:
+            pass
         self.conn.close()
 
     def test_01_format_hms(self):
@@ -1471,6 +1482,123 @@ class TestCeramicsBackend(unittest.TestCase):
         # Comprovar que s'ha restablert
         self.assertFalse(server.is_dia_tancat('2026-11-20')['tancat'])
         self.assertFalse(server.get_restriccions_dia('2026-12-04')['te_restriccio'])
+
+    def test_34_creacio_modificacio_eliminacio_tallers(self):
+        # Neteja prèvia de seguretat
+        with server.get_db() as conn:
+            c = conn.cursor()
+            c.execute("DELETE FROM reserves WHERE activitat_id LIKE 'raku%'")
+            c.execute("DELETE FROM activitats WHERE id LIKE 'raku%'")
+            conn.commit()
+
+        # 1. Crear un taller nou via POST /api/activitats
+        body_create = json.dumps({
+            'nom': 'Raku i Foc',
+            'capacitat_max': 6,
+            'color': '#EA580C',
+            'descripcio': 'Taller intensiu de raku tradicional'
+        }).encode('utf-8')
+        h = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h.path = '/api/activitats'
+        h.headers = {'Content-Length': str(len(body_create)), 'Content-Type': 'application/json'}
+        h.rfile = io.BytesIO(body_create)
+        h.wfile = io.BytesIO()
+        status_code = []
+        h.send_response = lambda code, msg=None: status_code.append(code)
+        h.send_header = lambda k, v: None
+        h.end_headers = lambda: None
+        h.do_POST()
+
+        self.assertEqual(status_code[0] if status_code else 200, 200)
+        res_create = json.loads(h.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_create.get('ok'))
+        act = res_create.get('activitat')
+        self.assertIsNotNone(act)
+        act_id = act['id']
+        self.assertEqual(act_id, 'raku-i-foc')
+        self.assertEqual(act['capacitatMax'], 6)
+        self.assertEqual(act['color'], '#EA580C')
+
+        # 2. Comprovar que get_activitats_config() el llista
+        acts = server.get_activitats_config()
+        self.assertTrue(any(a['id'] == 'raku-i-foc' for a in acts))
+
+        # 3. Comprovar disponibilitat d'un dia
+        disp = server.get_disponibilitat('2026-10-15')
+        raku_disp = next((a for a in disp['activitats'] if a['id'] == 'raku-i-foc'), None)
+        self.assertIsNotNone(raku_disp)
+        self.assertEqual(raku_disp['capacitatMax'], 6)
+        self.assertEqual(raku_disp['ocupat'], 0)
+
+        # 4. Modificar el taller via POST /api/activitats/update
+        body_update = json.dumps({
+            'id': 'raku-i-foc',
+            'nom': 'Raku Experimental',
+            'capacitat_max': 5,
+            'color': '#C2410C'
+        }).encode('utf-8')
+        h_up = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_up.path = '/api/activitats/update'
+        h_up.headers = {'Content-Length': str(len(body_update)), 'Content-Type': 'application/json'}
+        h_up.rfile = io.BytesIO(body_update)
+        h_up.wfile = io.BytesIO()
+        status_up = []
+        h_up.send_response = lambda code, msg=None: status_up.append(code)
+        h_up.send_header = lambda k, v: None
+        h_up.end_headers = lambda: None
+        h_up.do_POST()
+
+        self.assertEqual(status_up[0] if status_up else 200, 200)
+        res_up = json.loads(h_up.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_up.get('ok'))
+        self.assertEqual(res_up['activitat']['capacitatMax'], 5)
+        self.assertEqual(res_up['activitat']['nom'], 'Raku Experimental')
+
+        # 5. Crear una reserva per a aquest taller
+        with server.get_db() as conn:
+            c = conn.cursor()
+            c.execute('''
+                INSERT INTO reserves (id, student_id, student_nom, telefon, data, franja, hora_inici, hora_fi, activitat_id, activitat, places, estat, created_at)
+                VALUES ('RES-RAKU-1', 'CLI-RAKU-1', 'Client Raku', '600000000', '2026-10-15', 'M1', '10:00', '12:00', 'raku-i-foc', 'Raku Experimental', 2, 'confirmada', '2026-10-01T10:00:00')
+            ''')
+            conn.commit()
+
+        # Comprovar ocupació en disponibilitat
+        disp_after = server.get_disponibilitat('2026-10-15')
+        raku_disp_after = next((a for a in disp_after['activitats'] if a['id'] == 'raku-i-foc'), None)
+        self.assertEqual(raku_disp_after['ocupat'], 2)
+        self.assertEqual(raku_disp_after['placesDisponibles'], 3) # 5 - 2 = 3
+
+        # 6. Intentar eliminar el taller -> Com que té reserves actives, s'ha de desactivar (soft delete)
+        body_del = json.dumps({'id': 'raku-i-foc'}).encode('utf-8')
+        h_del = server.CeramicsRequestHandler.__new__(server.CeramicsRequestHandler)
+        h_del.path = '/api/activitats/delete'
+        h_del.headers = {'Content-Length': str(len(body_del)), 'Content-Type': 'application/json'}
+        h_del.rfile = io.BytesIO(body_del)
+        h_del.wfile = io.BytesIO()
+        status_del = []
+        h_del.send_response = lambda code, msg=None: status_del.append(code)
+        h_del.send_header = lambda k, v: None
+        h_del.end_headers = lambda: None
+        h_del.do_POST()
+
+        self.assertEqual(status_del[0] if status_del else 200, 200)
+        res_del = json.loads(h_del.wfile.getvalue().decode('utf-8'))
+        self.assertTrue(res_del.get('ok'))
+        self.assertEqual(res_del.get('action'), 'desactivat')
+
+        # Comprovar que no apareix a get_activitats_config() normal, però sí amb include_inactive=True
+        acts_active = server.get_activitats_config(include_inactive=False)
+        self.assertFalse(any(a['id'] == 'raku-i-foc' for a in acts_active))
+        acts_all = server.get_activitats_config(include_inactive=True)
+        self.assertTrue(any(a['id'] == 'raku-i-foc' for a in acts_all))
+
+        # 7. Neteja de la prova
+        with server.get_db() as conn:
+            c = conn.cursor()
+            c.execute("DELETE FROM reserves WHERE id = 'RES-RAKU-1'")
+            c.execute("DELETE FROM activitats WHERE id = 'raku-i-foc'")
+            conn.commit()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1427,3 +1427,44 @@
   from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* GESTIÓ DE TALLERS I ACTIVITATS */
+.color-palette-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.color-palette-btn:hover {
+  transform: scale(1.15);
+}
+.color-palette-btn.active {
+  box-shadow: 0 0 0 2px #047857, 0 0 0 4px rgba(4, 120, 87, 0.25) !important;
+  transform: scale(1.1);
+}
+
+.taller-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #F3F4F6;
+  background: #FFFFFF;
+  transition: background 0.15s ease;
+  gap: 12px;
+}
+.taller-row-item:last-child {
+  border-bottom: none;
+}
+.taller-row-item:hover {
+  background: #F9FAFB;
+}
+.taller-row-item.inactive {
+  opacity: 0.6;
+  background: #F8FAFC;
+}
+.taller-color-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+

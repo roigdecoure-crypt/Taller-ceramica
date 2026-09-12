@@ -477,6 +477,48 @@ def init_db():
             )
         ''')
 
+        # Taula d'activitats / tallers configurats al taller
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS activitats (
+                id TEXT PRIMARY KEY,
+                nom TEXT NOT NULL,
+                descripcio TEXT DEFAULT '',
+                capacitat_max INTEGER NOT NULL DEFAULT 4,
+                color TEXT NOT NULL DEFAULT '#B91C1C',
+                actiu INTEGER NOT NULL DEFAULT 1,
+                ordre INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Seeding inicial de tallers si la taula és buida
+        cursor.execute('SELECT COUNT(*) as cnt FROM activitats')
+        if cursor.fetchone()['cnt'] == 0:
+            initial_tallers = [
+                ('torn', 'Torn', 'Sessió al torn de terrissaire', 4, '#B91C1C', 1, 1),
+                ('modelatge', 'Modelatge', 'Modelat de fang a mà i escultura', 8, '#047857', 1, 2),
+                ('pintar', 'Pintar ceràmica', 'Pintura i esmaltat sobre ceràmica', 12, '#1D4ED8', 1, 3)
+            ]
+            cursor.executemany('''
+                INSERT INTO activitats (id, nom, descripcio, capacitat_max, color, actiu, ordre)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', initial_tallers)
+
+            # Sincronitzar amb capacitats de configuracio si ja s'havien modificat
+            try:
+                cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("capacitat_max_torn", "capacitat_max_modelatge", "capacitat_max_pintar")')
+                cfg_rows = cursor.fetchall()
+                for row in cfg_rows:
+                    val = int(row['valor'])
+                    if row['clau'] == 'capacitat_max_torn' and val > 0:
+                        cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "torn"', (val,))
+                    elif row['clau'] == 'capacitat_max_modelatge' and val > 0:
+                        cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "modelatge"', (val,))
+                    elif row['clau'] == 'capacitat_max_pintar' and val > 0:
+                        cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "pintar"', (val,))
+            except Exception:
+                pass
+
         # Franges horàries oficials: Torn únic de matí de 2 hores (Roig de Coure)
         default_franges_json = json.dumps([
             {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0}
@@ -958,32 +1000,60 @@ DEFAULT_ACTIVITATS = [
     {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#1D4ED8"}
 ]
 
-def get_activitats_config():
-    """Retorna les 3 activitats oficials amb capacitats dinàmiques des de la base de dades"""
-    cap_torn = 4
-    cap_modelatge = 8
-    cap_pintar = 12
+def slugify_activity_id(name):
+    """Genera un identificador vàlid (slug) a partir del nom del taller"""
+    import unicodedata
+    nfkd = unicodedata.normalize('NFKD', str(name or ''))
+    clean = ''.join([c for c in nfkd if not unicodedata.combining(c)])
+    clean = re.sub(r'[^a-zA-Z0-9\s-]', '', clean.lower()).strip()
+    slug = re.sub(r'[\s-]+', '-', clean)
+    return slug or f"taller-{int(time.time())}"
+
+def get_activitats_config(include_inactive=False):
+    """Retorna la llista d'activitats oficials i dinàmiques des de la base de dades"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("capacitat_max_torn", "capacitat_max_modelatge", "capacitat_max_pintar")')
-            rows = cursor.fetchall()
-            for r in rows:
-                val = int(r['valor'])
-                if r['clau'] == 'capacitat_max_torn' and val > 0:
-                    cap_torn = val
-                elif r['clau'] == 'capacitat_max_modelatge' and val > 0:
-                    cap_modelatge = val
-                elif r['clau'] == 'capacitat_max_pintar' and val > 0:
-                    cap_pintar = val
-    except Exception:
-        pass
+            cfg_caps = {}
+            try:
+                cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("capacitat_max_torn", "capacitat_max_modelatge", "capacitat_max_pintar")')
+                for row in cursor.fetchall():
+                    try:
+                        cfg_caps[row['clau']] = int(row['valor'])
+                    except (ValueError, TypeError):
+                        pass
+            except Exception:
+                pass
 
-    return [
-        {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": cap_torn, "icon": "", "color": "#B91C1C"},
-        {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": cap_modelatge, "icon": "", "color": "#047857"},
-        {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": cap_pintar, "icon": "", "color": "#1D4ED8"}
-    ]
+            if include_inactive:
+                cursor.execute('SELECT id, nom, descripcio, capacitat_max, color, actiu, ordre FROM activitats ORDER BY ordre ASC, id ASC')
+            else:
+                cursor.execute('SELECT id, nom, descripcio, capacitat_max, color, actiu, ordre FROM activitats WHERE actiu = 1 ORDER BY ordre ASC, id ASC')
+            rows = cursor.fetchall()
+            if rows:
+                result = []
+                for r in rows:
+                    act_id = r["id"]
+                    cap = int(r["capacitat_max"])
+                    cfg_key = f"capacitat_max_{act_id}"
+                    if cfg_key in cfg_caps and cfg_caps[cfg_key] > 0:
+                        cap = cfg_caps[cfg_key]
+                    result.append({
+                        "id": act_id,
+                        "nom": r["nom"],
+                        "descripcio": r["descripcio"] or "",
+                        "capacitatMax": cap,
+                        "icon": "",
+                        "color": r["color"] or "#B91C1C",
+                        "actiu": bool(r["actiu"]),
+                        "ordre": int(r["ordre"] or 0)
+                    })
+                return result
+    except Exception as e:
+        print(f"[get_activitats_config] Avís consultant activitats DB: {e}")
+
+    # Fallback predeterminat si no s'ha pogut llegir la taula
+    return DEFAULT_ACTIVITATS
 
 # Propietat retrocompatible
 ACTIVITATS = DEFAULT_ACTIVITATS
@@ -2156,8 +2226,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, **disp_mes})
                 return
 
-            elif path == '/api/reserves/activitats':
-                self.send_json({'ok': True, 'activitats': get_activitats_config()})
+            elif path in ('/api/reserves/activitats', '/api/activitats'):
+                include_inactive = params.get('tots', ['0'])[0] in ('1', 'true', 'True')
+                self.send_json({'ok': True, 'activitats': get_activitats_config(include_inactive=include_inactive)})
                 return
 
             elif path == '/api/festius':
@@ -3407,6 +3478,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_torn', str(max(1, cap_torn))))
                     cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_modelatge', str(max(1, cap_modelatge))))
                     cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', ('capacitat_max_pintar', str(max(1, cap_pintar))))
+                    cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "torn"', (max(1, cap_torn),))
+                    cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "modelatge"', (max(1, cap_modelatge),))
+                    cursor.execute('UPDATE activitats SET capacitat_max = ? WHERE id = "pintar"', (max(1, cap_pintar),))
                     conn.commit()
 
                 new_acts = get_activitats_config()
@@ -3416,6 +3490,154 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'capacitat_max_pintar': str(cap_pintar)
                 })
                 self.send_json({'ok': True, 'message': "Capacitats d'activitat actualitzades correctament!", 'activitats': new_acts})
+                return
+
+            elif path == '/api/activitats':
+                nom = (data.get('nom') or data.get('name') or '').strip()
+                if not nom:
+                    self.send_json({'ok': False, 'error': 'El nom del taller és obligatori'}, 400)
+                    return
+
+                try:
+                    cap_max = int(data.get('capacitat_max') or data.get('capacitatMax') or 4)
+                    if cap_max < 1:
+                        cap_max = 1
+                except (ValueError, TypeError):
+                    cap_max = 4
+
+                color = (data.get('color') or '#B91C1C').strip()
+                descripcio = (data.get('descripcio') or data.get('description') or '').strip()
+                custom_id = (data.get('id') or '').strip().lower()
+
+                base_id = slugify_activity_id(custom_id if custom_id else nom)
+                act_id = base_id
+                counter = 2
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    while True:
+                        cursor.execute('SELECT COUNT(*) as cnt FROM activitats WHERE id = ?', (act_id,))
+                        if cursor.fetchone()['cnt'] == 0:
+                            break
+                        act_id = f"{base_id}-{counter}"
+                        counter += 1
+
+                    cursor.execute('SELECT COALESCE(MAX(ordre), 0) + 1 as max_ord FROM activitats')
+                    next_ordre = cursor.fetchone()['max_ord']
+
+                    cursor.execute('''
+                        INSERT INTO activitats (id, nom, descripcio, capacitat_max, color, actiu, ordre)
+                        VALUES (?, ?, ?, ?, ?, 1, ?)
+                    ''', (act_id, nom, descripcio, cap_max, color, next_ordre))
+                    conn.commit()
+
+                all_acts = get_activitats_config(include_inactive=True)
+                new_act = next((a for a in all_acts if a['id'] == act_id), None)
+                self.send_json({
+                    'ok': True,
+                    'message': f"Taller '{nom}' creat correctament",
+                    'activitat': new_act,
+                    'activitats': all_acts
+                })
+                return
+
+            elif path in ('/api/activitats/update', '/api/activitats/modificar'):
+                act_id = (data.get('id') or '').strip().lower()
+                if not act_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'identificador del taller"}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM activitats WHERE id = ?', (act_id,))
+                    existing = cursor.fetchone()
+                    if not existing:
+                        self.send_json({'ok': False, 'error': f"No s'ha trobat el taller '{act_id}'"}, 404)
+                        return
+
+                    nom = (data.get('nom') or existing['nom']).strip()
+                    descripcio = data.get('descripcio') if 'descripcio' in data else existing['descripcio']
+                    color = (data.get('color') or existing['color']).strip()
+
+                    if 'capacitat_max' in data or 'capacitatMax' in data:
+                        try:
+                            cap_max = int(data.get('capacitat_max') or data.get('capacitatMax'))
+                            if cap_max < 1:
+                                cap_max = 1
+                        except (ValueError, TypeError):
+                            cap_max = int(existing['capacitat_max'])
+                    else:
+                        cap_max = int(existing['capacitat_max'])
+
+                    if 'actiu' in data:
+                        actiu = 1 if data.get('actiu') in (1, True, '1', 'true', 'True') else 0
+                    else:
+                        actiu = int(existing['actiu'])
+
+                    ordre = int(data.get('ordre') or existing['ordre'] or 0)
+
+                    cursor.execute('''
+                        UPDATE activitats
+                        SET nom = ?, descripcio = ?, capacitat_max = ?, color = ?, actiu = ?, ordre = ?
+                        WHERE id = ?
+                    ''', (nom, descripcio, cap_max, color, actiu, ordre, act_id))
+
+                    if act_id in ('torn', 'modelatge', 'pintar'):
+                        cfg_key = f"capacitat_max_{act_id}"
+                        cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (cfg_key, str(cap_max)))
+                        sync_to_google_sheets_async('save_config', {cfg_key: str(cap_max)})
+
+                    conn.commit()
+
+                all_acts = get_activitats_config(include_inactive=True)
+                updated_act = next((a for a in all_acts if a['id'] == act_id), None)
+                self.send_json({
+                    'ok': True,
+                    'message': f"Taller '{nom}' actualitzat correctament",
+                    'activitat': updated_act,
+                    'activitats': all_acts
+                })
+                return
+
+            elif path in ('/api/activitats/delete', '/api/activitats/eliminar'):
+                act_id = (data.get('id') or params.get('id', [''])[0]).strip().lower()
+                if not act_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'identificador del taller"}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM activitats WHERE id = ?', (act_id,))
+                    existing = cursor.fetchone()
+                    if not existing:
+                        self.send_json({'ok': False, 'error': f"No s'ha trobat el taller '{act_id}'"}, 404)
+                        return
+
+                    cursor.execute('''
+                        SELECT COUNT(*) as cnt FROM reserves 
+                        WHERE (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) 
+                        AND LOWER(estat) NOT IN ('cancel·lada', 'cancel·lat', 'eliminada')
+                    ''', (act_id, existing['nom'].lower()))
+                    res_cnt = cursor.fetchone()['cnt']
+
+                    if res_cnt > 0 or act_id in ('torn', 'modelatge', 'pintar'):
+                        cursor.execute('UPDATE activitats SET actiu = 0 WHERE id = ?', (act_id,))
+                        conn.commit()
+                        action = 'desactivat'
+                        msg = f"El taller '{existing['nom']}' té reserves associades o és un taller principal; s'ha desactivat per mantenir l'historial."
+                    else:
+                        cursor.execute('DELETE FROM activitats WHERE id = ?', (act_id,))
+                        conn.commit()
+                        action = 'eliminat'
+                        msg = f"El taller '{existing['nom']}' s'ha eliminat correctament."
+
+                all_acts = get_activitats_config(include_inactive=True)
+                self.send_json({
+                    'ok': True,
+                    'action': action,
+                    'message': msg,
+                    'activitats': all_acts
+                })
                 return
 
             elif path == '/api/whatsapp/test':
@@ -3709,6 +3931,43 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('DELETE FROM restriccions_activitats WHERE id = ?', (restr_id,))
                     conn.commit()
                 self.send_json({'ok': True, 'message': 'Restricció eliminada'})
+                return
+
+            elif path.startswith('/api/activitats/'):
+                act_id = path.replace('/api/activitats/', '').strip().lower()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM activitats WHERE id = ?', (act_id,))
+                    existing = cursor.fetchone()
+                    if not existing:
+                        self.send_json({'ok': False, 'error': f"No s'ha trobat el taller '{act_id}'"}, 404)
+                        return
+
+                    cursor.execute('''
+                        SELECT COUNT(*) as cnt FROM reserves 
+                        WHERE (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) 
+                        AND LOWER(estat) NOT IN ('cancel·lada', 'cancel·lat', 'eliminada')
+                    ''', (act_id, existing['nom'].lower()))
+                    res_cnt = cursor.fetchone()['cnt']
+
+                    if res_cnt > 0 or act_id in ('torn', 'modelatge', 'pintar'):
+                        cursor.execute('UPDATE activitats SET actiu = 0 WHERE id = ?', (act_id,))
+                        conn.commit()
+                        action = 'desactivat'
+                        msg = f"El taller '{existing['nom']}' té reserves associades o és un taller principal; s'ha desactivat per mantenir l'historial."
+                    else:
+                        cursor.execute('DELETE FROM activitats WHERE id = ?', (act_id,))
+                        conn.commit()
+                        action = 'eliminat'
+                        msg = f"El taller '{existing['nom']}' s'ha eliminat correctament."
+
+                all_acts = get_activitats_config(include_inactive=True)
+                self.send_json({
+                    'ok': True,
+                    'action': action,
+                    'message': msg,
+                    'activitats': all_acts
+                })
                 return
 
             else:
