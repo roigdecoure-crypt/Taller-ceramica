@@ -828,9 +828,21 @@ function setupEventListeners() {
     const target = e.target.closest('button');
     if (!target) return;
 
-    // Tancar modals
+    // Tancar modals de forma completament neta
     if (target.dataset.close) {
-      document.getElementById(target.dataset.close).classList.remove('active');
+      const modalId = target.dataset.close;
+      if (typeof window.closeAnyModal === 'function') {
+        window.closeAnyModal(modalId);
+      } else {
+        const m = document.getElementById(modalId);
+        if (m) {
+          m.classList.remove('active');
+          m.style.setProperty('display', 'none', 'important');
+          m.style.setProperty('opacity', '0', 'important');
+          m.style.setProperty('pointer-events', 'none', 'important');
+          m.style.setProperty('visibility', 'hidden', 'important');
+        }
+      }
       return;
     }
 
@@ -4018,10 +4030,17 @@ if (typeof window !== 'undefined') {
 let adminFestiusList = [];
 
 function closeAdminFestiusModal() {
+  if (typeof window.closeAnyModal === 'function') {
+    window.closeAnyModal('modal-admin-festius-backdrop');
+    return;
+  }
   const modal = document.getElementById('modal-admin-festius-backdrop');
   if (modal) {
     modal.classList.remove('active');
     modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
+    modal.style.setProperty('opacity', '0', 'important');
+    modal.style.setProperty('visibility', 'hidden', 'important');
   }
 }
 
@@ -4202,10 +4221,17 @@ async function eliminarFestiuDesDeDia(id) {
 let adminRestriccionsList = [];
 
 function closeAdminRestriccionsModal() {
+  if (typeof window.closeAnyModal === 'function') {
+    window.closeAnyModal('modal-admin-restriccions-backdrop');
+    return;
+  }
   const modal = document.getElementById('modal-admin-restriccions-backdrop');
   if (modal) {
     modal.classList.remove('active');
     modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
+    modal.style.setProperty('opacity', '0', 'important');
+    modal.style.setProperty('visibility', 'hidden', 'important');
   }
 }
 
@@ -4705,10 +4731,17 @@ async function populateNovaReservaActivitats() {
 }
 
 function closeAdminTallersModal() {
+  if (typeof window.closeAnyModal === 'function') {
+    window.closeAnyModal('modal-admin-tallers-backdrop');
+    return;
+  }
   const modal = document.getElementById('modal-admin-tallers-backdrop');
   if (modal) {
     modal.classList.remove('active');
     modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('pointer-events', 'none', 'important');
+    modal.style.setProperty('opacity', '0', 'important');
+    modal.style.setProperty('visibility', 'hidden', 'important');
   }
 }
 

@@ -16,49 +16,80 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=9.9.2">
-  <link rel="stylesheet" href="css/admin.css?v=9.9.2">
-  <link rel="stylesheet" href="css/card.css?v=9.9.2">
+  <link rel="stylesheet" href="css/styles.css?v=9.9.3">
+  <link rel="stylesheet" href="css/admin.css?v=9.9.3">
+  <link rel="stylesheet" href="css/card.css?v=9.9.3">
   <script>
+    // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
+    try {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister();
+          }
+        });
+      }
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        caches.keys().then(function(names) {
+          for (var j = 0; j < names.length; j++) {
+            caches.delete(names[j]);
+          }
+        });
+      }
+    } catch (swErr) {}
+
+    function forcarNetejaMemoriaCau() {
+      try {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (var i = 0; i < regs.length; i++) regs[i].unregister();
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (var j = 0; j < names.length; j++) caches.delete(names[j]);
+          });
+        }
+      } catch(e) {}
+      window.location.href = window.location.pathname + '?nocache=' + Date.now();
+    }
+    window.forcarNetejaMemoriaCau = forcarNetejaMemoriaCau;
+
     function triggerOpenModal(modalId, specificFnName) {
       var m = document.getElementById(modalId);
       if (m) {
         m.classList.add('active');
         m.style.setProperty('display', 'flex', 'important');
+        m.style.setProperty('opacity', '1', 'important');
+        m.style.setProperty('pointer-events', 'auto', 'important');
+        m.style.setProperty('visibility', 'visible', 'important');
+        m.style.setProperty('z-index', '99999', 'important');
       }
       if (specificFnName && typeof window[specificFnName] === 'function') {
         try {
           window[specificFnName]();
         } catch (e) {
-          console.warn('Avís cridant ' + specificFnName + ':', e);
+          console.warn('Avis cridant ' + specificFnName + ':', e);
         }
       }
     }
 
-    function closeAdminFestiusModal() {
-      var m = document.getElementById('modal-admin-festius-backdrop');
+    function closeAnyModal(modalId) {
+      var m = document.getElementById(modalId);
       if (m) {
         m.classList.remove('active');
         m.style.setProperty('display', 'none', 'important');
+        m.style.setProperty('opacity', '0', 'important');
+        m.style.setProperty('pointer-events', 'none', 'important');
+        m.style.setProperty('visibility', 'hidden', 'important');
       }
     }
 
-    function closeAdminRestriccionsModal() {
-      var m = document.getElementById('modal-admin-restriccions-backdrop');
-      if (m) {
-        m.classList.remove('active');
-        m.style.setProperty('display', 'none', 'important');
-      }
-    }
+    function closeAdminFestiusModal() { closeAnyModal('modal-admin-festius-backdrop'); }
+    function closeAdminRestriccionsModal() { closeAnyModal('modal-admin-restriccions-backdrop'); }
+    function closeAdminTallersModal() { closeAnyModal('modal-admin-tallers-backdrop'); }
 
-    function closeAdminTallersModal() {
-      var m = document.getElementById('modal-admin-tallers-backdrop');
-      if (m) {
-        m.classList.remove('active');
-        m.style.setProperty('display', 'none', 'important');
-      }
-    }
-
+    window.closeAnyModal = closeAnyModal;
     window.closeAdminFestiusModal = closeAdminFestiusModal;
     window.closeAdminRestriccionsModal = closeAdminRestriccionsModal;
     window.closeAdminTallersModal = closeAdminTallersModal;
@@ -66,9 +97,8 @@
 
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-backdrop.active').forEach(function(m) {
-          m.classList.remove('active');
-          m.style.setProperty('display', 'none', 'important');
+        document.querySelectorAll('.modal-backdrop').forEach(function(m) {
+          closeAnyModal(m.id);
         });
       }
     });
@@ -296,6 +326,10 @@
         </button>
         <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');">
           Nou Alumne
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-netejar-cau" onclick="forcarNetejaMemoriaCau();" title="Recarrega l'aplicacio forcand l'esborrat de la memoria cau i Service Worker" style="font-size: 11.5px; padding: 5px 9px; color: #4B5563; border-color: #D1D5DB; background: #F3F4F6; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Netejar Cau
         </button>
       </div>
     </header>
@@ -1941,8 +1975,8 @@
   </div>
 
   <!-- MODAL: GESTIÓ DE DIES DE FESTA I VACANCES -->
-  <div class="modal-backdrop" id="modal-admin-festius-backdrop" onclick="if(event.target===this) closeAdminFestiusModal();">
-    <div class="modal-dialog" style="max-width: 680px;">
+  <div class="modal-backdrop" id="modal-admin-festius-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(30, 26, 24, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" onclick="if(event.target===this) closeAdminFestiusModal();">
+    <div class="modal-dialog" style="background: #FFFFFF; border-radius: 16px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.35); padding: 24px; box-sizing: border-box; position: relative; z-index: 100000;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Dies de Festa i Vacances</h3>
@@ -2012,8 +2046,8 @@
   </div>
 
   <!-- MODAL: RESTRICCIÓ DE TALLERS I ACTIVITATS -->
-  <div class="modal-backdrop" id="modal-admin-restriccions-backdrop" onclick="if(event.target===this) closeAdminRestriccionsModal();">
-    <div class="modal-dialog" style="max-width: 720px;">
+  <div class="modal-backdrop" id="modal-admin-restriccions-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(30, 26, 24, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" onclick="if(event.target===this) closeAdminRestriccionsModal();">
+    <div class="modal-dialog" style="background: #FFFFFF; border-radius: 16px; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.35); padding: 24px; box-sizing: border-box; position: relative; z-index: 100000;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Restricció de Tallers i Activitats</h3>
@@ -2151,8 +2185,8 @@
   </div>
 
   <!-- MODAL: GESTIÓ DE TALLERS I AFORAMENT -->
-  <div class="modal-backdrop" id="modal-admin-tallers-backdrop" onclick="if(event.target===this) closeAdminTallersModal();">
-    <div class="modal-dialog" style="max-width: 760px;">
+  <div class="modal-backdrop" id="modal-admin-tallers-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(30, 26, 24, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" onclick="if(event.target===this) closeAdminTallersModal();">
+    <div class="modal-dialog" style="background: #FFFFFF; border-radius: 16px; max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.35); padding: 24px; box-sizing: border-box; position: relative; z-index: 100000;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #111827;">Gestió de Tallers i Activitats</h3>
@@ -2238,8 +2272,8 @@
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.1"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.9.2"></script>
-  <script src="js/reserves-calendar.js?v=9.9.2"></script>
-  <script src="js/admin.js?v=9.9.2"></script>
+  <script src="js/store.js?v=9.9.3"></script>
+  <script src="js/reserves-calendar.js?v=9.9.3"></script>
+  <script src="js/admin.js?v=9.9.3"></script>
 </body>
 </html>

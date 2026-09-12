@@ -1,9 +1,8 @@
 // sw.js - Service Worker per al Taller de Ceramica (Suport Offline, PWA i Notificacions Push)
-const CACHE_NAME = "taller-ceramica-v9.9.2";
+const CACHE_NAME = "taller-ceramica-v9.9.3";
 const ASSETS_TO_CACHE = [
   "./index.html",
   "./reserva.html",
-  "./admin.html",
   "./alumne.html",
   "./carnet.html",
   "./scanner.html",
@@ -11,7 +10,6 @@ const ASSETS_TO_CACHE = [
   "./manifest-alumne.json",
   "./css/styles.css",
   "./css/card.css",
-  "./css/admin.css",
   "./css/roigdecoure-web.css",
   "./fonts/buffalo.woff2",
   "./lib/qrcode.min.js",
@@ -23,7 +21,6 @@ const ASSETS_TO_CACHE = [
   "./js/store.js",
   "./js/reserves-calendar.js",
   "./js/alumne.js",
-  "./js/admin.js",
   "./js/roigdecoure-web.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
@@ -53,8 +50,14 @@ self.addEventListener("activate", (event) => {
 
 // Estrategia: Network first, fallback to cache (per tenir sempre les dades fresques pero funcionar offline)
 self.addEventListener("fetch", (event) => {
-  // No interceptar peticions de l-API ni d-altres dominis (com Google Sheets o Stripe)
-  if (event.request.url.includes("/api/") || !event.request.url.startsWith(self.location.origin)) {
+  // No interceptar peticions de l-API ni del panell d'administracio (admin.html, admin.js, admin.css) ni d-altres dominis
+  if (
+    event.request.url.includes("/api/") ||
+    event.request.url.includes("admin.html") ||
+    event.request.url.includes("admin.js") ||
+    event.request.url.includes("admin.css") ||
+    !event.request.url.startsWith(self.location.origin)
+  ) {
     return;
   }
 
