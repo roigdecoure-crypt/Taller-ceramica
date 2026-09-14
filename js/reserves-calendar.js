@@ -509,8 +509,8 @@ class ReservesCalendar {
       let bookBtn = '';
       if (this.isAdmin) {
         bookBtn = `
-          <button type="button" class="btn-book-act btn-open-booking-modal" data-slot-id="${f.id}" data-act-id="${act.id}" data-spots="${realDisp}" ${isActFull ? 'disabled' : ''}>
-            ${isActFull ? 'Esgotat' : '+ Reservar'}
+          <button type="button" class="btn-book-act btn-open-booking-modal ${isActFull ? 'btn-force-act' : ''}" data-slot-id="${f.id}" data-act-id="${act.id}" data-spots="${realDisp}" data-is-full="${isActFull ? '1' : '0'}" style="${isActFull ? 'background:#D97706; border-color:#D97706; color:white; font-weight:700;' : ''}" title="${isActFull ? 'Aforament complet: Clic per saltar regles i forçar reserva com a Admin' : ''}">
+            ${isActFull ? '⚡ Forçar' : '+ Reservar'}
           </button>
         `;
       } else {
@@ -803,6 +803,21 @@ class ReservesCalendar {
       `;
     }
 
+    const isAfternoonSlot = franja.id === 'T1' || (franja.inici && franja.inici >= '14:00');
+    const arrivalOptionsHtml = isAfternoonSlot ? `
+      <option value="17:00" data-fi="19:00" selected>17:00 a 19:00 (2h)</option>
+      <option value="17:15" data-fi="19:15">17:15 a 19:15 (2h)</option>
+      <option value="17:30" data-fi="19:30">17:30 a 19:30 (2h)</option>
+      <option value="17:45" data-fi="19:45">17:45 a 19:45 (2h)</option>
+      <option value="18:00" data-fi="20:00">18:00 a 20:00 (2h)</option>
+    ` : `
+      <option value="10:00" data-fi="12:00" selected>10:00 a 12:00 (2h)</option>
+      <option value="10:15" data-fi="12:15">10:15 a 12:15 (2h)</option>
+      <option value="10:30" data-fi="12:30">10:30 a 12:30 (2h)</option>
+      <option value="10:45" data-fi="12:45">10:45 a 12:45 (2h)</option>
+      <option value="11:00" data-fi="13:00">11:00 a 13:00 (2h)</option>
+    `;
+
     modalBackdrop.innerHTML = `
       <div class="modal-dialog res-booking-dialog">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
@@ -839,11 +854,7 @@ class ReservesCalendar {
           <div class="form-group" style="margin-bottom: 12px;">
             <label style="font-size:12px; font-weight:700;">Hora d'arribada (Sessió de 2 hores) *</label>
             <select id="modal-booking-arrival-time" class="form-control" style="font-size:13px; font-weight:600;">
-              <option value="10:00" data-fi="12:00">10:00 a 12:00 (2h)</option>
-              <option value="10:15" data-fi="12:15">10:15 a 12:15 (2h)</option>
-              <option value="10:30" data-fi="12:30">10:30 a 12:30 (2h)</option>
-              <option value="10:45" data-fi="12:45">10:45 a 12:45 (2h)</option>
-              <option value="11:00" data-fi="13:00">11:00 a 13:00 (2h)</option>
+              ${arrivalOptionsHtml}
             </select>
           </div>
 
@@ -855,10 +866,20 @@ class ReservesCalendar {
             </div>
             <div class="res-pax-stepper">
               <button type="button" class="res-pax-btn" id="btn-pax-minus" disabled>-</button>
-              <input type="number" id="input-booking-pax" class="res-pax-input" min="1" max="${maxSpots}" value="1" readonly>
-              <button type="button" class="res-pax-btn" id="btn-pax-plus" ${maxSpots <= 1 ? 'disabled' : ''}>+</button>
+              <input type="number" id="input-booking-pax" class="res-pax-input" min="1" max="${this.isAdmin ? 12 : maxSpots}" value="1" readonly>
+              <button type="button" class="res-pax-btn" id="btn-pax-plus" ${(this.isAdmin ? false : maxSpots <= 1) ? 'disabled' : ''}>+</button>
             </div>
           </div>
+
+          ${this.isAdmin ? `
+          <!-- Opció Administrador: Forçar Aforament -->
+          <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;">
+            <label style="font-size: 12px; font-weight: 700; color: #92400E; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; user-select: none;">
+              <input type="checkbox" id="modal-booking-forcar-aforament" ${maxSpots <= 0 ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: #D97706; cursor: pointer;">
+              <span>⚡ Saltar regles d'aforament (Forçar reserva)</span>
+            </label>
+          </div>
+          ` : ''}
 
           <!-- Observacions -->
           <div class="form-group">
@@ -894,12 +915,13 @@ class ReservesCalendar {
         if (currentPax === 1) btnMinus.disabled = true;
       }
     });
+    const effectiveMaxSpots = this.isAdmin ? Math.max(maxSpots, 12) : maxSpots;
     btnPlus.addEventListener('click', () => {
-      if (currentPax < maxSpots) {
+      if (currentPax < effectiveMaxSpots) {
         currentPax++;
         inputPax.value = currentPax;
         btnMinus.disabled = false;
-        if (currentPax >= maxSpots) btnPlus.disabled = true;
+        if (currentPax >= effectiveMaxSpots) btnPlus.disabled = true;
       }
     });
 
@@ -1006,7 +1028,8 @@ class ReservesCalendar {
           hora_inici: selectedHoraInici,
           hora_fi: selectedHoraFi,
           hores: 2.0,
-          notes: notes
+          notes: notes,
+          forcar_aforament: this.isAdmin && (modalBackdrop.querySelector('#modal-booking-forcar-aforament')?.checked || maxSpots <= 0)
         });
 
         if (res.ok) {
@@ -1029,7 +1052,38 @@ class ReservesCalendar {
             this.onBookingSuccess(reservaObj);
           }
         } else {
-          alert(res.error || 'No s\'ha pogut completar la reserva');
+          const errMsg = res.error || 'No s\'ha pogut completar la reserva';
+          if (this.isAdmin && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('places') || errMsg.toLowerCase().includes('complet') || (res && res.code === 'AFORAMENT_COMPLET'))) {
+            if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i forçar la reserva de totes maneres?`)) {
+              const resRetry = await Store.crearReserva({
+                student_id: studentId,
+                student_nom: studentNom,
+                telefon: studentTel,
+                data: this.selectedDate,
+                franja_id: franja.id,
+                franja: franja.id,
+                activitat: act.nom,
+                activitat_id: act.id,
+                places: currentPax,
+                hora_inici: selectedHoraInici,
+                hora_fi: selectedHoraFi,
+                hores: 2.0,
+                notes: notes,
+                forcar_aforament: true
+              });
+              if (resRetry && resRetry.ok) {
+                closeModal();
+                const reservaObj = resRetry.reserva || resRetry;
+                ReservesCalendar.sendBookingPush(reservaObj);
+                if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
+                this._showBookingSuccessModal(reservaObj);
+                await this.refresh();
+                if (typeof this.onBookingSuccess === 'function') this.onBookingSuccess(reservaObj);
+                return;
+              }
+            }
+          }
+          alert(errMsg);
           submitBtn.disabled = false;
           submitBtn.textContent = 'Confirmar Reserva';
         }

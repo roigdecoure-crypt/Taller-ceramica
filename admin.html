@@ -27,16 +27,55 @@
           for (var i = 0; i < regs.length; i++) {
             regs[i].unregister();
           }
-        });
+        }).catch(function() {});
       }
       if (typeof window !== 'undefined' && 'caches' in window) {
         caches.keys().then(function(names) {
           for (var j = 0; j < names.length; j++) {
             caches.delete(names[j]);
           }
-        });
+        }).catch(function() {});
       }
     } catch (swErr) {}
+
+    function switchAdminTab(tab) {
+      document.querySelectorAll('.sidebar-item[data-tab]').forEach(function(i) {
+        if (i.dataset.tab === tab) i.classList.add('active');
+        else i.classList.remove('active');
+      });
+      document.querySelectorAll('.top-nav-link[data-top-tab]').forEach(function(btn) {
+        if (btn.dataset.topTab === tab) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+      document.querySelectorAll('.admin-tab-view').forEach(function(view) {
+        view.classList.remove('active');
+      });
+      var targetView = document.getElementById('view-' + tab);
+      if (targetView) targetView.classList.add('active');
+
+      var heading = document.getElementById('admin-view-heading');
+      if (heading) {
+        if (tab === 'reserves') heading.textContent = 'Gestió de Reserves';
+        else if (tab === 'alumnes') heading.textContent = 'Alumnes & Clients';
+        else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
+        else if (tab === 'carnet-designer') heading.textContent = 'Dissenyador de Carnets';
+      }
+
+      if (typeof refreshAppointmentsDashboard === 'function' && tab === 'reserves') {
+        refreshAppointmentsDashboard();
+      } else if (typeof refreshStudentsList === 'function' && tab === 'alumnes') {
+        refreshStudentsList();
+      } else if (typeof populateDesignerStudentSelect === 'function' && tab === 'carnet-designer') {
+        populateDesignerStudentSelect();
+        if (typeof updateCardDesignPreview === 'function') updateCardDesignPreview();
+      }
+
+      if (window.innerWidth <= 768) {
+        var sb = document.getElementById('admin-sidebar');
+        if (sb) sb.classList.add('collapsed');
+      }
+    }
+    window.switchAdminTab = switchAdminTab;
 
     function forcarNetejaMemoriaCau() {
       try {
@@ -167,7 +206,7 @@
 
   <aside class="admin-sidebar" id="admin-sidebar">
     <div class="sidebar-header-wrapper">
-      <a href="javascript:void(0)" class="sidebar-brand" title="Roig de Coure">
+      <a href="index.html" class="sidebar-brand" title="Roig de Coure - Web Pública" target="_blank">
         <img src="img/logo.png" alt="Roig de Coure" class="sidebar-logo-img" id="sidebar-logo-img">
       </a>
       <button type="button" class="btn-sidebar-hamburger" id="btn-sidebar-hamburger" aria-label="Menú" title="Menú">
@@ -178,6 +217,7 @@
     </div>
 
     <ul class="sidebar-menu">
+      <!-- VISTES PRINCIPALS -->
       <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -221,31 +261,69 @@
       </li>
 
       <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Accions & Gestió</div>
 
-      <li class="sidebar-item" title="Escàner QR Mòbil">
-        <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-          </span>
-          <span class="nav-text">Escàner QR Mòbil</span>
-        </a>
+      <li class="sidebar-item" id="btn-sidebar-nova-reserva" title="Nova Reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #831D1D;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </span>
+        <span class="nav-text" style="font-weight: 600; color: #831D1D;">Nova Reserva</span>
       </li>
-      <li class="sidebar-item" title="Web Pública Roig de Coure">
-        <a href="index.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-          </span>
-          <span class="nav-text">Web Pública & Reserves</span>
-        </a>
+      <li class="sidebar-item" id="btn-sidebar-manual-checkin" title="Entrada / Sortida Manual" onclick="triggerOpenModal('modal-admin-manual-backdrop', 'openAdminManualCheckinModal');" style="cursor: pointer;">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+        </span>
+        <span class="nav-text">Entrada / Sortida Manual</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-aforament" title="Control d'Aforament" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');" style="cursor: pointer;">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Control Aforament</span>
+      </li>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Tallers & Configuració</div>
+
+      <!-- CONFIGURACIÓ DE TALLERS I SISTEMA -->
+      <li class="sidebar-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #B45309;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </span>
+        <span class="nav-text">Festius / Vacances</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #4F46E5;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+          </svg>
+        </span>
+        <span class="nav-text">Restriccions Tallers</span>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-tallers" title="Gestió de Tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #059669;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Gestió de Tallers</span>
       </li>
       <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
         <span class="nav-icon">
@@ -268,34 +346,6 @@
         </span>
         <span class="nav-text">Configuració</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        </span>
-        <span class="nav-text">Festius & Vacances</span>
-      </li>
-      <li class="sidebar-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-          </svg>
-        </span>
-        <span class="nav-text">Restriccions Tallers</span>
-      </li>
-      <li class="sidebar-item" id="btn-sidebar-tallers" title="Gestió de Tallers i Aforament" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
-        </span>
-        <span class="nav-text">Gestió de Tallers</span>
-      </li>
       <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -308,7 +358,57 @@
       </li>
 
       <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Enllaços & Eines</div>
 
+      <!-- ENLLAÇOS EXTERNS I UTILITATS -->
+      <li class="sidebar-item" title="Escàner QR Mòbil">
+        <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </span>
+          <span class="nav-text">Escàner QR ↗</span>
+        </a>
+      </li>
+      <li class="sidebar-item" title="Web Pública Roig de Coure">
+        <a href="index.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Web Pública ↗</span>
+        </a>
+      </li>
+      <li class="sidebar-item" title="Portal de l'Alumne">
+        <a href="alumne.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </span>
+          <span class="nav-text">Portal Alumne ↗</span>
+        </a>
+      </li>
+      <li class="sidebar-item" id="btn-sidebar-netejar-cau" title="Netejar Cau" onclick="forcarNetejaMemoriaCau();" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #64748B;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Netejar Cau</span>
+      </li>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- TANCAR SESSIÓ -->
       <li class="sidebar-item" id="btn-sidebar-logout" title="Tancar Sessió" style="color: #C25E3A; cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -334,39 +434,19 @@
   <!-- ==================== CONTINGUT PRINCIPAL ==================== -->
   <div class="admin-main-wrapper">
 
-    <!-- Capçalera superior amb títol i botons d'acció -->
+    <!-- Capçalera superior: Títol i Botons d'Acció (Nova Reserva i Nou Alumne) -->
     <header class="admin-top-bar">
       <div class="top-bar-left">
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
       </div>
       <div class="top-bar-actions notranslate" translate="no">
-        <button type="button" class="btn-roig-coure" id="btn-admin-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');">
-          + Nova Reserva
+        <button type="button" class="btn-top-nova-reserva" id="btn-top-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" title="Nova Reserva" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; background: #5E7E6F; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(94,126,111,0.25); transition: all 0.15s ease;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Nova Reserva
         </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-festius-top" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="border-color: #D97706; color: #92400E; background: #FEF3C7; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          Festius / Vacances
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-restriccions-top" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="border-color: #6366F1; color: #3730A3; background: #EEF2FF; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-          Restriccions Tallers
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-tallers-top" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="border-color: #059669; color: #065F46; background: #ECFDF5; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-          Gestió de Tallers
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-aforament-modal" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');">
-          Control Aforament
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-manual-checkin" onclick="triggerOpenModal('modal-admin-manual-backdrop', 'openAdminManualCheckinModal');">
-          Entrada / Sortida Manual
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');">
+        <button type="button" class="btn-roig-coure" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');" title="Nou Alumne" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; box-shadow: 0 2px 4px rgba(131,29,29,0.2);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nou Alumne
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-netejar-cau" onclick="forcarNetejaMemoriaCau();" title="Recarrega l'aplicacio forcand l'esborrat de la memoria cau i Service Worker" style="font-size: 11.5px; padding: 5px 9px; color: #4B5563; border-color: #D1D5DB; background: #F3F4F6; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-          Netejar Cau
         </button>
       </div>
     </header>
@@ -374,57 +454,15 @@
     <!-- PESTANYA 1: RESERVES & CALENDARI (SPLIT DASHBOARD TIPUS APPOINTMENTS MANAGER) -->
     <section class="admin-tab-view active" id="view-reserves">
 
-      <!-- Cinta superior: Aforaments màxims i de les 3 activitats -->
-      <div class="reserves-top-banner">
-        <div class="reserves-banner-left">
-          <div>
-            <span class="title">Aforament màxim del taller (Torn de matí):</span>
-            <span class="badge-val" id="admin-display-aforament-val">12 places simultànies</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px; margin-left: 12px;">
-            <input type="number" id="admin-input-aforament" min="1" max="50" style="width: 58px; text-align: center; padding: 4px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;" value="12">
-            <button type="button" class="btn btn-outline btn-sm" id="btn-admin-save-aforament" style="padding: 4px 8px; font-size: 12px;">Desar</button>
-          </div>
-        </div>
-
-        <div class="reserves-capacitats-group" id="admin-capacitats-group">
-          <span style="font-size: 12px; font-weight: 700; color: #4B5563;">Activitats:</span>
-          <div id="admin-capacitats-dinamiques-container" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div class="cap-act-item">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #B91C1C; display: inline-block;"></span>
-              <span>Torn:</span>
-              <input type="number" id="admin-cap-torn" min="1" max="20" value="4">
-            </div>
-            <div class="cap-act-item">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #047857; display: inline-block;"></span>
-              <span>Modelatge:</span>
-              <input type="number" id="admin-cap-modelatge" min="1" max="30" value="8">
-            </div>
-            <div class="cap-act-item">
-              <span style="width: 8px; height: 8px; border-radius: 50%; background: #1D4ED8; display: inline-block;"></span>
-              <span>Pintar:</span>
-              <input type="number" id="admin-cap-pintar" min="1" max="30" value="12">
-            </div>
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-admin-save-capacitats-act" style="padding: 4px 10px; font-size: 12px; background: #831D1D; border-color: #831D1D;">
-            Desar capacitats
-          </button>
-        </div>
-
-        <div class="reserves-actions-group" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-sm" id="btn-admin-festius" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border: 1px solid #D97706; color: #92400E; background: #FEF3C7; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            Dies de Festa / Vacances
-          </button>
-          <button type="button" class="btn btn-sm" id="btn-admin-restriccions" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border: 1px solid #6366F1; color: #3730A3; background: #EEF2FF; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-            Restringir Tallers
-          </button>
-          <button type="button" class="btn btn-sm" id="btn-admin-tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; border: 1px solid #059669; color: #065F46; background: #ECFDF5; padding: 5px 10px; border-radius: 6px; cursor: pointer;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-            Gestió de Tallers
-          </button>
-        </div>
+      <!-- Camps d'aforament ocults per mantenir compatibilitat amb scripts de fons -->
+      <div id="hidden-aforament-compat" style="display: none;" aria-hidden="true">
+        <input type="number" id="admin-input-aforament" value="12">
+        <span id="admin-display-aforament-val">12 places simultànies</span>
+        <button type="button" id="btn-admin-save-aforament"></button>
+        <input type="number" id="admin-cap-torn" value="4">
+        <input type="number" id="admin-cap-modelatge" value="8">
+        <input type="number" id="admin-cap-pintar" value="12">
+        <button type="button" id="btn-admin-save-capacitats-act"></button>
       </div>
 
       <!-- GRAELLA SPLIT 2 COLUMNES: CALENDARI (ESQUERRA) + LLISTA RESERVES (DRETA) -->
@@ -635,6 +673,9 @@
               </a>
               <button type="button" class="btn btn-outline btn-sm" id="inline-btn-carnet" title="Veure el carnet oficial de l'alumne">
                 Veure Carnet Oficial
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="inline-btn-download-qr" title="Descarregar imatge del codi QR de l'alumne (PNG)">
+                Descarregar QR
               </button>
               <button type="button" class="btn btn-outline btn-sm" id="inline-btn-edit-student" title="Editar les dades de l'alumne">
                 Editar Dades
@@ -943,6 +984,9 @@
             <button type="button" class="btn btn-outline" id="btn-designer-export-png">
               <span>Descarregar en PNG (CR80 300 DPI)</span>
             </button>
+            <button type="button" class="btn btn-outline" id="btn-designer-export-qr" title="Descarregar imatge d'alta definició només del codi QR">
+              <span>Descarregar només QR (PNG)</span>
+            </button>
             <button type="button" class="btn btn-primary" id="btn-designer-print">
               <span>Imprimir Carnet</span>
             </button>
@@ -989,6 +1033,7 @@
             <div style="display: flex; gap: 8px;">
               <a href="#" class="btn btn-outline btn-sm" id="drawer-btn-whatsapp" target="_blank">WhatsApp</a>
               <button class="btn btn-outline btn-sm" id="drawer-btn-carnet">Veure Carnet QR</button>
+              <button class="btn btn-outline btn-sm" id="drawer-btn-download-qr" title="Descarregar imatge del codi QR de l'alumne (PNG)">Descarregar QR</button>
               <button class="btn btn-outline btn-sm" id="drawer-btn-edit-student">Editar</button>
             </div>
           </div>
@@ -1287,6 +1332,7 @@
         <!-- Botons d'acció -->
         <div class="card-actions">
           <button class="btn btn-primary btn-sm" id="btn-print-card">Imprimir Carnet</button>
+          <button class="btn btn-outline btn-sm" id="btn-modal-export-qr" style="background:#FAF7F5; font-weight:700; border-color:var(--color-primary); color:var(--color-primary);" title="Descarregar imatge del codi QR de l'alumne (PNG)">Descarregar QR</button>
           <button class="btn btn-outline btn-sm" id="btn-modal-export-svg">Descarregar SVG</button>
           <button class="btn btn-outline btn-sm" id="btn-modal-export-png">Descarregar PNG</button>
           <button class="btn btn-outline btn-sm" id="btn-copy-card-link">Copiar Enllaç</button>
@@ -1410,6 +1456,8 @@
             </button>
           </div>
           <div id="cfg-whatsapp-test-status" style="font-size: 11px; margin-top: 6px; display: none;"></div>
+        </div>
+
         <!-- Festius, Vacances i Restriccions d'Activitats -->
         <div style="background: #FFFBEB; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid #FCD34D; margin-bottom: 16px;">
           <div style="font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 4px;">Festius, Vacances i Restriccions d'Activitats</div>
@@ -1859,19 +1907,37 @@
             </div>
           </div>
 
-          <!-- Hora d'arribada (de 10:00 a 11:00 cada 15 min - 2 hores) -->
+          <!-- Hora d'arribada (Matí i Tarda - sessions de 2 hores) -->
           <div>
             <label for="admin-res-hora-inici" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Hora d'arribada (Sessió de 2 hores):</label>
             <select id="admin-res-hora-inici" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
-              <option value="10:00" data-fi="12:00">10:00 h (fins a les 12:00) — 2 hores</option>
-              <option value="10:15" data-fi="12:15">10:15 h (fins a les 12:15) — 2 hores</option>
-              <option value="10:30" data-fi="12:30">10:30 h (fins a les 12:30) — 2 hores</option>
-              <option value="10:45" data-fi="12:45">10:45 h (fins a les 12:45) — 2 hores</option>
-              <option value="11:00" data-fi="13:00">11:00 h (fins a les 13:00) — 2 hores</option>
+              <optgroup label="Torn de Matí (10:00 - 13:00)">
+                <option value="10:00" data-fi="12:00">10:00 h (fins a les 12:00) — 2 hores</option>
+                <option value="10:15" data-fi="12:15">10:15 h (fins a les 12:15) — 2 hores</option>
+                <option value="10:30" data-fi="12:30">10:30 h (fins a les 12:30) — 2 hores</option>
+                <option value="10:45" data-fi="12:45">10:45 h (fins a les 12:45) — 2 hores</option>
+                <option value="11:00" data-fi="13:00">11:00 h (fins a les 13:00) — 2 hores</option>
+              </optgroup>
+              <optgroup label="Torn de Tarda (17:00 - 20:00)">
+                <option value="17:00" data-fi="19:00">17:00 h (fins a les 19:00) — 2 hores</option>
+                <option value="17:15" data-fi="19:15">17:15 h (fins a les 19:15) — 2 hores</option>
+                <option value="17:30" data-fi="19:30">17:30 h (fins a les 19:30) — 2 hores</option>
+                <option value="17:45" data-fi="19:45">17:45 h (fins a les 19:45) — 2 hores</option>
+                <option value="18:00" data-fi="20:00">18:00 h (fins a les 20:00) — 2 hores</option>
+              </optgroup>
             </select>
             <small style="color: var(--color-muted); font-size: 11px; margin-top: 3px; display: block;">
-              Horari disponible entre les 10:00 i les 11:00 en intervals de 1/4 d'hora. Totes les reserves tenen una durada de 2 hores.
+              Horaris disponibles de matí (10:00 a 11:00) i de tarda (17:00 a 18:00) en intervals de 1/4 d'hora. Totes les reserves tenen una durada de 2 hores.
             </small>
+          </div>
+
+                    <!-- Opció Administrador: Forçar Aforament -->
+          <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px;">
+            <label style="font-size: 13px; font-weight: 600; color: #92400E; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; user-select: none;">
+              <input type="checkbox" id="admin-res-forcar-aforament" style="width: 17px; height: 17px; accent-color: #D97706; cursor: pointer;">
+              <span>⚡ <strong>Saltar regles d'aforament</strong> (permetre sobrepassar places)</span>
+            </label>
+            <span style="font-size: 11px; color: #B45309; font-weight: 700; background: #FEF3C7; padding: 2px 8px; border-radius: 4px; border: 1px solid #FCD34D;">Admin</span>
           </div>
 
           <!-- Notes / Observacions -->
@@ -2300,6 +2366,8 @@
     </div>
   </div>
 
+
+
   <!-- Contenidor per a Toasts -->
   <div class="toast-container" id="toast-container"></div>
 
@@ -2307,10 +2375,10 @@
   <script src="lib/qrcode.min.js?v=9.1"></script>
   <script src="js/time-utils.js?v=9.1"></script>
   <script src="js/sound.js?v=9.1"></script>
-  <script src="js/qr-engine.js?v=9.1"></script>
+  <script src="js/qr-engine.js?v=9.4"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.9.3"></script>
+  <script src="js/store.js?v=9.9.4"></script>
   <script src="js/reserves-calendar.js?v=9.9.3"></script>
-  <script src="js/admin.js?v=9.9.3"></script>
+  <script src="js/admin.js?v=9.9.4"></script>
 </body>
 </html>

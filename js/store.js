@@ -730,6 +730,74 @@ const Store = {
     return { ok: true, message: 'Configuració desada' };
   },
 
+  async authAdmin(pin) {
+    const cleanPin = String(pin || '').trim();
+    if (this.mode === 'api' || this.apiBase) {
+      try {
+        const res = await fetch(`${this.apiBase}/api/admin/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin: cleanPin })
+        });
+        return await res.json();
+      } catch (err) {
+        console.warn('Error en authAdmin API:', err);
+      }
+    }
+    const data = this._getLocalData();
+    const currentStoredPin = (data.config && data.config.admin_pin) || localStorage.getItem('roig_admin_pin') || '1234';
+    if (cleanPin === String(currentStoredPin).trim()) {
+      return { ok: true, message: 'Autenticació correcta' };
+    }
+    return { ok: false, error: 'PIN incorrecte' };
+  },
+
+  async changeAdminPin(oldPin, newPin) {
+    const cleanOld = String(oldPin || '').trim();
+    const cleanNew = String(newPin || '').trim();
+
+    if (!cleanOld || !cleanNew) {
+      return { ok: false, error: 'Omple tant el PIN actual com el nou.' };
+    }
+    if (cleanNew.length < 4) {
+      return { ok: false, error: 'El nou PIN ha de tenir com a mínim 4 caràcters.' };
+    }
+
+    if (this.mode === 'api' || this.apiBase) {
+      try {
+        const res = await fetch(`${this.apiBase}/api/admin/change-pin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ oldPin: cleanOld, newPin: cleanNew })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          const data = this._getLocalData();
+          if (!data.config) data.config = {};
+          data.config.admin_pin = cleanNew;
+          this._saveLocalData(data);
+          try { localStorage.setItem('roig_admin_pin', cleanNew); } catch (e) {}
+        }
+        return json;
+      } catch (err) {
+        console.warn('Error canviant PIN via API:', err);
+      }
+    }
+
+    // Fallback mode local (offline)
+    const data = this._getLocalData();
+    const currentStoredPin = (data.config && data.config.admin_pin) || localStorage.getItem('roig_admin_pin') || '1234';
+    if (cleanOld !== String(currentStoredPin).trim()) {
+      return { ok: false, error: 'El PIN actual no és correcte.' };
+    }
+
+    if (!data.config) data.config = {};
+    data.config.admin_pin = cleanNew;
+    this._saveLocalData(data);
+    try { localStorage.setItem('roig_admin_pin', cleanNew); } catch (e) {}
+    return { ok: true, message: 'PIN d\'administrador actualitzat correctament!' };
+  },
+
   /* ====================== DISSENY DEL CARNET ====================== */
 
   async getCarnetConfig() {
@@ -1079,30 +1147,33 @@ const Store = {
     const data = this._getLocalData();
     if (!data.reserves) data.reserves = [];
 
-    // Validar dia de festa
-    const customFestiu = (data.dies_festius || []).find(f => reservaData.data >= f.data_inici && reservaData.data <= (f.data_fi || f.data_inici));
-    if (customFestiu) {
-      return { ok: false, error: `El taller està tancat en aquesta data: ${customFestiu.nom}${customFestiu.motiu ? ' (' + customFestiu.motiu + ')' : ''}.` };
-    }
+    const forcarAforament = Boolean(reservaData.forcar_aforament || reservaData.ignorar_aforament || reservaData.force);
 
-    // Validar restricció d'activitats
-    const actId = (reservaData.activitat_id || reservaData.activitat || '').toLowerCase();
-    const restr = (data.restriccions_activitats || []).find(r => reservaData.data >= r.data_inici && reservaData.data <= (r.data_fi || r.data_inici));
-    if (restr) {
-      const bloq = (restr.activitats_bloquejades || []).map(x => String(x).toLowerCase());
-      if (bloq.includes(actId)) {
-        return { ok: false, error: `L'activitat triada no es pot impartir en aquesta data (${restr.motiu || 'activitat restringida per calendari'}).` };
+    if (!forcarAforament) {
+      // Validar dia de festa
+      const customFestiu = (data.dies_festius || []).find(f => reservaData.data >= f.data_inici && reservaData.data <= (f.data_fi || f.data_inici));
+      if (customFestiu) {
+        return { ok: false, error: `El taller està tancat en aquesta data: ${customFestiu.nom}${customFestiu.motiu ? ' (' + customFestiu.motiu + ')' : ''}.`, code: 'DIA_TANCAT' };
+      }
+
+      // Validar restricció d'activitats
+      const actId = (reservaData.activitat_id || reservaData.activitat || '').toLowerCase();
+      const restr = (data.restriccions_activitats || []).find(r => reservaData.data >= r.data_inici && reservaData.data <= (r.data_fi || r.data_inici));
+      if (restr) {
+        const bloq = (restr.activitats_bloquejades || []).map(x => String(x).toLowerCase());
+        if (bloq.includes(actId)) {
+          return { ok: false, error: `L'activitat triada no es pot impartir en aquesta data (${restr.motiu || 'activitat restringida per calendari'}).`, code: 'ACTIVITAT_RESTRINGIDA' };
+        }
+      }
+
+      const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
+      const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
+      const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+      const demanades = parseInt(reservaData.places || 1, 10);
+      if (ocupades + demanades > maxCap) {
+        return { ok: false, error: `Aforament complet per a aquesta franja (Màx. ${maxCap} places).`, code: 'AFORAMENT_COMPLET' };
       }
     }
-
-    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
-    const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
-    const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
-    const demanades = parseInt(reservaData.places || 1, 10);
-    if (ocupades + demanades > maxCap) {
-      return { ok: false, error: `Aforament complet per a aquesta franja (Màx. ${maxCap} places).` };
-    }
-
     const resId = `RES-${Date.now()}-${reservaData.student_id}`;
     const newRes = {
       id: resId,
@@ -1110,7 +1181,7 @@ const Store = {
       student_nom: reservaData.student_nom || reservaData.student_id,
       telefon: reservaData.telefon || '',
       data: reservaData.data,
-      franja: reservaData.franja || reservaData.franja_id || 'M1',
+      franja: reservaData.franja || reservaData.franja_id || ((reservaData.hora_inici && reservaData.hora_inici >= '14:00') ? 'T1' : 'M1'),
       activitat: reservaData.activitat || 'Torn',
       activitat_id: reservaData.activitat_id || 'torn',
       places: demanades,
@@ -1137,6 +1208,7 @@ const Store = {
         return await res.json();
       } catch (e) {
         console.warn('Error cancel·lant reserva a l\'API:', e);
+        return { ok: false, error: 'Error de connexió al servidor. Torna-ho a provar.' };
       }
     }
 

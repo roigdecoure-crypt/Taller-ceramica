@@ -615,9 +615,16 @@ async function showStudentBadgeModal(studentId) {
   const qrContainer = document.getElementById('badge-qr-container');
   if (qrContainer && typeof QREngine !== 'undefined') {
     QREngine.generateQR(qrContainer, student.id, 104);
+    qrContainer.style.cursor = 'pointer';
+    qrContainer.title = "Fes clic per descarregar el codi QR";
+    qrContainer.onclick = () => QREngine.downloadQR(student);
   }
 
   // Botons de descàrrega al modal
+  const btnQr = document.getElementById('btn-modal-export-qr');
+  if (btnQr) {
+    btnQr.onclick = () => QREngine.downloadQR(student);
+  }
   const btnSvg = document.getElementById('btn-modal-export-svg');
   if (btnSvg) {
     btnSvg.onclick = () => downloadCardAsSVG(student, cfg);
@@ -885,32 +892,19 @@ function setupEventListeners() {
   try { initReservesAdmin(); } catch (e) { console.warn('Avís initReservesAdmin:', e); }
   try { initCardDesigner(); } catch (e) { console.warn('Avís initCardDesigner:', e); }
 
-  // Navegació de la barra lateral (Estil WordPress)
+  // Navegació de la barra lateral i menú superior
   document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
     item.addEventListener('click', () => {
-      const tab = item.dataset.tab;
-      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-
-      document.querySelectorAll('.admin-tab-view').forEach(view => view.classList.remove('active'));
-      const targetView = document.getElementById(`view-${tab}`);
-      if (targetView) targetView.classList.add('active');
-
-      const heading = document.getElementById('admin-view-heading');
-      if (heading) {
-        if (tab === 'reserves') heading.textContent = 'Gestió de Reserves';
-        else if (tab === 'alumnes') heading.textContent = 'Alumnes & Clients';
-        else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
-        else if (tab === 'carnet-designer') heading.textContent = 'Dissenyador de Carnets';
+      if (typeof window.switchAdminTab === 'function') {
+        window.switchAdminTab(item.dataset.tab);
       }
+    });
+  });
 
-      if (tab === 'reserves') {
-        refreshAppointmentsDashboard();
-      } else if (tab === 'alumnes') {
-        refreshStudentsList();
-      } else if (tab === 'carnet-designer') {
-        populateDesignerStudentSelect();
-        updateCardDesignPreview();
+  document.querySelectorAll('.top-nav-link[data-top-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (typeof window.switchAdminTab === 'function') {
+        window.switchAdminTab(btn.dataset.topTab);
       }
     });
   });
@@ -925,9 +919,18 @@ function setupEventListeners() {
     document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
   });
 
-  // Tancar menú en mòbil quan es clica un element del menú
+  // Tancar menú en mòbil quan es clica un element del menú (sense avortar enllaços <a>)
   document.querySelectorAll('.admin-sidebar .sidebar-item').forEach(item => {
-    item.addEventListener('click', () => {
+    item.addEventListener('click', (e) => {
+      const link = item.querySelector('a');
+      if (link && (e.target === link || link.contains(e.target))) {
+        setTimeout(() => {
+          if (window.innerWidth <= 768) {
+            document.getElementById('admin-sidebar')?.classList.add('collapsed');
+          }
+        }, 150);
+        return;
+      }
       if (window.innerWidth <= 768) {
         document.getElementById('admin-sidebar')?.classList.add('collapsed');
       }
@@ -1232,6 +1235,12 @@ function setupEventListeners() {
     }
   });
 
+  document.getElementById('inline-btn-download-qr')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      QREngine.downloadQR(currentViewingStudent.alumne);
+    }
+  });
+
   document.getElementById('inline-btn-edit-student')?.addEventListener('click', () => {
     if (!currentViewingStudent || !currentViewingStudent.alumne) return;
     const a = currentViewingStudent.alumne;
@@ -1271,6 +1280,12 @@ function setupEventListeners() {
   // Botons ràpids del Drawer (Compatibilitat)
   document.getElementById('drawer-btn-carnet')?.addEventListener('click', () => {
     if (currentViewingStudent && currentViewingStudent.alumne) showStudentBadgeModal(currentViewingStudent.alumne.id);
+  });
+
+  document.getElementById('drawer-btn-download-qr')?.addEventListener('click', () => {
+    if (currentViewingStudent && currentViewingStudent.alumne) {
+      QREngine.downloadQR(currentViewingStudent.alumne);
+    }
   });
 
   const btnCheckin = document.getElementById('drawer-btn-checkin');
@@ -2483,8 +2498,12 @@ async function initAppointmentsDashboard() {
     await renderAdminDayAppointments(adminSelectedDate);
   });
 
-  // Botons "+ Nova Reserva"
+  // Botons "Nova Reserva"
   document.getElementById('btn-admin-nova-reserva')?.addEventListener('click', () => {
+    openAdminNovaReservaModal(adminSelectedDate);
+  });
+
+  document.getElementById('btn-top-nova-reserva')?.addEventListener('click', () => {
     openAdminNovaReservaModal(adminSelectedDate);
   });
 
@@ -3085,7 +3104,7 @@ async function renderAdminDayAppointments(dateStr) {
 }
 
 // ==================== MODAL ADMIN NOVA RESERVA D'ALUMNE ====================
-async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, preselectedActId) {
+async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, preselectedActId, preselectedHoraInici) {
   const modal = document.getElementById('modal-admin-nova-reserva-backdrop');
   if (!modal) {
     console.error('Modal #modal-admin-nova-reserva-backdrop no trobat');
@@ -3178,9 +3197,19 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   const repsInput = document.getElementById('admin-res-repeticions');
   if (repsInput) repsInput.value = 4;
 
-  // Hora inici 10:00
+  // Hora inici (si hi ha preseleccionada, sinó 10:00)
   const horaSelect = document.getElementById('admin-res-hora-inici');
-  if (horaSelect) horaSelect.value = '10:00';
+  if (horaSelect) {
+    if (preselectedHoraInici) {
+      horaSelect.value = preselectedHoraInici;
+    } else {
+      horaSelect.value = '10:00';
+    }
+  }
+
+  // Forçar aforament reset
+  const chkForcar = document.getElementById('admin-res-forcar-aforament');
+  if (chkForcar) chkForcar.checked = false;
 
   // Notes
   const notesInput = document.getElementById('admin-res-notes');
@@ -3348,7 +3377,7 @@ function handleAdminResDataChange() {
   }
 }
 
-async function handleAdminSubmitNovaReserva(e) {
+async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
   if (e) e.preventDefault();
   const submitBtn = document.getElementById('btn-admin-submit-nova-reserva');
   const originalBtnText = submitBtn ? submitBtn.textContent : 'Confirmar Reserva';
@@ -3404,8 +3433,10 @@ async function handleAdminSubmitNovaReserva(e) {
   const horaSelect = document.getElementById('admin-res-hora-inici');
   const horaInici = horaSelect ? horaSelect.value : '10:00';
   const horaFi = horaSelect?.options[horaSelect.selectedIndex]?.dataset.fi || '12:00';
+  const franjaId = (horaInici >= '14:00') ? 'T1' : 'M1';
 
   const notes = document.getElementById('admin-res-notes')?.value?.trim() || '';
+  const forcarAforament = isRetryWithForce || (document.getElementById('admin-res-forcar-aforament')?.checked || false);
   const mode = document.querySelector('input[name="admin_res_mode"]:checked')?.value || 'puntual';
 
   try {
@@ -3423,15 +3454,16 @@ async function handleAdminSubmitNovaReserva(e) {
         frequencia: frequencia,
         repeticions: repeticions,
         saltar_tancats: saltarTancats,
-        franja_id: 'M1',
-        franja: 'M1',
+        franja_id: franjaId,
+        franja: franjaId,
         activitat: actNom,
         activitat_id: actId,
         places: places,
         hora_inici: horaInici,
         hora_fi: horaFi,
         hores: 2.0,
-        notes: notes
+        notes: notes,
+        forcar_aforament: forcarAforament
       });
 
       if (res && res.ok) {
@@ -3451,7 +3483,15 @@ async function handleAdminSubmitNovaReserva(e) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
       } else {
-        alert(`No s'ha pogut crear la sèrie recurrent: ${(res && res.error) || 'Aforament complet o error en les dates'}`);
+        alert(`const errMsg = (res && res.error) || 'Aforament complet o error en les dates';
+        if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('conflicte') || errMsg.toLowerCase().includes('places') || (res && res.code === 'AFORAMENT_COMPLET'))) {
+          if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i crear la sèrie recurrent de totes maneres?`)) {
+            const chk = document.getElementById('admin-res-forcar-aforament');
+            if (chk) chk.checked = true;
+            return handleAdminSubmitNovaReserva(e, true);
+          }
+        }
+        alert(`No s'ha pogut crear la sèrie recurrent: ${errMsg}`);}`);
       }
 
     } else {
@@ -3462,15 +3502,16 @@ async function handleAdminSubmitNovaReserva(e) {
         telefon: studentTel,
         email: studentEmail,
         data: dataRes,
-        franja_id: 'M1',
-        franja: 'M1',
+        franja_id: franjaId,
+        franja: franjaId,
         activitat: actNom,
         activitat_id: actId,
         places: places,
         hora_inici: horaInici,
         hora_fi: horaFi,
         hores: 2.0,
-        notes: notes
+        notes: notes,
+        forcar_aforament: forcarAforament
       });
 
       if (res && res.ok) {
@@ -3490,7 +3531,15 @@ async function handleAdminSubmitNovaReserva(e) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
       } else {
-        alert(`No s'ha pogut crear la reserva: ${(res && res.error) || 'Aforament complet o dia no disponible'}`);
+        alert(`const errMsg = (res && res.error) || 'Aforament complet o dia no disponible';
+        if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('places') || errMsg.toLowerCase().includes('complet') || errMsg.toLowerCase().includes('tancat') || (res && res.code === 'AFORAMENT_COMPLET'))) {
+          if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i forçar la reserva de totes maneres?`)) {
+            const chk = document.getElementById('admin-res-forcar-aforament');
+            if (chk) chk.checked = true;
+            return handleAdminSubmitNovaReserva(e, true);
+          }
+        }
+        alert(`No s'ha pogut crear la reserva: ${errMsg}`);}`);
       }
     }
   } catch (err) {
@@ -3598,6 +3647,15 @@ function initAdminAuth() {
           }
         }
       } catch (err) {
+        // Fallback per a mode local/offline si el backend no respon immediatament
+        if (pin === '1234') {
+          console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
+          sessionStorage.setItem('roig_admin_auth', '1');
+          if (lockScreen) lockScreen.style.display = 'none';
+          showToast('Sessió iniciada en mode local/offline', 'info');
+          try { await loadAdminDashboardData(); } catch (dashErr) {}
+          return;
+        }
         if (pinError) {
           pinError.textContent = `Error de connexió [${apiBase || 'local'}]: ${err.message}`;
           pinError.style.display = 'block';
@@ -3892,6 +3950,12 @@ async function initCardDesigner() {
   // Botó: Descarregar en PNG (CR80 300 DPI)
   document.getElementById('btn-designer-export-png')?.addEventListener('click', () => {
     downloadCardAsPNG(currentDesignerStudent || { id: '300Z', nom: 'Zoey', cognoms: '' }, cardDesignerConfig);
+  });
+
+  // Botó: Descarregar només QR (PNG)
+  document.getElementById('btn-designer-export-qr')?.addEventListener('click', () => {
+    const s = currentDesignerStudent || (currentViewingStudent && currentViewingStudent.alumne) || { id: '300Z', nom: 'Zoey', cognoms: '' };
+    QREngine.downloadQR(s);
   });
 
   // Botó: Imprimir Carnet
