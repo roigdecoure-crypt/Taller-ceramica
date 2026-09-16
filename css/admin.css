@@ -222,6 +222,21 @@
   margin: 10px 16px;
 }
 
+.sidebar-section-label {
+  padding: 8px 18px 4px 18px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #8C827A;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.admin-sidebar.collapsed .sidebar-section-label {
+  display: none !important;
+}
+
 .sidebar-footer-btn {
   padding: 14px 18px;
   color: #4B5563;
@@ -300,6 +315,103 @@
 
 .btn-roig-coure:hover {
   background-color: #631515 !important;
+}
+
+.btn-top-nova-reserva {
+  background-color: #5E7E6F !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(94, 126, 111, 0.25);
+}
+
+.btn-top-nova-reserva:hover {
+  background-color: #486154 !important;
+}
+
+.btn-top-nova-reserva:active {
+  transform: scale(0.98);
+}
+
+/* ==================== BARRA DE NAVEGACIÓ SUPERIOR AMB ENLLAÇOS ==================== */
+.admin-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAF7F5;
+  border-bottom: 1px solid #E5DDD5;
+  padding: 0 28px;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  top: 65px;
+  z-index: 85;
+}
+
+.admin-top-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.top-nav-tabs,
+.top-nav-external {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.top-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4B5563;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.top-nav-link:hover {
+  color: #831D1D;
+  background: rgba(131, 29, 29, 0.05);
+}
+
+.top-nav-link.active {
+  color: #831D1D;
+  font-weight: 700;
+  border-bottom-color: #831D1D;
+  background: #FFFFFF;
+}
+
+.top-nav-link.external-link {
+  color: #5E7E6F;
+  font-weight: 600;
+  border-bottom: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: #EEF5F1;
+  font-size: 12px;
+}
+
+.top-nav-link.external-link:hover {
+  background: #DFECE4;
+  color: #435E51;
 }
 
 /* Pestanyes de contingut */
@@ -1197,20 +1309,33 @@
   }
 
   .admin-top-bar {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    padding: 14px 12px;
+    padding: 12px 16px;
   }
   .top-bar-actions {
-    width: 100%;
-    flex-wrap: wrap;
+    width: auto;
+    flex-wrap: nowrap;
     gap: 8px;
   }
-  .top-bar-actions .btn,
-  .top-bar-actions .btn-roig-coure {
-    font-size: 12px;
+  .top-bar-actions .btn-roig-coure,
+  .top-bar-actions .btn-top-nova-reserva {
+    font-size: 13px;
+    padding: 7px 12px;
+  }
+
+  .admin-top-nav {
     padding: 6px 10px;
+    gap: 8px;
+    top: 56px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .top-nav-link {
+    padding: 7px 10px;
+    font-size: 12px;
   }
 
   /* Ajusts de disseny per evitar qualsevol desbordament a mòbil */
@@ -1516,5 +1641,92 @@
   position: relative !important;
   z-index: 100000 !important;
 }
+/* ==================== TARGETES MÈTRIQUES I STATS GRID ==================== */
+.stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+  gap: 16px !important;
+  margin-bottom: 24px !important;
+}
 
+.stat-card {
+  background: #FFFFFF !important;
+  border-radius: 12px !important;
+  padding: 18px 20px !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
 
+.stat-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-label {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #64748B !important;
+  margin-bottom: 8px !important;
+  letter-spacing: 0.3px !important;
+}
+
+.stat-value {
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: #1E293B !important;
+  line-height: 1.1 !important;
+  margin-bottom: 6px !important;
+}
+
+.stat-desc {
+  font-size: 12px !important;
+  color: #94A3B8 !important;
+  margin-top: auto !important;
+}
+
+/* ==================== TAULES I CONTENIDORS DE TAULA ==================== */
+.table-container {
+  width: 100% !important;
+  overflow-x: auto !important;
+  background: #FFFFFF !important;
+  border-radius: 10px !important;
+  border: 1px solid #E2E8F0 !important;
+}
+
+.table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  text-align: left !important;
+  font-size: 13.5px !important;
+  min-width: 650px !important;
+}
+
+.table thead th {
+  background: #F8FAFC !important;
+  padding: 12px 16px !important;
+  font-weight: 700 !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  white-space: nowrap !important;
+  font-size: 12.5px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+}
+
+.table tbody td {
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  color: #1E293B !important;
+  vertical-align: middle !important;
+}
+
+.table tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none !important;
+}

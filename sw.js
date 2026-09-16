@@ -1,48 +1,14 @@
-// sw.js - Service Worker per al Taller de Ceramica (Suport Offline, PWA i Notificacions Push)
-const CACHE_NAME = "taller-ceramica-v9.9.3";
-const ASSETS_TO_CACHE = [
-  "./index.html",
-  "./reserva.html",
-  "./alumne.html",
-  "./carnet.html",
-  "./scanner.html",
-  "./manifest.json",
-  "./manifest-alumne.json",
-  "./css/styles.css",
-  "./css/card.css",
-  "./css/roigdecoure-web.css",
-  "./fonts/buffalo.woff2",
-  "./lib/qrcode.min.js",
-  "./lib/html5-qrcode.min.js",
-  "./js/time-utils.js",
-  "./js/sound.js",
-  "./js/qr-engine.js",
-  "./js/api-config.js",
-  "./js/store.js",
-  "./js/reserves-calendar.js",
-  "./js/alumne.js",
-  "./js/roigdecoure-web.js",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
-];
+// sw.js - Service Worker per al Taller de Ceramica (Actualitzat)
+const CACHE_NAME = "taller-ceramica-v10.0.0-nocache";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn("Alguns fitxers no s'han pogut guardar a la cache inicial:", err);
-      });
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
+      return Promise.all(keys.map((key) => caches.delete(key)));
     })
   );
   self.clients.claim();
@@ -53,9 +19,11 @@ self.addEventListener("fetch", (event) => {
   // No interceptar peticions de l-API ni del panell d'administracio (admin.html, admin.js, admin.css) ni d-altres dominis
   if (
     event.request.url.includes("/api/") ||
-    event.request.url.includes("admin.html") ||
-    event.request.url.includes("admin.js") ||
-    event.request.url.includes("admin.css") ||
+    event.request.url.includes("admin") ||
+    event.request.url.includes("index.html") ||
+    event.request.url.includes("botiga") ||
+    event.request.url.includes("val-regal") ||
+    event.request.url === self.location.origin + "/" ||
     !event.request.url.startsWith(self.location.origin)
   ) {
     return;

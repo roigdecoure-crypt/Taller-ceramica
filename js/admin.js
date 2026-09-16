@@ -27,36 +27,45 @@ let allStudents = [];
 let currentViewingStudent = null;
 let liveTimerInterval = null;
 
-// Inicialització
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', async () => {
-    initAdminAuth();
-    setupEventListeners();
-    startLiveClock();
+// Inicialització robusta
+async function initAdminApp() {
+  if (window._adminAppInitialized) return;
+  window._adminAppInitialized = true;
 
-    // Carregar aforament i capacitats desades localment de forma immediata per evitar salts visuals
-    try {
-      if (typeof Store !== 'undefined' && typeof Store._getLocalData === 'function') {
-        const localCfg = Store._getLocalData()?.config || {};
-        if (localCfg.aforament_maxim_per_franja) {
-          const mCap = parseInt(localCfg.aforament_maxim_per_franja, 10);
-          ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = mCap;
-          });
-          ['admin-display-aforament-val', 'modal-admin-display-aforament-val'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = `${mCap} places simultànies`;
-          });
-        }
+  initAdminAuth();
+  setupEventListeners();
+  startLiveClock();
+
+  // Carregar aforament i capacitats desades localment de forma immediata per evitar salts visuals
+  try {
+    if (typeof Store !== 'undefined' && typeof Store._getLocalData === 'function') {
+      const localCfg = Store._getLocalData()?.config || {};
+      if (localCfg.aforament_maxim_per_franja) {
+        const mCap = parseInt(localCfg.aforament_maxim_per_franja, 10);
+        ['admin-input-aforament', 'modal-admin-input-aforament'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = mCap;
+        });
+        ['admin-display-aforament-val', 'modal-admin-display-aforament-val'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = `${mCap} places simultànies`;
+        });
       }
-    } catch (e) {}
-
-    const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
-    if (isAuth) {
-      await loadAdminDashboardData();
     }
-  });
+  } catch (e) {}
+
+  const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
+  if (isAuth) {
+    await loadAdminDashboardData();
+  }
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminApp);
+  } else {
+    initAdminApp();
+  }
 }
 
 async function loadAdminDashboardData() {
@@ -65,9 +74,14 @@ async function loadAdminDashboardData() {
   } catch (err) {
     console.warn('Store.init warning:', err);
   }
-  await loadConfig();
-  await refreshStudentsList();
-  await initAppointmentsDashboard();
+  // Carregar en paral·lel per màxima velocitat i sense bloquejos
+  try { loadConfig(); } catch(e) { console.warn('loadConfig error:', e); }
+  try { refreshStudentsList(); } catch(e) { console.warn('refreshStudentsList error:', e); }
+  if (typeof initAppointmentsDashboard === 'function') {
+    try { await initAppointmentsDashboard(); } catch(e) { console.warn('initAppointmentsDashboard error:', e); }
+  }
+  try { carregarLlistaValsRegal(); } catch(e) { console.warn('carregarLlistaValsRegal error:', e); }
+  try { carregarCatalegArticles(); } catch(e) { console.warn('carregarCatalegArticles error:', e); }
 }
 
 function showToast(message, type = 'info') {
@@ -799,6 +813,18 @@ async function openConfigModal() {
     }
     if (document.getElementById('cfg-stripe-infantil')) {
       document.getElementById('cfg-stripe-infantil').value = cfg.stripe_url_infantil || '';
+    }
+    if (document.getElementById('cfg-square-app-id')) {
+      document.getElementById('cfg-square-app-id').value = cfg.square_app_id || '';
+    }
+    if (document.getElementById('cfg-square-access-token')) {
+      document.getElementById('cfg-square-access-token').value = cfg.square_access_token || '';
+    }
+    if (document.getElementById('cfg-square-location-id')) {
+      document.getElementById('cfg-square-location-id').value = cfg.square_location_id || '';
+    }
+    if (document.getElementById('cfg-square-environment')) {
+      document.getElementById('cfg-square-environment').value = cfg.square_environment || 'sandbox';
     }
     if (document.getElementById('cfg-sheets-url')) {
       document.getElementById('cfg-sheets-url').value = cfg.google_sheets_url || '';
@@ -1578,6 +1604,10 @@ function setupEventListeners() {
       edat_tall_infantil: document.getElementById('cfg-edat-tall') ? document.getElementById('cfg-edat-tall').value : '12',
       stripe_url_adults: document.getElementById('cfg-stripe-adults') ? document.getElementById('cfg-stripe-adults').value : '',
       stripe_url_infantil: document.getElementById('cfg-stripe-infantil') ? document.getElementById('cfg-stripe-infantil').value : '',
+      square_app_id: document.getElementById('cfg-square-app-id')?.value.trim() || '',
+      square_access_token: document.getElementById('cfg-square-access-token')?.value.trim() || '',
+      square_location_id: document.getElementById('cfg-square-location-id')?.value.trim() || '',
+      square_environment: document.getElementById('cfg-square-environment')?.value || 'sandbox',
       google_sheets_url: document.getElementById('cfg-sheets-url').value,
       google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'reserves',
       whatsapp_enabled: document.getElementById('cfg-whatsapp-enabled')?.checked ? '1' : '0',
@@ -2698,9 +2728,11 @@ async function renderAdminCalendar() {
       const actKeys = Object.keys(actBreakdown);
       const summaryParts = actKeys.map(k => {
         const item = actBreakdown[k];
-        return `${item.count} ${k}${item.places > item.count ? ` (${item.places} pl.)` : ''}`;
+        const placesNum = item.places || item.count || 1;
+        return `${placesNum} pl. ${k}${item.count > 1 ? ` (${item.count} res.)` : ''}`;
       });
-      const titleAttr = `${count} ${count === 1 ? 'reserva' : 'reserves'}: ${summaryParts.join(', ')}`;
+      const totalPlaces = Object.values(actBreakdown).reduce((a, b) => a + (b.places || b.count || 1), 0);
+      const titleAttr = `${totalPlaces} ${totalPlaces === 1 ? 'plaça' : 'places'} (${count} ${count === 1 ? 'reserva' : 'reserves'}): ${summaryParts.join(', ')}`;
 
       const getActClass = (act) => {
         const a = act.toLowerCase();
@@ -2725,14 +2757,15 @@ async function renderAdminCalendar() {
           const item = actBreakdown[act];
           const actCls = getActClass(act);
           const shortCode = getActShort(act);
-          const fullLabel = `${item.count} ${act}`;
-          const shortLabel = `${item.count}${shortCode}`;
+          const placesNum = item.places || item.count || 1;
+          const fullLabel = `${placesNum} pl. ${act}`;
+          const shortLabel = `${placesNum}${shortCode}`;
 
           const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
           const customStyle = (actObj && actObj.color) ? `background: ${actObj.color} !important; color: #FFFFFF !important;` : '';
 
           badgesHtml += `
-            <div class="cal-day-badge ${actCls}" style="${customStyle}" title="${item.count} ${item.count === 1 ? 'reserva' : 'reserves'} de ${escapeHtml(act)}">
+            <div class="cal-day-badge ${actCls}" style="${customStyle}" title="${placesNum} ${placesNum === 1 ? 'plaça' : 'places'} (${item.count} ${item.count === 1 ? 'reserva' : 'reserves'}) de ${escapeHtml(act)}">
               <span class="badge-full">${escapeHtml(fullLabel)}</span>
               <span class="badge-short">${escapeHtml(shortLabel)}</span>
             </div>
@@ -2743,20 +2776,21 @@ async function renderAdminCalendar() {
           const item = actBreakdown[act];
           const actCls = getActClass(act);
           const shortCode = getActShort(act);
+          const placesNum = item.places || item.count || 1;
           const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
           const customStyle = (actObj && actObj.color) ? `background: ${actObj.color} !important; color: #FFFFFF !important;` : '';
           badgesHtml += `
-            <div class="cal-day-badge ${actCls}" style="${customStyle}">
-              <span class="badge-full">${item.count} ${escapeHtml(act)}</span>
-              <span class="badge-short">${item.count}${shortCode}</span>
+            <div class="cal-day-badge ${actCls}" style="${customStyle}" title="${placesNum} ${placesNum === 1 ? 'plaça' : 'places'} (${item.count} ${item.count === 1 ? 'reserva' : 'reserves'}) de ${escapeHtml(act)}">
+              <span class="badge-full">${placesNum} pl. ${escapeHtml(act)}</span>
+              <span class="badge-short">${placesNum}${shortCode}</span>
             </div>
           `;
         });
-        const restCount = actKeys.slice(2).reduce((acc, k) => acc + actBreakdown[k].count, 0);
+        const restPlaces = actKeys.slice(2).reduce((acc, k) => acc + (actBreakdown[k].places || actBreakdown[k].count || 0), 0);
         badgesHtml += `
           <div class="cal-day-badge act-altres">
-            <span class="badge-full">+${restCount} altres</span>
-            <span class="badge-short">+${restCount}</span>
+            <span class="badge-full">+${restPlaces} pl.</span>
+            <span class="badge-short">+${restPlaces}</span>
           </div>
         `;
       }
@@ -3024,7 +3058,7 @@ async function renderAdminDayAppointments(dateStr) {
               </button>
             ` : ''}
             ${r.telefon ? `
-              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
+              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
                 WhatsApp
               </a>
             ` : ''}
@@ -3469,6 +3503,24 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
       if (res && res.ok) {
         showToast(res.message || `Sèrie de ${res.total_creades} reserves recurrents creada amb èxit!`, 'success');
         if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
+
+        // Assegurar sincronització immediata amb Google Calendar per a totes les reserves de la sèrie
+        if (Array.isArray(res.reserves) && res.reserves.length > 0) {
+          Store.getConfig().then(cfg => {
+            const sheetsUrl = cfg.google_sheets_url || 'https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec';
+            const calName = cfg.google_calendar_name || 'Roigdecoure';
+            res.reserves.forEach(r => {
+              const rCopy = Object.assign({}, r, { calendar_name: calName });
+              fetch(sheetsUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'add_reserva', reserva: rCopy })
+              }).catch(() => {});
+            });
+          }).catch(() => {});
+        }
+
         closeAdminNovaReservaModal();
 
         adminSelectedDate = dataRes;
@@ -3483,7 +3535,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
       } else {
-        alert(`const errMsg = (res && res.error) || 'Aforament complet o error en les dates';
+        const errMsg = (res && res.error) || 'Aforament complet o error en les dates';
         if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('conflicte') || errMsg.toLowerCase().includes('places') || (res && res.code === 'AFORAMENT_COMPLET'))) {
           if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i crear la sèrie recurrent de totes maneres?`)) {
             const chk = document.getElementById('admin-res-forcar-aforament');
@@ -3491,7 +3543,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
             return handleAdminSubmitNovaReserva(e, true);
           }
         }
-        alert(`No s'ha pogut crear la sèrie recurrent: ${errMsg}`);}`);
+        alert(`No s'ha pogut crear la sèrie recurrent: ${errMsg}`);
       }
 
     } else {
@@ -3531,7 +3583,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
       } else {
-        alert(`const errMsg = (res && res.error) || 'Aforament complet o dia no disponible';
+        const errMsg = (res && res.error) || 'Aforament complet o dia no disponible';
         if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('places') || errMsg.toLowerCase().includes('complet') || errMsg.toLowerCase().includes('tancat') || (res && res.code === 'AFORAMENT_COMPLET'))) {
           if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i forçar la reserva de totes maneres?`)) {
             const chk = document.getElementById('admin-res-forcar-aforament');
@@ -3539,7 +3591,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
             return handleAdminSubmitNovaReserva(e, true);
           }
         }
-        alert(`No s'ha pogut crear la reserva: ${errMsg}`);}`);
+        alert(`No s'ha pogut crear la reserva: ${errMsg}`);
       }
     }
   } catch (err) {
@@ -3596,78 +3648,80 @@ function initAdminAuth() {
     if (pinInput) setTimeout(() => pinInput.focus(), 150);
   }
 
-  if (authForm) {
-    authForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pin = pinInput ? pinInput.value.trim() : '';
-      if (!pin) return;
+  window.handleAdminAuthSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const pin = pinInput ? pinInput.value.trim() : '';
+    if (!pin) return;
 
-      let timerMsg = null;
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Comprovant...';
-        timerMsg = setTimeout(() => {
-          if (submitBtn && submitBtn.disabled) {
-            submitBtn.textContent = 'Despertant servidor de Render (pot trigar ~30s)...';
-          }
-        }, 2500);
+    let timerMsg = null;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Comprovant...';
+      timerMsg = setTimeout(() => {
+        if (submitBtn && submitBtn.disabled) {
+          submitBtn.textContent = 'Despertant servidor de Render (pot trigar ~30s)...';
+        }
+      }, 2500);
+    }
+    if (pinError) pinError.style.display = 'none';
+
+    let apiBase = '';
+    try {
+      apiBase = getAdminApiBase();
+      const res = await fetch(`${apiBase}/api/admin/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`El servidor (${apiBase || 'local'}) no ha retornat una resposta vàlida en JSON.`);
       }
-      if (pinError) pinError.style.display = 'none';
-
-      let apiBase = '';
-      try {
-        apiBase = getAdminApiBase();
-        const res = await fetch(`${apiBase}/api/admin/auth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pin })
-        });
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          throw new Error(`El servidor (${apiBase || 'local'}) no ha retornat una resposta vàlida en JSON.`);
+      const data = await res.json();
+      if (data.ok) {
+        sessionStorage.setItem('roig_admin_auth', '1');
+        if (lockScreen) lockScreen.style.display = 'none';
+        showToast("Sessió d'administrador iniciada", 'success');
+        try {
+          await loadAdminDashboardData();
+        } catch (dashErr) {
+          console.warn('Avís carregant dades del panell:', dashErr);
         }
-        const data = await res.json();
-        if (data.ok) {
-          sessionStorage.setItem('roig_admin_auth', '1');
-          if (lockScreen) lockScreen.style.display = 'none';
-          showToast('Sessió d\'administrador iniciada', 'success');
-          try {
-            await loadAdminDashboardData();
-          } catch (dashErr) {
-            console.warn('Avís carregant dades del panell:', dashErr);
-          }
-        } else {
-          if (pinError) {
-            pinError.textContent = data.error || 'PIN incorrecte. (El PIN inicial per defecte és 1234)';
-            pinError.style.display = 'block';
-          }
-          if (pinInput) {
-            pinInput.value = '';
-            pinInput.focus();
-          }
-        }
-      } catch (err) {
-        // Fallback per a mode local/offline si el backend no respon immediatament
-        if (pin === '1234') {
-          console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
-          sessionStorage.setItem('roig_admin_auth', '1');
-          if (lockScreen) lockScreen.style.display = 'none';
-          showToast('Sessió iniciada en mode local/offline', 'info');
-          try { await loadAdminDashboardData(); } catch (dashErr) {}
-          return;
-        }
+      } else {
         if (pinError) {
-          pinError.textContent = `Error de connexió [${apiBase || 'local'}]: ${err.message}`;
+          pinError.textContent = data.error || 'PIN incorrecte. (El PIN inicial per defecte és 1234)';
           pinError.style.display = 'block';
         }
-      } finally {
-        if (timerMsg) clearTimeout(timerMsg);
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Desbloquejar Panell \u2192';
+        if (pinInput) {
+          pinInput.value = '';
+          pinInput.focus();
         }
       }
-    });
+    } catch (err) {
+      // Fallback per a mode local/offline si el backend no respon immediatament
+      if (pin === '1234') {
+        console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
+        sessionStorage.setItem('roig_admin_auth', '1');
+        if (lockScreen) lockScreen.style.display = 'none';
+        showToast('Sessió iniciada en mode local/offline', 'info');
+        try { await loadAdminDashboardData(); } catch (dashErr) {}
+        return;
+      }
+      if (pinError) {
+        pinError.textContent = `Error de connexió [${apiBase || 'local'}]: ${err.message}`;
+        pinError.style.display = 'block';
+      }
+    } finally {
+      if (timerMsg) clearTimeout(timerMsg);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Desbloquejar Panell \u2192';
+      }
+    }
+  };
+
+  if (authForm) {
+    authForm.onsubmit = window.handleAdminAuthSubmit;
   }
 
   if (logoutBtn) {
@@ -4757,6 +4811,7 @@ function renderRestriccionsTableHtml(container, list) {
         <tr style="background: #F9FAFB;">
           <th style="padding: 8px 10px;">Dates / Període</th>
           <th style="padding: 8px 10px;">Abast</th>
+          <th style="padding: 8px 10px;">Torn</th>
           <th style="padding: 8px 10px;">Permesos</th>
           <th style="padding: 8px 10px;">Bloquejats</th>
           <th style="padding: 8px 10px;">Motiu</th>
@@ -4779,10 +4834,18 @@ function renderRestriccionsTableHtml(container, list) {
     else if (r.tipus_abast === 'mes') abastLabel = 'Mes';
     else if (r.tipus_abast === 'rang') abastLabel = 'Interval';
 
+    let tornBadge = '<span class="badge badge-neutral" style="font-size: 10.5px;">Tot el dia</span>';
+    if (r.torn === 'mati') {
+      tornBadge = '<span class="badge" style="font-size: 10.5px; background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D;">Matí (10h-12h)</span>';
+    } else if (r.torn === 'tarda') {
+      tornBadge = '<span class="badge" style="font-size: 10.5px; background: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE;">Tarda (16h-20h)</span>';
+    }
+
     html += `
       <tr>
         <td style="padding: 8px 10px; font-weight: 600; white-space: nowrap;">${datesDesc}</td>
         <td style="padding: 8px 10px;"><span class="badge badge-neutral" style="font-size: 10.5px;">${abastLabel}</span></td>
+        <td style="padding: 8px 10px;">${tornBadge}</td>
         <td style="padding: 8px 10px; color: #047857; font-weight: 600;">${escapeHtml(permText)}</td>
         <td style="padding: 8px 10px; color: #DC2626; font-weight: 600;">${escapeHtml(bloqText)}</td>
         <td style="padding: 8px 10px; color: #4B5563;">${escapeHtml(r.motiu || '-')}</td>
@@ -4910,6 +4973,7 @@ async function handleCreateRestriccio(e) {
   }
 
   const motiu = document.getElementById('restr-input-motiu')?.value?.trim() || '';
+  const torn = document.getElementById('restr-input-torn')?.value || 'tot_el_dia';
 
   const btnSubmit = document.getElementById('btn-submit-restriccio');
   if (btnSubmit) btnSubmit.disabled = true;
@@ -4921,7 +4985,8 @@ async function handleCreateRestriccio(e) {
       tipus_abast: abast,
       activitats_permeses: permeses,
       activitats_bloquejades: bloquejades,
-      motiu: motiu
+      motiu: motiu,
+      torn: torn
     });
 
     if (res && res.ok) {
@@ -5355,3 +5420,900 @@ async function handleDeleteTaller(id) {
     showToast('Error eliminant el taller: ' + err.message, 'error');
   }
 }
+
+// ==============================================================================
+// GESTIÓ INTEGRAL DE VALS REGAL I CATÀLEG D'ARTICLES (HORES TANCADES)
+// ==============================================================================
+
+let adminValsRegalList = [];
+let adminArticlesList = [];
+let currentValsFilter = '';
+let currentValsQuery = '';
+
+const DEFAULT_CATALEG_ARTICLES = [
+  { id: 'art-torn-2h', nom: 'Taller Torn Iniciació (2h)', hores: 2.0, preu: 36.0, edat: 'adult', activitat_id: 'torn', es_val_regal: 1, actiu: 1, descripcio: 'Sessió completa de torn per a 1 persona' },
+  { id: 'art-modelatge-2h', nom: 'Taller Modelatge Creatiu (2h)', hores: 2.0, preu: 36.0, edat: 'adult', activitat_id: 'modelatge', es_val_regal: 1, actiu: 1, descripcio: 'Tècniques de pessic, xurros i planxes' },
+  { id: 'art-pintar-2h', nom: 'Pintar Ceràmica (2h)', hores: 2.0, preu: 36.0, edat: 'adult', activitat_id: 'pintar', es_val_regal: 1, actiu: 1, descripcio: 'Decoració de peces amb engalbes i esmalts' },
+  { id: 'art-pack-5h', nom: 'Pack 5 Hores Lliures', hores: 5.0, preu: 75.0, edat: 'adult', activitat_id: 'lliure', es_val_regal: 1, actiu: 1, descripcio: 'Hores per utilitzar lliurement al taller' },
+  { id: 'art-pack-10h', nom: 'Pack 10 Hores Lliures', hores: 10.0, preu: 140.0, edat: 'adult', activitat_id: 'lliure', es_val_regal: 1, actiu: 1, descripcio: 'Pack intensiu amb descompte per hora' }
+];
+
+async function carregarLlistaValsRegal() {
+  const tbody = document.getElementById('tbody-vals-regal');
+
+  // 1. Hidratació immediata des de memòria cau local (0 ms)
+  try {
+    const cached = localStorage.getItem('roig_cached_vals_regal');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        adminValsRegalList = parsed;
+        renderitzarComptadorsVals();
+        renderitzarTaulaValsRegal();
+      }
+    }
+  } catch (e) {}
+
+  if (tbody && (!adminValsRegalList || adminValsRegalList.length === 0)) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px; color: var(--color-muted);">Carregant vals regal...</td></tr>';
+  }
+
+  // 2. Petició de xarxa asíncrona amb timeout
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+
+    const res = await fetch(`${apiBase}/api/vals-regal`, {
+      signal: controller ? controller.signal : undefined,
+      cache: 'no-cache'
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.ok) {
+        adminValsRegalList = data.vals || [];
+        try { localStorage.setItem('roig_cached_vals_regal', JSON.stringify(adminValsRegalList)); } catch (e) {}
+        renderitzarComptadorsVals();
+        renderitzarTaulaValsRegal();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Avis sincronitzant vals regal amb el backend:', e);
+  }
+
+  // 3. Fallback segur: mostrar estat actual sense bloquejar la pantalla
+  renderitzarComptadorsVals();
+  if (tbody && (!adminValsRegalList || adminValsRegalList.length === 0)) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px; color: var(--color-muted);">No hi ha cap val regal emès encara. Fes clic a <strong>+ Nova Reserva / Val Regal</strong> per crear-ne un.</td></tr>';
+  } else {
+    renderitzarTaulaValsRegal();
+  }
+}
+
+function renderitzarComptadorsVals() {
+  const actius = (adminValsRegalList || []).filter(v => v.estat === 'actiu').length;
+  const canviats = (adminValsRegalList || []).filter(v => v.estat === 'canviat').length;
+  const totals = (adminValsRegalList || []).length;
+
+  const elActius = document.getElementById('vals-count-actius');
+  const elCanviats = document.getElementById('vals-count-canviats');
+  const elTotals = document.getElementById('vals-count-totals');
+
+  if (elActius) elActius.textContent = actius;
+  if (elCanviats) elCanviats.textContent = canviats;
+  if (elTotals) elTotals.textContent = totals;
+}
+
+function filtrarValsRegal(btn, estat) {
+  currentValsFilter = estat || '';
+  document.querySelectorAll('.val-filter-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-outline');
+  });
+  if (btn) {
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-primary');
+  }
+  renderitzarTaulaValsRegal();
+}
+
+function cercarValsRegal(query) {
+  currentValsQuery = (query || '').trim().toUpperCase();
+  renderitzarTaulaValsRegal();
+}
+
+function renderitzarTaulaValsRegal() {
+  const tbody = document.getElementById('tbody-vals-regal');
+  if (!tbody) return;
+
+  let filtrats = adminValsRegalList || [];
+
+  if (currentValsFilter) {
+    filtrats = filtrats.filter(v => v.estat === currentValsFilter);
+  }
+
+  if (currentValsQuery) {
+    filtrats = filtrats.filter(v => 
+      (v.codi || '').toUpperCase().includes(currentValsQuery) ||
+      (v.nom_destinatari || '').toUpperCase().includes(currentValsQuery) ||
+      (v.nom_comprador || '').toUpperCase().includes(currentValsQuery)
+    );
+  }
+
+  if (filtrats.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px; color: var(--color-muted);">No s\'ha trobat cap val regal amb aquests filtres.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtrats.map(v => {
+    let badgeClass = 'badge-neutral';
+    let badgeText = v.estat;
+    if (v.estat === 'actiu') {
+      badgeClass = 'badge-success';
+      badgeText = 'Actiu (Pendent)';
+    } else if (v.estat === 'canviat') {
+      badgeClass = 'badge-primary';
+      badgeText = 'Bescanviat';
+    } else if (v.estat === 'anul·lat') {
+      badgeClass = 'badge-danger';
+      badgeText = 'Anul·lat';
+    }
+
+    const compradorTxt = v.nom_comprador ? v.nom_comprador : '<span style="color:var(--color-muted);">-</span>';
+    const caducitatTxt = v.data_caducitat || '-';
+    const preuTxt = (v.preu_pagat !== undefined && v.preu_pagat !== null) ? `${Number(v.preu_pagat).toFixed(2)} €` : '-';
+
+    return `
+      <tr>
+        <td>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <strong style="font-family: monospace; font-size: 13px; color: #831D1D; letter-spacing: 0.5px;">${v.codi}</strong>
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 6px; font-size: 11px;" title="Copiar codi" onclick="navigator.clipboard.writeText('${v.codi}'); showToast('Codi copiat!', 'info');">Copiar</button>
+          </div>
+        </td>
+        <td>
+          <strong>${v.titol_experiencia || 'Taller'}</strong>
+          <div style="font-size: 11.5px; color: var(--color-muted);">${v.hores || 2} hores • ${preuTxt}</div>
+        </td>
+        <td>
+          <strong style="color: var(--color-dark);">${v.nom_destinatari}</strong>
+          ${v.missatge ? `<div style="font-size: 11px; color: #4B5563; font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${v.missatge}">«${v.missatge}»</div>` : ''}
+        </td>
+        <td>${compradorTxt}</td>
+        <td style="font-size: 12px; color: var(--color-muted);">${(v.data_creacio || '').slice(0, 10)}</td>
+        <td style="font-size: 12px; font-weight: 600;">${caducitatTxt}</td>
+        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td style="text-align: right;">
+          <div style="display: inline-flex; gap: 6px;">
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarValRegal('${v.codi}');" title="Editar dades d'aquest val regal">
+              Editar
+            </button>
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="imprimirValRegal('${v.codi}');" title="Obre la targeta regal per imprimir o desar en PDF">
+              PDF / Targeta
+            </button>
+            ${v.estat === 'actiu' ? `
+              <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="anullarValRegal('${v.codi}');" title="Anul·lar val">
+                Anul·lar
+              </button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderitzarTaulaArticlesDirecte(articles) {
+  const tbody = document.getElementById('tbody-articles');
+  const elCount = document.getElementById('articles-count-totals');
+  if (elCount) elCount.textContent = (articles || []).length;
+
+  if (!tbody) return;
+  if (!articles || articles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 25px; color: var(--color-muted);">No hi ha cap article creat. Fes clic a "+ Nou Article / Pack" per afegir-ne un.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = articles.map(a => `
+    <tr>
+      <td>
+        <span class="badge ${a.edat === 'infant' ? 'badge-info' : 'badge-neutral'}" style="font-weight: 700;">
+          ${a.edat === 'infant' ? 'Menor de 12 anys' : 'Adult'}
+        </span>
+      </td>
+      <td>
+        <strong style="color: var(--color-dark); font-size: 13.5px;">${a.nom}</strong>
+        <div style="font-size: 11.5px; color: var(--color-muted);">${a.descripcio || ''}</div>
+      </td>
+      <td><strong style="color: #4F46E5;">${a.hores} hores</strong></td>
+      <td><strong style="font-size: 14px; color: #831D1D;">${Number(a.preu).toFixed(2)} €</strong></td>
+      <td><span class="badge badge-neutral" style="text-transform: capitalize;">${a.activitat_id}</span></td>
+      <td>${a.es_val_regal ? '<span style="color:#059669; font-weight:700;">Sí</span>' : '<span style="color:#6B7280;">No</span>'}</td>
+      <td>
+        <span class="badge ${a.actiu ? 'badge-success' : 'badge-neutral'}" style="cursor: pointer;" onclick="toggleActiuArticle('${a.id}');" title="Fes clic per canviar visibilitat">
+          ${a.actiu ? 'Actiu' : 'Ocult'}
+        </span>
+      </td>
+      <td style="text-align: right;">
+        <div style="display: inline-flex; gap: 6px;">
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarArticle('${a.id}');" title="Editar article">
+            Editar
+          </button>
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: ${a.actiu ? '#B45309' : '#059669'};" onclick="toggleActiuArticle('${a.id}');" title="${a.actiu ? 'Amagar de la web' : 'Publicar a la web'}">
+            ${a.actiu ? 'Amagar' : 'Mostrar'}
+          </button>
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="eliminarArticle('${a.id}');" title="Eliminar article">
+            Eliminar
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function carregarCatalegArticles() {
+  const tbody = document.getElementById('tbody-articles');
+
+  // 1. Carregar des de memòria cau local immediatament (0 ms)
+  try {
+    const cached = localStorage.getItem('roig_cached_articles');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        adminArticlesList = parsed;
+        renderitzarTaulaArticlesDirecte(adminArticlesList);
+      }
+    }
+  } catch (e) {}
+
+  // 2. Si encara no hi ha articles, carregar els predeterminats de ceràmica
+  if (!adminArticlesList || adminArticlesList.length === 0) {
+    adminArticlesList = [...DEFAULT_CATALEG_ARTICLES];
+    renderitzarTaulaArticlesDirecte(adminArticlesList);
+  }
+
+  // 3. Sincronització asíncrona amb el servidor
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 6000) : null;
+
+    const res = await fetch(`${apiBase}/api/articles?include_inactive=1`, {
+      signal: controller ? controller.signal : undefined,
+      cache: 'no-cache'
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (res && res.ok) {
+      const data = await res.json();
+      if (data && data.ok && Array.isArray(data.articles) && data.articles.length > 0) {
+        adminArticlesList = data.articles;
+        try { localStorage.setItem('roig_cached_articles', JSON.stringify(adminArticlesList)); } catch (e) {}
+        renderitzarTaulaArticlesDirecte(adminArticlesList);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Avis sincronitzant catàleg amb el backend:', e);
+  }
+
+  // 4. Sempre garantir que la taula queda renderitzada
+  renderitzarTaulaArticlesDirecte(adminArticlesList);
+}
+
+
+function obrirModalCrearArticle() {
+  document.getElementById('art-form-id').value = '';
+  document.getElementById('modal-article-titol-cap').textContent = 'Nou Article / Pack';
+  document.getElementById('art-form-nom').value = '';
+  document.getElementById('art-form-descripcio').value = '';
+  document.getElementById('art-form-preu').value = '';
+  document.getElementById('art-form-hores').value = '2.0';
+  document.getElementById('art-form-activitat').value = 'torn';
+  const elEdat = document.getElementById('art-form-edat');
+  if (elEdat) elEdat.value = 'adult';
+  document.getElementById('art-form-ordre').value = String(adminArticlesList.length + 1);
+  document.getElementById('art-form-val-regal').checked = true;
+  document.getElementById('art-form-actiu').checked = true;
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-article-backdrop');
+  }
+}
+
+function editarArticle(artId) {
+  const a = adminArticlesList.find(item => item.id === artId);
+  if (!a) return;
+
+  document.getElementById('art-form-id').value = a.id;
+  document.getElementById('modal-article-titol-cap').textContent = `Editar: ${a.nom}`;
+  document.getElementById('art-form-nom').value = a.nom;
+  document.getElementById('art-form-descripcio').value = a.descripcio || '';
+  document.getElementById('art-form-preu').value = a.preu;
+  document.getElementById('art-form-hores').value = a.hores;
+  document.getElementById('art-form-activitat').value = a.activitat_id || 'torn';
+  const elEdat = document.getElementById('art-form-edat');
+  if (elEdat) elEdat.value = a.edat || 'adult';
+  document.getElementById('art-form-ordre').value = a.ordre || 1;
+  document.getElementById('art-form-val-regal').checked = Boolean(a.es_val_regal);
+  document.getElementById('art-form-actiu').checked = Boolean(a.actiu);
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-article-backdrop');
+  }
+}
+
+async function guardarArticleCataleg() {
+  const id = document.getElementById('art-form-id').value.trim();
+  const nom = document.getElementById('art-form-nom').value.trim();
+  const descripcio = document.getElementById('art-form-descripcio').value.trim();
+  const preu = parseFloat(document.getElementById('art-form-preu').value || 0);
+  const hores = parseFloat(document.getElementById('art-form-hores').value || 2.0);
+  const activitat_id = document.getElementById('art-form-activitat').value;
+  const edat = (document.getElementById('art-form-edat')?.value || 'adult').trim();
+  const ordre = parseInt(document.getElementById('art-form-ordre').value || 1, 10);
+  const es_val_regal = document.getElementById('art-form-val-regal').checked ? 1 : 0;
+  const actiu = document.getElementById('art-form-actiu').checked ? 1 : 0;
+  const btn = document.getElementById('btn-submit-article');
+
+  if (!nom || preu <= 0) {
+    showToast('Cal indicar el nom de l\'article i un preu superior a 0€.', 'warning');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Desant...'; }
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/articles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: id || undefined,
+        nom,
+        descripcio,
+        preu,
+        hores,
+        activitat_id,
+        edat,
+        icona: '',
+        ordre,
+        es_val_regal,
+        actiu
+      })
+    });
+
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast('Article desat correctament!', 'success');
+      closeAnyModal('modal-admin-article-backdrop');
+      await carregarCatalegArticles();
+    } else {
+      showToast(data?.error || 'No s\'ha pogut desar l\'article.', 'error');
+    }
+  } catch (err) {
+    showToast('Error desant article: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Desar Article'; }
+  }
+}
+
+async function toggleActiuArticle(artId) {
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/articles/toggle-actiu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: artId })
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast(data.message, 'info');
+      await carregarCatalegArticles();
+    }
+  } catch (e) {
+    showToast('Error de connexió: ' + e.message, 'error');
+  }
+}
+
+async function eliminarArticle(artId) {
+  const a = adminArticlesList.find(item => item.id === artId);
+  const nom = a ? a.nom : artId;
+  if (!confirm(`Segur que vols eliminar l'article '${nom}' del catàleg? Aquesta acció el traurà de la botiga web.`)) {
+    return;
+  }
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/articles/${encodeURIComponent(artId)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast(`Article '${nom}' eliminat.`, 'info');
+      await carregarCatalegArticles();
+    } else {
+      showToast(data?.error || 'No s\'ha pogut eliminar.', 'error');
+    }
+  } catch (e) {
+    showToast('Error de connexió: ' + e.message, 'error');
+  }
+}
+
+async function obrirModalCrearValRegal() {
+  const sel = document.getElementById('val-manual-article-select');
+  if (!sel) return;
+
+  document.getElementById('val-manual-mode').value = 'crear';
+  document.getElementById('val-manual-codi').value = '';
+  document.getElementById('modal-val-titol-cap').textContent = 'Emetre Nou Val Regal';
+  document.getElementById('val-manual-titol').value = '';
+  document.getElementById('val-manual-hores').value = '2.0';
+  document.getElementById('val-manual-destinatari').value = '';
+  document.getElementById('val-manual-comprador').value = '';
+  document.getElementById('val-manual-missatge').value = '';
+  document.getElementById('val-manual-preu').value = '50.00';
+
+  const extraFields = document.getElementById('val-edit-extra-fields');
+  if (extraFields) extraFields.style.display = 'none';
+
+  const btn = document.getElementById('btn-submit-val-manual');
+  if (btn) btn.textContent = 'Generar i Emetre Val Regal';
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/articles`);
+    const data = await res.json();
+    if (data && data.ok && data.articles) {
+      adminArticlesList = data.articles;
+      sel.innerHTML = '<option value="">-- Tria una opció del catàleg --</option>' + 
+        data.articles.filter(a => a.es_val_regal).map(a => 
+          `<option value="${a.id}">${a.nom} - ${Number(a.preu).toFixed(2)} € (${a.hores}h)</option>`
+        ).join('') + 
+        '<option value="custom">Altre títol personalitzat</option>';
+    }
+  } catch (e) {
+    console.error('Error omplint select:', e);
+  }
+}
+
+async function editarValRegal(codi) {
+  const val = adminValsRegalList.find(v => v.codi === codi);
+  if (!val) return;
+
+  await obrirModalCrearValRegal();
+
+  document.getElementById('val-manual-mode').value = 'editar';
+  document.getElementById('val-manual-codi').value = val.codi;
+  document.getElementById('modal-val-titol-cap').textContent = `Editar Val Regal: ${val.codi}`;
+  document.getElementById('val-manual-titol').value = val.titol_experiencia || '';
+  document.getElementById('val-manual-hores').value = val.hores || 2.0;
+  document.getElementById('val-manual-destinatari').value = val.nom_destinatari || '';
+  document.getElementById('val-manual-comprador').value = val.nom_comprador || '';
+  document.getElementById('val-manual-missatge').value = val.missatge || '';
+  document.getElementById('val-manual-preu').value = val.preu_pagat || 0.0;
+  
+  const elCaducitat = document.getElementById('val-manual-caducitat');
+  if (elCaducitat) elCaducitat.value = val.data_caducitat || '';
+
+  const elEstat = document.getElementById('val-manual-estat');
+  if (elEstat) elEstat.value = val.estat || 'actiu';
+
+  const extraFields = document.getElementById('val-edit-extra-fields');
+  if (extraFields) extraFields.style.display = 'grid';
+
+  const btn = document.getElementById('btn-submit-val-manual');
+  if (btn) btn.textContent = 'Desar Canvis del Val Regal';
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-nou-val-backdrop');
+  }
+}
+
+function actualitzarCampsDesDeArticle(artId) {
+  if (!artId || artId === 'custom') return;
+  const art = adminArticlesList.find(a => a.id === artId);
+  if (!art) return;
+
+  const inpTitol = document.getElementById('val-manual-titol');
+  const inpHores = document.getElementById('val-manual-hores');
+  const inpPreu = document.getElementById('val-manual-preu');
+
+  if (inpTitol) inpTitol.value = art.nom;
+  if (inpHores) inpHores.value = art.hores;
+  if (inpPreu) inpPreu.value = art.preu;
+}
+
+async function guardarNouValRegalManual() {
+  const mode = document.getElementById('val-manual-mode')?.value || 'crear';
+  const codiEdit = document.getElementById('val-manual-codi')?.value || '';
+  const sel = document.getElementById('val-manual-article-select');
+  const artId = sel ? sel.value : '';
+  const titol = document.getElementById('val-manual-titol')?.value?.trim();
+  const hores = parseFloat(document.getElementById('val-manual-hores')?.value || 2.0);
+  const destinatari = document.getElementById('val-manual-destinatari')?.value?.trim();
+  const comprador = document.getElementById('val-manual-comprador')?.value?.trim();
+  const missatge = document.getElementById('val-manual-missatge')?.value?.trim();
+  const preu = parseFloat(document.getElementById('val-manual-preu')?.value || 0.0);
+  const metode = document.getElementById('val-manual-metode')?.value || 'efectiu';
+  const caducitat = document.getElementById('val-manual-caducitat')?.value?.trim();
+  const estat = document.getElementById('val-manual-estat')?.value || 'actiu';
+  const btn = document.getElementById('btn-submit-val-manual');
+
+  if (!destinatari) {
+    showToast('Cal indicar el nom de qui rebrà el regal.', 'warning');
+    return;
+  }
+
+  if (mode === 'editar') {
+    if (btn) { btn.disabled = true; btn.textContent = 'Desant canvis...'; }
+    try {
+      const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+      const res = await fetch(`${apiBase}/api/vals-regal/editar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codi: codiEdit,
+          titol_experiencia: titol || 'Taller de Ceràmica',
+          hores: hores,
+          nom_destinatari: destinatari,
+          nom_comprador: comprador,
+          missatge: missatge,
+          preu_pagat: preu,
+          data_caducitat: caducitat,
+          estat: estat
+        })
+      });
+      const data = await res.json();
+      if (data && data.ok) {
+        showToast(`Val regal ${codiEdit} actualitzat amb èxit!`, 'success');
+        closeAnyModal('modal-admin-nou-val-backdrop');
+        await carregarLlistaValsRegal();
+      } else {
+        showToast(data?.error || 'No s\'han pogut desar els canvis.', 'error');
+      }
+    } catch (err) {
+      showToast('Error de connexió: ' + err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Desar Canvis del Val Regal'; }
+    }
+    return;
+  }
+
+  let activitatId = 'torn';
+  if (artId && artId !== 'custom') {
+    const art = adminArticlesList.find(a => a.id === artId);
+    if (art) activitatId = art.activitat_id || 'torn';
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Generant val...'; }
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/vals-regal/crear-manual`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        article_id: (artId && artId !== 'custom') ? artId : null,
+        titol_experiencia: titol || 'Taller de Ceràmica',
+        hores: hores,
+        activitat_id: activitatId,
+        nom_destinatari: destinatari,
+        nom_comprador: comprador,
+        missatge: missatge,
+        preu: preu,
+        metode_pagament: metode
+      })
+    });
+
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast(`Val regal ${data.codi} emès correctament!`, 'success');
+      closeAnyModal('modal-admin-nou-val-backdrop');
+      
+      // Obrir automàticament la targeta imprimible
+      imprimirValRegal(data.codi);
+      
+      // Recarregar la llista
+      await carregarLlistaValsRegal();
+    } else {
+      showToast(data?.error || 'No s\'ha pogut crear el val.', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió emetent el val: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generar i Emetre Val Regal'; }
+  }
+}
+
+function imprimirValRegal(codi) {
+  const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+  const url = `${apiBase}/api/vals-regal/${encodeURIComponent(codi)}/pdf`;
+  window.open(url, '_blank');
+}
+
+async function anullarValRegal(codi) {
+  if (!confirm(`Vols anul·lar el val regal '${codi}'? Aquesta acció invalidarà el codi perquè no es pugui fer servir per reservar.`)) {
+    return;
+  }
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/vals-regal/anullar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codi })
+    });
+    const data = await res.json();
+    if (data && data.ok) {
+      showToast(data.message || `Val ${codi} anul·lat.`, 'info');
+      await carregarLlistaValsRegal();
+    } else {
+      showToast(data?.error || 'No s\'ha pogut anul·lar.', 'error');
+    }
+  } catch (e) {
+    showToast('Error de connexió: ' + e.message, 'error');
+  }
+}
+
+// Exposició global
+window.carregarLlistaValsRegal = carregarLlistaValsRegal;
+window.filtrarValsRegal = filtrarValsRegal;
+window.cercarValsRegal = cercarValsRegal;
+window.obrirModalCrearValRegal = obrirModalCrearValRegal;
+window.editarValRegal = editarValRegal;
+window.actualitzarCampsDesDeArticle = actualitzarCampsDesDeArticle;
+window.guardarNouValRegalManual = guardarNouValRegalManual;
+window.imprimirValRegal = imprimirValRegal;
+window.anullarValRegal = anullarValRegal;
+window.carregarCatalegArticles = carregarCatalegArticles;
+window.obrirModalCrearArticle = obrirModalCrearArticle;
+window.editarArticle = editarArticle;
+window.guardarArticleCataleg = guardarArticleCataleg;
+window.toggleActiuArticle = toggleActiuArticle;
+window.eliminarArticle = eliminarArticle;
+
+// ============================================================
+// ESCÀNER QR DE VALS REGAL AMB CÀMERA DE LA TAULETA / MÒBIL
+// ============================================================
+let isValQrScanning = false;
+
+async function obrirEscannerValRegal() {
+  const modal = document.getElementById('modal-scan-val-backdrop');
+  const statusEl = document.getElementById('val-scan-status');
+  if (!modal) return;
+
+  modal.style.display = 'block';
+  if (statusEl) statusEl.textContent = 'Iniciant càmera...';
+
+  try {
+    if (typeof QREngine === 'undefined' || typeof Html5Qrcode === 'undefined') {
+      throw new Error('Mòdul escàner no disponible al navegador');
+    }
+
+    isValQrScanning = true;
+    await QREngine.startScanner(
+      'val-qr-reader-container',
+      async (decodedText) => {
+        if (!isValQrScanning) return;
+        isValQrScanning = false;
+        await tancarEscannerValRegal();
+        if (typeof SoundManager !== 'undefined' && SoundManager.playSuccess) {
+          SoundManager.playSuccess();
+        }
+        await processarCodiValEscanejat(decodedText);
+      },
+      (err) => {
+        // Frame sense QR, ignorar silenciós
+      },
+      'environment'
+    );
+
+    if (statusEl) statusEl.textContent = 'Apunta la càmera cap al codi QR del val regal...';
+  } catch (err) {
+    console.error('Error iniciant càmera escàner val:', err);
+    if (statusEl) {
+      statusEl.innerHTML = `<span style="color:#DC2626;">Error càmera: ${escapeHtml(err.message || 'Sense permís')}. Comprova que has permès l'accés a la càmera.</span>`;
+    }
+  }
+}
+
+async function tancarEscannerValRegal() {
+  isValQrScanning = false;
+  try {
+    if (typeof QREngine !== 'undefined' && QREngine.stopScanner) {
+      await QREngine.stopScanner();
+    }
+  } catch (e) {}
+  const container = document.getElementById('val-qr-reader-container');
+  if (container) container.innerHTML = '';
+  closeAnyModal('modal-scan-val-backdrop');
+}
+
+async function processarCodiValEscanejat(scannedText) {
+  if (!scannedText) return;
+
+  // Extreure el codi REGAL-XXXX-YYYY del text escanejat (suporta URL completa o codi sol)
+  let cleanCode = scannedText.trim();
+  const match = cleanCode.match(/REGAL-[A-Z0-9-]+/i);
+  if (match) {
+    cleanCode = match[0].toUpperCase();
+  }
+
+  // Filtrar i posar al cercador de la taula
+  const inpCerca = document.getElementById('input-cerca-vals');
+  if (inpCerca) {
+    inpCerca.value = cleanCode;
+    cercarValsRegal(cleanCode);
+  }
+
+  // Obtenir informació del val des del servidor
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/vals-regal/${encodeURIComponent(cleanCode)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data.ok || !data.val) {
+      showToast(`Val '${cleanCode}' no trobat a la base de dades.`, 'warning');
+      return;
+    }
+
+    mostrarModalDetallValEscanejat(data.val);
+  } catch (err) {
+    showToast(`Val escanejat: ${cleanCode}`, 'info');
+  }
+}
+
+function mostrarModalDetallValEscanejat(val) {
+  const modal = document.getElementById('modal-detall-val-escanejat-backdrop');
+  const titolEl = document.getElementById('scan-val-result-titol');
+  const bodyEl = document.getElementById('scan-val-result-body');
+  const actionsEl = document.getElementById('scan-val-result-actions');
+  if (!modal || !bodyEl) return;
+
+  if (titolEl) titolEl.textContent = `Val Regal: ${val.codi}`;
+
+  let estatBadge = '<span class="badge badge-success">Actiu (Pendent)</span>';
+  if (val.estat === 'canviat') {
+    estatBadge = '<span class="badge badge-primary">Bescanviat</span>';
+  } else if (val.estat === 'anul·lat') {
+    estatBadge = '<span class="badge badge-danger">Anul·lat</span>';
+  }
+
+  const preuPagat = (val.preu_pagat !== undefined && val.preu_pagat !== null) ? `${Number(val.preu_pagat).toFixed(2)} €` : '-';
+  const dataCreacio = (val.data_creacio || '').slice(0, 10);
+  const dataCaducitat = val.data_caducitat || '-';
+
+  bodyEl.innerHTML = `
+    <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; color: #6B7280;">Codi del Val</span>
+          <div style="font-family: monospace; font-size: 18px; font-weight: 800; color: #831D1D; letter-spacing: 1px;">${escapeHtml(val.codi)}</div>
+        </div>
+        <div>${estatBadge}</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px;">
+        ${escapeHtml(val.titol_experiencia || 'Taller')} (${val.hores || 2} hores)
+      </div>
+      <div style="font-size: 13px; color: #4B5563; margin-bottom: 12px;">
+        Preu abonat: <strong>${preuPagat}</strong>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12.5px; border-top: 1px solid #E5E7EB; padding-top: 10px;">
+        <div><span style="color:#6B7280;">Per a:</span> <strong>${escapeHtml(val.nom_destinatari || '-')}</strong></div>
+        <div><span style="color:#6B7280;">Comprat per:</span> <strong>${escapeHtml(val.nom_comprador || '-')}</strong></div>
+        <div><span style="color:#6B7280;">Emès el:</span> ${dataCreacio}</div>
+        <div><span style="color:#6B7280;">Caduca el:</span> <strong>${dataCaducitat}</strong></div>
+      </div>
+      ${val.missatge ? `
+        <div style="margin-top: 10px; background: #fff; border-left: 3px solid #5E7E6F; padding: 8px 12px; font-size: 12px; color: #374151; font-style: italic;">
+          «${escapeHtml(val.missatge)}»
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  let actionBtns = `
+    <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-detall-val-escanejat-backdrop');">Tancar</button>
+    <button type="button" class="btn btn-outline" onclick="imprimirValRegal('${escapeHtml(val.codi)}');">Veure Targeta / PDF</button>
+  `;
+
+  if (val.estat === 'actiu') {
+    actionBtns += `
+      <button type="button" class="btn btn-primary" onclick="marcarValBescanviatDirecte('${escapeHtml(val.codi)}');" style="background: #059669; border-color: #059669; font-weight: 700;">
+        Marcar com a Bescanviat
+      </button>
+    `;
+  }
+
+  if (actionsEl) actionsEl.innerHTML = actionBtns;
+  modal.style.display = 'block';
+}
+
+async function marcarValBescanviatDirecte(codi) {
+  if (!confirm(`Vols marcar el val ${codi} com a bescanviat (utilitzat pel client)?`)) {
+    return;
+  }
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/vals-regal/bescanviar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codi })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast(`Val ${codi} bescanviat correctament!`, 'success');
+      closeAnyModal('modal-detall-val-escanejat-backdrop');
+      await carregarLlistaValsRegal();
+    } else {
+      showToast(data?.error || 'No s\'ha pogut bescanviar el val.', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió: ' + err.message, 'error');
+  }
+}
+
+window.obrirEscannerValRegal = obrirEscannerValRegal;
+window.tancarEscannerValRegal = tancarEscannerValRegal;
+window.processarCodiValEscanejat = processarCodiValEscanejat;
+window.mostrarModalDetallValEscanejat = mostrarModalDetallValEscanejat;
+window.marcarValBescanviatDirecte = marcarValBescanviatDirecte;
+
+// Provar Connexió Square des de la pestanya de configuració
+async function provarConnexioSquare() {
+  const btn = document.getElementById('btn-provar-square');
+  const status = document.getElementById('square-test-status');
+  const token = document.getElementById('cfg-square-access-token')?.value.trim();
+  const locId = document.getElementById('cfg-square-location-id')?.value.trim();
+  const env = document.getElementById('cfg-square-environment')?.value || 'sandbox';
+
+  if (!token || !locId) {
+    showToast('Introdueix primer el Token i el Location ID de Square.', 'warning');
+    if (status) status.innerHTML = '<span style="color: #D97706; font-size: 11.5px;">Cal omplir Token i Location ID</span>';
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (status) status.innerHTML = '<span style="color: #6B7280; font-size: 11.5px;">Comprovant credencials amb Square...</span>';
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+    const res = await fetch(`${apiBase}/api/admin/square/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, location_id: locId, environment: env })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      if (status) status.innerHTML = `<span style="color: #059669; font-weight: 700; font-size: 12px;">✓ Connectat! (${escapeHtml(data.location_name || locId)})</span>`;
+      showToast(data.message || 'Connexió amb Square verificada amb èxit!', 'success');
+      try {
+        const appId = document.getElementById('cfg-square-app-id')?.value.trim() || '';
+        await Store.saveConfig({
+          square_app_id: appId,
+          square_access_token: token,
+          square_location_id: locId,
+          square_environment: env
+        });
+      } catch (e) {
+        console.warn('Error auto-desant Square:', e);
+      }
+    } else {
+      if (status) status.innerHTML = `<span style="color: #DC2626; font-weight: 600; font-size: 11.5px;">✗ ${escapeHtml(data.error || 'Error')}</span>`;
+      showToast(data.error || 'Error verificant Square', 'error');
+    }
+  } catch (err) {
+    if (status) status.innerHTML = `<span style="color: #DC2626; font-size: 11.5px;">Error: ${escapeHtml(err.message)}</span>`;
+    showToast('Error de connexió: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+window.provarConnexioSquare = provarConnexioSquare;
+
+

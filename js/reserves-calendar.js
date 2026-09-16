@@ -594,6 +594,14 @@ class ReservesCalendar {
             </div>
           </div>
 
+          ${!this.isAdmin ? `
+          <!-- Avís sobrepassar límit d'aforament -->
+          <div style="background: #FAF6F0; border: 1px dashed #D2B48C; border-radius: var(--radius-sm); padding: 8px 12px; margin-top: 10px; margin-bottom: 4px; font-size: 12px; color: #5C4033; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <span>💡 Si voleu <strong>sobrepassar el límit d'aforament establert</strong>, cal <strong>contactar amb administració</strong>.</span>
+            <a href="https://wa.me/34683633880?text=Hola!%20Voldria%20consultar%20sobrepassar%20l'aforament%20establert%20per%20a%20una%20reserva" target="_blank" style="color: #2E7D32; font-weight: 700; text-decoration: none; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">WhatsApp: 683 633 880 &rarr;</a>
+          </div>
+          ` : ''}
+
           <!-- Desglossament per activitats -->
           <div class="res-slot-acts-list">
             ${actsHtml}

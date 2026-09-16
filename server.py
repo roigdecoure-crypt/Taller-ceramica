@@ -142,23 +142,27 @@ def verify_admin_pin(input_pin):
     """Verifica si el PIN facilitat coincideix amb el PIN configurat a la BD o env."""
     if not input_pin:
         return False
+    clean_input = str(input_pin).strip()
     configured_pin = None
-    env_pin = os.environ.get('ADMIN_PIN')
-    if env_pin:
-        configured_pin = env_pin.strip()
-    else:
-        try:
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT valor FROM configuracio WHERE clau = 'admin_pin'")
-                row = cursor.fetchone()
-                if row and row['valor']:
-                    configured_pin = str(row['valor']).strip()
-        except Exception:
-            pass
+    # 1. Prioritat màxima: El PIN que l'administrador ha desat a la Base de Dades
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'admin_pin'")
+            row = cursor.fetchone()
+            if row and row['valor'] and str(row['valor']).strip():
+                configured_pin = str(row['valor']).strip()
+    except Exception:
+        pass
+    # 2. Variable d'entorn si no s'ha configurat cap PIN a la BD
+    if not configured_pin:
+        env_pin = os.environ.get('ADMIN_PIN')
+        if env_pin and env_pin.strip():
+            configured_pin = env_pin.strip()
+    # 3. Fallback per defecte
     if not configured_pin:
         configured_pin = '1234'
-    return str(input_pin).strip() == configured_pin
+    return clean_input == configured_pin
 
 def calculate_age_from_birthdate(birthdate_str):
     """Calcula l'edat exacta en anys a partir de la data de naixement."""
@@ -473,6 +477,7 @@ def init_db():
                 activitats_permeses TEXT,
                 activitats_bloquejades TEXT,
                 motiu TEXT,
+                torn TEXT DEFAULT 'tot_el_dia',
                 creat_el TEXT
             )
         ''')
@@ -488,6 +493,50 @@ def init_db():
                 actiu INTEGER NOT NULL DEFAULT 1,
                 ordre INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Taula de catàleg d'articles i experiències (preus i hores tancades)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS articles (
+                id TEXT PRIMARY KEY,
+                nom TEXT NOT NULL,
+                descripcio TEXT DEFAULT '',
+                preu REAL NOT NULL,
+                hores REAL NOT NULL DEFAULT 2.0,
+                activitat_id TEXT DEFAULT 'torn',
+                edat TEXT DEFAULT 'adult',
+                es_val_regal INTEGER NOT NULL DEFAULT 1,
+                actiu INTEGER NOT NULL DEFAULT 1,
+                ordre INTEGER DEFAULT 0,
+                icona TEXT DEFAULT '',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Taula de gestió integral de Vals Regal
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vals_regal (
+                codi TEXT PRIMARY KEY,
+                article_id TEXT,
+                titol_experiencia TEXT NOT NULL,
+                hores REAL NOT NULL DEFAULT 2.0,
+                activitat_id TEXT DEFAULT 'torn',
+                nom_comprador TEXT DEFAULT '',
+                email_comprador TEXT DEFAULT '',
+                nom_destinatari TEXT NOT NULL,
+                email_destinatari TEXT DEFAULT '',
+                missatge TEXT DEFAULT '',
+                preu_pagat REAL DEFAULT 0.0,
+                data_creacio TEXT NOT NULL,
+                data_caducitat TEXT NOT NULL,
+                estat TEXT NOT NULL DEFAULT 'actiu',
+                metode_pagament TEXT DEFAULT 'manual',
+                transaccio_id TEXT DEFAULT '',
+                data_canvi TEXT DEFAULT NULL,
+                reserva_id TEXT DEFAULT NULL,
+                alumne_id TEXT DEFAULT NULL,
+                notes TEXT DEFAULT ''
             )
         ''')
 
@@ -557,10 +606,59 @@ def init_db():
             'whatsapp_meta_template_recordatori_dia': "reserva_recordatori_dia",
             'carnet_design': json.dumps(DEFAULT_CARNET_CONFIG, ensure_ascii=False),
             'franges_horaries': default_franges_json,
-            'admin_pin': os.environ.get('ADMIN_PIN', '1234')
+            'admin_pin': os.environ.get('ADMIN_PIN', '1234'),
+            'square_app_id': "",
+            'square_access_token': "",
+            'square_location_id': "",
+            'square_environment': "sandbox",
+            'square_webhook_signature_key': ""
         }
         for k, v in default_config.items():
             cursor.execute('INSERT OR IGNORE INTO configuracio (clau, valor) VALUES (?, ?)', (k, v))
+
+        # Assegurar columna edat a la taula articles si no existeix
+        try:
+            cursor.execute("ALTER TABLE articles ADD COLUMN edat TEXT DEFAULT 'adult'")
+        except Exception:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE restriccions_activitats ADD COLUMN torn TEXT DEFAULT 'tot_el_dia'")
+        except Exception:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE reserves ADD COLUMN paga_senyal REAL DEFAULT 0.0")
+        except Exception:
+            pass
+
+        # Netejar icones existents a la taula articles
+        cursor.execute("UPDATE articles SET icona = '' WHERE icona IS NOT NULL")
+
+        # Seeding inicial de catàleg d'articles i experiències (sense icones, amb diferenciació Adult / Menor de 12 anys)
+        cursor.execute('SELECT COUNT(*) as cnt FROM articles')
+        if cursor.fetchone()['cnt'] == 0:
+            initial_articles = [
+                ('art_torn_adult', 'Taller de torn (Adult, 4h)', 'Sessió pràctica al torn de terrissaire per a adults (4 hores). Aprèn a centrar, pujar i donar forma.', 60.0, 4.0, 'torn', 'adult', 1, 1, 1, ''),
+                ('art_torn_infant', 'Taller de torn (Menor de 12 anys, 4h)', 'Iniciació al torn de terrissaire adaptada a nens i nenes menors de 12 anys (4 hores).', 56.0, 4.0, 'torn', 'infant', 1, 1, 2, ''),
+                ('art_modelatge_adult', 'Taller de modelatge (Adult, 4h)', 'Modelat de fang amb tècniques de pessic, xurro i planxa per a adults (4 hores). Crea peces úniques.', 60.0, 4.0, 'modelatge', 'adult', 1, 1, 3, ''),
+                ('art_modelatge_infant', 'Taller de modelatge (Menor de 12 anys, 4h)', 'Modelat lliure i creatiu de peces ceràmiques adaptat a menors de 12 anys (4 hores).', 56.0, 4.0, 'modelatge', 'infant', 1, 1, 4, ''),
+                ('art_pintar_ceramica', 'Pintar ceràmica (Tots els públics, 4h)', 'Decora i esmalta peces ceràmiques bescuitades amb colors vius i acabat vidriat (4 hores). Ideal per a totes les edats.', 56.0, 4.0, 'pintar', 'tots', 1, 1, 5, ''),
+                ('art_hores_adult', 'Comprar hores (Adult)', 'Bossa d\'hores de taller per a adults (mínim 4h) per desenvolupar projectes al teu ritme.', 140.0, 10.0, 'torn', 'adult', 1, 1, 6, ''),
+                ('art_hores_infant', 'Comprar hores (Menor de 12 anys)', 'Bossa d\'hores d\'aprenentatge i creació al taller per a menors de 12 anys (mínim 4h).', 130.0, 10.0, 'torn', 'infant', 1, 1, 7, '')
+            ]
+            cursor.executemany('''
+                INSERT INTO articles (id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', initial_articles)
+
+        # Migració de seguretat: cap article ni taller amb menys de 4 hores
+        cursor.execute("UPDATE articles SET hores = 4.0, preu = 60.0, nom = 'Taller de torn (Adult, 4h)' WHERE id = 'art_torn_adult' AND hores < 4.0")
+        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Taller de torn (Menor de 12 anys, 4h)' WHERE id = 'art_torn_infant' AND hores < 4.0")
+        cursor.execute("UPDATE articles SET hores = 4.0, preu = 60.0, nom = 'Taller de modelatge (Adult, 4h)' WHERE id = 'art_modelatge_adult' AND hores < 4.0")
+        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Taller de modelatge (Menor de 12 anys, 4h)' WHERE id = 'art_modelatge_infant' AND hores < 4.0")
+        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Pintar ceràmica (Tots els públics, 4h)' WHERE id = 'art_pintar_ceramica' AND hores < 4.0")
+        cursor.execute("UPDATE articles SET hores = 4.0 WHERE hores < 4.0")
 
         # MigraciÃ³ de valors antics a configuraciÃ³ oficial si cal
         cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de CerÃ mica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
@@ -943,7 +1041,7 @@ def sync_to_google_sheets_async(action, payload):
                 req_dict['session'] = payload
             elif action == 'add_paquet':
                 req_dict['paquet'] = payload
-            elif action in ('add_reserva', 'update_reserva', 'cancel_reserva'):
+            elif action in ('add_reserva', 'nova_reserva', 'update_reserva', 'cancel_reserva'):
                 req_dict['reserva'] = payload
             elif action == 'save_config' and isinstance(payload, dict):
                 req_dict['config'] = payload
@@ -959,7 +1057,7 @@ def sync_to_google_sheets_async(action, payload):
                 raw_resp = resp.read()
                 try:
                     res_data = json.loads(raw_resp.decode('utf-8'))
-                    if action == 'add_reserva' and res_data.get('status') == 'success':
+                    if action in ('add_reserva', 'nova_reserva') and res_data.get('status') == 'success':
                         created_cal_id = res_data.get('calendar_event_id')
                         if created_cal_id and payload.get('id'):
                             with get_db() as c_conn:
@@ -1198,7 +1296,7 @@ def start_whatsapp_scheduler():
 
                         cursor.execute("""
                             SELECT * FROM reserves 
-                            WHERE data = ? AND estat = 'confirmada' 
+                            WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') 
                               AND (whatsapp_notif_dia IS NULL OR whatsapp_notif_dia = 0)
                               AND telefon != ''
                         """, (today_str,))
@@ -1224,7 +1322,7 @@ def start_whatsapp_scheduler():
 
                     cursor.execute("""
                         SELECT * FROM reserves 
-                        WHERE data = ? AND estat = 'confirmada' 
+                        WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') 
                           AND (whatsapp_notif_48h IS NULL OR whatsapp_notif_48h = 0)
                           AND telefon != ''
                     """, (date_48h,))
@@ -1260,6 +1358,48 @@ INTERVALS_INICI_2H = [
     "10:00", "10:15", "10:30", "10:45", "11:00",
     "17:00", "17:15", "17:30", "17:45", "18:00"
 ]
+
+def calcular_preu_hores_trams(hores, es_infant=False):
+    """
+    Calcula el preu per hora i total segons les franges establertes.
+    Compra mínima: 4 hores.
+    Adults:
+      - 4h a 9h:  15 €/h
+      - 10h a 19h: 14 €/h
+      - 20h o més: 13 €/h
+    Mainada fins a 12 anys:
+      - 4h a 9h:  14 €/h
+      - 10h a 19h: 13 €/h
+      - 20h o més: 11 €/h
+    """
+    try:
+        h = max(4, int(hores))  # Compra mínima de 4 hores
+    except Exception:
+        h = 10
+
+    if not es_infant:
+        if h <= 9:
+            preu_hora = 15.0
+            franja_desc = "4h a 9h (15 €/h)"
+        elif h <= 19:
+            preu_hora = 14.0
+            franja_desc = "10h a 19h (14 €/h)"
+        else:
+            preu_hora = 13.0
+            franja_desc = "20h o més (13 €/h)"
+    else:
+        if h <= 9:
+            preu_hora = 14.0
+            franja_desc = "4h a 9h (14 €/h)"
+        elif h <= 19:
+            preu_hora = 13.0
+            franja_desc = "10h a 19h (13 €/h)"
+        else:
+            preu_hora = 11.0
+            franja_desc = "20h o més (11 €/h)"
+
+    total = round(h * preu_hora, 2)
+    return h, preu_hora, total, franja_desc
 
 def calcular_hora_fi_2h(hora_inici_str):
     try:
@@ -1343,9 +1483,10 @@ def is_dia_tancat(data_str):
 
     return {'tancat': False, 'motiu': ''}
 
-def get_restriccions_dia(data_str):
+def get_restriccions_dia(data_str, torn_filtre=None):
     """
-    Retorna les restriccions d'activitats/tallers per a una data concreta.
+    Retorna les restriccions d'activitats/tallers per a una data concreta i opcionalment
+    per a un torn concret ('mati' o 'tarda').
     """
     res = {
         'te_restriccio': False,
@@ -1357,7 +1498,7 @@ def get_restriccions_dia(data_str):
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu
+                SELECT id, data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, torn
                 FROM restriccions_activitats
                 WHERE data_inici <= ? AND data_fi >= ?
                 ORDER BY id ASC
@@ -1366,13 +1507,17 @@ def get_restriccions_dia(data_str):
             if not rows:
                 return res
 
-            res['te_restriccio'] = True
             bloquejades_set = set()
             permeses_set = set()
+            motius_actius = []
 
             for r in rows:
+                r_torn = (r['torn'] if 'torn' in r.keys() else 'tot_el_dia') or 'tot_el_dia'
+                if torn_filtre and r_torn not in ('tot_el_dia', torn_filtre):
+                    continue
+
                 if r['motiu'] and r['motiu'].strip():
-                    res['motius'].append(r['motiu'].strip())
+                    motius_actius.append(r['motiu'].strip())
 
                 # Parsing activitats_bloquejades
                 bloq_raw = (r['activitats_bloquejades'] or '').strip()
@@ -1406,8 +1551,11 @@ def get_restriccions_dia(data_str):
                     if act_id not in permeses_set:
                         bloquejades_set.add(act_id)
 
-            res['bloquejades'] = list(bloquejades_set)
-            res['permeses'] = [a for a in all_acts if a not in bloquejades_set]
+            if bloquejades_set:
+                res['te_restriccio'] = True
+                res['motius'] = motius_actius
+                res['bloquejades'] = list(bloquejades_set)
+                res['permeses'] = [a for a in all_acts if a not in bloquejades_set]
     except Exception:
         pass
 
@@ -1510,7 +1658,7 @@ def get_disponibilitat(data_str):
             SELECT r.*, a.nom, a.cognoms, a.telefon
             FROM reserves r
             LEFT JOIN alumnes a ON r.student_id = a.id
-            WHERE r.data = ? AND r.estat = 'confirmada'
+            WHERE r.data = ? AND r.estat IN ('confirmada', 'pendent_paga_senyal')
             ORDER BY r.hora_inici ASC
         ''', (data_str,))
         active_reserves = [row_to_dict(x) for x in cursor.fetchall()]
@@ -1549,13 +1697,15 @@ def get_disponibilitat(data_str):
         else:
             estat_franja = 'lliure'
 
-        # OcupaciÃ³ per activitat en aquesta franja
+        # Ocupació per activitat en aquesta franja amb comprovació de torn (Matí o Tarda)
+        torn_franja = 'tarda' if is_tarda else 'mati'
+        restr_franja = get_restriccions_dia(data_str, torn_filtre=torn_franja)
         ocupacio_per_act = {}
         activitats_franja = []
         for act in activitats_list:
             act_id = act['id']
             act_nom = act['nom'].lower()
-            is_blocked = restr_dia['te_restriccio'] and act_id.lower() in restr_dia['bloquejades']
+            is_blocked = restr_franja['te_restriccio'] and act_id.lower() in restr_franja['bloquejades']
             ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
             ocupacio_per_act[act_id] = ocupat_act
             capacitat_max_act = act['capacitatMax']
@@ -1571,7 +1721,7 @@ def get_disponibilitat(data_str):
                 'placesDisponibles': places_efectives,
                 'complet': places_efectives == 0,
                 'bloquejada': is_blocked,
-                'motiuRestriccio': f"Taller restringit ({', '.join(restr_dia['motius'])})" if (is_blocked and restr_dia['motius']) else ("Taller no disponible aquest dia" if is_blocked else "")
+                'motiuRestriccio': f"Taller restringit ({', '.join(restr_franja['motius'])})" if (is_blocked and restr_franja['motius']) else ("Taller no disponible aquest torn" if is_blocked else "")
             })
 
         # Intervals per a aquesta franja
@@ -1659,7 +1809,7 @@ def get_disponibilitat_mes(year, month):
         cursor.execute('''
             SELECT data, franja, activitat_id, activitat, places
             FROM reserves
-            WHERE data >= ? AND data <= ? AND estat = 'confirmada'
+            WHERE data >= ? AND data <= ? AND estat IN ('confirmada', 'pendent_paga_senyal')
         ''', (start_date, end_date))
         month_reserves = [row_to_dict(x) for x in cursor.fetchall()]
 
@@ -1993,6 +2143,366 @@ def generate_pkpass(student, balance=None):
 
     return buf.getvalue()
 
+# ==============================================================================
+# GESTIÓ D'ARTICLES, VALS REGAL I PASSAL·LELA SQUARE (CATÀLEG AMB HORES TANCADES)
+# ==============================================================================
+
+def generar_codi_val_regal():
+    """Genera un codi únic i distingible per a Vals Regal: ex. REGAL-9B2F-48X2"""
+    import random
+    chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' # Sense caràcters confusos (0, O, 1, I)
+    bloc1 = ''.join(random.choices(chars, k=4))
+    bloc2 = ''.join(random.choices(chars, k=4))
+    return f"REGAL-{bloc1}-{bloc2}"
+
+def get_articles_catalog(include_inactive=False):
+    """Retorna els articles del catàleg oficial amb hores i preus tancats."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        if include_inactive:
+            cursor.execute('SELECT * FROM articles ORDER BY ordre ASC, created_at ASC')
+        else:
+            cursor.execute('SELECT * FROM articles WHERE actiu = 1 ORDER BY ordre ASC, created_at ASC')
+        return [row_to_dict(r) for r in cursor.fetchall()]
+
+def get_val_regal_db(codi):
+    """Cerca un val regal pel seu codi exacte o normalitzat."""
+    if not codi:
+        return None
+    clean_codi = str(codi).strip().upper()
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM vals_regal WHERE UPPER(TRIM(codi)) = ?', (clean_codi,))
+        r = cursor.fetchone()
+        return row_to_dict(r) if r else None
+
+def crear_val_regal_db(titol_experiencia, hores, activitat_id, nom_destinatari,
+                       nom_comprador='', email_comprador='', email_destinatari='',
+                       missatge='', preu_pagat=0.0, metode_pagament='manual',
+                       transaccio_id='', article_id=None, dies_validesa=180):
+    """Crea un nou val regal amb codi únic i data de caducitat a 6 mesos (180 dies) per defecte."""
+    codi = generar_codi_val_regal()
+    now_dt = get_now()
+    data_creacio = now_dt.strftime('%Y-%m-%d %H:%M:%S')
+    data_caducitat = (now_dt + timedelta(days=dies_validesa)).strftime('%Y-%m-%d')
+    
+    with get_db() as conn:
+        cursor = conn.cursor()
+        # Verificar que el codi no existeixi
+        while True:
+            cursor.execute('SELECT codi FROM vals_regal WHERE codi = ?', (codi,))
+            if not cursor.fetchone():
+                break
+            codi = generar_codi_val_regal()
+        
+        cursor.execute('''
+            INSERT INTO vals_regal (
+                codi, article_id, titol_experiencia, hores, activitat_id,
+                nom_comprador, email_comprador, nom_destinatari, email_destinatari,
+                missatge, preu_pagat, data_creacio, data_caducitat, estat,
+                metode_pagament, transaccio_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actiu', ?, ?)
+        ''', (
+            codi, article_id, titol_experiencia, float(hores or 4.0), activitat_id or 'torn',
+            nom_comprador.strip(), email_comprador.strip(), nom_destinatari.strip(), email_destinatari.strip(),
+            missatge.strip(), float(preu_pagat or 0.0), data_creacio, data_caducitat,
+            metode_pagament, transaccio_id
+        ))
+        conn.commit()
+    
+    return get_val_regal_db(codi)
+
+def bescanviar_val_regal_db(codi, reserva_id, alumne_id=None):
+    """Canvia l'estat d'un val regal a 'canviat' associant-lo a una reserva."""
+    clean_codi = str(codi).strip().upper()
+    val = get_val_regal_db(clean_codi)
+    if not val:
+        return {'ok': False, 'error': "Val regal no trobat"}
+    if val['estat'] != 'actiu':
+        return {'ok': False, 'error': f"Aquest val no està disponible (Estat actual: {val['estat']})"}
+    
+    today_str = get_now().strftime('%Y-%m-%d')
+    if val.get('data_caducitat') and val['data_caducitat'] < today_str:
+        return {'ok': False, 'error': f"Aquest val regal va caducar el {val['data_caducitat']}"}
+    
+    now_str = get_now().strftime('%Y-%m-%d %H:%M:%S')
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE vals_regal
+            SET estat = 'canviat', data_canvi = ?, reserva_id = ?, alumne_id = ?
+            WHERE UPPER(TRIM(codi)) = ?
+        ''', (now_str, reserva_id, alumne_id, clean_codi))
+
+        # Si el val s'associa a un alumne, se li sumen automàticament les hores al seu compte!
+        if alumne_id and float(val.get('hores', 0) or 0) > 0:
+            hores_val = float(val['hores'])
+            segons_val = int(hores_val * 3600)
+            pack_id = f"PK-VAL-{clean_codi}"
+            cursor.execute("SELECT id FROM paquets_hores WHERE id = ?", (pack_id,))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO paquets_hores (id, student_id, data, hores, segons, concepte, preu, metode_pagament, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'val_regal', ?)
+                """, (pack_id, alumne_id, now_str, hores_val, segons_val, f"Val Regal {clean_codi} ({val.get('titol_experiencia', 'Hores')})", val.get('preu_pagat', 0), f"Val bescanviat {clean_codi}"))
+
+        conn.commit()
+    
+    return {'ok': True, 'message': 'Val bescanviat correctament i hores sumades a l\'alumne'}
+
+def generar_targeta_val_regal_html(val):
+    """Genera una pàgina HTML imprimible en alta resolució (PDF) pel val regal."""
+    codi = val.get('codi', '')
+    titol = val.get('titol_experiencia', 'Experiència de Ceràmica')
+    hores = val.get('hores', 2.0)
+    destinatari = val.get('nom_destinatari', 'Algú especial')
+    comprador = val.get('nom_comprador', '')
+    missatge = val.get('missatge', '')
+    caducitat = val.get('data_caducitat', '')
+    
+    de_part_de_html = f"<div class='from'>De part de: <strong>{comprador}</strong></div>" if comprador else ""
+    missatge_html = f"<div class='message'>«{missatge}»</div>" if missatge else ""
+    
+    # URL de bescanvi directe
+    qr_data = f"https://roigdecoure.cat/reserva.html?val={codi}"
+    qr_img_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={urllib.parse.quote(qr_data)}"
+
+    return f"""<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <title>Val Regal - {codi} - Roig de Coure</title>
+  <style>
+    @page {{ size: A5 landscape; margin: 0; }}
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #fdfaf6;
+      color: #2b2523;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }}
+    .voucher-card {{
+      width: 210mm;
+      height: 148mm;
+      background: #ffffff;
+      border: 3px solid #831D1D;
+      border-radius: 18px;
+      padding: 32px 40px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      background-image: radial-gradient(#831D1D 0.75px, transparent 0.75px);
+      background-size: 24px 24px;
+      background-color: #fffdfa;
+    }}
+    .voucher-card::after {{
+      content: '';
+      position: absolute;
+      top: 10px; left: 10px; right: 10px; bottom: 10px;
+      border: 1px dashed rgba(131, 29, 29, 0.4);
+      border-radius: 12px;
+      pointer-events: none;
+    }}
+    .header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #5E7E6F;
+      padding-bottom: 16px;
+      position: relative;
+      z-index: 2;
+    }}
+    .brand-title {{
+      font-size: 28px;
+      font-weight: 800;
+      color: #831D1D;
+      letter-spacing: 0.5px;
+    }}
+    .brand-sub {{
+      font-size: 13px;
+      font-weight: 600;
+      color: #5E7E6F;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+    }}
+    .badge {{
+      background: #831D1D;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }}
+    .content {{
+      margin: 18px 0;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }}
+    .details {{
+      flex: 1;
+    }}
+    .for {{
+      font-size: 13px;
+      color: #716b67;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }}
+    .recipient {{
+      font-size: 24px;
+      font-weight: 800;
+      color: #1a1615;
+      margin: 2px 0 10px 0;
+    }}
+    .exp-title {{
+      font-size: 18px;
+      font-weight: 700;
+      color: #831D1D;
+      background: #fbf0ee;
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      border-left: 4px solid #831D1D;
+    }}
+    .from {{
+      font-size: 13px;
+      color: #554e4a;
+      margin-bottom: 8px;
+    }}
+    .message {{
+      font-style: italic;
+      color: #4a433f;
+      font-size: 13px;
+      background: #f7f9f8;
+      border-left: 3px solid #5E7E6F;
+      padding: 6px 12px;
+      border-radius: 4px;
+      max-width: 440px;
+      margin-top: 4px;
+    }}
+    .qr-box {{
+      width: 130px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }}
+    .qr-img {{
+      width: 110px;
+      height: 110px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 4px;
+      background: #fff;
+    }}
+    .qr-hint {{
+      font-size: 10px;
+      color: #716b67;
+      margin-top: 6px;
+      font-weight: 600;
+    }}
+    .footer {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-top: 1px solid #e5dfd8;
+      padding-top: 12px;
+      position: relative;
+      z-index: 2;
+    }}
+    .code-box {{
+      display: flex;
+      flex-direction: column;
+    }}
+    .code-label {{
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #716b67;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }}
+    .code-val {{
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 800;
+      color: #831D1D;
+      letter-spacing: 2px;
+    }}
+    .validity {{
+      font-size: 11px;
+      color: #716b67;
+      text-align: right;
+    }}
+    .instructions {{
+      font-size: 11px;
+      color: #5E7E6F;
+      font-weight: 600;
+    }}
+    @media print {{
+      body {{ background: transparent; padding: 0; }}
+      .no-print {{ display: none; }}
+      .voucher-card {{ box-shadow: none; border-width: 2px; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="voucher-card">
+    <div class="header">
+      <div>
+        <div class="brand-title">Roig de Coure</div>
+        <div class="brand-sub">Taller d'Art i Ceràmica</div>
+      </div>
+      <div class="badge">VAL REGAL</div>
+    </div>
+    
+    <div class="content">
+      <div class="details">
+        <div class="for">Especialment per a:</div>
+        <div class="recipient">{destinatari}</div>
+        <div class="exp-title">{titol} ({hores} hores)</div>
+        {de_part_de_html}
+        {missatge_html}
+      </div>
+      
+      <div class="qr-box">
+        <img class="qr-img" src="{qr_img_url}" alt="QR Reserva">
+        <div class="qr-hint">Escaneja per triar dia i hora</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="code-box">
+        <div class="code-label">Codi de Bescanvi:</div>
+        <div class="code-val">{codi}</div>
+        <div class="instructions">Bescanviable directament a roigdecoure.cat/reserva.html</div>
+      </div>
+      <div class="validity">
+        <div>Validesa: 6 mesos &bull; Fins al: <strong>{caducitat}</strong></div>
+        <div>Taller Roig de Coure &bull; Olot</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="no-print" style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button onclick="window.print()" style="background: #831D1D; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">🖨️ Imprimir / Desar en PDF</button>
+  </div>
+</body>
+</html>"""
+
 class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
@@ -2005,11 +2515,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+        self.wfile.write(body)
+
+    def end_headers(self):
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
-        self.end_headers()
-        self.wfile.write(body)
+        super().end_headers()
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -2033,13 +2546,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/admin.html' + query_str
             elif clean_path in ('/reserva', '/reserves'):
                 self.path = '/reserva.html' + query_str
+            elif clean_path in ('/botiga', '/botiga.html'):
+                self.path = '/botiga.html' + query_str
             elif clean_path == '/carnet':
                 self.path = '/carnet.html' + query_str
             elif clean_path == '/scanner':
                 self.path = '/scanner.html' + query_str
             elif clean_path == '/landing':
                 self.path = '/landing.html' + query_str
-            elif clean_path in ('/web', '/activitats', '/torn', '/modelatge', '/pintar', '/vidre', '/grups', '/monografics', '/casals', '/val-regal', '/tarifes', '/contacte', '/faq'):
+            elif clean_path in ('/web', '/activitats', '/torn', '/modelatge', '/pintar', '/grups', '/monografics', '/casals', '/val-regal', '/contacte', '/faq'):
                 self.path = '/index.html' + query_str
             return super().do_GET()
 
@@ -2052,6 +2567,112 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('SELECT COUNT(*) as actius FROM sessions WHERE estat = "oberta"')
                     alumnes_actius = cursor.fetchone()['actius']
                 self.send_json({'ok': True, 'alumnesTotals': tot_alumnes, 'alumnesAlTaller': alumnes_actius, 'timestamp': datetime.now().isoformat()})
+                return
+            elif path == '/api/preus-hores':
+                params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                req_h = params.get('hores', ['10'])[0]
+                req_edat = params.get('edat', ['adult'])[0]
+                es_inf = (req_edat == 'infant')
+                h, p_hora, total, franja = calcular_preu_hores_trams(req_h, es_inf)
+                self.send_json({
+                    'ok': True,
+                    'hores': h,
+                    'edat': 'infant' if es_inf else 'adult',
+                    'preu_hora': p_hora,
+                    'total': total,
+                    'franja': franja,
+                    'min_hores': 4,
+                    'trams_adult': [
+                        {'de': 4, 'a': 9, 'preu_hora': 15.0, 'label': '4h a 9h: 15 €/h'},
+                        {'de': 10, 'a': 19, 'preu_hora': 14.0, 'label': '10h a 19h: 14 €/h'},
+                        {'de': 20, 'a': 999, 'preu_hora': 13.0, 'label': '20h o més: 13 €/h'}
+                    ],
+                    'trams_infant': [
+                        {'de': 4, 'a': 9, 'preu_hora': 14.0, 'label': '4h a 9h: 14 €/h'},
+                        {'de': 10, 'a': 19, 'preu_hora': 13.0, 'label': '10h a 19h: 13 €/h'},
+                        {'de': 20, 'a': 999, 'preu_hora': 11.0, 'label': '20h o més: 11 €/h'}
+                    ]
+                })
+                return
+            elif path == '/api/articles':
+                include_inactive = params.get('include_inactive', ['0'])[0] in ('1', 'true')
+                articles = get_articles_catalog(include_inactive=include_inactive)
+                self.send_json({'ok': True, 'articles': articles})
+                return
+
+            elif path == '/api/vals-regal':
+                estat_filtre = (params.get('estat', [''])[0]).strip().lower()
+                cerca = (params.get('q', [''])[0]).strip().upper()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    query = 'SELECT * FROM vals_regal WHERE 1=1'
+                    q_params = []
+                    if estat_filtre:
+                        query += ' AND estat = ?'
+                        q_params.append(estat_filtre)
+                    if cerca:
+                        query += ' AND (UPPER(codi) LIKE ? OR UPPER(nom_destinatari) LIKE ? OR UPPER(nom_comprador) LIKE ?)'
+                        pattern = f"%{cerca}%"
+                        q_params.extend([pattern, pattern, pattern])
+                    query += ' ORDER BY data_creacio DESC'
+                    cursor.execute(query, q_params)
+                    vals = [row_to_dict(r) for r in cursor.fetchall()]
+                self.send_json({'ok': True, 'vals': vals, 'total': len(vals)})
+                return
+
+            elif path.startswith('/api/vals-regal/verificar/'):
+                codi = path.replace('/api/vals-regal/verificar/', '').strip()
+                val = get_val_regal_db(codi)
+                if not val:
+                    self.send_json({
+                        'ok': False,
+                        'valid': False,
+                        'error': f"El codi '{codi}' no s'ha trobat al sistema. Si el teu val és d'abans del 15/09/2026, si us plau passeu pel taller a actualitzar-lo i reservar hora."
+                    }, 404)
+                    return
+                today_str = get_now().strftime('%Y-%m-%d')
+                if val.get('data_caducitat') and val['data_caducitat'] < today_str:
+                    self.send_json({'ok': False, 'valid': False, 'error': f"Aquest val va caducar el {val['data_caducitat']}", 'val': val}, 400)
+                    return
+                if val['estat'] != 'actiu':
+                    self.send_json({'ok': False, 'valid': False, 'error': f"Aquest val ja ha estat utilitzat (Estat: {val['estat']})", 'val': val}, 400)
+                    return
+                self.send_json({
+                    'ok': True,
+                    'valid': True,
+                    'val': {
+                        'codi': val['codi'],
+                        'titol_experiencia': val['titol_experiencia'],
+                        'hores': val['hores'],
+                        'activitat_id': val['activitat_id'],
+                        'nom_destinatari': val['nom_destinatari'],
+                        'data_caducitat': val['data_caducitat']
+                    }
+                })
+                return
+
+            elif path.startswith('/api/vals-regal/') and (path.endswith('/pdf') or path.endswith('/card')):
+                parts = path.strip('/').split('/')
+                codi = parts[2] if len(parts) >= 3 else ''
+                val = get_val_regal_db(codi)
+                if not val:
+                    self.send_json({'ok': False, 'error': "Val regal no trobat"}, 404)
+                    return
+                html_card = generar_targeta_val_regal_html(val)
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(html_card.encode('utf-8'))
+                return
+
+            elif path.startswith('/api/vals-regal/'):
+                codi = path.replace('/api/vals-regal/', '').strip().upper()
+                val = get_val_regal_db(codi)
+                if not val:
+                    self.send_json({'ok': False, 'error': 'Val regal no trobat'}, 404)
+                    return
+                self.send_json({'ok': True, 'val': val})
                 return
 
             elif path == '/api/admin/backups':
@@ -2112,98 +2733,6 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Content-Length', str(len(content)))
                 self.end_headers()
                 self.wfile.write(content)
-                return
-
-            elif path == '/api/alumnes/registre':
-                # Registre d'alta autonoma d'alumnes
-                nom = (data.get('nom') or '').strip()
-                cognoms = (data.get('cognoms') or '').strip()
-                telefon = (data.get('telefon') or '').strip()
-                email = (data.get('email') or '').strip()
-                pin = (data.get('pin') or data.get('contrasenya') or '').strip()
-                notes = (data.get('notes') or '').strip()
-
-                if not nom:
-                    self.send_json({'ok': False, 'error': 'El nom és obligatori'}, 400)
-                    return
-                if not telefon:
-                    self.send_json({'ok': False, 'error': 'El telèfon mòbil és obligatori'}, 400)
-                    return
-                if not email or '@' not in email:
-                    self.send_json({'ok': False, 'error': 'Cal indicar un correu electrònic vàlid'}, 400)
-                    return
-                if not pin or len(pin) < 4:
-                    self.send_json({'ok': False, 'error': 'La contrasenya ha de tenir com a mínim 4 caràcters'}, 400)
-                    return
-
-                clean_tel = re.sub(r'[\s\-_+.]', '', telefon)
-
-                with get_db() as conn:
-                    cursor = conn.cursor()
-                    # Comprovar si ja existeix un alumne actiu amb el mateix correu o telefon
-                    cursor.execute('''
-                        SELECT id, nom, cognoms, email, telefon FROM alumnes 
-                        WHERE actiu = 1 AND (
-                            (LENGTH(email) > 3 AND LOWER(TRIM(email)) = LOWER(TRIM(?)))
-                            OR (LENGTH(?) >= 8 AND REPLACE(REPLACE(REPLACE(REPLACE(telefon, '+', ''), ' ', ''), '-', ''), '.', '') LIKE '%' || ?)
-                        )
-                        LIMIT 1
-                    ''', (email, clean_tel, clean_tel[-8:] if len(clean_tel) >= 8 else clean_tel))
-                    existing_student = cursor.fetchone()
-
-                    if existing_student:
-                        ex_dict = row_to_dict(existing_student)
-                        self.send_json({
-                            'ok': False, 
-                            'duplicate': True,
-                            'error': f"Ja existeix un compte amb aquest correu o telèfon a nom de {ex_dict.get('nom')} ({ex_dict.get('id')}). Pots iniciar sessió directament."
-                        }, 409)
-                        return
-
-                    # Generar nou ID: TC-101, TC-102, ...
-                    cursor.execute('SELECT id FROM alumnes WHERE id LIKE "TC-%" ORDER BY id DESC')
-                    existing = cursor.fetchall()
-                    max_num = 100
-                    for r in existing:
-                        m = re.search(r'TC-(\d+)', r['id'])
-                        if m:
-                            max_num = max(max_num, int(m.group(1)))
-                    student_id = f"TC-{max_num + 1}"
-                    data_alta = get_now().strftime('%Y-%m-%dT%H:%M:%S')
-
-                    cursor.execute('''
-                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes))
-                    conn.commit()
-
-                # Sincronitzar amb Google Sheets si esta actiu
-                sync_to_google_sheets_async('sync_alumne', {
-                    'id': student_id,
-                    'nom': nom,
-                    'cognoms': cognoms,
-                    'telefon': telefon,
-                    'email': email,
-                    'pin': pin,
-                    'data_alta': data_alta,
-                    'notes': notes,
-                    'actiu': 1
-                })
-
-                created_student = {
-                    'id': student_id,
-                    'nom': nom,
-                    'cognoms': cognoms,
-                    'telefon': telefon,
-                    'email': email,
-                    'data_alta': data_alta
-                }
-                self.send_json({
-                    'ok': True,
-                    'id': student_id,
-                    'alumne': created_student,
-                    'message': f"Compte d'alumne creat correctament! El teu codi és {student_id}."
-                })
                 return
 
             elif path == '/api/alumnes':
@@ -2550,6 +3079,529 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': 'PIN incorrecte'}, 401)
                 return
 
+            # ==================================================================
+            elif path == '/api/articles':
+                art_id = (data.get('id') or '').strip()
+                nom = (data.get('nom') or '').strip()
+                descripcio = (data.get('descripcio') or '').strip()
+                preu = float(data.get('preu') or 0.0)
+                hores = float(data.get('hores') or 2.0)
+                activitat_id = (data.get('activitat_id') or 'torn').strip().lower()
+                edat = (data.get('edat') or 'adult').strip().lower()
+                if edat not in ('adult', 'infant', 'tots'):
+                    edat = 'adult'
+                es_val_regal = 1 if data.get('es_val_regal', 1) else 0
+                actiu = 1 if data.get('actiu', 1) else 0
+                ordre = int(data.get('ordre') or 0)
+                icona = (data.get('icona') or '').strip()
+
+                if not nom or preu <= 0:
+                    self.send_json({'ok': False, 'error': 'Cal indicar un nom i un preu superior a 0€'}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    if not art_id:
+                        art_id = f"art_{int(get_now().timestamp())}_{re.sub(r'[^a-z0-9]', '', nom.lower())[:10]}"
+                        cursor.execute('''
+                            INSERT INTO articles (id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (art_id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona))
+                    else:
+                        cursor.execute('''
+                            INSERT OR REPLACE INTO articles (id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (art_id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'id': art_id, 'message': 'Article desat correctament'})
+                return
+
+            elif path == '/api/articles/toggle-actiu':
+                art_id = (data.get('id') or '').strip()
+                if not art_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de l'article"}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('UPDATE articles SET actiu = CASE WHEN actiu = 1 THEN 0 ELSE 1 END WHERE id = ?', (art_id,))
+                    conn.commit()
+                    cursor.execute('SELECT actiu FROM articles WHERE id = ?', (art_id,))
+                    row = cursor.fetchone()
+                    new_state = row['actiu'] if row else 1
+                self.send_json({'ok': True, 'actiu': new_state, 'message': f"Estat actualitzat a: {'Actiu' if new_state else 'Ocult'}"})
+                return
+
+            elif path == '/api/vals-regal/crear-manual':
+                titol = (data.get('titol') or data.get('titol_experiencia') or 'Taller de Ceràmica').strip()
+                hores = float(data.get('hores') or 2.0)
+                activitat_id = (data.get('activitat_id') or 'torn').strip()
+                nom_destinatari = (data.get('nom_destinatari') or data.get('destinatari') or '').strip()
+                nom_comprador = (data.get('nom_comprador') or data.get('comprador') or '').strip()
+                email_comprador = (data.get('email_comprador') or '').strip()
+                email_destinatari = (data.get('email_destinatari') or '').strip()
+                missatge = (data.get('missatge') or '').strip()
+                preu = float(data.get('preu') or 0.0)
+                metode = (data.get('metode_pagament') or 'efectiu_tpv_taller').strip()
+                article_id = (data.get('article_id') or None)
+                dies = int(data.get('dies_validesa') or 180)
+
+                if not nom_destinatari:
+                    self.send_json({'ok': False, 'error': 'Cal indicar el nom de la persona que rebrà el regal'}, 400)
+                    return
+
+                nou_val = crear_val_regal_db(
+                    titol_experiencia=titol,
+                    hores=hores,
+                    activitat_id=activitat_id,
+                    nom_destinatari=nom_destinatari,
+                    nom_comprador=nom_comprador,
+                    email_comprador=email_comprador,
+                    email_destinatari=email_destinatari,
+                    missatge=missatge,
+                    preu_pagat=preu,
+                    metode_pagament=metode,
+                    article_id=article_id,
+                    dies_validesa=dies
+                )
+
+                self.send_json({
+                    'ok': True,
+                    'val': nou_val,
+                    'codi': nou_val['codi'],
+                    'message': f"Val regal creat amb èxit! Codi generat: {nou_val['codi']}"
+                })
+                return
+
+            elif path == '/api/vals-regal/anullar':
+                codi = (data.get('codi') or '').strip().upper()
+                if not codi:
+                    self.send_json({'ok': False, 'error': 'Cal indicar el codi del val regal'}, 400)
+                    return
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE vals_regal SET estat = 'anul·lat' WHERE UPPER(TRIM(codi)) = ? AND estat != 'canviat'", (codi,))
+                    if cursor.rowcount == 0:
+                        self.send_json({'ok': False, 'error': 'No s\'ha pogut anul·lar el val (potser ja està canviat o no existeix)'}, 400)
+                        return
+                    conn.commit()
+                self.send_json({'ok': True, 'message': f"Val regal {codi} anul·lat correctament"})
+                return
+
+            elif path == '/api/vals-regal/bescanviar':
+                codi = (data.get('codi') or '').strip().upper()
+                if not codi:
+                    self.send_json({'ok': False, 'error': 'Cal indicar el codi del val regal'}, 400)
+                    return
+                res = bescanviar_val_regal_db(codi, reserva_id=data.get('reserva_id', 'MANUAL-ADMIN'), alumne_id=data.get('alumne_id'))
+                if not res.get('ok'):
+                    self.send_json(res, 400)
+                    return
+                self.send_json({'ok': True, 'message': f"Val regal {codi} bescanviat correctament!", 'val': res.get('val')})
+                return
+
+            elif path == '/api/vals-regal/editar':
+                codi = (data.get('codi') or '').strip().upper()
+                nom_destinatari = (data.get('nom_destinatari') or '').strip()
+                nom_comprador = (data.get('nom_comprador') or '').strip()
+                email_comprador = (data.get('email_comprador') or '').strip()
+                missatge = (data.get('missatge') or '').strip()
+                titol = (data.get('titol_experiencia') or '').strip()
+                hores = float(data.get('hores') or 2.0)
+                preu = float(data.get('preu_pagat') or 0.0)
+                data_caducitat = (data.get('data_caducitat') or '').strip()
+                estat = (data.get('estat') or 'actiu').strip().lower()
+
+                if not codi or not nom_destinatari:
+                    self.send_json({'ok': False, 'error': 'Cal indicar el codi i el nom de la persona destinatària'}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE vals_regal
+                        SET nom_destinatari = ?, nom_comprador = ?, email_comprador = ?,
+                            missatge = ?, titol_experiencia = ?, hores = ?,
+                            preu_pagat = ?, data_caducitat = ?, estat = ?
+                        WHERE UPPER(TRIM(codi)) = ?
+                    ''', (nom_destinatari, nom_comprador, email_comprador, missatge, titol, hores, preu, data_caducitat, estat, codi))
+                    if cursor.rowcount == 0:
+                        self.send_json({'ok': False, 'error': 'Val regal no trobat a la base de dades'}, 404)
+                        return
+                    conn.commit()
+
+                val_actualitzat = get_val_regal_db(codi)
+                self.send_json({'ok': True, 'val': val_actualitzat, 'message': 'Val regal actualitzat correctament'})
+                return
+
+            elif path == '/api/demo/seed':
+                # Inicialitza / restaura dades demo segures per a proves
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO vals_regal 
+                        (codi, article_id, titol_experiencia, hores, activitat_id, nom_destinatari, nom_comprador, email_comprador, missatge, preu_pagat, data_creacio, data_caducitat, estat, metode_pagament, transaccio_id, notes)
+                        VALUES ('REGAL-DEMO-2026', 'art_torn_adult', 'Taller de torn (Adult)', 2.0, 'torn', 'Laura Soler (Demo)', 'Marc Amic', 'demo@exemple.cat', 'Perquè gaudeixis de la ceràmica!', 50.0, '2026-09-15', '2027-03-15', 'actiu', 'demo_sandbox', 'DEMO-TX-1', 'Val de prova demo')
+                    """)
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO vals_regal 
+                        (codi, article_id, titol_experiencia, hores, activitat_id, nom_destinatari, nom_comprador, email_comprador, missatge, preu_pagat, data_creacio, data_caducitat, estat, data_canvi, reserva_id, metode_pagament, transaccio_id, notes)
+                        VALUES ('REGAL-UTILITZAT-2026', 'art_modelatge_adult', 'Taller de modelatge (Adult)', 2.0, 'modelatge', 'Jordi Mas (Demo)', 'Anna Casals', 'anna@exemple.cat', 'Felicitats!', 45.0, '2026-09-01', '2027-03-01', 'canviat', '2026-09-10T11:00:00', 'RES-DEMO-PREV', 'demo_sandbox', 'DEMO-TX-2', 'Val canviat de prova')
+                    """)
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO alumnes
+                        (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
+                        VALUES ('ALU-DEMO-01', 'Laura', 'Soler Mas', '+34683633880', 'laura.demo@exemple.cat', '1234', '2026-09-01', 'Alumne de demostració (Saldo 8h)', 1)
+                    """)
+                    conn.commit()
+
+                self.send_json({
+                    'ok': True,
+                    'message': 'Dades de demostració inicialitzades correctament!',
+                    'val_actiu': 'REGAL-DEMO-2026',
+                    'val_utilitzat': 'REGAL-UTILITZAT-2026',
+                    'alumne_demo': 'ALU-DEMO-01'
+                })
+                return
+            elif path == '/api/admin/square/test':
+                sq_token = (data.get('token') or '').strip()
+                sq_loc_id = (data.get('location_id') or '').strip()
+                sq_env = (data.get('environment') or 'sandbox').strip()
+
+                if not sq_token or not sq_loc_id:
+                    self.send_json({'ok': False, 'error': 'Cal indicar el token i el location ID'}, 400)
+                    return
+
+                api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
+                url = f"{api_base}/v2/locations/{sq_loc_id}"
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "Square-Version": "2024-01-18",
+                        "Authorization": f"Bearer {sq_token}",
+                        "Content-Type": "application/json"
+                    },
+                    method="GET"
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as resp:
+                        res_data = json.loads(resp.read().decode('utf-8'))
+                        loc = res_data.get('location', {})
+                        self.send_json({
+                            'ok': True,
+                            'location_name': loc.get('name'),
+                            'currency': loc.get('currency'),
+                            'business_name': loc.get('business_name'),
+                            'message': f"Connectat correctament a Square ({loc.get('name', 'Taller')})!"
+                        })
+                        return
+                except urllib.error.HTTPError as he:
+                    try:
+                        err_body = json.loads(he.read().decode('utf-8'))
+                        msg = err_body.get('errors', [{}])[0].get('detail', str(he))
+                    except Exception:
+                        msg = str(he)
+                    self.send_json({'ok': False, 'error': f"Error de Square ({he.code}): {msg}"}, 400)
+                    return
+                except Exception as e:
+                    self.send_json({'ok': False, 'error': f"No s'ha pogut connectar amb Square: {str(e)}"}, 500)
+                    return
+
+            elif path == '/api/checkout/paga-senyal':
+                res_id = (data.get('reserva_id') or '').strip()
+                places = int(data.get('places') or 4)
+                nom = (data.get('nom') or '').strip()
+                tel = (data.get('telefon') or '').strip()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM reserves WHERE id = ?', (res_id,))
+                    r_row = cursor.fetchone()
+                    if r_row:
+                        places = int(r_row['places'] or places)
+                        nom = r_row['student_nom'] or nom
+                    cursor.execute('SELECT clau, valor FROM configuracio WHERE clau LIKE "square_%"')
+                    sq_cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
+
+                sq_token = (sq_cfg.get('square_access_token') or '').strip()
+                sq_loc_id = (sq_cfg.get('square_location_id') or '').strip()
+                sq_env = (sq_cfg.get('square_environment') or 'sandbox').strip()
+
+                total_dep = places * 10.0
+                preu_cents = int(round(total_dep * 100))
+
+                host_url = self.headers.get('Host', 'localhost:8080')
+                scheme = 'https' if not host_url.startswith('localhost') and not host_url.startswith('127.0.0.1') else 'http'
+                base_domain = f"{scheme}://{host_url}"
+
+                if not sq_token or not sq_loc_id:
+                    with get_db() as conn:
+                        conn.cursor().execute("UPDATE reserves SET estat = 'confirmada', notes = notes || ' [PAGA I SENYAL PAGADA DEMO]' WHERE id = ?", (res_id,))
+                        conn.commit()
+                    self.send_json({
+                        'ok': True,
+                        'mode': 'demo_direct',
+                        'checkout_url': f"{base_domain}/reserva.html?reserva_confirmada={res_id}",
+                        'message': 'Simulació de pagament de paga i senyal completada!'
+                    })
+                    return
+
+                api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
+                sq_url = f"{api_base}/v2/online-checkout/payment-links"
+
+                order_payload = {
+                    "idempotency_key": f"dep_{res_id}_{int(get_now().timestamp())}",
+                    "order": {
+                        "location_id": sq_loc_id,
+                        "line_items": [
+                            {
+                                "name": f"Paga i Senyal Reserva ({places} places)",
+                                "quantity": "1",
+                                "base_price_money": {
+                                    "amount": preu_cents,
+                                    "currency": "EUR"
+                                }
+                            }
+                        ],
+                        "metadata": {
+                            "tipus_compra": "paga_senyal",
+                            "reserva_id": res_id
+                        }
+                    },
+                    "checkout_options": {
+                        "redirect_url": f"{base_domain}/reserva.html?reserva_confirmada={res_id}"
+                    }
+                }
+
+                req_sq = urllib.request.Request(
+                    sq_url,
+                    data=json.dumps(order_payload).encode('utf-8'),
+                    headers={
+                        "Square-Version": "2024-01-18",
+                        "Authorization": f"Bearer {sq_token}",
+                        "Content-Type": "application/json"
+                    },
+                    method="POST"
+                )
+                try:
+                    with urllib.request.urlopen(req_sq, timeout=15) as resp_sq:
+                        sq_res_data = json.loads(resp_sq.read().decode('utf-8'))
+                        payment_link = sq_res_data.get('payment_link', {})
+                        checkout_url = payment_link.get('url') or payment_link.get('long_url')
+                        self.send_json({
+                            'ok': True,
+                            'mode': 'square',
+                            'checkout_url': checkout_url
+                        })
+                        return
+                except Exception as sq_err:
+                    self.send_json({'ok': False, 'error': f"Error connectant amb Square: {str(sq_err)}"}, 500)
+                    return
+            elif path == '/api/checkout/create-session':
+                # Creació de sessió de cobrament a Square (o simulada en proves locals)
+                article_id = (data.get('article_id') or '').strip()
+                tipus_compra = (data.get('tipus_compra') or 'val_regal').strip() # 'val_regal' o 'alumne'
+                nom_destinatari = (data.get('nom_destinatari') or '').strip()
+                nom_comprador = (data.get('nom_comprador') or '').strip()
+                email_comprador = (data.get('email_comprador') or '').strip()
+                email_destinatari = (data.get('email_destinatari') or '').strip()
+                missatge = (data.get('missatge') or '').strip()
+                student_id = (data.get('student_id') or '').strip()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM articles WHERE id = ?', (article_id,))
+                    art_row = cursor.fetchone()
+                    if not art_row:
+                        self.send_json({'ok': False, 'error': "Article no trobat al catàleg"}, 404)
+                        return
+                    article = row_to_dict(art_row)
+
+                    # Obtenir configuració de Square
+                    cursor.execute('SELECT clau, valor FROM configuracio WHERE clau LIKE "square_%"')
+                    sq_cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
+
+                sq_token = (sq_cfg.get('square_access_token') or '').strip()
+                sq_loc_id = (sq_cfg.get('square_location_id') or '').strip()
+                sq_env = (sq_cfg.get('square_environment') or 'sandbox').strip()
+
+                # Càlcul dinàmic d'hores si es compren hores (amb trams de preu)
+                req_hores = data.get('hores')
+                if req_hores is not None and int(req_hores) < 4:
+                    self.send_json({'ok': False, 'error': 'La compra mínima és de 4 hores.'}, status=400)
+                    return
+                if article.get('hores') is not None and float(article.get('hores', 0)) < 4.0:
+                    self.send_json({'ok': False, 'error': 'Totes les compres i tallers han de ser de com a mínim 4 hores.'}, status=400)
+                    return
+                is_hores = ('hores' in article['id'].lower() or 'hores' in article['nom'].lower() or req_hores is not None)
+                if is_hores:
+                    es_inf = (article.get('edat') == 'infant' or data.get('edat') == 'infant')
+                    h_num, p_hora, total_import, _ = calcular_preu_hores_trams(req_hores or article.get('hores', 10), es_inf)
+                    article['hores'] = float(h_num)
+                    article['preu'] = total_import
+                    edat_label = 'Menor de 12 anys' if es_inf else 'Adult'
+                    nom_article = f"Comprar {h_num} hores ({edat_label} a {int(p_hora)} €/h)"
+
+                preu_cents = int(round(float(article['preu']) * 100))
+                if not is_hores:
+                    nom_article = article['nom']
+                host_url = self.headers.get('Host', 'localhost:8080')
+                scheme = 'https' if not host_url.startswith('localhost') and not host_url.startswith('127.0.0.1') else 'http'
+                base_domain = f"{scheme}://{host_url}"
+
+                # Si no hi ha claus de Square configurades, mode demo/proves immediat
+                if not sq_token or not sq_loc_id:
+                    # En entorn de desenvolupament sense credencials, creem directament el val per testejar el flux
+                    if tipus_compra == 'val_regal':
+                        nou_val = crear_val_regal_db(
+                            titol_experiencia=article['nom'],
+                            hores=article['hores'],
+                            activitat_id=article['activitat_id'],
+                            nom_destinatari=nom_destinatari or nom_comprador or 'Destinatari Regal',
+                            nom_comprador=nom_comprador,
+                            email_comprador=email_comprador,
+                            email_destinatari=email_destinatari,
+                            missatge=missatge,
+                            preu_pagat=article['preu'],
+                            metode_pagament='demo_sense_tpv',
+                            transaccio_id=f"DEMO-{int(get_now().timestamp())}",
+                            article_id=article['id']
+                        )
+                        redirect_url = f"{base_domain}/reserva.html?val={nou_val['codi']}&compra_exit=1"
+                        self.send_json({
+                            'ok': True,
+                            'mode': 'demo_direct',
+                            'checkout_url': redirect_url,
+                            'codi_val': nou_val['codi'],
+                            'message': 'Simulació de compra completada! S\'ha generat el val regal.'
+                        })
+                        return
+                    else:
+                        self.send_json({
+                            'ok': True,
+                            'mode': 'demo_direct',
+                            'checkout_url': f"{base_domain}/alumne.html?recarga_ok=1",
+                            'message': 'Simulació de recàrrega d\'hores completada.'
+                        })
+                        return
+
+                # Crida a l'API oficial de Square Payments Links
+                api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
+                sq_url = f"{api_base}/v2/online-checkout/payment-links"
+                
+                order_payload = {
+                    "idempotency_key": f"pay_{int(get_now().timestamp())}_{os.urandom(4).hex()}",
+                    "order": {
+                        "location_id": sq_loc_id,
+                        "line_items": [
+                            {
+                                "name": nom_article,
+                                "quantity": "1",
+                                "base_price_money": {
+                                    "amount": preu_cents,
+                                    "currency": "EUR"
+                                }
+                            }
+                        ],
+                        "metadata": {
+                            "article_id": article_id,
+                            "tipus_compra": tipus_compra,
+                            "nom_destinatari": nom_destinatari,
+                            "nom_comprador": nom_comprador,
+                            "email_comprador": email_comprador,
+                            "email_destinatari": email_destinatari,
+                            "missatge": missatge,
+                            "student_id": student_id
+                        }
+                    },
+                    "checkout_options": {
+                        "redirect_url": f"{base_domain}/reserva.html?pagament_square=completat"
+                    }
+                }
+
+                req_sq = urllib.request.Request(
+                    sq_url,
+                    data=json.dumps(order_payload).encode('utf-8'),
+                    headers={
+                        "Square-Version": "2024-01-18",
+                        "Authorization": f"Bearer {sq_token}",
+                        "Content-Type": "application/json"
+                    },
+                    method="POST"
+                )
+
+                try:
+                    with urllib.request.urlopen(req_sq, timeout=15) as resp_sq:
+                        sq_res_data = json.loads(resp_sq.read().decode('utf-8'))
+                        payment_link = sq_res_data.get('payment_link', {})
+                        checkout_url = payment_link.get('url') or payment_link.get('long_url')
+                        self.send_json({
+                            'ok': True,
+                            'mode': 'square',
+                            'checkout_url': checkout_url,
+                            'order_id': payment_link.get('order_id')
+                        })
+                        return
+                except Exception as sq_err:
+                    self.send_json({'ok': False, 'error': f"Error connectant amb Square: {str(sq_err)}"}, 500)
+                    return
+
+            elif path == '/api/webhooks/square':
+                # Webhook per rebre confirmacions de cobrament de Square
+                event_type = data.get('type')
+                if event_type in ('payment.updated', 'order.updated'):
+                    payment_data = data.get('data', {}).get('object', {}).get('payment', {})
+                    if payment_data.get('status') == 'COMPLETED':
+                        order_id = payment_data.get('order_id')
+                        meta = payment_data.get('metadata') or {}
+                        tipus_compra = meta.get('tipus_compra', 'val_regal')
+                        article_id = meta.get('article_id')
+                        
+                        if tipus_compra == 'paga_senyal':
+                            res_id = meta.get('reserva_id')
+                            if res_id:
+                                with get_db() as conn_dep:
+                                    conn_dep.cursor().execute("UPDATE reserves SET estat = 'confirmada', notes = notes || ' [PAGA I SENYAL PAGADA PER SQUARE]' WHERE id = ?", (res_id,))
+                                    conn_dep.commit()
+                        elif tipus_compra == 'alumne' or meta.get('student_id'):
+                            stu_id = meta.get('student_id')
+                            if stu_id:
+                                h_num = float(meta.get('hores') or 10.0)
+                                p_num = float(meta.get('preu') or 0.0)
+                                segons_num = int(h_num * 3600)
+                                pk_id = f"PK-SQ-{payment_data.get('id', order_id)}"
+                                with get_db() as conn_pk:
+                                    c_pk = conn_pk.cursor()
+                                    c_pk.execute("SELECT id FROM paquets_hores WHERE id = ?", (pk_id,))
+                                    if not c_pk.fetchone():
+                                        c_pk.execute("""
+                                            INSERT INTO paquets_hores (id, student_id, data, hores, segons, concepte, preu, metode_pagament, stripe_session_id, notes)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, 'square', ?, ?)
+                                        """, (pk_id, stu_id, get_now().strftime('%Y-%m-%d %H:%M:%S'), h_num, segons_num, f"Adquisició {h_num}h (Square en línia)", p_num, order_id, "Cobrament completat via Square"))
+                                        conn_pk.commit()
+                        elif tipus_compra == 'val_regal' and article_id:
+                            with get_db() as conn_w:
+                                c_w = conn_w.cursor()
+                                c_w.execute('SELECT * FROM articles WHERE id = ?', (article_id,))
+                                art = c_w.fetchone()
+                                if art:
+                                    crear_val_regal_db(
+                                        titol_experiencia=art['nom'],
+                                        hores=art['hores'],
+                                        activitat_id=art['activitat_id'],
+                                        nom_destinatari=meta.get('nom_destinatari', 'Destinatari'),
+                                        nom_comprador=meta.get('nom_comprador', ''),
+                                        email_comprador=meta.get('email_comprador', ''),
+                                        email_destinatari=meta.get('email_destinatari', ''),
+                                        missatge=meta.get('missatge', ''),
+                                        preu_pagat=art['preu'],
+                                        metode_pagament='square',
+                                        transaccio_id=payment_data.get('id', order_id),
+                                        article_id=article_id
+                                    )
+                self.send_json({'ok': True})
+                return
+
             elif path == '/api/admin/change-pin':
                 old_pin = str(data.get('oldPin', '')).strip()
                 new_pin = str(data.get('newPin', '')).strip()
@@ -2667,6 +3719,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         return
                     cursor.execute("UPDATE alumnes SET pin = ? WHERE id = ?", (new_pin, student['id']))
                     conn.commit()
+                    updated_st = find_student_by_code(cursor, student['id'])
+                if updated_st:
+                    try:
+                        sync_to_google_sheets_async('sync_alumne', updated_st)
+                    except Exception as e:
+                        print(f"Avís sync GS alumne PIN: {e}")
                 self.send_json({'ok': True, 'message': "Contrasenya actualitzada correctament"})
                 return
 
@@ -3186,6 +4244,23 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         franja_id = 'M1'
 
+                # Si es proporciona un codi de val regal, validar-lo a la base de dades oficial
+                if codi_val_regal:
+                    val_obj = get_val_regal_db(codi_val_regal)
+                    if not val_obj:
+                        self.send_json({'ok': False, 'error': f"El codi de val regal '{codi_val_regal}' no és vàlid"}, 400)
+                        return
+                    if val_obj['estat'] != 'actiu':
+                        self.send_json({'ok': False, 'error': f"Aquest val regal ja s'ha utilitzat o ha estat anul·lat (Estat: {val_obj['estat']})"}, 400)
+                        return
+                    today_chk = get_now().strftime('%Y-%m-%d')
+                    if val_obj.get('data_caducitat') and val_obj['data_caducitat'] < today_chk:
+                        self.send_json({'ok': False, 'error': f"Aquest val regal va caducar el {val_obj['data_caducitat']}"}, 400)
+                        return
+                    val_regal = 1
+                    if not activitat_id or activitat_id == 'torn':
+                        activitat_id = val_obj.get('activitat_id', 'torn')
+
                 if not data_res:
                     self.send_json({'ok': False, 'error': 'Cal indicar la data de la reserva'}, 400)
                     return
@@ -3230,13 +4305,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 activitat_id = act_obj['id']
                 activitat_nom = act_obj['nom']
 
-                # Validar restricciÃ³ d'activitats per a la data
-                restr_dia = get_restriccions_dia(data_res)
+                # Validar restricció d'activitats per a la data i torn
+                is_tarda_req = (hora_inici_req >= '14:00') if hora_inici_req else (franja_id == 'T1')
+                torn_req = 'tarda' if is_tarda_req else 'mati'
+                restr_dia = get_restriccions_dia(data_res, torn_filtre=torn_req)
                 if restr_dia['te_restriccio'] and activitat_id.lower() in restr_dia['bloquejades'] and not forcar_aforament:
                     motiu_txt = f" ({', '.join(restr_dia['motius'])})" if restr_dia['motius'] else ""
+                    torn_txt = "a la tarda" if torn_req == 'tarda' else "al matí"
                     self.send_json({
                         'ok': False,
-                        'error': f"L'activitat '{activitat_nom}' no està disponible per a la data seleccionada{motiu_txt}.",
+                        'error': f"L'activitat '{activitat_nom}' no està disponible {torn_txt} per a la data seleccionada{motiu_txt}.",
                         'code': 'ACTIVITAT_RESTRINGIDA'
                     }, 400)
                     return
@@ -3303,7 +4381,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         max_cap = get_aforament_maxim()
                         cursor.execute('''
                             SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
-                            WHERE data = ? AND estat = 'confirmada' AND (
+                            WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                 (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                 (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                             )
@@ -3319,7 +4397,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         # Comprovar aforament particular de l'activitat en aquest torn
                         cursor.execute('''
                             SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
-                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat = 'confirmada' AND (
+                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                 (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                 (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                             )
@@ -3332,19 +4410,35 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (MÃ x. {act_obj['capacitatMax']})."}, 400)
                             return
     
+                    # Proposta 1: Paga i Senyal per a reserves de 4 o més places (10 € / persona)
+                    paga_senyal_import = 0.0
+                    estat_res = 'confirmada'
+                    if places_demanades >= 4 and not val_regal and not is_soc_alumne:
+                        paga_senyal_import = float(places_demanades * 10.0)
+                        estat_res = 'pendent_paga_senyal'
+                        if 'PAGA I SENYAL' not in notes.upper():
+                            notes = f"[PAGA I SENYAL: {int(paga_senyal_import)}€ PENDENT (10€ x {places_demanades}p)] {notes}".strip()
+
                     res_id = f"RES-{int(get_now().timestamp())}-{student_id}"
                     now_iso = get_now().strftime('%Y-%m-%dT%H:%M:%S')
                     cal_event_id = (data.get('calendar_event_id') or '').strip() or None
                     cursor.execute('''
-                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at, calendar_event_id, val_regal, codi_val_regal)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?, ?, ?)
+                        INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, email, estat, hores, notes, created_at, calendar_event_id, val_regal, codi_val_regal, paga_senyal)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         res_id, student_id, student_nom, data_res,
                         hora_inici_req, hora_fi_req,
                         franja_obj['id'], activitat_nom, activitat_id, places_demanades, telefon, email,
-                        hores_req, notes, now_iso, cal_event_id, val_regal, codi_val_regal
+                        estat_res, hores_req, notes, now_iso, cal_event_id, val_regal, codi_val_regal, paga_senyal_import
                     ))
                     conn.commit()
+
+                # Si és una reserva amb Val Regal, marcar el val com a bescanviat
+                if codi_val_regal:
+                    try:
+                        bescanviar_val_regal_db(codi_val_regal, res_id, alumne_id=student_id)
+                    except Exception as e_val:
+                        print(f"[Val Regal] Error marcant val {codi_val_regal} com a canviat: {e_val}")
 
                 # Obtenir nom del calendari configurat
                 cal_name = 'reserves'
@@ -3372,7 +4466,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'val_regal': val_regal,
                     'codi_val_regal': codi_val_regal,
                     'soc_alumne': 1 if (is_soc_alumne or (student_id and not student_id.startswith('CLI-'))) else 0,
-                    'estat': 'confirmada',
+                    'estat': estat_res,
+                    'paga_senyal': paga_senyal_import,
+                    'requereix_paga_senyal': bool(paga_senyal_import > 0),
                     'hores': hores_req,
                     'notes': notes,
                     'created_at': now_iso,
@@ -3445,7 +4541,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     for d in dates_valides:
                         cursor.execute('''
                             SELECT SUM(COALESCE(places, 1)) as total FROM reserves
-                            WHERE data = ? AND estat = 'confirmada' AND (
+                            WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                 (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                 (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                             )
@@ -3455,7 +4551,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                         cursor.execute('''
                             SELECT SUM(COALESCE(places, 1)) as act_tot FROM reserves
-                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat = 'confirmada' AND (
+                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                 (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                 (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                             )
@@ -3586,7 +4682,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         for d_val in dates_valides:
                             cursor.execute('''
                                 SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
-                                WHERE data = ? AND estat = 'confirmada' AND (
+                                WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                     (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                     (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                                 )
@@ -3601,7 +4697,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
     
                             cursor.execute('''
                                 SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
-                                WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat = 'confirmada' AND (
+                                WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                     (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                     (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                                 )
@@ -3672,7 +4768,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'calendar_name': cal_name
                         }
                         created_reserves.append(r_dict)
-                        sync_to_google_sheets_async('nova_reserva', r_dict)
+                        sync_to_google_sheets_async('add_reserva', r_dict)
 
                     conn.commit()
 
@@ -4047,6 +5143,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 act_perm = data.get('activitats_permeses') or data.get('activitatsPermeses') or []
                 act_bloq = data.get('activitats_bloquejades') or data.get('activitatsBloquejades') or []
                 motiu = (data.get('motiu') or '').strip()
+                torn = (data.get('torn') or 'tot_el_dia').strip().lower()
+                if torn not in ('mati', 'tarda', 'tot_el_dia'):
+                    torn = 'tot_el_dia'
 
                 if isinstance(act_perm, list):
                     act_perm_json = json.dumps(act_perm)
@@ -4067,9 +5166,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
-                        INSERT INTO restriccions_activitats (data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, creat_el)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (data_inici, data_fi, tipus_abast, act_perm_json, act_bloq_json, motiu, get_now().isoformat()))
+                        INSERT INTO restriccions_activitats (data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, torn, creat_el)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (data_inici, data_fi, tipus_abast, act_perm_json, act_bloq_json, motiu, torn, get_now().isoformat()))
                     new_id = cursor.lastrowid
                     conn.commit()
                 self.send_json({'ok': True, 'id': new_id, 'message': 'RestricciÃ³ de tallers desada'})
@@ -4324,6 +5423,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path.startswith('/api/articles/'):
+                art_id = path.replace('/api/articles/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM articles WHERE id = ?', (art_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Article eliminat correctament del catàleg'})
+                return
+
             else:
                 self.send_json({'ok': False, 'error': 'Ruta API no trobada'}, 404)
         except Exception as e:
@@ -4345,14 +5453,16 @@ def run_server():
         pass
 
     print("=" * 65)
-    print("SERVIDOR DEL TALLER DE CERÃMICA ACTIU (SQLite + REST API)")
+    print("SERVIDOR DEL TALLER DE CERAMICA ACTIU (SQLite + REST API)")
     print("=" * 65)
     print(f"Local (aquest ordinador):   http://localhost:{PORT}")
-    print(f"MÃ²bil / Tauleta (mateixa WiFi): http://{local_ip}:{PORT}")
-    print(f"Panell AdministraciÃ³:       http://localhost:{PORT}/admin.html")
-    print(f"EscÃ ner QR (Android/Tauleta): http://localhost:{PORT}/scanner.html")
-    print(f"Portal de l'Alumne:         http://localhost:{PORT}/alumne.html")
-    print(f"Base de Dades SQLite:        {DB_PATH}")
+    print(f"Mobil / Tauleta (WiFi):     http://{local_ip}:{PORT}")
+    print(f"Panell Administracio:       http://localhost:{PORT}/admin.html")
+    print(f"Botiga & Vals Regal:        http://localhost:{PORT}/botiga.html")
+    print(f"Reserves Web:               http://localhost:{PORT}/reserva.html")
+    print(f"Escaner QR:                 http://localhost:{PORT}/scanner.html")
+    print(f"Portal Alumne:              http://localhost:{PORT}/alumne.html")
+    print(f"Base de Dades SQLite:       {DB_PATH}")
     print("=" * 65)
     print("Prem Ctrl+C per aturar el servidor.")
 

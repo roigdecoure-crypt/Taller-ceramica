@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Botiga en Línia & Vals Regal | Roig de Coure - Ceràmica a Olot</title>
+  <meta name="description" content="Compra vals regal d'experiències de ceràmica o packs d'hores al taller Roig de Coure a Olot. Pagament segur en línia i targeta regal personalitzable.">
+  <link rel="canonical" href="https://www.roigdecoure.cat/botiga.html">
+  <meta name="robots" content="index, follow">
+  <meta property="og:locale" content="ca_ES">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Botiga en Línia & Vals Regal | Roig de Coure">
+  <meta property="og:description" content="Vals regal d'experiències i packs d'hores al taller de ceràmica Roig de Coure a Olot.">
+  <meta property="og:url" content="https://www.roigdecoure.cat/botiga.html">
+  <meta property="og:image" content="https://www.roigdecoure.cat/img/web/classes-torn-modelatge.webp">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css?v=10.1.0">
+  <style>
+    :root {
+      --brand-primary: #831D1D;
+      --brand-secondary: #5E7E6F;
+      --brand-bg: #FDFBF7;
+    }
+    body {
+      background-color: var(--brand-bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #2D2421;
+      margin: 0;
+      padding: 0;
+    }
+    .shop-header {
+      background: #FFFFFF;
+      border-bottom: 2px solid #F0EAE1;
+      padding: 20px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .shop-brand {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--brand-primary);
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    .shop-sub {
+      font-size: 13px;
+      color: var(--brand-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 30px 20px 80px 20px;
+    }
+    .hero-banner {
+      background: linear-gradient(135deg, #831D1D 0%, #A32828 100%);
+      color: #FFF;
+      border-radius: 16px;
+      padding: 32px 28px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px rgba(131, 29, 29, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .hero-text h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      line-height: 1.2;
+    }
+    .hero-text p {
+      font-size: 15px;
+      opacity: 0.9;
+      margin: 0;
+      max-width: 580px;
+    }
+    .btn-redeem-banner {
+      background: #FFFFFF;
+      color: var(--brand-primary);
+      border: none;
+      border-radius: 30px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transition: transform 0.15s ease;
+      display: inline-block;
+    }
+    .btn-redeem-banner:hover {
+      transform: scale(1.04);
+    }
+    .catalog-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--brand-primary);
+      margin: 0;
+    }
+    .filter-group {
+      display: inline-flex;
+      background: #EFE8DF;
+      border-radius: 30px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .filter-btn {
+      background: transparent;
+      border: none;
+      border-radius: 24px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #6B625E;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .filter-btn.active {
+      background: #FFFFFF;
+      color: var(--brand-primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .product-card {
+      background: #FFFFFF;
+      border: 1.5px solid #EFEAE3;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.07);
+      border-color: #D5C8B8;
+    }
+    .badge-edat {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .badge-adult {
+      background: #F8ECE8;
+      color: #831D1D;
+      border: 1px solid #EAC8C0;
+    }
+    .badge-infant {
+      background: #EEF6F2;
+      color: #2D5A46;
+      border: 1px solid #C4DFD2;
+    }
+    .badge-tots {
+      background: #F4EFF8;
+      color: #6B21A8;
+      border: 1px solid #E4D5EC;
+    }
+    .product-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: #1A1615;
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+    }
+    .product-desc {
+      font-size: 13.5px;
+      color: #6B625E;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      min-height: 42px;
+    }
+    .product-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-top: 1px solid #F4EFEA;
+      padding-top: 14px;
+      margin-bottom: 18px;
+    }
+    .product-hours {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand-secondary);
+    }
+    .product-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--brand-primary);
+    }
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-buy-gift {
+      background: var(--brand-primary);
+      color: #FFF;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: background 0.15s ease;
+    }
+    .btn-buy-gift:hover {
+      background: #6D1616;
+    }
+
+    /* Modal de Regal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: #FFFFFF;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #831D1D;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    .modal-header h3 {
+      margin: 0;
+      color: var(--brand-primary);
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .btn-close {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #888;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #4A403C;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #DCD3C7;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--brand-primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(131, 29, 29, 0.1);
+    }
+    .summary-box {
+      background: #FDF7F2;
+      border: 1px dashed var(--brand-primary);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 18px;
+      font-size: 13.5px;
+    }
+
+    .btn-quick-h {
+      background: #FFFFFF;
+      border: 1px solid #D6C7BC;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand-dark);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-quick-h:hover {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+    }
+    .tram-pill {
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 6px 4px;
+      background: #FFFFFF;
+      color: #6B7280;
+    }
+    .tram-pill.active {
+      border-color: var(--brand-primary);
+      background: #FFF5F3;
+      color: var(--brand-primary);
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(131,29,29,0.15);
+    }
+
+  </style>
+</head>
+<body>
+
+  <header class="shop-header">
+    <h1 class="shop-brand">Roig de Coure</h1>
+    <div class="shop-sub">Botiga d'Experiències &amp; Vals Regal</div>
+  </header>
+
+  <div class="container">
+
+    <!-- Avís per a vals anteriors al 15/09/2026 (Proposta 4) -->
+    <div style="background: #FEF3C7; border: 1.5px solid #FCD34D; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 22px; line-height: 1;">ℹ️</span>
+        <div style="font-size: 13.5px; color: #92400E; line-height: 1.4;">
+          <strong>Tens un val regal anterior al 15/09/2026?</strong><br>
+          Si el teu val és d'abans del 15/09/2026, si us plau passeu pel taller a actualitzar-lo i reservar hora.
+        </div>
+      </div>
+      <a href="https://wa.me/34683633880?text=Hola!%20Tinc%20un%20val%20anterior%20al%2015/09/2026%20i%20voldria%20actualitzar-lo" target="_blank" style="background: #D97706; color: white; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap;">
+        Contactar per WhatsApp
+      </a>
+    </div>
+    
+    <!-- Banner Principal -->
+    <div class="hero-banner">
+      <div class="hero-text">
+        <h1>Regala una experiència de ceràmica</h1>
+        <p>Tria una sessió al torn, modelatge o pintura de ceràmica. Rep la targeta regal al moment amb codi QR i missatge personalitzat.</p>
+      </div>
+      <div>
+        <a href="reserva.html" class="btn-redeem-banner">Canviar un Val Regal</a>
+      </div>
+    </div>
+
+    <!-- Controls de filtre (Adults / Menors de 12 anys) -->
+    <div class="catalog-controls">
+      <h2 class="section-title">Catàleg de Tallers i Experiències</h2>
+      <div class="filter-group">
+        <button type="button" class="filter-btn active" id="filter-btn-tots" onclick="canviarFiltreEdat('tots');">Tots</button>
+        <button type="button" class="filter-btn" id="filter-btn-adult" onclick="canviarFiltreEdat('adult');">Adults</button>
+        <button type="button" class="filter-btn" id="filter-btn-infant" onclick="canviarFiltreEdat('infant');">Menors de 12 anys</button>
+      </div>
+    </div>
+
+    <!-- Graella d'articles -->
+    <div class="catalog-grid" id="catalog-grid">
+      <div style="padding: 40px; text-align: center; color: #888; grid-column: 1 / -1;">Carregant experiències...</div>
+    </div>
+
+    <!-- SECCIÓ PÚBLICA: CONSULTAR ESTAT D'UN VAL REGAL (Proposta 6) -->
+    <div class="consultar-val-box" id="consultar-val" style="background: #FFFFFF; border: 1px solid var(--card-border); border-radius: 14px; padding: 26px; margin-top: 36px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+      <div style="margin-bottom: 6px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--brand-primary);">Consultar el meu Val Regal</h3>
+      </div>
+      <p style="font-size: 13.5px; color: #6B7280; margin: 0 0 16px 0;">
+        Escriu el codi del teu val per comprovar la validesa (6 mesos), les hores disponibles i reservar cita directament.
+      </p>
+
+      <div style="display: flex; gap: 10px; max-width: 480px; margin-bottom: 14px;">
+        <input type="text" id="input-cerca-val-public" placeholder="Ex: REGAL-9B2F-48X2" style="flex: 1; padding: 10px 14px; border: 1.5px solid #D1D5DB; border-radius: 8px; font-family: monospace; font-size: 14px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+        <button type="button" class="btn-buy-gift" style="padding: 10px 20px; white-space: nowrap;" onclick="consultarValRegalPublic()">
+          Consultar
+        </button>
+      </div>
+
+      <div id="resultat-cerca-val" style="display: none; border-radius: 10px; padding: 16px; margin-top: 14px;"></div>
+    </div>
+
+  </div>
+
+  <!-- MODAL DE COMPRA / PERSONALITZACIÓ DE VAL REGAL -->
+  <div class="modal-overlay" id="modal-val-regal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-article-nom">Configurar Val Regal</h3>
+        <button type="button" class="btn-close" onclick="tancarModalValRegal();">&times;</button>
+      </div>
+
+      <div class="summary-box">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong id="summary-title" style="font-size: 15px; color: var(--brand-primary);">Taller de torn (Adult, 4h)</strong>
+            <div id="summary-hours" style="font-size: 12px; color: var(--brand-secondary);">4 hores de taller</div>
+          </div>
+          <div id="summary-price" style="font-size: 22px; font-weight: 800; color: var(--brand-primary);">60,00 €</div>
+        </div>
+      </div>
+
+      <!-- CALCULADORA DINÀMICA D'HORES (Per a comprar hores amb trams de preu) -->
+      <div id="hores-calculator-box" style="display: none; background: #FAF7F5; border: 1.5px solid #E2D7CC; border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+        <label style="display: block; font-size: 13px; font-weight: 700; color: var(--brand-primary); margin-bottom: 8px;">
+          Quantes hores vols comprar?
+        </label>
+        
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+          <span style="font-size: 12px; color: var(--brand-dark);">Tria les hores que necessitis:</span>
+          <span style="font-size: 11.5px; font-weight: 700; color: #831D1D; background: #FDF2F2; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 6px;">Mínim: 4 hores</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+          <input type="number" id="input-quantitat-hores" min="4" max="100" value="10" style="width: 84px; text-align: center; padding: 8px 10px; font-size: 16px; font-weight: 800; border: 1.5px solid #C4A482; border-radius: 8px;" oninput="if(this.value && this.value<4) this.value=4; actualitzarCalculHores();">
+          <span style="font-weight: 600; font-size: 14px; color: var(--brand-dark);">hores</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" class="btn-quick-h" onclick="fixarHores(4);">4h</button>
+            <button type="button" class="btn-quick-h" onclick="fixarHores(6);">6h</button>
+            <button type="button" class="btn-quick-h" onclick="fixarHores(10);">10h</button>
+            <button type="button" class="btn-quick-h" onclick="fixarHores(20);">20h</button>
+          </div>
+        </div>
+
+        <!-- Trams de preu visuals (Mínim 4h) -->
+        <div id="trams-preview-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11.5px; text-align: center; margin-bottom: 12px;"></div>
+
+        <div style="background: #FFF; border: 1px solid #E5DDD5; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 12px; color: #6B7280;">Tarifa aplicada:</span>
+            <strong id="calc-tarifa-txt" style="display: block; font-size: 13.5px; color: var(--brand-secondary);">14,00 € / hora</strong>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 12px; color: #6B7280;">Total a pagar:</span>
+            <strong id="calc-total-txt" style="display: block; font-size: 18px; font-weight: 800; color: var(--brand-primary);">140,00 €</strong>
+          </div>
+        </div>
+      </div>
+
+      <form id="form-checkout-regal" onsubmit="event.preventDefault(); procedirAlPagament();">
+        <input type="hidden" id="input-article-id">
+        <input type="hidden" id="input-tipus-compra" value="val_regal">
+
+        <div class="form-group">
+          <label for="regal-destinatari">Per a qui és el regal? (Nom del Destinatari) *</label>
+          <input type="text" id="regal-destinatari" class="form-input" placeholder="Ex: Laura Soler" required>
+        </div>
+
+        <div class="form-group">
+          <label for="regal-comprador">De part de qui? (El teu nom)</label>
+          <input type="text" id="regal-comprador" class="form-input" placeholder="Ex: Marc i amics">
+        </div>
+
+        <div class="form-group">
+          <label for="regal-email">El teu correu (on rebràs la confirmació i el val) *</label>
+          <input type="email" id="regal-email" class="form-input" placeholder="teucorreu@exemple.cat" required>
+        </div>
+
+        <div class="form-group">
+          <label for="regal-missatge">Dedicatòria personalitzada (imprès a la targeta)</label>
+          <textarea id="regal-missatge" class="form-textarea" rows="3" placeholder="Escriu aquí el teu missatge per fer el regal encara més especial..."></textarea>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
+          <button type="submit" id="btn-submit-pay" class="btn-buy-gift" style="padding: 14px; font-size: 15px;">
+            Procedir al Pagament Segur (Square)
+          </button>
+          <button type="button" class="btn-close-secondary" onclick="tancarModalValRegal();" style="background: #F4EFEA; color: #4A403C; border: 1px solid #E2D7CC; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center;">
+            Cancel·lar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api-config.js?v=9.5"></script>
+  <script>
+    let articles = [];
+    let selectedArticle = null;
+    let currentFilterEdat = 'tots';
+
+    async function carregarArticles() {
+      const grid = document.getElementById('catalog-grid');
+      try {
+        const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+        const res = await fetch(`${apiBase}/api/articles`);
+        const data = await res.json();
+        if (data && data.ok && data.articles) {
+          articles = data.articles;
+          renderitzarArticles();
+        } else {
+          grid.innerHTML = '<div style="padding:40px; text-align:center; color:red;">No s\'han pogut carregar els articles.</div>';
+        }
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = '<div style="padding:40px; text-align:center; color:red;">Error de connexió al servidor.</div>';
+      }
+    }
+
+    function canviarFiltreEdat(filtre) {
+      currentFilterEdat = filtre;
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`filter-btn-${filtre}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      renderitzarArticles();
+    }
+
+    function renderitzarArticles() {
+      const grid = document.getElementById('catalog-grid');
+      if (!articles || articles.length === 0) {
+        grid.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">Properament nous tallers.</div>';
+        return;
+      }
+
+      let llista = articles;
+      if (currentFilterEdat === 'adult') {
+        llista = articles.filter(a => a.edat === 'adult' || a.edat === 'tots' || !a.edat);
+      } else if (currentFilterEdat === 'infant') {
+        llista = articles.filter(a => a.edat === 'infant' || a.edat === 'tots');
+      }
+
+      if (llista.length === 0) {
+        grid.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">No hi ha experiències en aquesta categoria.</div>';
+        return;
+      }
+
+      grid.innerHTML = llista.map(a => {
+        let badgeText = 'Adult';
+        let badgeClass = 'badge-adult';
+        if (a.edat === 'infant') {
+          badgeText = 'Menor de 12 anys';
+          badgeClass = 'badge-infant';
+        } else if (a.edat === 'tots') {
+          badgeText = 'Tots els públics';
+          badgeClass = 'badge-tots';
+        }
+
+        return `
+          <div class="product-card">
+            <div>
+              <span class="badge-edat ${badgeClass}">${badgeText}</span>
+              <h3 class="product-title">${a.nom}</h3>
+              <p class="product-desc">${a.descripcio || 'Activitat ceràmica al taller Roig de Coure.'}</p>
+            </div>
+            <div>
+              <div class="product-meta">
+                <span class="product-hours">${a.hores} hores de taller</span>
+                <span class="product-price">${Number(a.preu).toFixed(2)} €</span>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-buy-gift" onclick="obrirModalRegal('${a.id}');">
+                  Comprar Val Regal
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function obrirModalRegal(artId) {
+      selectedArticle = articles.find(a => a.id === artId);
+      if (!selectedArticle) return;
+
+      document.getElementById('input-article-id').value = selectedArticle.id;
+      document.getElementById('input-tipus-compra').value = 'val_regal';
+      document.getElementById('summary-title').textContent = selectedArticle.nom;
+      document.getElementById('summary-hours').textContent = `${selectedArticle.hores} hores de sessió`;
+      document.getElementById('summary-price').textContent = `${Number(selectedArticle.preu).toFixed(2)} €`;
+      document.getElementById('btn-submit-pay').textContent = `Pagar ${Number(selectedArticle.preu).toFixed(2)} € (Square)`;
+
+      document.getElementById('modal-val-regal').classList.add('active');
+    }
+
+    function tancarModalValRegal() {
+      document.getElementById('modal-val-regal').classList.remove('active');
+    }
+
+    async function procedirAlPagament() {
+      const btn = document.getElementById('btn-submit-pay');
+      const articleId = document.getElementById('input-article-id').value;
+      const tipusCompra = document.getElementById('input-tipus-compra').value;
+      const destinatari = document.getElementById('regal-destinatari').value.trim();
+      const comprador = document.getElementById('regal-comprador').value.trim();
+      const email = document.getElementById('regal-email').value.trim();
+      const missatge = document.getElementById('regal-missatge').value.trim();
+
+      if (!articleId || !destinatari || !email) {
+        alert('Cal omplir tots els camps obligatoris.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Connexió amb Square...';
+
+      try {
+        const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+        const res = await fetch(`${apiBase}/api/checkout/create-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            article_id: articleId,
+            tipus_compra: tipusCompra,
+            nom_destinatari: destinatari,
+            nom_comprador: comprador,
+            email_comprador: email,
+            missatge: missatge
+          })
+        });
+
+        const data = await res.json();
+        if (data && data.ok) {
+          if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+          } else {
+            alert('Compra enregistrada correctament!');
+            window.location.reload();
+          }
+        } else {
+          alert(data?.error || 'No s\'ha pogut iniciar el procés de pagament.');
+          btn.disabled = false;
+          btn.textContent = 'Tornar a provar';
+        }
+      } catch (err) {
+        alert('Error de comunicació amb el servidor: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Tornar a provar';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarArticles);
+  </script>
+</body>
+</html>

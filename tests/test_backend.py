@@ -24,6 +24,8 @@ class TestCeramicsBackend(unittest.TestCase):
         c = self.conn.cursor()
         c.execute("DELETE FROM reserves WHERE activitat_id LIKE 'raku%'")
         c.execute("DELETE FROM activitats WHERE id LIKE 'raku%'")
+        c.execute("DELETE FROM configuracio WHERE clau = 'carnet_design'")
+        c.execute("DELETE FROM reserves WHERE recurrent_id LIKE 'REC-%-231F'")
         self.conn.commit()
 
     def tearDown(self):
@@ -31,6 +33,8 @@ class TestCeramicsBackend(unittest.TestCase):
             c = self.conn.cursor()
             c.execute("DELETE FROM reserves WHERE activitat_id LIKE 'raku%'")
             c.execute("DELETE FROM activitats WHERE id LIKE 'raku%'")
+            c.execute("DELETE FROM configuracio WHERE clau = 'carnet_design'")
+            c.execute("DELETE FROM reserves WHERE recurrent_id LIKE 'REC-%-231F'")
             self.conn.commit()
         except Exception:
             pass

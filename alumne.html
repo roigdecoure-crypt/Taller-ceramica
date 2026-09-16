@@ -354,30 +354,88 @@
 
       <div id="login-error-msg" style="display: none; background: #FDEDEC; border: 1px solid #F5C6CB; color: #721C24; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; text-align: left; line-height: 1.4;"></div>
 
-      <form id="form-student-login">
-        <div class="form-group" style="text-align: left; margin-bottom: 14px;">
-          <label for="login-student-id" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Nom o Codi d'Alumne
-          </label>
-          <input type="text" id="login-student-id" class="form-control" placeholder="Ex: Ferran Picornell o 231F" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size: 16px; padding: 10px 12px;">
-        </div>
-
-        <div class="form-group" style="text-align: left; margin-bottom: 18px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label for="login-student-password" style="font-size: 12px; font-weight: 700; color: var(--color-dark); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">
-              Contrasenya (PIN)
-            </label>
-            <button type="button" id="btn-toggle-login-pwd" style="background: none; border: none; font-size: 12px; color: var(--brand-secondary, #5E7E6F); cursor: pointer; padding: 0; text-decoration: underline; font-weight: 600;">
-              Mostrar
-            </button>
-          </div>
-          <input type="password" id="login-student-password" class="form-control" placeholder="Introdueix el teu PIN o contrasenya" required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size: 16px; padding: 10px 12px;">
-        </div>
-
-        <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block btn-lg" style="font-weight: 700;">
-          Accedir al Meu Espai
+      <!-- SELECTOR DE PESTANYES: INICIAR SESSIÓ / DONAR-ME D'ALTA -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; background: #F3EFEA; padding: 5px; border-radius: 12px;">
+        <button type="button" id="tab-btn-login" style="padding: 10px 8px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; background: #FFF; color: var(--brand-primary); box-shadow: 0 2px 5px rgba(0,0,0,0.06); transition: all 0.2s;">
+          Iniciar Sessió
         </button>
-      </form>
+        <button type="button" id="tab-btn-registre" style="padding: 10px 8px; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; background: transparent; color: var(--color-muted); transition: all 0.2s;">
+          Donar-me d'Alta
+        </button>
+      </div>
+
+      <!-- VISTA 1: FORMULARI DE LOGIN -->
+      <div id="view-login-tab">
+        <form id="form-student-login">
+          <div class="form-group" style="text-align: left; margin-bottom: 14px;">
+            <label for="login-student-id" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+              Usuari (Correu, Nom o Codi TC)
+            </label>
+            <input type="text" id="login-student-id" class="form-control" placeholder="Ex: el-teu@email.com o TC-101" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size: 15px; padding: 11px 12px;">
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label for="login-student-password" style="font-size: 12px; font-weight: 700; color: var(--color-dark); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">
+                Contrasenya
+              </label>
+              <button type="button" id="btn-toggle-login-pwd" style="background: none; border: none; font-size: 12px; color: var(--brand-secondary, #5E7E6F); cursor: pointer; padding: 0; text-decoration: underline; font-weight: 600;">
+                Mostrar
+              </button>
+            </div>
+            <input type="password" id="login-student-password" class="form-control" placeholder="Introdueix la teva contrasenya" required autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size: 15px; padding: 11px 12px;">
+          </div>
+
+          <button type="submit" id="btn-submit-login" class="btn btn-primary btn-block btn-lg" style="font-weight: 700; padding: 13px;">
+            Accedir al Meu Espai
+          </button>
+        </form>
+      </div>
+
+      <!-- VISTA 2: FORMULARI DE REGISTRE AUTÒNOM -->
+      <div id="view-registre-tab" style="display: none;">
+        <form id="form-student-registre">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; text-align: left;">
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">Nom *</label>
+              <input type="text" id="reg-nom" class="form-control" placeholder="Ex: Marta" required style="font-size: 14px; padding: 10px;">
+            </div>
+            <div>
+              <label style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">Cognoms</label>
+              <input type="text" id="reg-cognoms" class="form-control" placeholder="Ex: Soler" style="font-size: 14px; padding: 10px;">
+            </div>
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">Telèfon Mòbil (amb WhatsApp) *</label>
+            <input type="tel" id="reg-telefon" class="form-control" placeholder="Ex: 612 34 56 78" required style="font-size: 14px; padding: 10px;">
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">Correu Electrònic (el teu usuari) *</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="el-teu@email.com" required style="font-size: 14px; padding: 10px;">
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label style="font-size: 12px; font-weight: 700; color: var(--color-dark); margin: 0;">Tria una Contrasenya *</label>
+              <button type="button" id="btn-toggle-reg-pwd" style="background: none; border: none; font-size: 12px; color: var(--brand-secondary, #5E7E6F); cursor: pointer; padding: 0; text-decoration: underline; font-weight: 600;">
+                Mostrar
+              </button>
+            </div>
+            <input type="password" id="reg-password" class="form-control" placeholder="Mínim 4 caràcters" minlength="4" required style="font-size: 14px; padding: 10px;">
+          </div>
+
+          <div class="form-group" style="text-align: left; margin-bottom: 18px;">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">Repetir Contrasenya *</label>
+            <input type="password" id="reg-password-confirm" class="form-control" placeholder="Torna a escriure la contrasenya" minlength="4" required style="font-size: 14px; padding: 10px;">
+          </div>
+
+          <button type="submit" id="btn-submit-registre" class="btn btn-primary btn-block btn-lg" style="font-weight: 700; padding: 13px; background: var(--brand-secondary, #5E7E6F); border-color: var(--brand-secondary, #5E7E6F);">
+            Crear el Meu Compte d'Alumne
+          </button>
+        </form>
+      </div>
 
       <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--color-border); font-size: 13px; text-align: center;">
         <button type="button" id="btn-open-recovery" style="background: none; border: none; color: var(--brand-primary, #831D1D); font-weight: 700; text-decoration: underline; cursor: pointer; font-size: 13px; padding: 4px;">
@@ -431,16 +489,22 @@
         </div>
 
         <!-- Codi QR a dalt, destacat i ampliable al clic -->
-        <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR o desar-lo al Wallet" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
-          <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-            <!-- QR generat per QREngine -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <div id="btn-open-qr-zoom" role="button" tabindex="0" title="Fes clic per ampliar el codi QR o desar-lo al Wallet" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 10px 14px; background: #FAF7F5; border: 1px solid var(--color-border); border-radius: 12px; transition: all 0.2s ease;">
+            <div id="portal-top-qr" style="background: #FFFFFF; padding: 6px; border-radius: 8px; border: 1px solid #E5DDD5; width: 92px; height: 92px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+              <!-- QR generat per QREngine -->
+            </div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--brand-primary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+              Toca per ampliar
+            </div>
+            <div style="font-size: 10px; color: var(--color-muted); margin-top: 2px;">
+              Wallet &bull; Rellotge
+            </div>
           </div>
-          <div style="font-size: 11px; font-weight: 700; color: var(--brand-primary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-            Toca per ampliar
-          </div>
-          <div style="font-size: 10px; color: var(--color-muted); margin-top: 2px;">
-            Wallet &bull; Rellotge
-          </div>
+          <button type="button" id="btn-portal-quick-download-qr" class="btn btn-outline" style="font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 8px; background: #FFFFFF; color: var(--brand-primary); border-color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 5px; width: 100%; justify-content: center;" title="Descarregar imatge del codi QR al teu dispositiu">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descarregar QR
+          </button>
         </div>
       </div>
 
@@ -626,11 +690,15 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-        <button type="button" class="btn btn-primary btn-block" id="btn-open-wallet-options" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #000000; color: #FFFFFF; border: none; border-radius: 10px;">
-          Afegir a Apple / Google Wallet
+        <button type="button" class="btn btn-primary btn-block" id="btn-download-pure-qr" style="font-size: 14px; padding: 11px 14px; font-weight: 700; background: var(--brand-primary); color: #FFFFFF; border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;" title="Descarregar imatge en alta definició del codi QR">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descarregar Codi QR (PNG)
         </button>
         <button type="button" class="btn btn-block" id="btn-download-watch-qr" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #2C221E; color: #FFFFFF; border: none; border-radius: 10px;">
           Desar QR Ceràmic Mat (per a Rellotge)
+        </button>
+        <button type="button" class="btn btn-block" id="btn-open-wallet-options" style="font-size: 13px; padding: 10px 14px; font-weight: 700; background: #000000; color: #FFFFFF; border: none; border-radius: 10px;">
+          Afegir a Apple / Google Wallet
         </button>
         <a href="carnet.html" target="_blank" class="btn btn-outline btn-block" id="btn-open-carnet-web" style="font-size: 12px; padding: 8px 12px; text-decoration: none; font-weight: 600; border-radius: 10px;">
           Veure Carnet Digital Complet
@@ -903,10 +971,12 @@
   <script src="lib/qrcode.min.js?v=9.2"></script>
   <script src="js/time-utils.js?v=9.2"></script>
   <script src="js/sound.js?v=9.2"></script>
-  <script src="js/qr-engine.js?v=9.2"></script>
+  <script src="js/qr-engine.js?v=9.4"></script>
   <script src="js/api-config.js?v=9.2"></script>
-  <script src="js/store.js?v=9.2"></script>
+  <script src="js/store.js?v=9.7"></script>
   <script src="js/reserves-calendar.js?v=9.2"></script>
-  <script src="js/alumne.js?v=9.2"></script>
+  <script src="js/alumne.js?v=9.7"></script>
 </body>
 </html>
+
+

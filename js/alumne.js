@@ -1,5 +1,5 @@
 /**
- * alumne.js - Lògica del Portal de l'Alumne, PWA i Adquisició d'Hores
+ * alumne.js - LÃ²gica del Portal de l'Alumne, PWA i AdquisiciÃ³ d'Hores
  */
 
 let currentStudent = null;
@@ -7,7 +7,7 @@ let currentSelectedPack = null;
 let liveSessionInterval = null;
 let deferredPrompt = null;
 
-// Detecció iOS i Mode Standalone (App instal·lada)
+// DetecciÃ³ iOS i Mode Standalone (App instalÂ·lada)
 const isIosDevice = () => {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
   const ua = window.navigator.userAgent.toLowerCase();
@@ -27,25 +27,25 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof w
   });
 }
 
-// Captura de l'esdeveniment d'instal·lació de PWA (Android / Chrome / Edge)
+// Captura de l'esdeveniment d'instalÂ·laciÃ³ de PWA (Android / Chrome / Edge)
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     
-    // Mostrar banner només si no està ja en mode app i no l'ha tancat expressament
+    // Mostrar banner nomÃ©s si no estÃ  ja en mode app i no l'ha tancat expressament
     if (!isInStandaloneMode() && typeof sessionStorage !== 'undefined' && sessionStorage.getItem('pwa_banner_dismissed') !== '1') {
       const banner = document.getElementById('pwa-install-banner');
       if (banner) banner.style.display = 'flex';
     }
   });
 
-  // Quan l'app s'instal·la correctament
+  // Quan l'app s'instalÂ·la correctament
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.style.display = 'none';
-    showToast('App instal·lada amb èxit a la teva pantalla d\'inici!', 'success');
+    showToast('App instalÂ·lada amb Ã¨xit a la teva pantalla d\'inici!', 'success');
   });
 }
 
@@ -56,7 +56,7 @@ if (typeof document !== 'undefined') {
   await checkUrlParamsOrSession();
   setupEventListeners();
 
-  // Si és iOS i no està en mode standalone, mostrar el banner d'instal·lació suau
+  // Si Ã©s iOS i no estÃ  en mode standalone, mostrar el banner d'instalÂ·laciÃ³ suau
   if (isIosDevice() && !isInStandaloneMode() && sessionStorage.getItem('pwa_banner_dismissed') !== '1') {
     const banner = document.getElementById('pwa-install-banner');
     if (banner) banner.style.display = 'flex';
@@ -77,7 +77,7 @@ function showToast(message, type = 'info') {
   }, 3500);
 }
 
-// Carregar configuració del taller i aplicar marca personalitzada
+// Carregar configuraciÃ³ del taller i aplicar marca personalitzada
 async function loadPortalConfig() {
   try {
     const cfg = await Store.getConfig();
@@ -88,17 +88,17 @@ async function loadPortalConfig() {
       if (bPhone) bPhone.textContent = cfg.taller_telefon;
     }
   } catch (err) {
-    console.warn('Error carregant configuració del portal:', err);
+    console.warn('Error carregant configuraciÃ³ del portal:', err);
   }
 }
 
-// Aplicar disseny i marca (colors, tipografia, nom i logo) dinàmicament
+// Aplicar disseny i marca (colors, tipografia, nom i logo) dinÃ micament
 function applyBrandingToPortal(cfg) {
   if (!cfg) return;
 
-  const nom = (cfg.taller_nom && cfg.taller_nom !== 'Taller de Ceràmica' && cfg.taller_nom !== 'Taller de Ceramica') ? cfg.taller_nom : 'Roig de Coure';
+  const nom = (cfg.taller_nom && cfg.taller_nom !== 'Taller de CerÃ mica' && cfg.taller_nom !== 'Taller de Ceramica') ? cfg.taller_nom : 'Roig de Coure';
 
-  // Textos de marca (sense subtítol redundant)
+  // Textos de marca (sense subtÃ­tol redundant)
   const loginTitle = document.getElementById('login-workshop-title');
   if (loginTitle) loginTitle.textContent = nom;
 
@@ -122,7 +122,7 @@ function applyBrandingToPortal(cfg) {
   // Tipografia - Verdana per defecte oficial
   document.documentElement.style.setProperty('--brand-font', "Verdana, Geneva, Tahoma, sans-serif");
 
-  // Logotip (amb comprovació de càrrega segura i gestió d'errors per no trencar la imatge)
+  // Logotip (amb comprovaciÃ³ de cÃ rrega segura i gestiÃ³ d'errors per no trencar la imatge)
   const rawLogo = (cfg.taller_logo_url || '').trim();
   const isValidLogo = rawLogo !== '' && !rawLogo.includes('PHN2Zz48L3N2Zz4=');
 
@@ -153,13 +153,13 @@ function applyBrandingToPortal(cfg) {
   }
 }
 
-// Funció per activar la instal·lació de l'App (Android prompt o modal iOS)
+// FunciÃ³ per activar la instalÂ·laciÃ³ de l'App (Android prompt o modal iOS)
 async function triggerPwaInstall() {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const choice = await deferredPrompt.userChoice;
     if (choice.outcome === 'accepted') {
-      console.log('Instal·lació PWA acceptada');
+      console.log('InstalÂ·laciÃ³ PWA acceptada');
     }
     deferredPrompt = null;
     const banner = document.getElementById('pwa-install-banner');
@@ -168,11 +168,11 @@ async function triggerPwaInstall() {
     const modal = document.getElementById('modal-ios-install');
     if (modal) modal.style.display = 'flex';
   } else {
-    showToast('Pots instal·lar l\'aplicació prement el menú del navegador (⋮ o Share) i triant "Afegeix a la pantalla d\'inici".', 'info');
+    showToast('Pots instalÂ·lar l\'aplicaciÃ³ prement el menÃº del navegador (â® o Share) i triant "Afegeix a la pantalla d\'inici".', 'info');
   }
 }
 
-// Comprovar si hi ha paràmetres URL (ex: alumne.html?id=TC-101) o sessió guardada a localStorage
+// Comprovar si hi ha parÃ metres URL (ex: alumne.html?id=TC-101) o sessiÃ³ guardada a localStorage
 async function checkUrlParamsOrSession() {
   const params = new URLSearchParams(window.location.search);
   const idParam = params.get('id');
@@ -186,23 +186,23 @@ async function checkUrlParamsOrSession() {
   const targetId = idParam || savedId;
   const targetPin = pinParam || savedPin;
 
-  // Si disposem d'identificador i PIN, intentem iniciar sessió automàticament
+  // Si disposem d'identificador i PIN, intentem iniciar sessiÃ³ automÃ ticament
   if (targetId && targetPin) {
     const success = await loginStudent(targetId, targetPin, true);
     if (success) {
-      // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
+      // Si retorna d'un pagament de Stripe amb Ã¨xit (sempre a partir de 4h com a Stripe)
       const pendingHours = sessionStorage.getItem('pending_stripe_hours');
       const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
       if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
         sessionStorage.removeItem('pending_stripe_hours');
-        await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
+        await processSuccessfulPayment(hoursToAdd, `AdquisiciÃ³ ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
         window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
       }
       return;
     }
   }
 
-  // Si només disposem de l'identificador (ex: enllaç desat anteriorment)
+  // Si nomÃ©s disposem de l'identificador (ex: enllaÃ§ desat anteriorment)
   if (targetId) {
     const inputId = document.getElementById('login-student-id');
     if (inputId) inputId.value = targetId;
@@ -211,7 +211,7 @@ async function checkUrlParamsOrSession() {
   }
 }
 
-// Identificació de l'alumne amb nom/codi i contrasenya (PIN)
+// IdentificaciÃ³ de l'alumne amb nom/codi i contrasenya (PIN)
 async function loginStudent(identifier, password, isAutoLogin = false) {
   const errBox = document.getElementById('login-error-msg');
   if (errBox) errBox.style.display = 'none';
@@ -258,7 +258,7 @@ async function loginStudent(identifier, password, isAutoLogin = false) {
 
     currentStudent = res;
 
-    // Guardar a localStorage i sessionStorage per a persistència total
+    // Guardar a localStorage i sessionStorage per a persistÃ¨ncia total
     localStorage.setItem('logged_student_id', res.alumne.id);
     sessionStorage.setItem('logged_student_id', res.alumne.id);
     localStorage.setItem('logged_student_pin', cleanPin);
@@ -275,7 +275,7 @@ async function loginStudent(identifier, password, isAutoLogin = false) {
     return true;
   } catch (err) {
     if (!isAutoLogin) {
-      const msg = 'Error iniciant sessió: ' + err.message;
+      const msg = 'Error iniciant sessiÃ³: ' + err.message;
       if (errBox) {
         errBox.textContent = msg;
         errBox.style.display = 'block';
@@ -361,7 +361,7 @@ function renderDashboard(details) {
     QREngine.generateQR(zoomQrBox, a.id, 216);
   }
 
-  // Actualitzar enllaços del Wallet i Carnet Digital
+  // Actualitzar enllaÃ§os del Wallet i Carnet Digital
   const btnLinkPkpass = document.getElementById('btn-link-download-pkpass');
   if (btnLinkPkpass) {
     btnLinkPkpass.href = `${Store.apiBase || ''}/api/wallet/pass?id=${encodeURIComponent(a.id)}`;
@@ -381,10 +381,10 @@ function renderDashboard(details) {
   // Historial de paquets
   renderPaquetsTable(details.paquets);
 
-  // Secció de Reserves i Aforament
+  // SecciÃ³ de Reserves i Aforament
   renderReservationsSection(a.id);
 
-  // Secció d'adquisició d'hores segons edat
+  // SecciÃ³ d'adquisiciÃ³ d'hores segons edat
   setupStudentPurchaseSection(a);
 }
 
@@ -412,7 +412,7 @@ async function renderReservationsSection(studentId) {
   await loadStudentBookings(studentId);
 }
 
-// Gestió de Finestres Flotants (Modals)
+// GestiÃ³ de Finestres Flotants (Modals)
 function openModal(modal) {
   if (!modal) return;
   modal.style.removeProperty('display');
@@ -458,7 +458,7 @@ async function loadStudentBookings(studentId) {
         <div style="padding: 16px; text-align: center; background: #FAF8F5; border-radius: 8px; border: 1px dashed var(--color-border);">
           <p style="font-size: 13px; color: var(--color-muted); margin: 0 0 10px;">No tens cap reserva activa per als propers dies.</p>
           <button type="button" class="btn btn-outline btn-sm" id="btn-empty-open-reservar" style="color: var(--brand-secondary, #5E7E6F); border-color: var(--brand-secondary, #5E7E6F); font-weight: 700; font-size: 13px;">
-            + Reservar la teva propera sessió
+            + Reservar la teva propera sessiÃ³
           </button>
         </div>
       `;
@@ -481,7 +481,7 @@ async function loadStudentBookings(studentId) {
         </div>
         <div>
           <button class="btn btn-outline btn-sm btn-cancel-student-res" data-res-id="${r.id}" style="color: var(--color-primary, #831D1D); border-color: var(--color-border, #E2EBE5); font-size: 12px; font-weight: 600;">
-            Cancel·lar
+            CancelÂ·lar
           </button>
         </div>
       `;
@@ -491,20 +491,20 @@ async function loadStudentBookings(studentId) {
     container.querySelectorAll('.btn-cancel-student-res').forEach(btn => {
       btn.addEventListener('click', async () => {
         const resId = btn.dataset.resId;
-        const confirmCancel = confirm('Estàs segur que vols cancel·lar aquesta reserva? La teva plaça al taller quedarà lliure per a altres companys.');
+        const confirmCancel = confirm('EstÃ s segur que vols cancelÂ·lar aquesta reserva? La teva plaÃ§a al taller quedarÃ  lliure per a altres companys.');
         if (!confirmCancel) return;
 
         btn.disabled = true;
-        btn.textContent = 'Cancel·lant...';
+        btn.textContent = 'CancelÂ·lant...';
         const res = await Store.cancelarReserva(resId);
         if (res.ok) {
-          showToast('Reserva cancel·lada correctament i plaça alliberada.', 'info');
+          showToast('Reserva cancelÂ·lada correctament i plaÃ§a alliberada.', 'info');
           if (studentReservesCalendar) await studentReservesCalendar.refresh();
           await loadStudentBookings(studentId);
         } else {
-          showToast(res.error || 'Error cancel·lant la reserva', 'error');
+          showToast(res.error || 'Error cancelÂ·lant la reserva', 'error');
           btn.disabled = false;
-          btn.textContent = 'Cancel·lar';
+          btn.textContent = 'CancelÂ·lar';
         }
       });
     });
@@ -552,14 +552,14 @@ async function setupStudentPurchaseSection(a) {
         iconEl.textContent = '';
         titleEl.textContent = `Tarifa Infantil (fins a ${edatTall} anys)`;
         descEl.textContent = birthInfo
-          ? `${birthInfo}Redirigirà a l'article infantil de Stripe.`
-          : `S'aplicarà la passarel·la per a alumnes de fins a ${edatTall} anys.`;
+          ? `${birthInfo}RedirigirÃ  a l'article infantil de Stripe.`
+          : `S'aplicarÃ  la passarelÂ·la per a alumnes de fins a ${edatTall} anys.`;
       } else {
         iconEl.textContent = '';
-        titleEl.textContent = `Tarifa Adults (més de ${edatTall} anys)`;
+        titleEl.textContent = `Tarifa Adults (mÃ©s de ${edatTall} anys)`;
         descEl.textContent = birthInfo
-          ? `${birthInfo}Redirigirà a l'article d'adults de Stripe.`
-          : `S'aplicarà la passarel·la d'adults (més de ${edatTall} anys).`;
+          ? `${birthInfo}RedirigirÃ  a l'article d'adults de Stripe.`
+          : `S'aplicarÃ  la passarelÂ·la d'adults (mÃ©s de ${edatTall} anys).`;
       }
       if (selectCat) selectCat.value = cat;
     }
@@ -572,7 +572,7 @@ async function setupStudentPurchaseSection(a) {
       };
     }
   } catch (err) {
-    console.warn('Error configurant secció de compra:', err);
+    console.warn('Error configurant secciÃ³ de compra:', err);
   }
 }
 
@@ -581,7 +581,7 @@ function renderSessionsTable(sessions) {
   tbody.innerHTML = '';
 
   if (!sessions || sessions.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no s'ha registrat cap sessió.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--color-muted); padding:16px;">Encara no s'ha registrat cap sessiÃ³.</td></tr>`;
     return;
   }
 
@@ -613,7 +613,7 @@ function renderPaquetsTable(paquets) {
       <td>${TimeUtils.formatDate(p.data)}</td>
       <td><strong>${p.concepte || 'Pack Hores'}</strong></td>
       <td><span class="badge badge-success">+${p.hores}h (${TimeUtils.secondsToHms(p.segons)})</span></td>
-      <td>${p.preu ? p.preu + '€' : '-'}</td>
+      <td>${p.preu ? p.preu + 'â¬' : '-'}</td>
       <td><span class="badge badge-neutral">${p.metode_pagament || 'Stripe'}</span></td>
     `;
     tbody.appendChild(tr);
@@ -651,7 +651,7 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
   }
 }
 
-// Configuració d'Esdeveniments
+// ConfiguraciÃ³ d'Esdeveniments
 function setupEventListeners() {
   // Commutar visibilitat de la contrasenya (PIN)
   const btnTogglePwd = document.getElementById('btn-toggle-login-pwd');
@@ -661,6 +661,119 @@ function setupEventListeners() {
       const isPwd = inputPwd.type === 'password';
       inputPwd.type = isPwd ? 'text' : 'password';
       btnTogglePwd.textContent = isPwd ? 'Ocultar' : 'Mostrar';
+    });
+  }
+
+    // Alternança de Pestanyes Login / Registre
+  const tabBtnLogin = document.getElementById('tab-btn-login');
+  const tabBtnReg = document.getElementById('tab-btn-registre');
+  const viewLoginTab = document.getElementById('view-login-tab');
+  const viewRegTab = document.getElementById('view-registre-tab');
+
+  function setAuthTab(tab) {
+    if (tab === 'registre') {
+      if (tabBtnReg) {
+        tabBtnReg.style.background = '#FFF';
+        tabBtnReg.style.color = 'var(--brand-primary)';
+        tabBtnReg.style.fontWeight = '700';
+        tabBtnReg.style.boxShadow = '0 2px 5px rgba(0,0,0,0.06)';
+      }
+      if (tabBtnLogin) {
+        tabBtnLogin.style.background = 'transparent';
+        tabBtnLogin.style.color = 'var(--color-muted)';
+        tabBtnLogin.style.fontWeight = '600';
+        tabBtnLogin.style.boxShadow = 'none';
+      }
+      if (viewLoginTab) viewLoginTab.style.display = 'none';
+      if (viewRegTab) viewRegTab.style.display = 'block';
+    } else {
+      if (tabBtnLogin) {
+        tabBtnLogin.style.background = '#FFF';
+        tabBtnLogin.style.color = 'var(--brand-primary)';
+        tabBtnLogin.style.fontWeight = '700';
+        tabBtnLogin.style.boxShadow = '0 2px 5px rgba(0,0,0,0.06)';
+      }
+      if (tabBtnReg) {
+        tabBtnReg.style.background = 'transparent';
+        tabBtnReg.style.color = 'var(--color-muted)';
+        tabBtnReg.style.fontWeight = '600';
+        tabBtnReg.style.boxShadow = 'none';
+      }
+      if (viewLoginTab) viewLoginTab.style.display = 'block';
+      if (viewRegTab) viewRegTab.style.display = 'none';
+    }
+  }
+
+  if (tabBtnLogin) tabBtnLogin.addEventListener('click', () => setAuthTab('login'));
+  if (tabBtnReg) tabBtnReg.addEventListener('click', () => setAuthTab('registre'));
+
+  // Suport URL per obrir directament en mode registre: ?mode=registre
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'registre') {
+      setAuthTab('registre');
+    }
+  } catch (e) {}
+
+  // Toggle contrasenya formulari registre
+  const toggleRegPwd = document.getElementById('btn-toggle-reg-pwd');
+  const regPwdInp = document.getElementById('reg-password');
+  if (toggleRegPwd && regPwdInp) {
+    toggleRegPwd.addEventListener('click', () => {
+      const isPwd = regPwdInp.type === 'password';
+      regPwdInp.type = isPwd ? 'text' : 'password';
+      toggleRegPwd.textContent = isPwd ? 'Ocultar' : 'Mostrar';
+    });
+  }
+
+  // Formulari d'Alta Autònoma d'Alumnes
+  const formReg = document.getElementById('form-student-registre');
+  if (formReg) {
+    formReg.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nom = document.getElementById('reg-nom')?.value.trim();
+      const cognoms = document.getElementById('reg-cognoms')?.value.trim() || '';
+      const telefon = document.getElementById('reg-telefon')?.value.trim();
+      const email = document.getElementById('reg-email')?.value.trim();
+      const pwd = document.getElementById('reg-password')?.value.trim();
+      const pwdConf = document.getElementById('reg-password-confirm')?.value.trim();
+      const submitBtn = document.getElementById('btn-submit-registre');
+      const errBox = document.getElementById('login-error-msg');
+
+      if (!nom || !telefon || !email || !pwd) {
+        if (errBox) { errBox.textContent = 'Si us plau, omple tots els camps obligatoris.'; errBox.style.display = 'block'; }
+        return;
+      }
+
+      if (pwd !== pwdConf) {
+        if (errBox) { errBox.textContent = 'Les contrasenyes no coincideixen. Torna a comprovar-les.'; errBox.style.display = 'block'; }
+        showToast('Les contrasenyes no coincideixen.', 'error');
+        return;
+      }
+
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creant el teu compte...'; }
+      if (errBox) errBox.style.display = 'none';
+
+      try {
+        const res = await Store.registrarAlumne({ nom, cognoms, telefon, email, pin: pwd });
+        if (!res.ok) {
+          const msg = res.error || 'No s\'ha pogut completar el registre.';
+          if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+          showToast(msg, 'error');
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Crear el Meu Compte d\'Alumne'; }
+          return;
+        }
+
+        showToast('Compte creat amb èxit! Benvingut/da.', 'success');
+        // Auto-login immediat
+        await loginStudent(email, pwd, false);
+      } catch (err) {
+        const msg = 'Error en el registre: ' + err.message;
+        if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+        showToast(msg, 'error');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Crear el Meu Compte d\'Alumne'; }
+      }
     });
   }
 
@@ -677,7 +790,7 @@ function setupEventListeners() {
     });
   }
 
-  // Tancar sessió (Logout net de credencials i estat)
+  // Tancar sessiÃ³ (Logout net de credencials i estat)
   const btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
@@ -694,7 +807,7 @@ function setupEventListeners() {
     });
   }
 
-  // Obertura i gestió del modal de Recuperació de Contrasenya / PIN
+  // Obertura i gestiÃ³ del modal de RecuperaciÃ³ de Contrasenya / PIN
   const btnOpenRecovery = document.getElementById('btn-open-recovery');
   const modalRecovery = document.getElementById('modal-recuperar-pwd');
   const btnCloseRecovery = document.getElementById('btn-close-recovery-modal');
@@ -726,7 +839,7 @@ function setupEventListeners() {
     });
   }
 
-  // Submit recuperació (verificació d'identitat per telèfon o correu)
+  // Submit recuperaciÃ³ (verificaciÃ³ d'identitat per telÃ¨fon o correu)
   const formRecovery = document.getElementById('form-recovery-verify');
   if (formRecovery) {
     formRecovery.addEventListener('submit', async (e) => {
@@ -754,7 +867,7 @@ function setupEventListeners() {
           return;
         }
 
-        // Èxit de verificació
+        // Ãxit de verificaciÃ³
         if (resBox) {
           const greetingEl = document.getElementById('recovery-result-greeting');
           if (greetingEl) greetingEl.textContent = `Identitat verificada: ${res.nom} (Codi ${res.id})`;
@@ -763,7 +876,7 @@ function setupEventListeners() {
           resBox.style.display = 'block';
         }
 
-        // Botó per accedir ara directament amb el PIN recuperat
+        // BotÃ³ per accedir ara directament amb el PIN recuperat
         const btnLoginNow = document.getElementById('btn-recovery-login-now');
         if (btnLoginNow) {
           btnLoginNow.onclick = async () => {
@@ -774,7 +887,7 @@ function setupEventListeners() {
           };
         }
 
-        // Toggle per desplegar formulari d'assignació de nova contrasenya
+        // Toggle per desplegar formulari d'assignaciÃ³ de nova contrasenya
         const btnToggleChg = document.getElementById('btn-recovery-toggle-change');
         const chgBox = document.getElementById('recovery-change-box');
         if (btnToggleChg && chgBox) {
@@ -783,13 +896,13 @@ function setupEventListeners() {
           };
         }
 
-        // Botó per desar nova contrasenya directament des de la recuperació
+        // BotÃ³ per desar nova contrasenya directament des de la recuperaciÃ³
         const btnSaveNew = document.getElementById('btn-recovery-save-new-pin');
         if (btnSaveNew) {
           btnSaveNew.onclick = async () => {
             const newPin = (document.getElementById('recovery-new-pin-input')?.value || '').trim();
             if (!newPin || newPin.length < 4) {
-              alert('La nova contrasenya ha de tenir com a mínim 4 caràcters.');
+              alert('La nova contrasenya ha de tenir com a mÃ­nim 4 carÃ cters.');
               return;
             }
             btnSaveNew.disabled = true;
@@ -797,7 +910,7 @@ function setupEventListeners() {
             try {
               const chgRes = await Store.canviarPinAlumne(res.id, newPin);
               if (chgRes.ok) {
-                showToast('Nova contrasenya desada amb èxit!', 'success');
+                showToast('Nova contrasenya desada amb Ã¨xit!', 'success');
                 closeModal(modalRecovery);
                 document.getElementById('login-student-id').value = res.id;
                 document.getElementById('login-student-password').value = newPin;
@@ -866,7 +979,7 @@ function setupEventListeners() {
 
       if (newPin !== confirmPin) {
         if (errBox) {
-          errBox.textContent = 'La nova contrasenya i la confirmació no coincideixen.';
+          errBox.textContent = 'La nova contrasenya i la confirmaciÃ³ no coincideixen.';
           errBox.style.display = 'block';
         }
         return;
@@ -874,7 +987,7 @@ function setupEventListeners() {
 
       if (newPin.length < 4) {
         if (errBox) {
-          errBox.textContent = 'La contrasenya ha de tenir un mínim de 4 caràcters.';
+          errBox.textContent = 'La contrasenya ha de tenir un mÃ­nim de 4 carÃ cters.';
           errBox.style.display = 'block';
         }
         return;
@@ -902,7 +1015,7 @@ function setupEventListeners() {
         if (currentStudent.alumne) currentStudent.alumne.pin = newPin;
 
         closeModal(modalChangePin);
-        showToast('Contrasenya (PIN) actualitzada amb èxit!', 'success');
+        showToast('Contrasenya (PIN) actualitzada amb Ã¨xit!', 'success');
       } catch (err) {
         if (errBox) {
           errBox.textContent = 'Error: ' + err.message;
@@ -917,7 +1030,7 @@ function setupEventListeners() {
     });
   }
 
-  // Botons d'instal·lació de PWA
+  // Botons d'instalÂ·laciÃ³ de PWA
   const btnInstallBanner = document.getElementById('btn-pwa-install-action');
   if (btnInstallBanner) {
     btnInstallBanner.addEventListener('click', triggerPwaInstall);
@@ -953,7 +1066,7 @@ function setupEventListeners() {
     });
   }
 
-  // Botó Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
+  // BotÃ³ Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
   const btnPortalBuyStripe = document.getElementById('btn-portal-buy-stripe');
   if (btnPortalBuyStripe) {
     btnPortalBuyStripe.addEventListener('click', async () => {
@@ -970,24 +1083,24 @@ function setupEventListeners() {
         catNom = `Infantil (fins a ${edatTall} anys)`;
       } else {
         stripeUrl = (cfg.stripe_url_adults || '').trim();
-        catNom = `Adults (més de ${edatTall} anys)`;
+        catNom = `Adults (mÃ©s de ${edatTall} anys)`;
       }
 
       if (stripeUrl && stripeUrl.startsWith('http')) {
         const separator = stripeUrl.includes('?') ? '&' : '?';
         const finalUrl = `${stripeUrl}${separator}client_reference_id=${encodeURIComponent(currentStudent.alumne.id)}`;
         window.open(finalUrl, '_blank');
-        showToast(`S'ha obert la passarel·la de Stripe per a ${catNom}.`, 'info');
+        showToast(`S'ha obert la passarelÂ·la de Stripe per a ${catNom}.`, 'info');
       } else {
         const confirmSim = confirm(
-          `L'enllaç de Stripe per a la categoria "${catNom}" no està configurat a l'Administració.\n\n` +
+          `L'enllaÃ§ de Stripe per a la categoria "${catNom}" no estÃ  configurat a l'AdministraciÃ³.\n\n` +
           `Vols simular el pagament d'hores de prova per a ${currentStudent.alumne.nom}?`
         );
         if (confirmSim) {
-          const hStr = prompt('Quantes hores vols carregar de prova? (Mínim 4h)', '4');
+          const hStr = prompt('Quantes hores vols carregar de prova? (MÃ­nim 4h)', '4');
           const h = parseFloat(hStr);
           if (!isNaN(h) && h >= 4) {
-            await processSuccessfulPayment(h, `Adquisició ${h} Hores (${catNom})`, 0, 'Stripe (Simulació)');
+            await processSuccessfulPayment(h, `AdquisiciÃ³ ${h} Hores (${catNom})`, 0, 'Stripe (SimulaciÃ³)');
           }
         }
       }
@@ -995,7 +1108,7 @@ function setupEventListeners() {
   }
 
 
-  // Desplegable i confirmació Bizum (mínim 4h)
+  // Desplegable i confirmaciÃ³ Bizum (mÃ­nim 4h)
   const btnPortalShowBizum = document.getElementById('btn-portal-show-bizum');
   if (btnPortalShowBizum) {
     btnPortalShowBizum.addEventListener('click', () => {
@@ -1010,11 +1123,11 @@ function setupEventListeners() {
   if (btnPortalConfirmBizum) {
     btnPortalConfirmBizum.addEventListener('click', async () => {
       if (!currentStudent) return;
-      const hStr = prompt(`Quantes hores has pagat per Bizum? (Mínim 4 hores)`, '4');
+      const hStr = prompt(`Quantes hores has pagat per Bizum? (MÃ­nim 4 hores)`, '4');
       if (hStr === null) return;
       const h = parseFloat(hStr);
       if (isNaN(h) || h < 4) {
-        alert('La quantitat mínima permesa és de 4 hores (com a Stripe).');
+        alert('La quantitat mÃ­nima permesa Ã©s de 4 hores (com a Stripe).');
         return;
       }
       const selectCat = document.getElementById('portal-select-categoria');
@@ -1025,7 +1138,7 @@ function setupEventListeners() {
     });
   }
 
-  // Finestres flotants (Modals): Comprar Hores & Reservar Sessió
+  // Finestres flotants (Modals): Comprar Hores & Reservar SessiÃ³
   const btnOpenComprar = document.getElementById('btn-open-modal-comprar');
   const modalComprar = document.getElementById('modal-comprar-hores');
   const btnCloseComprar = document.getElementById('btn-close-modal-comprar');
@@ -1137,7 +1250,32 @@ function setupEventListeners() {
     });
   }
 
-  // Botons de descàrrega QR per al Rellotge Intel·ligent
+  // DescÃ rrega directa del Codi QR en Alta DefiniciÃ³ (PNG)
+  const btnDownloadPureQr = document.getElementById('btn-download-pure-qr');
+  if (btnDownloadPureQr) {
+    btnDownloadPureQr.addEventListener('click', () => {
+      QREngine.downloadQR(currentStudent);
+    });
+  }
+
+  const btnPortalQuickDownloadQr = document.getElementById('btn-portal-quick-download-qr');
+  if (btnPortalQuickDownloadQr) {
+    btnPortalQuickDownloadQr.addEventListener('click', (e) => {
+      e.stopPropagation();
+      QREngine.downloadQR(currentStudent);
+    });
+  }
+
+  const modalQrBox = document.getElementById('modal-qr-zoom-box');
+  if (modalQrBox) {
+    modalQrBox.style.cursor = 'pointer';
+    modalQrBox.title = 'Fes clic per descarregar el codi QR';
+    modalQrBox.addEventListener('click', () => {
+      QREngine.downloadQR(currentStudent);
+    });
+  }
+
+  // Botons de descÃ rrega QR per al Rellotge IntelÂ·ligent
   const btnDownloadWatchQr = document.getElementById('btn-download-watch-qr');
   const btnWalletModalWatchQr = document.getElementById('btn-wallet-modal-watch-qr');
   const btnWalletModalWatchQrMatte = document.getElementById('btn-wallet-modal-watch-qr-matte');
@@ -1185,11 +1323,11 @@ function setupEventListeners() {
 }
 
 /**
- * Genera i descarrega una imatge d'alta definició (600x600 px) del codi QR
- * optimitzada exclusivament per a pantalles de rellotges intel·ligents (Pixel Watch, Apple Watch, Wear OS).
+ * Genera i descarrega una imatge d'alta definiciÃ³ (600x600 px) del codi QR
+ * optimitzada exclusivament per a pantalles de rellotges intelÂ·ligents (Pixel Watch, Apple Watch, Wear OS).
  *
  * @param {object} student Dades de l'alumne
- * @param {boolean} isMatte Si és true, genera la versió Ceràmic Mat antirreflex per a pantalles OLED
+ * @param {boolean} isMatte Si Ã©s true, genera la versiÃ³ CerÃ mic Mat antirreflex per a pantalles OLED
  */
 async function downloadWatchQrImage(student, isMatte = true) {
   const raw = student || currentStudent;
@@ -1229,32 +1367,32 @@ async function downloadWatchQrImage(student, isMatte = true) {
   }
 
   if (isMatte) {
-    // 1. Fons fosc AMOLED: els píxels perimetrals estan apagats (0 nits)
+    // 1. Fons fosc AMOLED: els pÃ­xels perimetrals estan apagats (0 nits)
     ctx.fillStyle = '#181514';
     ctx.fillRect(0, 0, 600, 600);
 
-    // 2. Capçalera en to terracota càlid corporatiu
+    // 2. CapÃ§alera en to terracota cÃ lid corporatiu
     ctx.fillStyle = '#D28C74';
     ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('ROIG DE COURE', 300, 48);
 
-    // 3. Targeta central mat ceràmica (porcellana càlida antirreflex #DDD7CE)
+    // 3. Targeta central mat cerÃ mica (porcellana cÃ lida antirreflex #DDD7CE)
     ctx.fillStyle = '#DDD7CE';
     drawRoundRect(ctx, 75, 70, 450, 450, 24);
 
-    // 4. QR amb mòduls negres purs sobre el to ceràmic mat (dibuixat directament i instantani)
+    // 4. QR amb mÃ²duls negres purs sobre el to cerÃ mic mat (dibuixat directament i instantani)
     QREngine.drawQRToCanvas(ctx, id, 105, 100, 390, '#000000', '#DDD7CE');
 
     // 5. Peu d'alumne en to suau sobre fosc
     ctx.fillStyle = '#C8C1B6';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText(`${id} • ${name}`, 300, 562);
+    ctx.fillText(`${id} â¢ ${name}`, 300, 562);
 
-    saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Mat_Rellotge.png`, 'QR ceràmic mat desat correctament!');
+    saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Mat_Rellotge.png`, 'QR cerÃ mic mat desat correctament!');
 
   } else {
-    // Fons blanc clàssic
+    // Fons blanc clÃ ssic
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, 600, 600);
 
@@ -1263,12 +1401,12 @@ async function downloadWatchQrImage(student, isMatte = true) {
     ctx.textAlign = 'center';
     ctx.fillText('ROIG DE COURE', 300, 52);
 
-    // QR sobre blanc clàssic (420x420 a 90, 85)
+    // QR sobre blanc clÃ ssic (420x420 a 90, 85)
     QREngine.drawQRToCanvas(ctx, id, 90, 85, 420, '#000000', '#FFFFFF');
 
     ctx.fillStyle = '#2C221E';
     ctx.font = 'bold 22px monospace';
-    ctx.fillText(`${id} • ${name}`, 300, 545);
+    ctx.fillText(`${id} â¢ ${name}`, 300, 545);
 
     saveCanvasAsFile(canvas, `RoigDeCoure_${id}_Rellotge.png`, 'QR fons blanc desat correctament!');
   }
@@ -1282,21 +1420,21 @@ async function downloadWatchQrImage(student, isMatte = true) {
         try {
           await navigator.share({
             title: `Carnet Rellotge - ${id}`,
-            text: `Codi QR de Roig de Coure per al teu rellotge intel·ligent`,
+            text: `Codi QR de Roig de Coure per al teu rellotge intelÂ·ligent`,
             files: [file]
           });
           showToast(successMsg, 'success');
           return;
         } catch (err) {
           if (err.name !== 'AbortError') {
-            console.warn('navigator.share no ha reeixit, usant descàrrega:', err);
+            console.warn('navigator.share no ha reeixit, usant descÃ rrega:', err);
           } else {
             return;
           }
         }
       }
 
-      // Descàrrega directa
+      // DescÃ rrega directa
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = filename;

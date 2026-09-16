@@ -18,7 +18,7 @@
     currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear()
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function initAll() {
     initScrollReveals();
     initHeroBackgroundSlider();
     initNavigation();
@@ -26,7 +26,14 @@
     initGiftVoucher();
     initFaqAccordion();
     initContactForm();
-  });
+    initSocAlumneAndValRegal();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
 
   /* ==== SCROLL REVEAL amb IntersectionObserver ==== */
   function initScrollReveals() {
@@ -212,7 +219,37 @@
   }
 
   /* ==== MOTOR DE RESERVES ==== */
+  
+  async function loadWebActivitatsConfig() {
+    try {
+      var res = await fetch('/api/reserves/activitats?t=' + Date.now());
+      var data = await res.json();
+      if (data && data.ok && data.activitats) {
+        data.activitats.forEach(function(act) {
+          var btn = document.querySelector('.booking-act-btn[data-act="' + act.id + '"]');
+          if (btn) {
+            if (act.descripcio) {
+              var sub = btn.querySelector('.booking-act-subtitle');
+              if (sub) sub.textContent = act.descripcio;
+            }
+            if (act.nom) {
+              var nameEl = btn.querySelector('.booking-act-name');
+              if (nameEl) nameEl.textContent = act.nom;
+            }
+            if (act.capacitatMax) {
+              var badge = btn.querySelector('.booking-act-badge');
+              if (badge) badge.textContent = act.id === 'torn' ? (act.capacitatMax + ' torns') : (act.capacitatMax + ' places');
+            }
+          }
+        });
+      }
+    } catch(e) {
+      console.warn('Fallback activitats config');
+    }
+  }
+
   function initBookingEngine() {
+    loadWebActivitatsConfig();
     document.querySelectorAll('.booking-act-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { selectActivity(this.getAttribute('data-act')); });
     });
@@ -248,7 +285,17 @@
         this.classList.add('selected');
         booking.shift = this.getAttribute('data-shift');
         var arr = document.getElementById('booking-arrival-time');
-        if (arr) { arr.value = booking.shift === 'mati' ? '10:00' : '17:00'; booking.arrivalTime = arr.value; }
+        if (arr) {
+          // Filtrar opcions: mostrar només les hores del torn seleccionat
+          var isMati = booking.shift === 'mati';
+          Array.from(arr.options).forEach(function (opt) {
+            var h = parseInt(opt.value.split(':')[0], 10);
+            opt.style.display = (isMati ? h < 14 : h >= 14) ? '' : 'none';
+            opt.disabled = (isMati ? h >= 14 : h < 14);
+          });
+          arr.value = isMati ? '10:00' : '17:00';
+          booking.arrivalTime = arr.value;
+        }
       });
     });
 
@@ -266,6 +313,7 @@
     var form = document.getElementById('public-booking-form');
     if (form) form.addEventListener('submit', handleBookingSubmit);
 
+    initSocAlumneAndValRegal();
     selectInitialDate();
     renderCalendar();
   }
@@ -371,13 +419,13 @@
       var res = await fetch(apiBase + '/api/reserves/disponibilitat?data=' + booking.date + '&activitat=' + booking.activity);
       if (res.ok) {
         var data = await res.json();
-        if (data.ok && data.franges) {
-          var fm = data.franges.find(function (f) { return f.id === 'mati'; });
-          var ft = data.franges.find(function (f) { return f.id === 'tarda'; });
-          sm.textContent = (fm ? fm.disponibles : max) + ' places disponibles';
-          st.textContent = (ft ? ft.disponibles : max) + ' places disponibles';
+          var fm = data.franges.find(function (f) { return f.id === 'mati' || f.id === 'M1'; });
+          var ft = data.franges.find(function (f) { return f.id === 'tarda' || f.id === 'T1'; });
+          var dispM = fm ? (fm.placesLliures !== undefined ? fm.placesLliures : fm.disponibles) : max;
+          var dispT = ft ? (ft.placesLliures !== undefined ? ft.placesLliures : ft.disponibles) : max;
+          sm.textContent = dispM + ' places disponibles';
+          st.textContent = dispT + ' places disponibles';
           return;
-        }
       }
     } catch (e) { /* offline */ }
     sm.textContent = max + ' places disponibles';
@@ -425,22 +473,32 @@
     } finally { if (btn) { btn.disabled = false; btn.textContent = 'Confirmar Reserva de Plaça'; } }
   }
 
+  function formatDataEuropea(dateStr) {
+    if (!dateStr) return '';
+    var parts = String(dateStr).split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return dateStr;
+  }
+
   function showModal(d) {
     var modal = document.getElementById('booking-modal');
     var content = document.getElementById('modal-summary-content');
     var waBtn = document.getElementById('modal-wa-btn');
     if (!modal) return;
+    var dataEU = formatDataEuropea(d.data);
     if (content) content.innerHTML =
       '<div style="background:#FBF4F2;border:1px solid #E8E1DA;border-radius:8px;padding:16px;margin:16px 0;font-size:14px;line-height:1.6;">' +
       '<p><strong>Titular:</strong> ' + esc(d.nom) + '</p>' +
       '<p><strong>Activitat:</strong> ' + esc(d.act) + '</p>' +
       '<p><strong>Places:</strong> ' + d.places + '</p>' +
-      '<p><strong>Data:</strong> ' + esc(d.data) + '</p>' +
+      '<p><strong>Data:</strong> ' + esc(dataEU) + '</p>' +
       '<p><strong>Torn:</strong> ' + esc(d.torn) + ' (Arribada ' + d.hora + 'h)</p>' +
       (d.val ? '<p><strong>Val Regal:</strong> ' + esc(d.val) + '</p>' : '') +
       '<p style="margin-top:8px;font-size:12px;color:#787069;">Ref: <code>' + esc(d.id) + '</code></p></div>';
     if (waBtn) {
-      var t = encodeURIComponent('Hola Roig de Coure! Reserva:\n- ' + d.act + '\n- Data: ' + d.data +
+      var t = encodeURIComponent('Hola Roig de Coure! Reserva:\n- ' + d.act + '\n- Data: ' + dataEU +
         '\n- Torn: ' + d.torn + ' (' + d.hora + 'h)\n- Places: ' + d.places + '\n- Nom: ' + d.nom + '\n- Tel: ' + d.tel);
       waBtn.href = 'https://wa.me/' + CFG.phone + '?text=' + t;
     }
@@ -449,33 +507,292 @@
     if (close) close.onclick = function () { modal.classList.remove('active'); };
   }
 
-  /* ==== VAL REGAL ==== */
-  const STRIPE_GIFT_URLS = {
-    'torn': 'https://buy.stripe.com/3cI14n2BHdPH0KKg5vgIo0m',           // Experiència torn o modelatge adults
-    'torn-infant': 'https://buy.stripe.com/6oUeVd1xDbHzbpof1rgIo0k',    // Experiència torn o modelatge <= 12 anys
-    'pintar': 'https://buy.stripe.com/aFacN5ekpfXPdxw8D3gIo0o',         // Regalar Experiències / Pintar
-    'hores-adults': 'https://buy.stripe.com/eVqdR90tzeTL1OO06xgIo0n',   // Hores de taller Adults
-    'hores-infant': 'https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j'    // Hores de taller <= 12 anys
-  };
+  /* ==== VAL REGAL & PACK D'HORES (SQUARE CHECKOUT) ==== */
+  var modalitatRegal = 'experiencia'; // 'experiencia' o 'hores'
 
-  function initGiftVoucher() {
-    var expSel = document.getElementById('gift-exp-select');
-    var prevExp = document.getElementById('preview-gift-exp');
+  function canviarModalitatRegal(mode) {
+    modalitatRegal = mode;
+    var btnExp = document.getElementById('tab-val-exp');
+    var btnHores = document.getElementById('tab-val-hores');
+    var panelExp = document.getElementById('panel-regal-exp');
+    var panelHores = document.getElementById('panel-regal-hores');
 
-    function upd() {
-      if (prevExp && expSel) prevExp.textContent = expSel.options[expSel.selectedIndex].text;
+    if (mode === 'experiencia') {
+      if (btnExp) btnExp.classList.add('active');
+      if (btnHores) btnHores.classList.remove('active');
+      if (panelExp) panelExp.style.display = 'block';
+      if (panelHores) panelHores.style.display = 'none';
+    } else {
+      if (btnExp) btnExp.classList.remove('active');
+      if (btnHores) btnHores.classList.add('active');
+      if (panelExp) panelExp.style.display = 'none';
+      if (panelHores) panelHores.style.display = 'block';
+      actualitzarCalculHoresWeb();
+    }
+    actualitzarPreviewRegal();
+  }
+  window.canviarModalitatRegal = canviarModalitatRegal;
+
+  function fixarHoresWeb(h) {
+    var inp = document.getElementById('input-web-hores');
+    if (inp) {
+      inp.value = h;
+      actualitzarCalculHoresWeb();
+    }
+  }
+  window.fixarHoresWeb = fixarHoresWeb;
+
+  function calcularPreuHoresTramsWeb(hores, esInfant) {
+    // Compra mínima de 4 hores
+    var h = Math.max(4, parseInt(hores, 10) || 4);
+    var preuHora = 15;
+    if (!esInfant) {
+      if (h <= 9) preuHora = 15;
+      else if (h <= 19) preuHora = 14;
+      else preuHora = 13;
+    } else {
+      if (h <= 9) preuHora = 14;
+      else if (h <= 19) preuHora = 13;
+      else preuHora = 11;
+    }
+    return { hores: h, preuHora: preuHora, total: h * preuHora };
+  }
+
+  function actualitzarCalculHoresWeb() {
+    var inpHores = document.getElementById('input-web-hores');
+    var rawVal = inpHores ? parseInt(inpHores.value, 10) : 10;
+    var h = isNaN(rawVal) ? 4 : Math.max(4, rawVal);
+    if (inpHores && inpHores.value && rawVal < 4) {
+      inpHores.value = 4;
+    }
+    var radEdat = document.querySelector('input[name="hores-edat"]:checked');
+    var esInfant = radEdat && radEdat.value === 'infant';
+
+    // Actualitzar etiquetes visuals de radio
+    var lblAd = document.getElementById('lbl-hores-adult');
+    var lblInf = document.getElementById('lbl-hores-infant');
+    if (lblAd) lblAd.classList.toggle('active', !esInfant);
+    if (lblInf) lblInf.classList.toggle('active', esInfant);
+
+    var calc = calcularPreuHoresTramsWeb(h, esInfant);
+
+    var txtTarifa = document.getElementById('web-tarifa-txt');
+    if (txtTarifa) txtTarifa.textContent = calc.preuHora.toFixed(2).replace('.', ',') + ' € / h';
+
+    var txtTotal = document.getElementById('web-total-hores-txt');
+    if (txtTotal) txtTotal.textContent = calc.total.toFixed(2).replace('.', ',') + ' €';
+
+    // Renderitzar trams visuals
+    var cPreview = document.getElementById('web-trams-preview');
+    if (cPreview) {
+      var trams = !esInfant
+        ? [ { r: '4h - 9h', p: 15, min: 4, max: 9 }, { r: '10h - 19h', p: 14, min: 10, max: 19 }, { r: '20h+', p: 13, min: 20, max: 999 } ]
+        : [ { r: '4h - 9h', p: 14, min: 4, max: 9 }, { r: '10h - 19h', p: 13, min: 10, max: 19 }, { r: '20h+', p: 11, min: 20, max: 999 } ];
+
+      cPreview.innerHTML = trams.map(function(t) {
+        var act = (h >= t.min && h <= t.max) ? 'active' : '';
+        return '<div class="tram-card ' + act + '">' +
+                 '<div style="font-weight:700;">' + t.r + '</div>' +
+                 '<div style="font-size:12px; font-weight:800;">' + t.p + '€/h</div>' +
+               '</div>';
+      }).join('');
     }
 
-    if (expSel) expSel.addEventListener('change', upd);
+    actualitzarPreviewRegal();
+  }
+  window.actualitzarCalculHoresWeb = actualitzarCalculHoresWeb;
 
-    var payBtn = document.getElementById('gift-pay-btn');
-    if (payBtn) payBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      var selVal = (expSel && expSel.value) || 'torn';
-      var stripeUrl = STRIPE_GIFT_URLS[selVal] || STRIPE_GIFT_URLS['torn'];
-      window.open(stripeUrl, '_blank');
-    });
-    upd();
+  function actualitzarPreviewRegal() {
+    var titolExp = 'Experiència al Taller';
+    var preuFinal = 50;
+
+    if (modalitatRegal === 'experiencia') {
+      var expSel = document.getElementById('gift-exp-select');
+      if (expSel && expSel.selectedOptions && expSel.selectedOptions[0]) {
+        var opt = expSel.selectedOptions[0];
+        titolExp = opt.dataset.title || opt.textContent;
+        preuFinal = parseFloat(opt.dataset.price) || 50;
+      }
+    } else {
+      var inpHores = document.getElementById('input-web-hores');
+      var h = inpHores ? (parseInt(inpHores.value, 10) || 1) : 10;
+      var radEdat = document.querySelector('input[name="hores-edat"]:checked');
+      var esInfant = radEdat && radEdat.value === 'infant';
+      var calc = calcularPreuHoresTramsWeb(h, esInfant);
+      titolExp = 'Pack de ' + calc.hores + ' hores (' + (esInfant ? 'Infantil' : 'Adult') + ')';
+      preuFinal = calc.total;
+    }
+
+    var elTitol = document.getElementById('preview-gift-exp');
+    if (elTitol) elTitol.textContent = titolExp;
+
+    var elPreu = document.getElementById('preview-gift-preu-badge');
+    if (elPreu) elPreu.textContent = preuFinal.toFixed(2).replace('.', ',') + ' €';
+
+    var btnPay = document.getElementById('btn-final-square-pay');
+    if (btnPay) btnPay.textContent = 'Pagar ara amb Square (' + preuFinal.toFixed(2).replace('.', ',') + ' €)';
+
+    // Personalització en viu
+    var destVal = (document.getElementById('regal-web-destinatari') || {}).value || '';
+    var boxDest = document.getElementById('preview-gift-dest');
+    var spanDest = document.getElementById('preview-gift-dest-nom');
+    if (boxDest && spanDest) {
+      if (destVal.trim()) {
+        boxDest.style.display = 'block';
+        spanDest.textContent = destVal.trim();
+      } else {
+        boxDest.style.display = 'none';
+      }
+    }
+
+    var fromVal = (document.getElementById('regal-web-comprador') || {}).value || '';
+    var boxFrom = document.getElementById('preview-gift-from');
+    var spanFrom = document.getElementById('preview-gift-from-nom');
+    if (boxFrom && spanFrom) {
+      if (fromVal.trim()) {
+        boxFrom.style.display = 'block';
+        spanFrom.textContent = fromVal.trim();
+      } else {
+        boxFrom.style.display = 'none';
+      }
+    }
+
+    var msgVal = (document.getElementById('regal-web-missatge') || {}).value || '';
+    var elDed = document.getElementById('preview-gift-dedicatoria');
+    if (elDed) {
+      elDed.textContent = msgVal.trim()
+        ? '«' + msgVal.trim() + '»'
+        : 'Una experiència artesanal única per gaudir i crear amb les mans.';
+    }
+  }
+  window.actualitzarPreviewRegal = actualitzarPreviewRegal;
+
+  async function iniciarPagamentFinalSquare() {
+    var btn = document.getElementById('btn-final-square-pay');
+    var dest = (document.getElementById('regal-web-destinatari') || {}).value || '';
+    var comprador = (document.getElementById('regal-web-comprador') || {}).value || '';
+    var email = (document.getElementById('regal-web-email') || {}).value || '';
+    var msg = (document.getElementById('regal-web-missatge') || {}).value || '';
+
+    if (!dest.trim() || !email.trim()) {
+      alert('Si us plau, indica el nom del destinatari i el teu correu electrònic.');
+      return;
+    }
+
+    var articleId = 'art_torn_adult';
+    var reqHores = null;
+    var reqEdat = null;
+
+    if (modalitatRegal === 'experiencia') {
+      var expSel = document.getElementById('gift-exp-select');
+      articleId = (expSel && expSel.value) || 'art_torn_adult';
+    } else {
+      var inpHores = document.getElementById('input-web-hores');
+      reqHores = inpHores ? (parseInt(inpHores.value, 10) || 10) : 10;
+      var radEdat = document.querySelector('input[name="hores-edat"]:checked');
+      var esInf = radEdat && radEdat.value === 'infant';
+      reqEdat = esInf ? 'infant' : 'adult';
+      articleId = esInf ? 'art_torn_infant' : 'art_torn_adult';
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Connexió amb Square...';
+    }
+
+    try {
+      var apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+      var res = await fetch(apiBase + '/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          article_id: articleId,
+          tipus_compra: 'val_regal',
+          hores: reqHores,
+          edat: reqEdat,
+          nom_destinatari: dest.trim(),
+          nom_comprador: comprador.trim(),
+          email_comprador: email.trim(),
+          missatge: msg.trim()
+        })
+      });
+      var data = await res.json();
+      if (res.ok && data.ok) {
+        if (data.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          alert('Val creat correctament! Codi del val: ' + (data.codi_val || 'generat'));
+          window.location.reload();
+        }
+      } else {
+        alert(data.error || 'No s\'ha pogut connectar amb la passarel·la.');
+        if (btn) {
+          btn.disabled = false;
+          actualitzarPreviewRegal();
+        }
+      }
+    } catch(err) {
+      alert('Error de comunicació amb el servidor: ' + err.message);
+      if (btn) {
+        btn.disabled = false;
+        actualitzarPreviewRegal();
+      }
+    }
+  }
+  window.iniciarPagamentFinalSquare = iniciarPagamentFinalSquare;
+
+  async function consultarValWeb() {
+    var inp = document.getElementById('web-cerca-val');
+    var resBox = document.getElementById('web-cerca-val-resultat');
+    var codi = (inp ? inp.value : '').trim().toUpperCase();
+    if (!codi) {
+      if (resBox) {
+        resBox.style.display = 'block';
+        resBox.style.background = '#FEE2E2';
+        resBox.style.color = '#991B1B';
+        resBox.textContent = 'Introdueix un codi de val.';
+      }
+      return;
+    }
+    if (resBox) {
+      resBox.style.display = 'block';
+      resBox.style.background = '#F3F4F6';
+      resBox.style.color = '#4B5563';
+      resBox.textContent = 'Comprovant val...';
+    }
+
+    try {
+      var apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+      var res = await fetch(apiBase + '/api/vals-regal/verificar/' + encodeURIComponent(codi));
+      var data = await res.json();
+      if (res.ok && data.ok && data.val) {
+        var v = data.val;
+        var estatTxt = v.estat === 'actiu' ? '✓ Actiu i llest per reservar' : ('Estat: ' + v.estat);
+        var bg = v.estat === 'actiu' ? '#ECFDF5' : '#FEF3C7';
+        var col = v.estat === 'actiu' ? '#065F46' : '#92400E';
+        resBox.style.background = bg;
+        resBox.style.color = col;
+        resBox.innerHTML = '<strong>' + estatTxt + '</strong><br>' +
+          'Experiència: ' + esc(v.titol_experiencia || 'Taller de ceràmica') + ' (' + v.hores + 'h)<br>' +
+          'Destinatari: ' + esc(v.nom_destinatari || '') + '<br>' +
+          'Caduca el: ' + esc(v.data_caducitat || '6 mesos') + '<br>' +
+          '<a href="reserva.html?val=' + encodeURIComponent(v.codi) + '" style="display:inline-block; margin-top:6px; font-weight:700; color:' + col + '; text-decoration:underline;">Reservar hora ara amb aquest val &rarr;</a>';
+      } else {
+        resBox.style.background = '#FEE2E2';
+        resBox.style.color = '#991B1B';
+        resBox.innerHTML = data.error || 'Aquest codi no s\'ha trobat.';
+      }
+    } catch(err) {
+      resBox.style.background = '#FEE2E2';
+      resBox.style.color = '#991B1B';
+      resBox.textContent = 'Error consultant el val: ' + err.message;
+    }
+  }
+  window.consultarValWeb = consultarValWeb;
+
+  function initGiftVoucher() {
+    actualitzarCalculHoresWeb();
+    actualitzarPreviewRegal();
   }
 
   /* ==== FAQ ==== */
@@ -507,4 +824,190 @@
   }
 
   function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    /* ==== GESTIÓ SÓC ALUMNE I VAL REGAL ==== */
+  function initSocAlumneAndValRegal() {
+    var checkSoc = document.getElementById('check-soc-alumne');
+    var cardSoc = document.getElementById('soc-alumne-card');
+    var fieldsSoc = document.getElementById('soc-alumne-fields');
+    var hiddenChkSoc = document.getElementById('chk-soc-alumne');
+
+    var checkVal = document.getElementById('check-val-regal');
+    var cardVal = document.getElementById('val-regal-card');
+    var fieldsVal = document.getElementById('val-regal-fields');
+    var hiddenChkVal = document.getElementById('chk-val-regal');
+
+    function toggleSoc(active) {
+      if (checkSoc) checkSoc.checked = active;
+      if (hiddenChkSoc) hiddenChkSoc.checked = active;
+      if (fieldsSoc) fieldsSoc.style.display = active ? 'block' : 'none';
+      if (cardSoc) {
+        cardSoc.style.borderColor = active ? 'var(--primary)' : '#E5DDD5';
+        cardSoc.style.background = active ? '#FFF8F6' : '#FAF7F5';
+      }
+      if (!active) clearStudent();
+    }
+    window.toggleSocAlumne = toggleSoc;
+
+    if (checkSoc) {
+      checkSoc.addEventListener('change', function() { toggleSoc(this.checked); });
+    }
+
+    // Modes de cerca
+    var btnModeNom = document.getElementById('btn-mode-nom');
+    var btnModeNum = document.getElementById('btn-mode-num');
+    var panNom = document.getElementById('panel-alumne-nom');
+    var panNum = document.getElementById('panel-alumne-num');
+
+    if (btnModeNom && btnModeNum) {
+      btnModeNom.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        btnModeNom.style.borderColor = 'var(--primary)';
+        btnModeNom.style.background = '#FFF8F6';
+        btnModeNom.style.color = 'var(--primary)';
+        btnModeNum.style.borderColor = '#D6C7BC';
+        btnModeNum.style.background = '#FFF';
+        btnModeNum.style.color = 'var(--dark)';
+        if (panNom) panNom.style.display = 'block';
+        if (panNum) panNum.style.display = 'none';
+      });
+
+      btnModeNum.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        btnModeNum.style.borderColor = 'var(--primary)';
+        btnModeNum.style.background = '#FFF8F6';
+        btnModeNum.style.color = 'var(--primary)';
+        btnModeNom.style.borderColor = '#D6C7BC';
+        btnModeNom.style.background = '#FFF';
+        btnModeNom.style.color = 'var(--dark)';
+        if (panNum) panNum.style.display = 'block';
+        if (panNom) panNom.style.display = 'none';
+      });
+    }
+
+    async function verifyStudent(query, errEl) {
+      if (!query) {
+        if (errEl) { errEl.textContent = 'Si us plau, escriu una dada per cercar.'; errEl.style.display = 'block'; }
+        return;
+      }
+      if (errEl) errEl.style.display = 'none';
+      try {
+        var apiBase = getWebApiBase();
+        var res = await fetch(apiBase + '/api/alumnes/verificar?q=' + encodeURIComponent(query));
+        var data = await res.json();
+        if (data && data.ok && data.found && data.alumne) {
+          applyStudent(data.alumne);
+        } else {
+          if (errEl) {
+            errEl.textContent = 'No hem trobat cap alumne amb aquesta dada. Pots omplir les teves dades a sota.';
+            errEl.style.display = 'block';
+          }
+        }
+      } catch(err) {
+        console.warn('Error verificant:', err);
+      }
+    }
+
+    function applyStudent(al) {
+      var nomIn = document.getElementById('client-nom');
+      var telIn = document.getElementById('client-tel');
+      var emIn = document.getElementById('client-email');
+      if (nomIn && al.nom) nomIn.value = al.nom;
+      if (telIn && al.telefon) telIn.value = al.telefon;
+      if (emIn && al.email) emIn.value = al.email;
+
+      var alertBox = document.getElementById('alumne-identificat-alert');
+      var nomDisp = document.getElementById('alumne-nom-display');
+      var idDisp = document.getElementById('alumne-id-display');
+      if (nomDisp) nomDisp.textContent = al.nom;
+      if (idDisp) idDisp.textContent = al.id;
+      if (alertBox) alertBox.style.display = 'flex';
+
+      window._identifiedStudent = al;
+    }
+
+    function clearStudent() {
+      var alertBox = document.getElementById('alumne-identificat-alert');
+      if (alertBox) alertBox.style.display = 'none';
+      window._identifiedStudent = null;
+    }
+
+    var btnCercarNom = document.getElementById('btn-cercar-nom');
+    if (btnCercarNom) {
+      btnCercarNom.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        verifyStudent((document.getElementById('input-student-name') ? document.getElementById('input-student-name').value : '').trim(), document.getElementById('student-name-error'));
+      });
+    }
+
+    var inputStudentName = document.getElementById('input-student-name');
+    if (inputStudentName) {
+      inputStudentName.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault(); e.stopPropagation();
+          verifyStudent((this.value || '').trim(), document.getElementById('student-name-error'));
+        }
+      });
+    }
+
+    var btnCercarNum = document.getElementById('btn-cercar-num');
+    if (btnCercarNum) {
+      btnCercarNum.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        verifyStudent((document.getElementById('input-student-num') ? document.getElementById('input-student-num').value : '').trim(), document.getElementById('student-num-error'));
+      });
+    }
+
+    var inputStudentNum = document.getElementById('input-student-num');
+    if (inputStudentNum) {
+      inputStudentNum.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault(); e.stopPropagation();
+          verifyStudent((this.value || '').trim(), document.getElementById('student-num-error'));
+        }
+      });
+    }
+
+    var btnDesferAlumne = document.getElementById('btn-desfer-alumne');
+    if (btnDesferAlumne) {
+      btnDesferAlumne.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        clearStudent();
+      });
+    }
+
+    // Val regal toggle
+    function toggleVal(active) {
+      if (checkVal) checkVal.checked = active;
+      if (hiddenChkVal) hiddenChkVal.checked = active;
+      if (fieldsVal) fieldsVal.style.display = active ? 'block' : 'none';
+      if (cardVal) {
+        cardVal.style.borderColor = active ? 'var(--primary)' : '#E5DDD5';
+        cardVal.style.background = active ? '#FFF8F6' : '#FAF7F5';
+      }
+      if (active) {
+        var shiftMati = document.getElementById('shift-mati');
+        if (shiftMati) shiftMati.click();
+      }
+    }
+    window.toggleValRegal = toggleVal;
+
+    if (checkVal) {
+      checkVal.addEventListener('change', function() { toggleVal(this.checked); });
+    }
+
+    // Botons activitat del val
+    document.querySelectorAll('.btn-val-act').forEach(function(b) {
+      b.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        document.querySelectorAll('.btn-val-act').forEach(function(x) {
+          x.style.borderColor = '#D6C7BC'; x.style.color = 'var(--dark)'; x.classList.remove('active');
+        });
+        this.style.borderColor = 'var(--primary)'; this.style.color = 'var(--primary)'; this.classList.add('active');
+        var act = this.getAttribute('data-act');
+        selectActivity(act);
+      });
+    });
+  }
+
 })();

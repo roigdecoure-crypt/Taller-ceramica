@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reserva la teva Plaça - Roig de Coure | Taller de Ceràmica</title>
+  <title>Reserva la teva Plaça de Ceràmica a Olot | Roig de Coure</title>
+  <meta name="description" content="Reserva en línia la teva sessió de torn ceràmic, modelatge o pintura de ceràmica al taller Roig de Coure d'Olot. Tria data i hora fàcilment.">
+  <link rel="canonical" href="https://www.roigdecoure.cat/reserva.html">
+  <meta name="robots" content="index, follow">
+  <meta property="og:locale" content="ca_ES">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Reserva la teva Plaça de Ceràmica a Olot | Roig de Coure">
+  <meta property="og:description" content="Reserva en línia la teva sessió de torn, modelatge o pintura a Roig de Coure (Olot).">
+  <meta property="og:url" content="https://www.roigdecoure.cat/reserva.html">
+  <meta property="og:image" content="https://www.roigdecoure.cat/img/web/classes-torn-modelatge.webp">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
@@ -685,7 +694,7 @@
                 <span class="act-cap-badge" id="badge-cap-torn">Màx. 4 torns</span>
               </div>
               <div class="act-title">Torn</div>
-              <div class="act-desc">Sessió al torn de terrissaire</div>
+              <div class="act-desc">classe de torn o acabar treballs de torn</div>
             </div>
 
             <div class="act-card" data-id="modelatge" data-cap="8">
@@ -693,7 +702,7 @@
                 <span class="act-cap-badge" id="badge-cap-modelatge">Fins a 8 places</span>
               </div>
               <div class="act-title">Modelatge</div>
-              <div class="act-desc">Modelat a mà i escultura de fang</div>
+              <div class="act-desc">modelatge o acabar treballs sense torn</div>
             </div>
 
             <div class="act-card" data-id="pintar" data-cap="12">
@@ -701,7 +710,7 @@
                 <span class="act-cap-badge" id="badge-cap-pintar">Fins a 12 places</span>
               </div>
               <div class="act-title">Pintar ceràmica</div>
-              <div class="act-desc">Pintura i esmaltat de peces</div>
+              <div class="act-desc">Pintar peces de biscuit ceràmica</div>
             </div>
           </div>
 
@@ -788,10 +797,32 @@
                 <input type="checkbox" id="check-val-regal" style="width: 22px; height: 22px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0;">
               </div>
 
-              <!-- Selector d'activitat del val (Torn, Modelatge o Pintar ceràmica) -->
+              <!-- Selector d'activitat i validació del codi de val -->
               <div id="val-regal-fields" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #D6C7BC;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 6px;">
+                  Codi del teu val regal:
+                </label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <input type="text" id="input-val-regal-code" class="form-control" placeholder="Ex: REGAL-9B2F-48X2" style="font-family: monospace; font-size: 14px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">
+                  <button type="button" class="btn btn-primary" id="btn-validar-codi-val" style="padding: 0 16px; font-size: 13px; font-weight: 700; white-space: nowrap;">
+                    Validar
+                  </button>
+                </div>
+
+                <!-- Avís vals regal antics -->
+                <div style="margin-bottom: 12px; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 8px; padding: 9px 12px; font-size: 12px; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+                  <span style="font-size: 14px; line-height: 1.2;">ℹ️</span>
+                  <div>
+                    <strong>Tens un val anterior al 15/09/2026?</strong><br>
+                    Si el teu val és d'abans del 15/09/2026, si us plau passeu pel taller a actualitzar-lo i reservar hora.
+                  </div>
+                </div>
+
+                <!-- Resultat de la validació del val -->
+                <div id="val-regal-status-msg" style="display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px;"></div>
+
                 <label style="font-size: 13px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 8px;">
-                  De què és el teu val regal?
+                  Activitat del teu val regal:
                 </label>
                 <div class="val-act-selector" id="val-act-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
                   <button type="button" class="btn-val-act active" data-act="torn" style="padding: 10px 6px; border: 2px solid var(--primary); background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
@@ -806,7 +837,7 @@
                 </div>
 
                 <div style="background: #FDF5F5; border: 1px solid #F8B4B4; color: #831D1D; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.4;">
-                  <strong>Horari obligatori per a val regal:</strong> Les sessions amb val regal es realitzen exclusivament a <strong>primera hora (10:00 h - 12:00 h)</strong>. El dia de la sessió només caldrà que mostris el teu val físic o digital al taller.
+                  <strong>Horari per a val regal:</strong> Les sessions amb val regal es realitzen preferentment a <strong>primera hora (10:00 h - 12:00 h)</strong>. El dia de la sessió només caldrà que mostris el teu val físic o digital al taller.
                 </div>
               </div>
             </div>
@@ -873,6 +904,15 @@
                 Comprovant disponibilitat...
               </div>
             </div>
+            <!-- Avís sobrepassar límit d'aforament -->
+            <div style="margin-top: 12px; background: #FAF6F0; border: 1px dashed #D2B48C; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #5C4033; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Si voleu <strong>sobrepassar el límit d'aforament establert</strong> o assistir en grup, cal <strong>contactar amb administració</strong>.</span>
+              </div>
+              <a href="https://wa.me/34683633880?text=Hola!%20Voldria%20consultar%20sobrepassar%20l'aforament%20establert%20per%20a%20una%20reserva" target="_blank" style="color: #2E7D32; font-weight: 700; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; background: #E8F5E9; padding: 4px 10px; border-radius: 6px; border: 1px solid #C8E6C9; white-space: nowrap;">
+                WhatsApp: 683 633 880 &rarr;
+              </a>
+            </div>
           </div>
 
           <!-- 3. QUANTES PERSONES -->
@@ -883,6 +923,17 @@
             <select id="pax-select" class="pax-select" aria-label="Nombre de persones que assistiran">
               <option value="1">1 persona</option>
             </select>
+          </div>
+
+          <!-- Avís de Paga i Senyal per a reserves de 4 o més places -->
+          <div id="paga-senyal-box" style="display: none; margin-top: 10px; background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #92400E;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <span style="font-size: 18px; line-height: 1;">⚠️</span>
+              <div>
+                <strong>Reserva de grup (4 o més persones):</strong><br>
+                Per confirmar la reserva de grup, cal fer una paga i senyal de <strong>10 € per plaça</strong> (Total: <span id="paga-senyal-total-txt" style="font-weight: 700;">40 €</span>). Aquest import es descomptarà del total de la teva sessió al taller.
+              </div>
+            </div>
           </div>
 
           <!-- 4. DADES DE CONTACTE -->
@@ -927,9 +978,14 @@
 
           <div id="booking-error-msg" style="display:none; color: #831D1D; background: #FDF5F5; padding: 10px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;"></div>
 
-          <button type="submit" class="btn-submit-booking" id="btn-submit">
-            Confirmar Reserva ara
-          </button>
+          <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+            <button type="submit" class="btn-submit-booking" id="btn-submit">
+              Confirmar Reserva ara
+            </button>
+            <button type="button" class="btn-submit-booking" id="btn-submit-wa" onclick="enviarReservaPerWhatsApp()" style="background: #25D366; color: white; border: none; font-size: 14.5px; padding: 13px 18px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+              <span>Reservar directament per WhatsApp</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -964,6 +1020,10 @@
           <div class="summary-row" id="sum-alumne-row" style="display: none;">
             <span class="label">Alumne del taller:</span>
             <span class="val" id="sum-alumne-nom" style="color: var(--secondary); font-weight: 700;">Sí</span>
+          </div>
+          <div class="summary-row" id="sum-paga-senyal-row" style="display: none; background: #FFFBEB; padding: 6px 10px; border-radius: 6px; border: 1px solid #FCD34D;">
+            <span class="label" style="color: #92400E; font-weight: 700;">Paga i senyal (Pendent):</span>
+            <span class="val" id="sum-paga-senyal-val" style="color: #92400E; font-weight: 800;">40,00 €</span>
           </div>
           <div class="summary-row">
             <span class="label">Referència:</span>
@@ -1059,13 +1119,29 @@
           data.activitats.forEach(act => {
             if (act.id === 'torn') {
               state.activitatCapMax = act.capacitatMax;
-              document.getElementById('badge-cap-torn').textContent = `Màx. ${act.capacitatMax} torns`;
+              const b = document.getElementById('badge-cap-torn');
+              if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
             } else if (act.id === 'modelatge') {
               state.activitatCapMax = act.capacitatMax;
-              document.getElementById('badge-cap-modelatge').textContent = `Fins a ${act.capacitatMax} places`;
+              const b = document.getElementById('badge-cap-modelatge');
+              if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
             } else if (act.id === 'pintar') {
               state.activitatCapMax = act.capacitatMax;
-              document.getElementById('badge-cap-pintar').textContent = `Fins a ${act.capacitatMax} places`;
+              const b = document.getElementById('badge-cap-pintar');
+              if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
+            }
+
+            // Actualitzar descripció i títol dinàmicament des de la base de dades
+            const card = document.querySelector(`.act-card[data-id="${act.id}"]`);
+            if (card) {
+              if (act.descripcio) {
+                const descEl = card.querySelector('.act-desc');
+                if (descEl) descEl.textContent = act.descripcio;
+              }
+              if (act.nom) {
+                const titleEl = card.querySelector('.act-title');
+                if (titleEl) titleEl.textContent = act.nom;
+              }
             }
           });
         }
@@ -1074,7 +1150,6 @@
       }
     }
 
-    // Carregar disponibilitat del dia seleccionat
     async function checkAvailability() {
       const dateVal = state.data;
       const slotsContainer = document.getElementById('slots-container');
@@ -1241,8 +1316,81 @@
 
       select.onchange = (e) => {
         state.places = parseInt(e.target.value, 10) || 1;
+        updatePagaSenyalVisibility();
       };
+      updatePagaSenyalVisibility();
     }
+
+    function updatePagaSenyalVisibility() {
+      const box = document.getElementById('paga-senyal-box');
+      const txt = document.getElementById('paga-senyal-total-txt');
+      const chkVal = document.getElementById('check-val-regal');
+      const isVal = state.isValRegal || (chkVal && chkVal.checked);
+      const chkAlu = document.getElementById('check-soc-alumne');
+      const isAlu = state.isSocAlumne || (chkAlu && chkAlu.checked);
+      if (state.places >= 4 && !isVal && !isAlu) {
+        if (box) box.style.display = 'block';
+        if (txt) txt.textContent = `${state.places * 10} €`;
+      } else {
+        if (box) box.style.display = 'none';
+      }
+    }
+
+    function enviarReservaPerWhatsApp() {
+      const nom = document.getElementById('client-name')?.value?.trim();
+      const tel = document.getElementById('client-tel')?.value?.trim();
+      const email = document.getElementById('client-email')?.value?.trim();
+      const notes = document.getElementById('client-notes')?.value?.trim();
+      const errBox = document.getElementById('booking-error-msg');
+
+      if (!nom || !tel) {
+        if (errBox) {
+          errBox.textContent = 'Per reservar per WhatsApp, cal indicar el teu nom i telèfon.';
+          errBox.style.display = 'block';
+        }
+        document.getElementById('client-name')?.focus();
+        return;
+      }
+      if (!state.data) {
+        if (errBox) {
+          errBox.textContent = 'Si us plau, selecciona una data al calendari abans d\'enviar per WhatsApp.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+      if (errBox) errBox.style.display = 'none';
+
+      const actNom = state.activitatNom || (state.activitatId === 'torn' ? 'Torn' : (state.activitatId === 'modelatge' ? 'Modelatge' : 'Pintar ceràmica'));
+      const hora = `${state.horaInici || '10:00'} - ${state.horaFi || '12:00'}`;
+      const dataCatalan = formatCatalanDate(state.data);
+      const placesTxt = `${state.places} persona${state.places > 1 ? 'es' : ''}`;
+      
+      let msg = `Hola Roig de Coure! Vull reservar plaça al taller:\n\n` +
+                `• Nom: ${nom}\n` +
+                `• Telèfon: ${tel}\n` +
+                `• Activitat: ${actNom}\n` +
+                `• Data: ${dataCatalan}\n` +
+                `• Horari: ${hora}\n` +
+                `• Places: ${placesTxt}\n`;
+
+      if (state.isValRegal) {
+        const codiVal = document.getElementById('input-val-regal-code')?.value?.trim() || '';
+        msg += `• Val regal: Sí${codiVal ? ' (Codi: ' + codiVal + ')' : ''}\n`;
+      }
+      if (state.places >= 4) {
+        msg += `• Paga i senyal estimada: ${state.places * 10} € (10 €/persona)\n`;
+      }
+      if (email) {
+        msg += `• Email: ${email}\n`;
+      }
+      if (notes) {
+        msg += `• Comentaris: ${notes}\n`;
+      }
+
+      const url = `https://wa.me/34683633880?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+    window.enviarReservaPerWhatsApp = enviarReservaPerWhatsApp;
 
     // Format Data en Català
     function formatCatalanDate(isoStr) {
@@ -1727,6 +1875,7 @@
       function toggleValRegal(checked) {
         checkValRegal.checked = checked;
         state.isValRegal = checked;
+        if (typeof updatePagaSenyalVisibility === 'function') updatePagaSenyalVisibility();
         if (checked) {
           valRegalFields.style.display = 'block';
           valRegalCard.style.borderColor = 'var(--primary)';
@@ -1749,6 +1898,92 @@
           if (e.target === checkValRegal || (valRegalFields && valRegalFields.contains(e.target))) return;
           toggleValRegal(!checkValRegal.checked);
         });
+      }
+
+      // Validació en viu del codi de Val Regal
+      const btnValidarVal = document.getElementById('btn-validar-codi-val');
+      const inputCodiVal = document.getElementById('input-val-regal-code');
+      const msgBoxVal = document.getElementById('val-regal-status-msg');
+
+      async function validarCodiValRegal() {
+        if (!inputCodiVal || !msgBoxVal) return;
+        const codi = inputCodiVal.value.trim().toUpperCase();
+        if (!codi) {
+          msgBoxVal.style.display = 'block';
+          msgBoxVal.style.background = '#FEE2E2';
+          msgBoxVal.style.color = '#991B1B';
+          msgBoxVal.style.border = '1px solid #FCA5A5';
+          msgBoxVal.textContent = 'Introdueix el codi del teu val regal per comprovar-lo.';
+          return;
+        }
+
+        btnValidarVal.disabled = true;
+        btnValidarVal.textContent = 'Comprovant...';
+
+        try {
+          const res = await fetch(`${ROIG_API_BASE}/api/vals-regal/verificar/${encodeURIComponent(codi)}`);
+          const data = await res.json();
+          msgBoxVal.style.display = 'block';
+
+          if (res.ok && data.ok && data.valid) {
+            const v = data.val;
+            msgBoxVal.style.background = '#ECFDF5';
+            msgBoxVal.style.color = '#065F46';
+            msgBoxVal.style.border = '1px solid #A7F3D0';
+            msgBoxVal.innerHTML = `
+              <strong>✓ Val Verificat!</strong><br>
+              Experiència: <strong>${v.titol_experiencia}</strong> (${v.hores}h)<br>
+              Destinatari: <strong>${v.nom_destinatari}</strong> • Vàlid fins al ${v.data_caducitat}
+            `;
+
+            // Autoseleccionar l'activitat corresponent
+            const actTarget = v.activitat_id || 'torn';
+            const card = document.querySelector(`.act-card[data-id="${actTarget}"]`);
+            if (card) card.click();
+
+            // Autoomplir el nom del client si és buit
+            const clientNameInput = document.getElementById('client-name');
+            if (clientNameInput && !clientNameInput.value) {
+              clientNameInput.value = v.nom_destinatari;
+            }
+          } else {
+            msgBoxVal.style.background = '#FEE2E2';
+            msgBoxVal.style.color = '#991B1B';
+            msgBoxVal.style.border = '1px solid #FCA5A5';
+            msgBoxVal.textContent = data.error || 'Aquest codi no és vàlid o ja ha estat utilitzat.';
+          }
+        } catch (e) {
+          msgBoxVal.style.display = 'block';
+          msgBoxVal.style.background = '#FEE2E2';
+          msgBoxVal.style.color = '#991B1B';
+          msgBoxVal.textContent = 'Error de connexió verificant el val.';
+        } finally {
+          btnValidarVal.disabled = false;
+          btnValidarVal.textContent = 'Validar';
+        }
+      }
+
+      if (btnValidarVal) {
+        btnValidarVal.addEventListener('click', validarCodiValRegal);
+      }
+      if (inputCodiVal) {
+        inputCodiVal.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            validarCodiValRegal();
+          }
+        });
+      }
+
+      // Si s'accedeix amb ?val=REGAL-... (per exemple des del codi QR de la targeta regal)
+      const urlParams = new URLSearchParams(window.location.search);
+      const valParam = urlParams.get('val');
+      if (valParam) {
+        toggleValRegal(true);
+        if (inputCodiVal) {
+          inputCodiVal.value = valParam.trim().toUpperCase();
+          setTimeout(validarCodiValRegal, 300);
+        }
       }
 
       // Submit del formulari de reserva
@@ -1788,6 +2023,8 @@
           finalNotes = finalNotes ? `${alTag} ${finalNotes}` : alTag;
         }
 
+        const codiValInput = document.getElementById('input-val-regal-code')?.value?.trim();
+
         const payload = {
           student_nom: nom,
           student_id: (isAlumne && state.studentId) ? state.studentId : undefined,
@@ -1803,6 +2040,7 @@
           activitat: actNom,
           places: state.places,
           val_regal: isVal,
+          codi_val_regal: isVal ? codiValInput : undefined,
           notes: finalNotes
         };
 
@@ -1871,6 +2109,17 @@
       } else {
         if (sumAlumneRow) sumAlumneRow.style.display = 'none';
       }
+      const sumPagaRow = document.getElementById('sum-paga-senyal-row');
+      const sumPagaVal = document.getElementById('sum-paga-senyal-val');
+      if (reserva.estat === 'pendent_paga_senyal' || (reserva.paga_senyal && reserva.paga_senyal > 0)) {
+        const importPs = reserva.paga_senyal || (reserva.places * 10);
+        if (sumPagaRow) sumPagaRow.style.display = 'flex';
+        if (sumPagaVal) sumPagaVal.textContent = `${importPs.toFixed(2).replace('.', ',')} €`;
+        document.getElementById('success-client-msg').textContent = `Reserva de grup registrada! Recorda fer la paga i senyal de ${importPs} € (10 € per persona) per Bizum al 683 633 880 o al taller per confirmar definitivament la teva plaça.`;
+      } else {
+        if (sumPagaRow) sumPagaRow.style.display = 'none';
+      }
+
       document.getElementById('sum-ref').textContent = reserva.id || 'CONFIRMADA';
 
       // Enllaç Google Calendar

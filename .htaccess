@@ -1,0 +1,14 @@
+DirectoryIndex index.html index.php
+
+RewriteEngine On
+RewriteCond %{ENV:HTTPS} !on
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# URLs netes per a Instagram i xarxes
+RewriteRule ^links/?$ links.html [L]
+RewriteRule ^bio/?$ bio.html [L]
+
+# Caching per a fitxers estatics
+<FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|js|css|swf|webp)$">
+    Header set Cache-Control "max-age=604800, public"
+</FilesMatch>

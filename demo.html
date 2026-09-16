@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Versió Demo | Taller de Ceràmica Roig de Coure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #831D1D;
+      --primary-dark: #631414;
+      --secondary: #5E7E6F;
+      --bg: #FDFBF9;
+      --surface: #FFFFFF;
+      --border: #E8DFD8;
+      --text: #2C2623;
+      --muted: #706863;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 0;
+    }
+    .demo-top-bar {
+      background: linear-gradient(90deg, #831D1D, #991B1B);
+      color: white;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+    .header-area {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .header-area h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34px;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .header-area p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+    .demo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .demo-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .demo-card h3 {
+      font-size: 18px;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-card p {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .demo-card .btn-demo {
+      display: inline-block;
+      text-align: center;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13.5px;
+      transition: background 0.2s;
+    }
+    .demo-card .btn-demo:hover {
+      background: var(--primary-dark);
+    }
+    .features-list {
+      list-style: none;
+      margin-bottom: 16px;
+      font-size: 12.5px;
+      color: #4B5563;
+    }
+    .features-list li {
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .features-list li::before {
+      content: "✓";
+      color: #059669;
+      font-weight: 700;
+    }
+    .sandbox-box {
+      background: #FFFFFF;
+      border: 1.5px dashed #C4A482;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+    .data-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #F4EFEA;
+      border: 1px solid #E2D7CC;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 13px;
+      color: #831D1D;
+      cursor: pointer;
+    }
+    .data-pill:hover {
+      background: #EBE1D7;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="demo-top-bar">
+    Mode Demostració Interactiva &bull; Les operacions no afecten vendes ni comptes bancaris reals
+  </div>
+
+  <div class="container">
+    
+    <div class="header-area">
+      <h1>Entorn Demo del Taller de Ceràmica</h1>
+      <p>
+        Pots navegar lliurement per la botiga, el calendari de reserves, el panell d'administració i l'escàner per provar totes les noves funcionalitats implementades.
+      </p>
+    </div>
+
+    <!-- Graella de Mòduls de la Demo -->
+    <div class="demo-grid">
+      
+      <!-- 1. Botiga i Vals Regal -->
+      <div class="demo-card">
+        <div>
+          <h3>Botiga & Vals Regal</h3>
+          <p>Catàleg net de tallers i compra d'hores amb calculadora dinàmica per trams de preu.</p>
+          <ul class="features-list">
+            <li>Calculadora d'hores per trams (18€/15€/14€/13€)</li>
+            <li>Consulta pública d'estat de vals regal (6 mesos)</li>
+            <li>Avís per a vals anteriors al 15/09/2026</li>
+            <li>Pagament segur final amb Square</li>
+          </ul>
+        </div>
+        <a href="botiga.html" class="btn-demo" target="_blank">Obrir Botiga Online &rarr;</a>
+      </div>
+
+      <!-- 2. Formulari de Reserves -->
+      <div class="demo-card">
+        <div>
+          <h3>Formulari de Reserves</h3>
+          <p>Reserva de torns de 2h al matí o a la tarda, aforament en viu i reserva directa.</p>
+          <ul class="features-list">
+            <li>Paga i senyal automàtica per a 4+ places (10€/plaça)</li>
+            <li>Botó de reserva directa per WhatsApp</li>
+            <li>Bescanvi de vals regal al matí (10h-12h)</li>
+            <li>Accés ràpid per a alumnes amb fitxa</li>
+          </ul>
+        </div>
+        <a href="reserva.html" class="btn-demo" target="_blank">Obrir Formulari de Reserves &rarr;</a>
+      </div>
+
+      <!-- 3. Panell d'Administració -->
+      <div class="demo-card">
+        <div>
+          <h3>Panell d'Administració</h3>
+          <p>Control complet de reserves diàries, gestió de vals regal i restricció d'activitats.</p>
+          <ul class="features-list">
+            <li>Restriccions de tallers per Matí, Tarda o Tot el dia</li>
+            <li>Creació manual i edició de Vals Regal existents</li>
+            <li>Gestió de catàleg i preus d'articles</li>
+            <li>Control d'assistència i aforament</li>
+          </ul>
+        </div>
+        <a href="admin.html" class="btn-demo" target="_blank">Obrir Panell Administrador &rarr;</a>
+      </div>
+
+      <!-- 4. Escàner QR i Scanner Mòbil -->
+      <div class="demo-card">
+        <div>
+          <h3>Escàner QR</h3>
+          <p>Escàner directe amb la càmera del mòbil per validar vals regal i carnets d'alumnes.</p>
+          <ul class="features-list">
+            <li>Validació instantània del codi del val</li>
+            <li>Lectura de carnets digitals (Google Wallet)</li>
+            <li>Canvi i registre immediat al taller</li>
+            <li>Mode PWA optimitzat per a mòbil</li>
+          </ul>
+        </div>
+        <a href="scanner.html" class="btn-demo" target="_blank">Obrir Escàner QR &rarr;</a>
+      </div>
+
+    </div>
+
+    <!-- Caixa de dades demo per testejar -->
+    <div class="sandbox-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="font-size: 17px; font-weight: 700; color: var(--primary);">
+          Dades de Mostra per Provar el Sistema
+        </h3>
+        <button type="button" onclick="restablirDadesDemo()" style="background: #059669; color: white; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+          Restablir Dades Demo
+        </button>
+      </div>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+        Fes clic sobre qualsevol codi per copiar-lo al portapapers i provar-lo a la botiga, a les reserves o a l'administració:
+      </p>
+
+      <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; color: #4B5563; margin-bottom: 4px;">Val Regal Actiu (6 mesos):</div>
+          <span class="data-pill" onclick="copiarCodi('REGAL-DEMO-2026')">REGAL-DEMO-2026 (copiar)</span>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; color: #4B5563; margin-bottom: 4px;">Val Ja Utilitzat:</div>
+          <span class="data-pill" onclick="copiarCodi('REGAL-UTILITZAT-2026')">REGAL-UTILITZAT-2026 (copiar)</span>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; color: #4B5563; margin-bottom: 4px;">Val Anterior al 15/09/2026:</div>
+          <span class="data-pill" onclick="copiarCodi('VAL-ANTIC-PAPER')">VAL-ANTIC-PAPER (copiar)</span>
+        </div>
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; color: #4B5563; margin-bottom: 4px;">Alumne de Prova:</div>
+          <span class="data-pill" onclick="copiarCodi('ALU-DEMO-01')">ALU-DEMO-01 (copiar)</span>
+        </div>
+      </div>
+
+      <div id="demo-feedback-msg" style="display: none; margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 13px;"></div>
+    </div>
+
+  </div>
+
+  <script src="js/api-config.js?v=9.5"></script>
+  <script>
+    function copiarCodi(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const msg = document.getElementById('demo-feedback-msg');
+        msg.style.display = 'block';
+        msg.style.background = '#ECFDF5';
+        msg.style.border = '1px solid #A7F3D0';
+        msg.style.color = '#065F46';
+        msg.textContent = `Codi "${text}" copiat al portapapers! Ja el pots enganxar a la botiga o a les reserves.`;
+        setTimeout(() => { msg.style.display = 'none'; }, 4000);
+      });
+    }
+
+    async function restablirDadesDemo() {
+      const msg = document.getElementById('demo-feedback-msg');
+      msg.style.display = 'block';
+      msg.style.background = '#F3F4F6';
+      msg.style.border = '1px solid #D1D5DB';
+      msg.style.color = '#374151';
+      msg.textContent = 'Inicialitzant dades de demostració...';
+
+      try {
+        const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+        const res = await fetch(`${apiBase}/api/demo/seed`, { method: 'POST' });
+        const data = await res.json();
+        if (data && data.ok) {
+          msg.style.background = '#ECFDF5';
+          msg.style.border = '1px solid #A7F3D0';
+          msg.style.color = '#065F46';
+          msg.textContent = 'Dades demo restablertes correctament! Pots provar els codis immediatament.';
+        } else {
+          msg.style.background = '#FEE2E2';
+          msg.style.border = '1px solid #FCA5A5';
+          msg.style.color = '#991B1B';
+          msg.textContent = data?.error || 'No s\'han pogut inicialitzar les dades demo.';
+        }
+      } catch (err) {
+        msg.style.background = '#FEE2E2';
+        msg.style.border = '1px solid #FCA5A5';
+        msg.style.color = '#991B1B';
+        msg.textContent = 'Error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

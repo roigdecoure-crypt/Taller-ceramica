@@ -193,6 +193,71 @@ const QREngine = {
   },
 
   /**
+   * Descarrega una imatge PNG d'alta definició (800x800 px) del codi QR de l'alumne
+   * @param {string|object} studentOrId Codi ID (ex: "TC-101") o objecte alumne ({ id, nom, cognoms })
+   * @param {object} options Opcions: { pureQr: boolean, size: number, filename: string }
+   */
+  downloadQR(studentOrId, options = {}) {
+    let id = '';
+    let name = '';
+    if (typeof studentOrId === 'string') {
+      id = studentOrId.trim();
+    } else if (studentOrId && typeof studentOrId === 'object') {
+      const s = studentOrId.alumne || studentOrId;
+      id = String(s.id || '').trim();
+      name = `${s.nom || ''} ${s.cognoms || ''}`.trim();
+    }
+
+    if (!id) {
+      if (typeof showToast === 'function') {
+        showToast("No s'ha pogut identificar el codi d'alumne per descarregar el QR.", 'error');
+      } else {
+        alert("No s'ha pogut identificar el codi d'alumne.");
+      }
+      return false;
+    }
+
+    const size = options.size || 800;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Fons blanc pur
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // Marge de seguretat estàndard per a lectura òptica fiable
+    const margin = typeof options.margin === 'number' ? options.margin : Math.round(size * 0.08);
+    const qrSize = size - (margin * 2);
+
+    // Dibuixar exclusivament el codi QR (sense cap text)
+    this.drawQRToCanvas(ctx, id, margin, margin, qrSize, '#000000', '#FFFFFF');
+
+    const safeName = (name || id).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = options.filename || `QR_${id}_${safeName}.png`;
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      const successMsg = `Codi QR (${id}) descarregat correctament!`;
+      if (typeof showToast === 'function') {
+        showToast(successMsg, 'success');
+      }
+    }, 'image/png');
+
+    return true;
+  },
+
+  /**
    * Obté la llista de càmeres del dispositiu
    */
   async getCameras() {

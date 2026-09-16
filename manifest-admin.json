@@ -1,0 +1,26 @@
+{
+  "name": "Roig de Coure - Administració",
+  "short_name": "Admin Roig",
+  "id": "/admin.html",
+  "description": "Panell d'administració i gestió del Taller de Ceràmica Roig de Coure",
+  "start_url": "./admin.html",
+  "scope": "./admin.html",
+  "display": "standalone",
+  "background_color": "#FAF9F5",
+  "theme_color": "#831D1D",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

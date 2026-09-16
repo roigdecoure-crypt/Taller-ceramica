@@ -1,0 +1,11 @@
+# robots.txt per a Roig de Coure - Taller de Ceràmica a Olot
+# https://www.roigdecoure.cat/
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /api/
+Disallow: /data/
+Disallow: /tests/
+
+Sitemap: https://www.roigdecoure.cat/sitemap.xml

@@ -1,110 +1,186 @@
 # PROMPT MESTRE OPERATIU: SISTEMA DE GESTIÓ I RESERVES "ROIG DE COURE"
 
-> **Instrucció d'ús:** Copia i enganxa tot el text següent en qualsevol nou xat o entorn d'IA per recrear, configurar o regenerar el projecte complet amb totes les funcionalitats, regles de negoci i disseny actuals en una sola ordre.
+> **Instrucció d'ús:** Copia i enganxa tot el text següent en qualsevol nou xat o entorn d'intel·ligència artificial (Claude, ChatGPT, Gemini, etc.) per recrear, configurar, desplegar, mantenir o regenerar el projecte complet amb totes les funcionalitats, regles de negoci, seguretat i disseny actuals en una sola ordre.
 
 ---
 
 ```markdown
-Ets un enginyer de programari sènior i dissenyador web. Desenvolupa o configura el sistema web complet de gestió i reserves per al taller de ceràmica artesanal "Roig de Coure".
+Ets un enginyer de programari sènior i dissenyador web especialitzat en sistemes autònoms i interfícies artesanes d'alta qualitat. Desenvolupa, mantén o desplega el sistema web complet de gestió, assistència i reserves per al taller de ceràmica artesanal "Roig de Coure".
 
-Aquest projecte consta d'un backend en Python (amb SQLite) i un frontend responsive en HTML5, CSS modern i JavaScript pur (sense frameworks pesants), tot en català.
+Aquest projecte consta d'un backend en Python 3 pur (sense dependències externes obligatòries) amb base de dades SQLite nativa, i un frontend adaptable (responsive) en HTML5, CSS modern i JavaScript estàndard (sense frameworks pesants), tot redactat de forma íntegra en català.
 
-Segueix estrictament els següents requisits funcionals, d'arquitectura, de disseny i de privacitat:
+L'aplicació és 100% autònoma, descarregable i desplegable a qualsevol servidor o màquina local (OVH, VPS, Docker, Render, Raspberry Pi, servidor intern o ordinador de taller) sense dependre de plataformes tancades o serveis de pagament de tercers.
+
+Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i de disseny detallats a continuació:
 
 ---
 
 ### 1. REGLA ESTÈTICA GLOBAL I IDENTITAT DE MARCA
-1. **Nom de marca**: "Roig de Coure" (títol prominent, estètica artesanal, elegant i càlida).
-2. **Paleta de colors**: Terracota/roig argila (#831D1D / #C25E3A), tons càlids de fons (#FAF7F5, #FFF8F6, #FFFFFF), text fosc contrastat (#2C221E) i tons verds suaus per a confirmacions (#5E7E6F, #EEF5F1).
-3. **REGISTRE DE ZERO ICONES**: No utilitzis cap icona (FontAwesome, SVG d'icones) ni emoticones/emojis a cap part de l'aplicació (ni a botons, ni a títols, ni a targetes, ni a avisos). Utilitza exclusivament tipografia neta, majúscules suaus, vores elegants i caràcters bàsics com '‹' o '›' per a navegació.
-4. **Menú mòbil**: En pantalla mòbil (responsive), la barra de navegació superior s'ha de plegar obligatòriament en un botó hamburguesa de 3 línies que obri un menú desplegable suau que es tanqui en prémer qualsevol enllaç.
-5. **Idioma**: Tota la interfície, formularis, dates i missatges han d'estar en català.
+1. **Nom de marca**: "Roig de Coure" (títol destacat, estètica de taller de terrissaire tradicional, càlida i professional).
+2. **Paleta de colors corporativa**:
+   - Color primari: Roig argila / terracota intens (`#831D1D` / `#C25E3A`).
+   - Color secundari i contrast: Verd ceràmic / coure oxidat (`#5E7E6F`, fons suau `#EEF5F1`).
+   - Fons i targetes: Blanc pur (`#FFFFFF`), porcellana càlida (`#FAF7F5`, `#FFF8F6`) i to mat antirreflex (`#DDD7CE`).
+   - Tipografia: Text principal fosc contrastat (`#2C221E`), lletra secundària neutra (`#6B7280`).
+3. **REGISTRE DE ZERO ICONES I ZERO EMOJIS**:
+   - No utilitzis cap icona (ni FontAwesome, ni icones SVG genèriques, ni iconografies predissenyades) ni cap emoji o emoticona a cap part de l'aplicació (ni a la interfície, ni als botons, ni als títols, ni a les alertes, ni als missatges de confirmació).
+   - L'estètica transmet sobrietat artesanal mitjançant composicions tipogràfiques netes, vores suaus, espaiats equilibrats, badges tipogràfics i caràcters bàsics com '‹' o '›' per a la navegació entre mesos.
+4. **Navegació mòbil (Responsive)**:
+   - A pantalles petites, la barra de navegació superior es plega en un botó d'accés ràpid tipogràfic o menú d'hamburguesa net de 3 línies que desplega els enllaços i es tanca en seleccionar qualsevol opció.
+5. **Idioma**:
+   - Tota la interfície d'usuari, formularis, taules, diàlegs modals, missatges de sistema, dates, hores i codi de cara al públic estan rigorosament en català.
 
 ---
 
-### 2. HORARIS DEL TALLER I REGLES D'AFORAMENT
-1. **Dies de funcionament**:
-   - Obert: **Dimecres a Diumenge** (10:00 h a 13:00 h i 17:00 h a 20:00 h).
-   - Tancat: **Dilluns i Dimarts** (descans setmanal del taller).
-2. **Aforament màxim del taller**: 12 persones simultànies en total entre totes les activitats.
-3. **Activitats i límits simultanis**:
-   - **Torn de terrissaire**: màxim 4 torns físics.
-   - **Modelatge i escultura**: fins a 8 places (limitat pel global de 12).
-   - **Pintar ceràmica**: fins a 12 places (limitat pel global de 12).
-4. **Durada de les sessions**: Reserves públiques de 2 hores amb arribada flexible de 10:00 a 11:00 cada 15 minuts (10:00, 10:15, 10:30, 10:45, 11:00).
+### 2. HORARIS DEL TALLER, TORNS I REGLES D'AFORAMENT
+1. **Dies d'obertura del taller**:
+   - Obert: **Dimecres a Diumenge** (obertura setmanal habitual).
+   - Tancat: **Dilluns i Dimarts** (descans del taller).
+2. **Torns diaris independents de 2 hores**:
+   - **Torn de Matí (10:00 h a 13:00 h)**: Arribades esglaonades cada 15 minuts a les `10:00`, `10:15`, `10:30`, `10:45` i `11:00`. (Sessions de 2 hores: finalitzen de 12:00 a 13:00).
+   - **Torn de Tarda (17:00 h a 20:00 h)**: Arribades esglaonades cada 15 minuts a les `17:00`, `17:15`, `17:30`, `17:45` i `18:00`. (Sessions de 2 hores: finalitzen de 19:00 a 20:00).
+3. **Aforament màxim independent per torn**:
+   - **12 places màximes per torn** (12 al matí i 12 a la tarda de manera totalment independent: les reserves del matí no consumeixen places de la tarda).
+4. **Límits físics per activitat**:
+   - **Torn de terrissaire**: màxim **4 torns físics** simultanis per torn (com que cada sessió dura 2 hores, hi ha un màxim absolut de 4 places de torn en tot el torn de matí i 4 en el torn de tarda; els intervals de 15 minuts serveixen per esglaonar l'arribada, no per afegir nous torns).
+   - **Modelatge i escultura**: fins a 8 places simultànies (limitat per l'aforament del taller).
+   - **Pintar ceràmica**: fins a 12 places simultànies (limitat per l'aforament del taller).
 
 ---
 
-### 3. PÀGINA DE RESERVA PÚBLICA (`reserva.html`)
-Desenvolupa un assistent de reserva pas a pas:
-- **Pas 1: Tria d'activitat**:
-  - Targetes per a Torn, Modelatge i Pintar ceràmica.
-  - **Opció Val Regal**: Selector visible "Tinc un val regal". NO demanis número ni codi de val; només permet escollir quina activitat porta el val (Torn, Modelatge o Pintar). En marcar aquesta opció, obliga automàticament a reservar a primera hora (10:00 h a 12:00 h) amb un avís informatiu clar.
-  - **Opció Sóc Alumne (Privacitat Estricta RGPD)**:
-    - NO mostris mai un desplegable públic amb els noms dels altres alumnes del taller.
-    - Ofereix una verificació privada individualitzada on l'alumne pot triar identificar-se:
-      a) Escrivint el seu Nom i Cognoms en un camp i prement "Verificar".
-      b) Escrivint el seu Codi d'Alumne (ex: TC-101 o 101, insensible a majúscules) i prement "Verificar".
-    - El backend verifica l'existència (`/api/alumnes/verificar?q=...`) i només mostra la confirmació del propi alumne trobat, autocompletant les seves dades de contacte al Pas 4 i vinculant el seu `student_id` a la reserva.
-- **Pas 2: Data i Franja Horària (Calendari Visual Incrustat)**:
-  - NO utilitzis un simple camp `<input type="date">`. Mostra un calendari mensual visual directament incrustat a la pantalla.
-  - Dies organitzats de Dl a Dg. Dilluns i Dimarts marcats com a "Tancat" (descans) i no clicables.
-  - Dies passats desactivats. Dies de Dc a Dg clicables i destacats.
-  - Botons de navegació de mesos ('‹', 'Avui', '›') amb bloqueig per no anar a mesos passats.
-  - En fer clic a un dia, ressalta'l en fons terracota (#831D1D) amb lletra blanca i carrega instantàniament les franges de 2 hores d'aquell dia via API de disponibilitat.
-  - Mostra a sota el rètol de la data seleccionada en català ("Diumenge, 6 de setembre de 2026").
-- **Pas 3: Nombre de persones**:
-  - Selector de places fins al màxim disponible segons l'activitat i aforament lliure en aquella franja.
-- **Pas 4: Dades de contacte**:
-  - Nom complet, telèfon mòbil i email per rebre la confirmació.
-- **Confirmació**:
-  - Pantalla d'èxit amb resum complet, botó per descarregar calendari (.ics / Google Calendar) i botó de WhatsApp directe amb el taller.
+### 3. PÀGINA WEB PÚBLICA I DE RESERVA (`index.html` i `reserva.html`)
+1. **Pàgina d'Inici (`index.html`)**:
+   - Filosofia artesanal, descripció de cursos, torns, packs i tarifes.
+   - Calendari integrat de disponibilitat immediata amb botons de selecció de torn (Matí / Tarda) i selector d'hora d'arribada (10:00 a 11:00 al matí, 17:00 a 18:00 a la tarda).
+   - Formulari de reserva ràpida amb connexió directa a la base de dades i WhatsApp.
+2. **Assistent de Reserva Pas a Pas (`reserva.html`)**:
+   - **Pas 1: Activitat**: Torn, Modelatge o Pintar peces.
+     - *Opció Val Regal*: Permet triar l'activitat sense necessitat d'introduir número de val; assigna automàticament la sessió al primer torn de matí amb nota informativa.
+     - *Opció Sóc Alumne (Privacitat Estricta RGPD)*: Sense desplegables públics de noms. Verificació individual per nom complet o codi d'alumne via `GET /api/alumnes/verificar?q=...`. Autocompleta les dades de l'alumne trobat i vincula el seu `student_id`.
+   - **Pas 2: Data i Torn (Calendari Visual Incrustat)**:
+     - Calendari mensual visual incrustat (sense inputs date genèrics).
+     - Dilluns i dimarts marcats com a tancats. Dies passats inhabilitats.
+     - En fer clic a un dia disponible, desplega les targetes de torns (Matí 10:00-13:00 i Tarda 17:00-20:00) amb les places lliures reals per activitat.
+     - Desplegable d'hora d'arribada dinàmic: si es tria matí, mostra 10:00 a 11:00; si es tria tarda, mostra 17:00 a 18:00.
+   - **Pas 3: Nombre de places**:
+     - Selector numèric limitat pel màxim d'aforament restant disponible per a l'activitat i el torn triat.
+   - **Pas 4: Dades de contacte i Confirmació**:
+     - Nom complet, telèfon mòbil i email.
+     - Pantalla de confirmació amb resum complet, descàrrega d'esdeveniment `.ics` per a agendes i botó directe de contacte per WhatsApp amb el taller.
 
 ---
 
-### 4. ESPAI ALUMNE (`alumne.html`)
-- Títol de marca "Roig de Coure" gran i visible.
-- Accés per codi d'alumne (ex: TC-101 o 101, insensible a majúscules/minúscules), telèfon o PIN.
-- El botó d'accés ha de dir exactament "Accedir al Meu Espai" (sense enllaç a pàgina d'inici).
-- Panell amb saldo d'hores contractades, hores consumides i hores disponibles.
-- Targeta del paquet d'hores actiu.
-- Botó d'acció amb el text exacte "Comprar Hores" (sense opció de Bizum; enllaç directe o instruccions de compra).
-- Codi QR personal de l'alumne per a l'assistència al taller.
-- Historial de reserves fetes i assistències registrades.
+### 4. ESPAI ALUMNE I CARNET DIGITAL (`alumne.html` i `carnet.html`)
+1. **Accés segur a l'Espai Alumne (`alumne.html`)**:
+   - Accés per identificador (codi `231F`, nom, telèfon o email) i contrasenya / PIN personal.
+   - Botó per mostrar/ocultar contrasenya.
+2. **Recuperació de Contrasenya (PIN)**:
+   - Verificació per doble factor (identificador + telèfon o correu registrat).
+   - Mostra el PIN recuperat amb accés en 1 clic i opció de canviar-lo directament.
+   - Canal d'ajuda directe a WhatsApp del taller.
+3. **Balanç d'hores en temps real**:
+   - Comptabilitat exacta al segon expressada en format `HH:MM:SS`.
+   - Hores contractades en paquets, hores consumides en sessions i saldo restant disponible.
+4. **Compra de Paquets d'Hores**:
+   - Botó directe "Comprar Hores" vinculat als enllaços de pagament Stripe segons l'edat de l'alumne (Adults o Infantil, amb tall configurable als 12 anys).
+5. **Carnet Digital de l'Alumne amb Codi QR (`carnet.html`)**:
+   - Codi identificador personal per al fitxatge presencial al taller.
+   - **Suport per a Apple Watch**: Generació de passis `.pkpass` per a l'Apple Wallet de l'iPhone i rellotge.
+   - **Suport per a Wear OS / Pixel Watch / Galaxy Watch (Mode Mat OLED)**:
+     - Descàrrega d'imatge 1:1 en alta resolució (600x600 px).
+     - Fons negre AMOLED pur (`#181514`) que manté els píxels apagats per estalviar bateria.
+     - Targeta de porcellana ceràmica mat antirreflex (`#DDD7CE`) amb QR negre d'alt contrast dissenyada per evitar reflexos de llum a l'escàner del taller.
 
 ---
 
-### 5. ESCÀNER D'ASSISTÈNCIA PRESENCIAL (`scanner.html`)
-- Dissenyat per a tauletes o mòbils a l'entrada del taller per escanejar el QR de l'alumne.
-- **Mode Standby Ambient Discret ("No es veu res")**:
-  - En repòs, no mostris la pantalla de la càmera de seguretat oberta. Mostra una pantalla neta, fons fosc elegant amb el logotip tipogràfic discret "Roig de Coure" i un subtil indicador de l'estat de l'escàner.
-  - La càmera treballa en segon pla (hidden/opacitat transparent) analitzant el flux a 20 FPS amb la llibreria `jsQR`.
-  - En passar el QR per davant: detecció automàtica instantània, xiulet suau de confirmació (Web Audio API), targeta emergent verda de benvinguda amb el nom de l'alumne i les hores restants, registre automàtic al backend i retorn automàtic al mode discret després de 3 segons.
-  - Botó d'opcions discret per canviar de càmera frontal/posterior.
+### 5. ESCÀNER D'ASSISTÈNCIA AMBIENT DISCRET (`scanner.html`)
+1. **Mode Standby Discret ("No es veu res")**:
+   - En repòs no mostra la imatge de la càmera a la pantalla de la recepció. Presenta una pantalla fosca artesanal amb el logotip "Roig de Coure" i un indicador subtil de funcionament.
+   - La càmera treballa en segon pla analitzant a 20 FPS amb la llibreria `jsQR`.
+2. **Detecció automàtica i registre instantani**:
+   - En apropar el QR des de mòbil, paper o rellotge: lectura immediata, xiulet suau acústic (Web Audio API), targeta verda emergent amb el nom de l'alumne, tipus d'acció (Entrada o Sortida) i hores restants.
+   - Retorn automàtic al mode discret després de 3 segons.
+3. **Gestió de cicles oblidats**:
+   - Si un alumne entra i no fitxa la sortida, la sessió roman com a oberta sense bloquejar el sistema.
+   - L'administració pot tancar-la manualment o aplicar la durada estàndard per defecte (ex: `02:00:00`).
 
 ---
 
 ### 6. PANELL D'ADMINISTRACIÓ (`admin.html`)
-- Gestió global de reserves: calendari mensual i selector per dies.
-- **Ubicació de la llista de reserves**: Col·loca la llista de reserves del dia seleccionat **directament a sota del calendari**.
-- Disseny responsive de la taula/llista de reserves perquè s'ajusti perfectament a l'amplada del navegador sense barres de desplaçament innecessàries.
-- Neteja de botons redundants a la capçalera i interfície.
-- Pestañas per a: Reserves, Alumnes, Paquets d'hores, Assistències presencials, Configuració de vacances/festius i paràmetres d'aforament.
-- Exportació a Excel d'alumnes i assistències.
+1. **Seguretat i accés**:
+   - Custodiat per una pantalla de bloqueig per PIN (per defecte: `1234`, configurable des del panell).
+2. **Barra superior i navegació**:
+   - Botó d'acció ràpida **+ Nou Alumne** i botó corporatiu **+ Nova Reserva** integrats a la capçalera amb suport responsive.
+   - Menú lateral net (sense signes duplicats).
+3. **Gestió d'Alumnes i Fitxa 360° Integrada**:
+   - En fer clic a qualsevol fila de la taula d'alumnes s'obre la fitxa completa de l'alumne a la mateixa pantalla, sense modals molestos.
+   - Selector de data de naixement que calcula automàticament l'edat en temps real i assigna la tarifa (Adult / Infantil).
+   - Pestanyes integrades: Reserves, Sessions/Assistència i Compres de paquets.
+   - Botons d'acció directa: Nova reserva per a l'alumne, afegir compra, marcar entrada/sortida i carnet digital.
+4. **Gestió de Reserves i Calendari**:
+   - Calendari mensual interactiu amb llista de reserves del dia situada **directament a sota del calendari**.
+   - Modal de Nova Reserva amb selector de torn de Matí (10:00 a 11:00) i Tarda (17:00 a 18:00).
+   - **Reserves Recurrents (Sèries periòdiques)**:
+     - Freqüències: Setmanal (+7 dies), Quinzenal (+14 dies) o Mensual (+1 mes).
+     - Presets de 4, 8, 12 sessions o personalitzat (fins a 26).
+     - Salt automàtic de dies tancats (dilluns, dimarts i festius).
+     - Previsualització en temps real d'aforament (`POST /api/reserves/recurrent-preview`).
+     - Cancel·lació individual o cancel·lació completa de sèrie en 1 clic (`POST /api/reserves/cancel-serie`).
+   - Casella de control de presència ràpida (`Visited`) per marcar l'assistència dels alumnes a classe.
+5. **Còpies de seguretat atòmiques (Snapshots SQLite)**:
+   - Captures completes de la base de dades amb `sqlite3.backup` a la carpeta `data/snapshots/`.
+   - Còpia automàtica diària (retenció de 30 dies) i generació manual en qualsevol moment.
+   - Descàrrega directa del fitxer `.db` i restauració segura amb còpia prèvia d'emergència automàtica.
 
 ---
 
-### 7. BACKEND EN PYTHON I BASE DE DADES (`server.py` + SQLite)
-- Servidor autònom basat en `http.server` de Python i SQLite (`ceramica.db`).
-- Taules principals: `alumnes`, `paquets_hores`, `reserves`, `assistències`, `configuracio`, `dies_tancats`.
-- Endpoints REST JSON:
-  - `GET /api/reserves/disponibilitat?data=YYYY-MM-DD`: Càlcul dinàmic de places lliures per activitat i franja.
-  - `GET /api/reserves/mes?any=YYYY&mes=MM`: Disponibilitat de tot el mes (festius, tancats, estat d'ocupació).
-  - `GET /api/alumnes/verificar?q=...`: Verificació privada d'alumne per nom o codi sense retornar llistes d'altres usuaris.
-  - `POST /api/reserves`: Creació de reserva amb comprovació atòmica d'aforament.
-  - `POST /api/scan`: Validació de codi QR i registre immediat d'assistència.
-  - `GET /api/alumnes/me?codi=...`: Consulta privada de saldo i reserves de l'alumne.
-  - Endpoints d'administració d'alumnes, paquets i exportació d'assistències.
-- Suport per mantenir sincronitzada qualsevol carpeta mirall del projecte (`taller-ceramica-hores/`).
-- Bateria de proves unitàries a `tests/test_backend.py` per garantir que tots els fluxos crítics funcionen correctament.
+### 7. BACKEND EN PYTHON I MODEL DE DADES (`server.py` + SQLite)
+1. **Servidor HTTP lleuger**:
+   - Desenvolupat sobre `http.server.HTTPServer` i `BaseHTTPRequestHandler` amb gestió multi-fil (`threading`).
+2. **Esquema principal de taules SQLite (`ceramica.db`)**:
+   - `alumnes`: `id`, `nom`, `cognoms`, `telefon`, `email`, `pin`, `edat`, `data_naixement`, `data_alta`, `actiu`, `notes`.
+   - `paquets_hores`: `id`, `student_id`, `data`, `hores`, `segons`, `concepte`, `preu`, `metode_pagament`, `notes`.
+   - `sessions`: `id`, `student_id`, `data`, `entrada`, `sortida`, `durada_segons`, `format_hms`, `tipus`, `estat`, `notes`.
+   - `reserves`: `id`, `student_id`, `student_nom`, `data`, `hora_inici`, `hora_fi`, `franja`, `activitat`, `activitat_id`, `places`, `telefon`, `email`, `estat`, `hores`, `notes`, `recurrent_id`, `calendar_event_id`, `created_at`.
+   - `activitats`: `id`, `nom`, `capacitat_max`, `icon`, `color`, `activa`.
+   - `configuracio`: `clau`, `valor`.
+   - `dies_festius`: `id`, `data_inici`, `data_fi`, `nom`, `motiu`.
+   - `restriccions_activitats`: `id`, `data_inici`, `data_fi`, `tipus_abast`, `activitats_permeses`, `activitats_bloquejades`, `motiu`.
+3. **Endpoints REST JSON principals**:
+   - `GET /api/reserves/disponibilitat?data=YYYY-MM-DD`: Càlcul independent de matí i tarda per a cada franja i activitat.
+   - `GET /api/reserves/mes?any=YYYY&mes=MM`: Disponibilitat de tot el mes.
+   - `POST /api/reserves`: Creació atòmica de reserva amb comprovació d'aforament per torn.
+   - `POST /api/reserves/recurrent-preview`: Previsualització de sèries periòdiques.
+   - `POST /api/reserves/recurrent`: Creació de sèries recurrents.
+   - `POST /api/reserves/cancel-serie`: Cancel·lació atòmica de sèries completes.
+   - `POST /api/scan`: Validació de codi QR i registre immediat d'assistència.
+   - `GET /api/alumnes/verificar?q=...`: Verificació privada d'alumne sense exposar dades de tercers.
+   - `POST /api/admin/auth` i `POST /api/admin/change-pin`: Seguretat del panell d'administració.
+   - `GET /api/admin/snapshots`, `POST /api/admin/snapshots`, `POST /api/admin/restore-snapshot`: Gestió de còpies de seguretat.
+   - `POST /api/alumnes/recuperar-pin` i `POST /api/alumnes/canviar-pin`: Gestió de credencials.
+
+---
+
+### 8. INTEGRACIONS EXTERNES
+1. **Google Sheets i Google Calendar**:
+   - Sincronització bidireccional asíncrona amb Google Apps Script.
+   - Registre automàtic d'alumnes, paquets, sessions i reserves.
+   - Hidratació inicial automàtica que protegeix i garanteix la persistència de les franges de matí (`M1`) i tarda (`T1`).
+2. **WhatsApp Notificacions (Meta Cloud API Oficial)**:
+   - Enviament directe a través de l'API oficial de Meta.
+   - Plantilles de confirmació immediata de reserva, recordatori a 48 hores i recordatori el mateix dia al matí.
+3. **Passarel·la de pagament Stripe**:
+   - Enllaços de compra directa d'hores per a Adults i Infantil.
+
+---
+
+### 9. BATERIA DE PROVES UNITÀRIES
+- Suite completa `tests/test_backend.py` amb 34 proves unitàries que cobreixen:
+  - Càlcul de segons a hores (`HH:MM:SS`) i balanços d'hores.
+  - Cicles de fitxatge, entrades i tancaments per oblit.
+  - Disponibilitat, aforament independent de matí i tarda i límits d'activitats.
+  - Generació, previsualització i cancel·lació de reserves recurrents.
+  - Còpies de seguretat (snapshots) i restauració de la base de dades.
+  - Alta d'alumnes amb edat calculada per data de naixement.
+  - Execució satisfactòria del 100% de les proves amb `python -m unittest discover tests`.
 ```

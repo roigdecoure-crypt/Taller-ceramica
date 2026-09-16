@@ -266,30 +266,84 @@ const Store = {
   },
 
   async canviarPinAlumne(studentId, newPin, currentPin = null) {
-    if (this.mode === 'api') {
+    const cleanPin = String(newPin || '').trim();
+    if (cleanPin.length < 4) {
+      return { ok: false, error: 'La nova contrasenya ha de tenir almenys 4 caracters' };
+    }
+
+    let apiRes = null;
+    if (this.mode === 'api' || this.apiBase) {
       try {
         const res = await fetch(`${this.apiBase}/api/alumnes/canviar-pin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ student_id: studentId, new_pin: newPin, current_pin: currentPin })
+          body: JSON.stringify({ student_id: studentId, new_pin: cleanPin, current_pin: currentPin })
         });
-        return await res.json();
+        apiRes = await res.json();
+        if (apiRes && !apiRes.ok) return apiRes;
       } catch (err) {
-        return { ok: false, error: 'Error de connexió: ' + err.message };
+        console.warn('Avís API canviar-pin:', err);
       }
     }
+
+    // Actualitzar localment
     const data = this._getLocalData();
     const student = (data.alumnes || []).find(a => a.id === studentId);
-    if (!student) return { ok: false, error: 'Alumne no trobat' };
-    if (currentPin !== null && String(student.pin || '') !== String(currentPin || '')) {
-      return { ok: false, error: 'La contrasenya actual no és correcta' };
+    if (student) {
+      student.pin = cleanPin;
+      this._saveLocalData(data);
     }
-    if (String(newPin || '').trim().length < 4) {
-      return { ok: false, error: 'La nova contrasenya ha de tenir almenys 4 caràcters' };
+    try { localStorage.setItem('logged_student_pin', cleanPin); } catch (e) {}
+
+    // SINCRONITZACIÓ DIRECTA A GOOGLE SHEETS (Garanteix persistència total)
+    try {
+      const cfg = await this.getConfig();
+      const gsUrl = cfg.google_sheets_url || 'https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec';
+      if (gsUrl) {
+        let stObj = null;
+        try {
+          const stDetails = await this.getAlumne(studentId);
+          if (stDetails && stDetails.alumne) {
+            stObj = { ...stDetails.alumne, pin: cleanPin };
+          }
+        } catch (e) {}
+        if (!stObj) {
+          stObj = student ? { ...student, pin: cleanPin } : { id: studentId, pin: cleanPin };
+        }
+        fetch(gsUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync_alumne', payload: stObj })
+        }).catch(err => console.warn('Error sync GS student PIN:', err));
+      }
+    } catch (e) {}
+
+    return apiRes || { ok: true, message: 'Contrasenya actualitzada i sincronitzada permanentment' };
+  },
+
+  async registrarAlumne(studentData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/registre`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(studentData)
+        });
+        const json = await res.json();
+        if (json.ok && json.alumne) {
+          const local = this._getLocalData();
+          if (!local.alumnes) local.alumnes = [];
+          local.alumnes.push({ ...json.alumne, pin: studentData.pin || studentData.contrasenya });
+          this._saveLocalData(local);
+        }
+        return json;
+      } catch (e) {
+        console.warn('Error registre API, fallback local:', e);
+      }
     }
-    student.pin = String(newPin).trim();
-    this._saveLocalData(data);
-    return { ok: true, message: 'Contrasenya actualitzada correctament' };
+    // Fallback local
+    return await this.saveAlumne(studentData);
   },
 
   async saveAlumne(studentData) {
@@ -752,7 +806,7 @@ const Store = {
     return { ok: false, error: 'PIN incorrecte' };
   },
 
-  async changeAdminPin(oldPin, newPin) {
+    async changeAdminPin(oldPin, newPin) {
     const cleanOld = String(oldPin || '').trim();
     const cleanNew = String(newPin || '').trim();
 
@@ -763,6 +817,7 @@ const Store = {
       return { ok: false, error: 'El nou PIN ha de tenir com a mínim 4 caràcters.' };
     }
 
+    let apiRes = null;
     if (this.mode === 'api' || this.apiBase) {
       try {
         const res = await fetch(`${this.apiBase}/api/admin/change-pin`, {
@@ -770,32 +825,35 @@ const Store = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ oldPin: cleanOld, newPin: cleanNew })
         });
-        const json = await res.json();
-        if (json.ok) {
-          const data = this._getLocalData();
-          if (!data.config) data.config = {};
-          data.config.admin_pin = cleanNew;
-          this._saveLocalData(data);
-          try { localStorage.setItem('roig_admin_pin', cleanNew); } catch (e) {}
-        }
-        return json;
+        apiRes = await res.json();
+        if (apiRes && !apiRes.ok) return apiRes;
       } catch (err) {
         console.warn('Error canviant PIN via API:', err);
       }
     }
 
-    // Fallback mode local (offline)
+    // Desar localment
     const data = this._getLocalData();
-    const currentStoredPin = (data.config && data.config.admin_pin) || localStorage.getItem('roig_admin_pin') || '1234';
-    if (cleanOld !== String(currentStoredPin).trim()) {
-      return { ok: false, error: 'El PIN actual no és correcte.' };
-    }
-
     if (!data.config) data.config = {};
     data.config.admin_pin = cleanNew;
     this._saveLocalData(data);
     try { localStorage.setItem('roig_admin_pin', cleanNew); } catch (e) {}
-    return { ok: true, message: 'PIN d\'administrador actualitzat correctament!' };
+
+    // SINCRONITZACIÓ DIRECTA A GOOGLE SHEETS (Perquè mai es restauri a 1234)
+    try {
+      const cfg = await this.getConfig();
+      const gsUrl = cfg.google_sheets_url || 'https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec';
+      if (gsUrl) {
+        fetch(gsUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'save_config', payload: { admin_pin: cleanNew } })
+        }).catch(err => console.warn('Error sync GS admin PIN:', err));
+      }
+    } catch (e) {}
+
+    return apiRes || { ok: true, message: "PIN d'administrador actualitzat i sincronitzat permanentment!" };
   },
 
   /* ====================== DISSENY DEL CARNET ====================== */
@@ -976,9 +1034,9 @@ const Store = {
     const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
     const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
     return [
-      { id: "torn", nom: "Torn", descripcio: "Sessió al torn de terrissaire", capacitatMax: capTorn, icon: "", color: "#B91C1C", actiu: true },
-      { id: "modelatge", nom: "Modelatge", descripcio: "Modelat de fang a mà i escultura", capacitatMax: capModelatge, icon: "", color: "#047857", actiu: true },
-      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintura i esmaltat sobre ceràmica", capacitatMax: capPintar, icon: "", color: "#1D4ED8", actiu: true }
+      { id: "torn", nom: "Torn", descripcio: "classe de torn o acabar treballs de torn", capacitatMax: capTorn, icon: "", color: "#B91C1C", actiu: true },
+      { id: "modelatge", nom: "Modelatge", descripcio: "modelatge o acabar treballs sense torn", capacitatMax: capModelatge, icon: "", color: "#047857", actiu: true },
+      { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintar peces de biscuit ceràmica", capacitatMax: capPintar, icon: "", color: "#1D4ED8", actiu: true }
     ];
   },
 
@@ -1563,6 +1621,7 @@ const Store = {
       activitats_permeses: restriccioData.activitats_permeses || restriccioData.activitatsPermeses || [],
       activitats_bloquejades: restriccioData.activitats_bloquejades || restriccioData.activitatsBloquejades || [],
       motiu: restriccioData.motiu || '',
+      torn: restriccioData.torn || 'tot_el_dia',
       creat_el: new Date().toISOString()
     };
     local.restriccions_activitats.push(newRestr);

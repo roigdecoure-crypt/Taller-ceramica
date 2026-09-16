@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panell d'Administració - Taller de Ceràmica</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest-admin.json">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -16,9 +16,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=9.9.3">
-  <link rel="stylesheet" href="css/admin.css?v=9.9.3">
-  <link rel="stylesheet" href="css/card.css?v=9.9.3">
+  <link rel="stylesheet" href="css/styles.css?v=10.1.0">
+  <link rel="stylesheet" href="css/admin.css?v=10.1.0">
+  <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <script>
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
     try {
@@ -59,6 +59,7 @@
         else if (tab === 'alumnes') heading.textContent = 'Alumnes & Clients';
         else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
         else if (tab === 'carnet-designer') heading.textContent = 'Dissenyador de Carnets';
+        else if (tab === 'vals-regal') heading.textContent = 'Vals Regal & Catàleg';
       }
 
       if (typeof refreshAppointmentsDashboard === 'function' && tab === 'reserves') {
@@ -68,6 +69,9 @@
       } else if (typeof populateDesignerStudentSelect === 'function' && tab === 'carnet-designer') {
         populateDesignerStudentSelect();
         if (typeof updateCardDesignPreview === 'function') updateCardDesignPreview();
+      } else if (tab === 'vals-regal') {
+        if (typeof carregarLlistaValsRegal === 'function') carregarLlistaValsRegal();
+        if (typeof carregarCatalegArticles === 'function') carregarCatalegArticles();
       }
 
       if (window.innerWidth <= 768) {
@@ -189,7 +193,7 @@
       <h2 style="font-size: 18px; font-weight: 800; color: #2C221E; margin-bottom: 6px;">Panell de Gestió</h2>
       <p style="font-size: 13px; color: #8C827A; margin-bottom: 22px; line-height: 1.4;">Introdueix el PIN mestre per gestionar el taller.</p>
       
-      <form id="form-admin-auth">
+      <form id="form-admin-auth" onsubmit="if(window.handleAdminAuthSubmit){window.handleAdminAuthSubmit(event);return false;}">
         <div style="position: relative; margin-bottom: 6px;">
           <input type="password" id="input-admin-pin" class="form-control" placeholder="PIN (ex: 1234)" autofocus style="font-size: 22px; text-align: center; letter-spacing: 6px; padding: 12px 50px 12px 12px; border-radius: 12px;" maxlength="12" required>
           <button type="button" id="btn-toggle-admin-pin" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8C827A; font-size: 11px; font-weight: 600; padding: 6px;" title="Mostrar o amagar PIN">Veure</button>
@@ -218,7 +222,7 @@
 
     <ul class="sidebar-menu">
       <!-- VISTES PRINCIPALS -->
-      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari">
+      <li class="sidebar-item active" data-tab="reserves" id="nav-tab-reserves" title="Reserves & Calendari" onclick="switchAdminTab('reserves');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -229,7 +233,7 @@
         </span>
         <span class="nav-text">Reserves & Calendari</span>
       </li>
-      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes" title="Alumnes & Clients">
+      <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes" title="Alumnes & Clients" onclick="switchAdminTab('alumnes');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -240,7 +244,7 @@
         </span>
         <span class="nav-text">Alumnes & Clients</span>
       </li>
-      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe" title="Al taller ara mateix">
+      <li class="sidebar-item" data-tab="directe" id="nav-tab-directe" title="Al taller ara mateix" onclick="switchAdminTab('directe');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -249,7 +253,7 @@
         </span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
-      <li class="sidebar-item" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets">
+      <li class="sidebar-item" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets" onclick="switchAdminTab('carnet-designer');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="5" width="20" height="14" rx="2"></rect>
@@ -258,6 +262,18 @@
           </svg>
         </span>
         <span class="nav-text">Dissenyador de Carnets</span>
+      </li>
+      <li class="sidebar-item" data-tab="vals-regal" id="nav-tab-vals-regal" title="Vals Regal & Catàleg" onclick="switchAdminTab('vals-regal');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #831D1D;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 12 20 22 4 22 4 12"></polyline>
+            <rect x="2" y="7" width="20" height="5"></rect>
+            <line x1="12" y1="22" x2="12" y2="7"></line>
+            <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+            <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Vals Regal & Catàleg</span>
       </li>
 
       <div class="sidebar-divider"></div>
@@ -995,6 +1011,122 @@
       </div>
     </section>
 
+    <!-- VISTA: VALS REGAL & CATÀLEG D'ARTICLES (HORES TANCADES) -->
+    <section class="admin-tab-view" id="view-vals-regal">
+      <div class="header-content" style="margin-bottom: 24px;">
+        <div>
+          <h2>Vals Regal & Catàleg d'Experiències</h2>
+          <p class="text-muted">Gestiona els vals regal emesos, crea'n de nous per a vendes al taller i consulta els articles amb preus i hores tancades.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-primary" onclick="triggerOpenModal('modal-admin-nou-val-backdrop', 'obrirModalCrearValRegal');">
+            <span>+ Crear Val Regal</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="carregarLlistaValsRegal();">
+            <span>Actualitzar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Targetes Mètriques Vals Regal -->
+      <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Vals Actius (Pendents)</div>
+          <div class="stat-value" id="vals-count-actius" style="color: #5E7E6F;">0</div>
+          <div class="stat-desc">A punt per ser bescanviats a reserves</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Vals Bescanviats</div>
+          <div class="stat-value" id="vals-count-canviats" style="color: #831D1D;">0</div>
+          <div class="stat-desc">Classes ja gaudides al taller</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Vals Emesos</div>
+          <div class="stat-value" id="vals-count-totals">0</div>
+          <div class="stat-desc">Històric de vals venuts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Catàleg d'Articles</div>
+          <div class="stat-value" id="articles-count-totals" style="color: #B45309;">5</div>
+          <div class="stat-desc">Experiències i packs amb hores tancades</div>
+        </div>
+      </div>
+
+      <!-- Filtres i Taula de Vals Regal -->
+      <div class="card" style="margin-bottom: 30px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 16px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-primary val-filter-btn active" data-filter="" onclick="filtrarValsRegal(this, '');">Tots</button>
+            <button type="button" class="btn btn-sm btn-outline val-filter-btn" data-filter="actiu" onclick="filtrarValsRegal(this, 'actiu');">Actius</button>
+            <button type="button" class="btn btn-sm btn-outline val-filter-btn" data-filter="canviat" onclick="filtrarValsRegal(this, 'canviat');">Bescanviats</button>
+            <button type="button" class="btn btn-sm btn-outline val-filter-btn" data-filter="anul·lat" onclick="filtrarValsRegal(this, 'anul·lat');">Anul·lats</button>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; min-width: 340px;">
+            <input type="text" id="input-cerca-vals" class="form-control" placeholder="Cercar per codi, destinatari o comprador..." oninput="cercarValsRegal(this.value);" style="font-size: 13px; flex: 1;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="obrirEscannerValRegal();" style="white-space: nowrap; font-size: 13px; padding: 7px 14px; font-weight: 600; background: #831D1D; border-color: #831D1D;" title="Escanejar codi QR del val regal amb la càmera de la tauleta">
+              Llegir QR del Val
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="table" id="taula-vals-regal">
+            <thead>
+              <tr>
+                <th>Codi</th>
+                <th>Experiència</th>
+                <th>Destinatari</th>
+                <th>Comprador</th>
+                <th>Data Compra</th>
+                <th>Caducitat</th>
+                <th>Estat</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-vals-regal">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: var(--color-muted);">Carregant vals regal...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Catàleg d'Articles Actius -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #831D1D;">Articles i Packs del Catàleg Web</h3>
+            <p style="margin: 0; font-size: 12px; color: var(--color-muted);">Productes tancats disponibles per comprar en línia o a la botiga.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="obrirModalCrearArticle();" style="background: #047857; border-color: #047857;">
+            <span>+ Nou Article / Pack</span>
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="table" id="taula-articles">
+            <thead>
+              <tr>
+                <th>Públic / Edat</th>
+                <th>Nom de l'Article</th>
+                <th>Hores Assignades</th>
+                <th>Preu Fix</th>
+                <th>Activitat</th>
+                <th>Val Regal?</th>
+                <th>Estat</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-articles">
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 20px; color: var(--color-muted);">Carregant catàleg...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- DRAWER LATERAL: FITXA 360° D'ALUMNE -->
@@ -1381,7 +1513,37 @@
           <input type="url" id="cfg-stripe-infantil" class="form-control" placeholder="https://buy.stripe.com/cNi9AT5NT8vnfFEcTjgIo0j">
         </div>
 
-        <h4 style="margin: 18px 0 10px; color: var(--color-secondary);">Sincronització amb Google Sheets</h4>
+        <h4 style="margin: 22px 0 10px; color: #1E3A8A; display: flex; align-items: center; gap: 6px;">
+          Passarel·la de Pagaments Square (TPV & Botiga Web)
+        </h4>
+        <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
+          Configura les credencials del teu compte de Square per unificar els cobraments de la botiga web i vals regal amb els TPV físics del taller.
+        </p>
+        <div class="form-group">
+          <label>Entorn de Square</label>
+          <select id="cfg-square-environment" class="form-control" style="font-size: 13px;">
+            <option value="sandbox">Sandbox (Proves - no cobra diners reals)</option>
+            <option value="production">Producció (Oficial)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Square Application ID</label>
+          <input type="text" id="cfg-square-app-id" class="form-control" placeholder="sandbox-sq0idb-..." style="font-family: monospace; font-size: 13px;">
+        </div>
+        <div class="form-group">
+          <label>Square Access Token</label>
+          <input type="password" id="cfg-square-access-token" class="form-control" placeholder="EAAA..." style="font-family: monospace; font-size: 13px;">
+        </div>
+        <div class="form-group">
+          <label>Square Location ID (Ubicació TPV)</label>
+          <input type="text" id="cfg-square-location-id" class="form-control" placeholder="L..." style="font-family: monospace; font-size: 13px;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px; margin-bottom: 16px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-provar-square" onclick="provarConnexioSquare()" style="border-color: #059669; color: #065F46; background: #ECFDF5; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            Provar Connexió amb Square
+          </button>
+          <span id="square-test-status" style="font-size: 12px;"></span>
+        </div>
         <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">
           Enganxa l'URL de la teva aplicació web de Google Apps Script (que acaba en <code>/exec</code>):
         </p>
@@ -2220,6 +2382,16 @@
               </div>
             </div>
 
+            <!-- Selecció del torn afectat: Matí / Tarda / Tot el dia -->
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Torn afectat per la restricció:</label>
+              <select id="restr-input-torn" class="form-control" style="width: 100%; max-width: 320px; font-size: 13px; padding: 6px 10px; border: 1px solid #D1D5DB; border-radius: 6px;">
+                <option value="tot_el_dia" selected>Tot el dia (Matí i Tarda)</option>
+                <option value="mati">Només Matí (10:00 - 12:00)</option>
+                <option value="tarda">Només Tarda (16:00 - 20:00)</option>
+              </select>
+            </div>
+
             <!-- Selecció de tallers permesos / bloquejats -->
             <div style="margin-bottom: 12px; background: #FFFFFF; border: 1px solid #C7D2FE; border-radius: 6px; padding: 12px;">
               <label style="display: block; font-size: 12.5px; font-weight: 700; color: #1E1B4B; margin-bottom: 8px;">
@@ -2366,19 +2538,220 @@
     </div>
   </div>
 
+  <!-- MODAL: GESTIÓ D'ARTICLE / PACK DEL CATÀLEG (CREAR O EDITAR) -->
+  <div class="modal-backdrop" id="modal-admin-article-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) closeAnyModal('modal-admin-article-backdrop');">
+    <div class="modal-dialog" style="max-width: 520px; background: #FFF; border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #047857; padding-bottom: 12px; margin-bottom: 18px;">
+        <h3 id="modal-article-titol-cap" style="margin: 0; font-size: 18px; font-weight: 800; color: #047857;">Nou Article / Pack</h3>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-admin-article-backdrop');">&times;</button>
+      </div>
 
+      <form id="form-admin-article" onsubmit="event.preventDefault(); guardarArticleCataleg();">
+        <input type="hidden" id="art-form-id">
 
-  <!-- Contenidor per a Toasts -->
+        <div style="display: grid; grid-template-columns: 1fr 150px; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Nom de l'Article o Taller *</label>
+            <input type="text" id="art-form-nom" class="form-control" placeholder="Ex: Taller de torn (Adult)" required style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Públic / Edat *</label>
+            <select id="art-form-edat" class="form-control" style="font-size: 13px;">
+              <option value="adult">Adult</option>
+              <option value="infant">Menor de 12 anys</option>
+              <option value="tots">Tots els públics</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Descripció breu per a la botiga web</label>
+          <textarea id="art-form-descripcio" class="form-control" rows="2" placeholder="Explica en què consisteix l'activitat..." style="font-size: 13px;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Preu Fix (€) *</label>
+            <input type="number" id="art-form-preu" class="form-control" step="0.5" min="1" placeholder="50.00" required style="font-size: 13px; font-weight: 700;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Hores de sessió / crèdit *</label>
+            <input type="number" id="art-form-hores" class="form-control" step="0.5" min="0.5" value="2.0" required style="font-size: 13px; font-weight: 700;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Activitat associada</label>
+            <select id="art-form-activitat" class="form-control" style="font-size: 13px;">
+              <option value="torn">Torn</option>
+              <option value="modelatge">Modelatge</option>
+              <option value="pintar">Pintar Ceràmica</option>
+              <option value="vidre">Fusió de Vidre</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Ordre a la web</label>
+            <input type="number" id="art-form-ordre" class="form-control" value="1" min="0" style="font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 16px; margin-bottom: 18px; padding: 12px; background: #F9FAFB; border-radius: 8px; border: 1px solid #E5E7EB;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="art-form-val-regal" checked style="width: 18px; height: 18px; accent-color: #831D1D;">
+            <strong>Apte com a Val Regal</strong>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="art-form-actiu" checked style="width: 18px; height: 18px; accent-color: #047857;">
+            <strong>Visible a la Web (Actiu)</strong>
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; padding-top: 14px;">
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-article-backdrop');">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-article" style="background: #047857; border-color: #047857; font-weight: 700;">
+            Desar Article
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR NOU VAL REGAL MANUAL (VENDES AL TALLER / TPV) -->
+  <div class="modal-backdrop" id="modal-admin-nou-val-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) closeAnyModal('modal-admin-nou-val-backdrop');">
+    <div class="modal-dialog" style="max-width: 540px; background: #FFF; border-radius: 12px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #831D1D; padding-bottom: 12px; margin-bottom: 18px;">
+        <h3 id="modal-val-titol-cap" style="margin: 0; font-size: 18px; font-weight: 800; color: #831D1D;">Emetre Nou Val Regal</h3>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-admin-nou-val-backdrop');">&times;</button>
+      </div>
+
+      <form id="form-crear-val-regal-manual" onsubmit="event.preventDefault(); guardarNouValRegalManual();">
+        <input type="hidden" id="val-manual-mode" value="crear">
+        <input type="hidden" id="val-manual-codi" value="">
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Experiència / Article del Catàleg *</label>
+          <select id="val-manual-article-select" class="form-control" onchange="actualitzarCampsDesDeArticle(this.value);" required style="font-size: 13px;">
+            <option value="">-- Selecciona una experiència --</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Títol imprès al val</label>
+            <input type="text" id="val-manual-titol" class="form-control" placeholder="Taller de torn (Adult)" required style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Hores de sessió</label>
+            <input type="number" id="val-manual-hores" class="form-control" value="2.0" step="0.5" min="1" max="20" required style="font-size: 13px;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Per a qui és? (Destinatari) *</label>
+            <input type="text" id="val-manual-destinatari" class="form-control" placeholder="Nom i cognoms" required style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">De part de qui? (Comprador)</label>
+            <input type="text" id="val-manual-comprador" class="form-control" placeholder="Ex: Els teus amics, la família..." style="font-size: 13px;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Dedicatòria o Missatge personalitzat (opcional)</label>
+          <textarea id="val-manual-missatge" class="form-control" rows="2" placeholder="Escriu aquí unes paraules boniques..." style="font-size: 13px;"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Import cobrat (€)</label>
+            <input type="number" id="val-manual-preu" class="form-control" value="50.00" step="0.5" style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Mètode de cobrament</label>
+            <select id="val-manual-metode" class="form-control" style="font-size: 13px;">
+              <option value="tpv_square_taller">TPV Físic Square (Taller)</option>
+              <option value="efectiu">Efectiu (Caixa)</option>
+              <option value="bizum">Bizum</option>
+              <option value="transferencia">Transferència Bancària</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="val-edit-extra-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Data de Caducitat</label>
+            <input type="date" id="val-manual-caducitat" class="form-control" style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Estat del Val</label>
+            <select id="val-manual-estat" class="form-control" style="font-size: 13px;">
+              <option value="actiu">Actiu (Pendent de bescanviar)</option>
+              <option value="canviat">Bescanviat</option>
+              <option value="anul·lat">Anul·lat</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; padding-top: 14px;">
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-nou-val-backdrop');">Cancel·lar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-val-manual" style="background: #831D1D; border-color: #831D1D; font-weight: 700;">
+            Generar i Emetre Val Regal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ESCÀNER QR DE VALS REGAL PER A TAULETA / MÒBIL -->
+  <div class="modal-backdrop" id="modal-scan-val-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) tancarEscannerValRegal();">
+    <div class="modal-card" style="max-width: 520px; width: 92%; margin: 30px auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #1F2937;">Escanejar Codi QR del Val</h3>
+        <button type="button" class="modal-close" onclick="tancarEscannerValRegal();" style="border: none; background: transparent; font-size: 24px; cursor: pointer; color: #6B7280; line-height: 1;">&times;</button>
+      </div>
+      <p style="font-size: 13px; color: #6B7280; margin-bottom: 14px; line-height: 1.4;">Apunta amb la càmera de la tauleta o mòbil cap al codi QR del val regal (imprès en paper o a la pantalla del client).</p>
+      
+      <div id="val-qr-reader-container" style="width: 100%; min-height: 280px; background: #111827; border-radius: 8px; overflow: hidden; position: relative;"></div>
+      
+      <div id="val-scan-status" style="margin-top: 12px; font-size: 13px; text-align: center; color: #4B5563; font-weight: 500;">
+        Iniciant càmera...
+      </div>
+
+      <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" onclick="tancarEscannerValRegal();">Tancar Escàner</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RESULTAT I ACCIÓ DEL VAL ESCANEJAT -->
+  <div class="modal-backdrop" id="modal-detall-val-escanejat-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) closeAnyModal('modal-detall-val-escanejat-backdrop');">
+    <div class="modal-card" style="max-width: 520px; width: 92%; margin: 30px auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #1F2937;" id="scan-val-result-titol">Detall del Val Regal</h3>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-detall-val-escanejat-backdrop');" style="border: none; background: transparent; font-size: 24px; cursor: pointer; color: #6B7280; line-height: 1;">&times;</button>
+      </div>
+      
+      <div id="scan-val-result-body" style="margin-bottom: 20px;"></div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; padding-top: 14px;" id="scan-val-result-actions">
+        <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-detall-val-escanejat-backdrop');">Tancar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
   <script src="lib/qrcode.min.js?v=9.1"></script>
+  <script src="lib/html5-qrcode.min.js?v=9.4"></script>
   <script src="js/time-utils.js?v=9.1"></script>
   <script src="js/sound.js?v=9.1"></script>
   <script src="js/qr-engine.js?v=9.4"></script>
   <script src="js/api-config.js?v=9.1"></script>
-  <script src="js/store.js?v=9.9.4"></script>
-  <script src="js/reserves-calendar.js?v=9.9.3"></script>
-  <script src="js/admin.js?v=9.9.4"></script>
+  <script src="js/store.js?v=10.1.0"></script>
+  <script src="js/reserves-calendar.js?v=10.1.0"></script>
+  <script src="js/admin.js?v=10.1.0"></script>
 </body>
 </html>

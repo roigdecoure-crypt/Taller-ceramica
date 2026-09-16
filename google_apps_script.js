@@ -38,11 +38,16 @@ function doPost(e) {
     if (action === "get_all" || action === "hydrate") {
       return handleGetAll();
     } else if (action === "sync_all") {
-      syncAlumnes(ss, data.alumnes || []);
-      syncPaquets(ss, data.paquets || []);
-      syncSessions(ss, data.sessions || []);
-      if (data.reserves) syncReserves(ss, data.reserves || []);
-      if (data.config) syncConfig(ss, data.config);
+      var alumnesList = data.alumnes || (data.payload && data.payload.alumnes) || [];
+      var paquetsList = data.paquets || (data.payload && data.payload.paquets) || [];
+      var sessionsList = data.sessions || (data.payload && data.payload.sessions) || [];
+      var reservesList = data.reserves || (data.payload && data.payload.reserves);
+      var configObj = data.config || (data.payload && data.payload.config);
+      syncAlumnes(ss, alumnesList);
+      syncPaquets(ss, paquetsList);
+      syncSessions(ss, sessionsList);
+      if (reservesList) syncReserves(ss, reservesList);
+      if (configObj) syncConfig(ss, configObj);
       return jsonResponse({ status: "success", message: "Sincronitzacio completa realitzada amb exit!" });
     } else if (action === "sync_alumne") {
       upsertAlumneRow(ss, data.payload || data.alumne);
@@ -62,7 +67,7 @@ function doPost(e) {
     } else if (action === "delete_paquet") {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
-    } else if (action === "add_reserva" || action === "update_reserva") {
+    } else if (action === "add_reserva" || action === "nova_reserva" || action === "update_reserva") {
       var resCalId = upsertReservaRow(ss, data.payload || data.reserva);
       return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets", calendar_event_id: resCalId });
     } else if (action === "cancel_reserva") {
@@ -202,25 +207,26 @@ function upsertAlumneRow(ss, a) {
   var sheet = getOrCreateSheet(ss, "Alumnes", HEADERS_ALUMNES, "#C25E3A");
   var values = sheet.getDataRange().getValues();
   var rowIdx = -1;
+  var existingRow = null;
 
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(a.id).trim()) {
       rowIdx = i + 1;
+      existingRow = values[i];
       break;
     }
   }
 
-  var rowData = [
-    a.id,
-    a.nom || "",
-    a.cognoms || "",
-    a.telefon || "",
-    a.email || "",
-    a.pin || "",
-    a.data_alta || new Date().toISOString(),
-    a.notes || "",
-    (a.actiu === undefined || a.actiu === null ? 1 : a.actiu)
-  ];
+  var nom = (a.nom !== undefined && a.nom !== null && a.nom !== '') ? a.nom : (existingRow ? existingRow[1] : '');
+  var cognoms = (a.cognoms !== undefined && a.cognoms !== null) ? a.cognoms : (existingRow ? existingRow[2] : '');
+  var telefon = (a.telefon !== undefined && a.telefon !== null && a.telefon !== '') ? a.telefon : (existingRow ? existingRow[3] : '');
+  var email = (a.email !== undefined && a.email !== null && a.email !== '') ? a.email : (existingRow ? existingRow[4] : '');
+  var pin = (a.pin !== undefined && a.pin !== null && a.pin !== '') ? a.pin : (existingRow ? existingRow[5] : '1234');
+  var data_alta = (a.data_alta !== undefined && a.data_alta !== null && a.data_alta !== '') ? a.data_alta : (existingRow ? existingRow[6] : new Date().toISOString());
+  var notes = (a.notes !== undefined && a.notes !== null) ? a.notes : (existingRow ? existingRow[7] : '');
+  var actiu = (a.actiu !== undefined && a.actiu !== null) ? a.actiu : (existingRow ? existingRow[8] : 1);
+
+  var rowData = [a.id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu];
 
   if (rowIdx !== -1) {
     sheet.getRange(rowIdx, 1, 1, rowData.length).setValues([rowData]);
@@ -687,6 +693,7 @@ function syncCalendarEvent(r) {
     var nom = r.student_nom || r.student_id || "Alumne";
     var act = r.activitat || "Torn";
     var tel = r.telefon || "";
+    var places = parseInt(r.places, 10) || 1;
     var title = act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
     var startTime = parseDateTimeRobust(r.data, r.hora_inici);
