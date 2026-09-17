@@ -258,11 +258,31 @@ async function loginStudent(identifier, password, isAutoLogin = false) {
 
     currentStudent = res;
 
-    // Guardar a localStorage i sessionStorage per a persistÃ¨ncia total
+        // Guardar a localStorage i sessionStorage per a persistència total
     localStorage.setItem('logged_student_id', res.alumne.id);
     sessionStorage.setItem('logged_student_id', res.alumne.id);
     localStorage.setItem('logged_student_pin', cleanPin);
     sessionStorage.setItem('logged_student_pin', cleanPin);
+
+    // Assegurar que l'alumne actual queda registrat a la llista de perfils vinculats
+    try {
+      const list = getLinkedStudents();
+      const studentEntry = {
+        id: res.alumne.id,
+        nom: res.alumne.nom,
+        cognoms: res.alumne.cognoms || '',
+        pin: cleanPin
+      };
+      const existingIdx = list.findIndex(s => String(s.id).toLowerCase() === String(res.alumne.id).toLowerCase());
+      if (existingIdx >= 0) {
+        list[existingIdx] = studentEntry;
+      } else {
+        list.push(studentEntry);
+      }
+      saveLinkedStudents(list);
+    } catch (e) {
+      console.warn("Error actualitzant alumnes vinculats:", e);
+    }
 
     document.getElementById('section-login').style.display = 'none';
     document.getElementById('section-dashboard').style.display = 'block';
@@ -652,6 +672,299 @@ async function processSuccessfulPayment(hores, concepte, preu, metode = 'Stripe'
 }
 
 // ConfiguraciÃ³ d'Esdeveniments
+
+// ==========================================
+// GESTIÓ MULTI-PERFIL I FAMÍLIA VINCULADA
+// ==========================================
+
+function getLinkedStudents() {
+  try {
+    const raw = localStorage.getItem('linked_students');
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLinkedStudents(list) {
+  try {
+    localStorage.setItem('linked_students', JSON.stringify(list));
+  } catch (e) {
+    console.warn("Error desant linked_students:", e);
+  }
+}
+
+function renderFamilySwitcher() {
+  const bar = document.getElementById('portal-family-switcher');
+  const listEl = document.getElementById('family-pills-list');
+  const btnAllQrs = document.getElementById('btn-open-family-qrs-modal');
+  if (!bar || !listEl || !currentStudent) return;
+
+  const list = getLinkedStudents();
+  if (list.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = 'flex';
+  listEl.innerHTML = '';
+
+  const activeId = String(currentStudent.alumne.id).toLowerCase();
+
+  list.forEach(s => {
+    const pill = document.createElement('div');
+    const isActive = String(s.id).toLowerCase() === activeId;
+    pill.className = `family-pill ${isActive ? 'active' : ''}`;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = isActive ? `✓ ${s.nom}` : s.nom;
+    pill.appendChild(nameSpan);
+
+    if (list.length > 1) {
+      const rmBtn = document.createElement('button');
+      rmBtn.type = 'button';
+      rmBtn.className = 'family-pill-remove';
+      rmBtn.innerHTML = '&times;';
+      rmBtn.title = `Desvincular ${s.nom}`;
+      rmBtn.onclick = (e) => {
+        e.stopPropagation();
+        desvincularAlumne(s.id, s.nom);
+      };
+      pill.appendChild(rmBtn);
+    }
+
+    if (!isActive) {
+      pill.title = `Canviar al perfil de ${s.nom}`;
+      pill.onclick = () => switchActiveStudent(s.id);
+    }
+
+    listEl.appendChild(pill);
+  });
+
+  if (btnAllQrs) {
+    btnAllQrs.style.display = list.length > 1 ? 'inline-flex' : 'none';
+  }
+}
+
+async function switchActiveStudent(studentId) {
+  const list = getLinkedStudents();
+  const target = list.find(s => String(s.id).toLowerCase() === String(studentId).toLowerCase());
+  if (!target) return;
+
+  showToast(`Carregant el perfil de ${target.nom}...`, "info");
+  const ok = await loginStudent(target.id, target.pin, true);
+  if (ok) {
+    showToast(`Perfil canviat a ${target.nom}`, "success");
+  } else {
+    showToast(`No s'ha pogut canviar al perfil de ${target.nom}. Torna a introduir les credencials.`, "error");
+  }
+}
+
+async function handleVincularSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const idInput = document.getElementById('input-vincular-id');
+  const pinInput = document.getElementById('input-vincular-pin');
+  const errBox = document.getElementById('vincular-error-msg');
+  const submitBtn = document.getElementById('btn-submit-vincular');
+
+  const cleanId = (idInput ? idInput.value : '').trim();
+  const cleanPin = (pinInput ? pinInput.value : '').trim();
+
+  if (!cleanId || !cleanPin) {
+    if (errBox) {
+      errBox.textContent = "Cal introduir tant el nom o codi com el PIN de l'alumne.";
+      errBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verificant credencials...';
+  }
+  if (errBox) errBox.style.display = 'none';
+
+  try {
+    const res = await Store.loginAlumne(cleanId, cleanPin);
+    if (!res.ok) {
+      if (errBox) {
+        errBox.textContent = res.error || "Credencials incorrectes de l'alumne.";
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    const list = getLinkedStudents();
+    const entry = {
+      id: res.alumne.id,
+      nom: res.alumne.nom,
+      cognoms: res.alumne.cognoms || '',
+      pin: cleanPin
+    };
+    const existingIdx = list.findIndex(s => String(s.id).toLowerCase() === String(res.alumne.id).toLowerCase());
+    if (existingIdx >= 0) {
+      list[existingIdx] = entry;
+    } else {
+      list.push(entry);
+    }
+    saveLinkedStudents(list);
+
+    const modalVincular = document.getElementById('modal-vincular-alumne');
+    if (modalVincular) closeModal(modalVincular);
+
+    if (idInput) idInput.value = '';
+    if (pinInput) pinInput.value = '';
+
+    await loginStudent(res.alumne.id, cleanPin, true);
+    showToast(`S'ha vinculat en/na ${res.alumne.nom} amb èxit!`, "success");
+  } catch (err) {
+    if (errBox) {
+      errBox.textContent = "Error vinculant: " + err.message;
+      errBox.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Vincular Alumne';
+    }
+  }
+}
+
+async function desvincularAlumne(studentId, studentName) {
+  const nom = studentName || 'aquest alumne';
+  if (!confirm(`Vols desvincular a ${nom} d'aquest dispositiu?`)) return;
+
+  let list = getLinkedStudents();
+  list = list.filter(s => String(s.id).toLowerCase() !== String(studentId).toLowerCase());
+  saveLinkedStudents(list);
+
+  showToast(`S'ha desvinculat a ${nom}.`, "info");
+
+  const isCurrentActive = currentStudent && String(currentStudent.alumne.id).toLowerCase() === String(studentId).toLowerCase();
+  if (isCurrentActive) {
+    if (list.length > 0) {
+      await switchActiveStudent(list[0].id);
+    } else {
+      
+  // Esdeveniments de Gestió de Família i Perfils Vinculats
+  const btnOpenVincular = document.getElementById('btn-open-vincular-modal');
+  const modalVincular = document.getElementById('modal-vincular-alumne');
+  const btnCloseVincular = document.getElementById('btn-close-vincular-modal');
+  const formVincular = document.getElementById('form-vincular-alumne');
+
+  if (btnOpenVincular && modalVincular) {
+    btnOpenVincular.addEventListener('click', () => {
+      const errBox = document.getElementById('vincular-error-msg');
+      if (errBox) errBox.style.display = 'none';
+      const idInput = document.getElementById('input-vincular-id');
+      if (idInput) idInput.value = '';
+      const pinInput = document.getElementById('input-vincular-pin');
+      if (pinInput) pinInput.value = '';
+      openModal(modalVincular);
+      if (idInput) setTimeout(() => idInput.focus(), 150);
+    });
+  }
+
+  if (btnCloseVincular && modalVincular) {
+    btnCloseVincular.addEventListener('click', () => closeModal(modalVincular));
+  }
+
+  if (formVincular) {
+    formVincular.addEventListener('submit', handleVincularSubmit);
+  }
+
+  const btnOpenFamilyQrs = document.getElementById('btn-open-family-qrs-modal');
+  const modalFamilyQrs = document.getElementById('modal-family-qrs');
+  const btnCloseFamilyQrs = document.getElementById('btn-close-family-qrs-modal');
+  const btnCloseFamilyQrsAct = document.getElementById('btn-close-family-qrs-action');
+
+  if (btnOpenFamilyQrs && modalFamilyQrs) {
+    btnOpenFamilyQrs.addEventListener('click', openFamilyQrsModal);
+  }
+  if (btnCloseFamilyQrs && modalFamilyQrs) {
+    btnCloseFamilyQrs.addEventListener('click', () => closeModal(modalFamilyQrs));
+  }
+  if (btnCloseFamilyQrsAct && modalFamilyQrs) {
+    btnCloseFamilyQrsAct.addEventListener('click', () => closeModal(modalFamilyQrs));
+  }
+
+  const btnLogout = document.getElementById('btn-logout');
+      if (btnLogout) btnLogout.click();
+    }
+  } else {
+    renderFamilySwitcher();
+  }
+}
+
+function openFamilyQrsModal() {
+  const modal = document.getElementById('modal-family-qrs');
+  const grid = document.getElementById('family-qrs-cards-grid');
+  if (!modal || !grid) return;
+
+  grid.innerHTML = '';
+  const list = getLinkedStudents();
+  const activeId = currentStudent ? String(currentStudent.alumne.id).toLowerCase() : '';
+
+  list.forEach(s => {
+    const card = document.createElement('div');
+    const isActive = String(s.id).toLowerCase() === activeId;
+    card.style.cssText = `
+      background: #FFFFFF;
+      border: 2px solid ${isActive ? 'var(--brand-primary, #831D1D)' : 'var(--color-border, #E5DDD5)'};
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      box-shadow: ${isActive ? '0 4px 12px rgba(131,29,29,0.1)' : '0 2px 4px rgba(0,0,0,0.03)'};
+    `;
+
+    const titleBox = document.createElement('div');
+    const nameEl = document.createElement('div');
+    nameEl.style.cssText = 'font-size: 16px; font-weight: 700; color: var(--color-dark);';
+    nameEl.textContent = `${s.nom} ${s.cognoms || ''}`.trim();
+    titleBox.appendChild(nameEl);
+
+    const codeEl = document.createElement('div');
+    codeEl.style.cssText = 'font-size: 12px; color: var(--color-muted); margin-top: 2px;';
+    codeEl.innerHTML = `Codi: <strong style="color: var(--brand-primary);">${s.id}</strong> ${isActive ? '<span style="color: #059669; font-weight: 700; margin-left: 4px;">(Actiu)</span>' : ''}`;
+    titleBox.appendChild(codeEl);
+
+    card.appendChild(titleBox);
+
+    const qrBox = document.createElement('div');
+    qrBox.style.cssText = 'background: #FAF7F5; padding: 10px; border-radius: 10px; border: 1px solid #E5DDD5; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; box-sizing: border-box;';
+    QREngine.generateQR(qrBox, s.id, 140);
+    card.appendChild(qrBox);
+
+    if (!isActive) {
+      const btnSel = document.createElement('button');
+      btnSel.type = 'button';
+      btnSel.className = 'btn btn-outline btn-sm';
+      btnSel.style.cssText = 'width: 100%; font-size: 12px; font-weight: 600; padding: 6px 10px;';
+      btnSel.textContent = `Seleccionar ${s.nom}`;
+      btnSel.onclick = async () => {
+        closeModal(modal);
+        await switchActiveStudent(s.id);
+      };
+      card.appendChild(btnSel);
+    } else {
+      const activeTag = document.createElement('div');
+      activeTag.style.cssText = 'font-size: 12px; font-weight: 700; color: #059669; background: #EEF5F1; border-radius: 6px; padding: 4px 12px; width: 100%;';
+      activeTag.textContent = 'Perfil Actiu';
+      card.appendChild(activeTag);
+    }
+
+    grid.appendChild(card);
+  });
+
+  openModal(modal);
+}
+
 function setupEventListeners() {
   // Commutar visibilitat de la contrasenya (PIN)
   const btnTogglePwd = document.getElementById('btn-toggle-login-pwd');
