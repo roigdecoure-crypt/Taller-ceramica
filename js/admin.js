@@ -3092,7 +3092,7 @@ async function renderAdminDayAppointments(dateStr) {
               </a>
             ` : ''}
             ${!isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-edit-reserva" data-res-id="${r.id}" data-recurrent-id="${recId || r.recurrent_id || ''}" data-is-recurrent="${isRecurrent ? '1' : '0'}" data-client="${escapeHtml(clientNom)}" data-date="${dateStr}" data-hora-inici="${r.hora_inici || '18:00'}" data-hora-fi="${r.hora_fi || '20:00'}" data-hores="${r.hores || 2.0}" data-activitat="${escapeHtml(actNom)}" style="padding: 3px 8px; font-size: 11.5px; color: #1D4ED8; border-color: #BFDBFE; background: #EFF6FF; font-weight: 600;" title="Canviar l'hora i durada d'aquesta reserva">
+              <button type="button" class="btn btn-outline btn-sm btn-app-edit-reserva" data-res-id="${r.id}" data-recurrent-id="${recId || r.recurrent_id || ''}" data-is-recurrent="${isRecurrent ? '1' : '0'}" data-client="${escapeHtml(clientNom)}" data-date="${dateStr}" data-hora-inici="${r.hora_inici || '18:00'}" data-hora-fi="${r.hora_fi || '20:00'}" data-hores="${r.hores || 2.0}" data-activitat="${escapeHtml(actNom)}" data-activitat-id="${r.activitat_id || 'torn'}" data-notes="${escapeHtml(r.notes || '')}" style="padding: 3px 8px; font-size: 11.5px; color: #1D4ED8; border-color: #BFDBFE; background: #EFF6FF; font-weight: 600;" title="Canviar l'hora, data, durada o interval d'aquesta reserva">
                 ${isRecurrent ? 'Editar Sèrie' : 'Editar'}
               </button>
             ` : ''}
@@ -3218,13 +3218,17 @@ async function renderAdminDayAppointments(dateStr) {
         horaInici: btn.dataset.horaInici,
         horaFi: btn.dataset.horaFi,
         hores: parseFloat(btn.dataset.hores) || 2.0,
-        activitat: btn.dataset.activitat
+        activitat: btn.dataset.activitat,
+        activitatId: btn.dataset.activitatId || 'torn',
+        notes: btn.dataset.notes || ''
       });
     });
   });
 }
 
 // ==================== MODAL ADMIN EDITAR HORARI I DURADA ====================
+let _editSeriePreviewDebounce = null;
+
 function openAdminEditarReservaModal(resData) {
   const modal = document.getElementById('modal-admin-editar-reserva-backdrop');
   if (!modal) return;
@@ -3232,9 +3236,11 @@ function openAdminEditarReservaModal(resData) {
   const idInput = document.getElementById('edit-res-id');
   const recInput = document.getElementById('edit-res-recurrent-id');
   const dateInput = document.getElementById('edit-res-date');
+  const actIdInput = document.getElementById('edit-res-act-id');
   if (idInput) idInput.value = resData.id || '';
   if (recInput) recInput.value = resData.recurrentId || '';
   if (dateInput) dateInput.value = resData.date || '';
+  if (actIdInput) actIdInput.value = resData.activitatId || 'torn';
 
   const clientEl = document.getElementById('edit-res-client-nom');
   const descEl = document.getElementById('edit-res-desc');
@@ -3242,19 +3248,39 @@ function openAdminEditarReservaModal(resData) {
   if (descEl) descEl.textContent = `${formatCatalanFullDate(resData.date)} • ${resData.activitat} • Actual: ${resData.horaInici} - ${resData.horaFi} (${resData.hores}h)`;
 
   const scopeContainer = document.getElementById('edit-res-scope-container');
-  const scopeSerieDesc = document.getElementById('edit-res-scope-serie-desc');
-  const scopeSingleDesc = document.getElementById('edit-res-scope-single-desc');
+  const serieBlock = document.getElementById('edit-res-serie-config-block');
   const titleEl = document.getElementById('modal-edit-res-title');
+
+  // Inicialitzar dates i sessions per a la sèrie
+  const dataIniciInput = document.getElementById('edit-res-data-inici');
+  if (dataIniciInput) dataIniciInput.value = resData.date || getAdminLocalDate();
+
+  const repInput = document.getElementById('edit-res-repeticions');
+  if (repInput) {
+    let repVal = 4;
+    if (resData.notes && resData.notes.includes('/')) {
+      const match = resData.notes.match(/\[Recurrent\s+\d+\/(\d+)\]/i);
+      if (match && match[1]) {
+        repVal = parseInt(match[1], 10) || 4;
+      }
+    }
+    repInput.value = repVal;
+  }
+
+  const freqSel = document.getElementById('edit-res-frequencia');
+  if (freqSel) freqSel.value = 'setmanal';
+  const customIntervalWrap = document.getElementById('edit-res-custom-interval-wrap');
+  if (customIntervalWrap) customIntervalWrap.style.display = 'none';
 
   if (resData.isRecurrent) {
     if (scopeContainer) scopeContainer.style.display = 'block';
-    if (titleEl) titleEl.textContent = 'Modificar Horari de Sèrie Recurrent';
-    if (scopeSerieDesc) scopeSerieDesc.textContent = `A partir del dia ${formatCatalanFullDate(resData.date)} i totes les sessions següents`;
-    if (scopeSingleDesc) scopeSingleDesc.textContent = `Canviar únicament el dia ${formatCatalanFullDate(resData.date)}`;
+    if (serieBlock) serieBlock.style.display = 'flex';
+    if (titleEl) titleEl.textContent = 'Modificar Sèrie Recurrent o Monogràfic';
     const radioSerie = document.querySelector('input[name="edit_res_scope"][value="serie"]');
     if (radioSerie) radioSerie.checked = true;
   } else {
     if (scopeContainer) scopeContainer.style.display = 'none';
+    if (serieBlock) serieBlock.style.display = 'none';
     if (titleEl) titleEl.textContent = 'Modificar Horari de la Reserva';
     const radioSingle = document.querySelector('input[name="edit_res_scope"][value="single"]');
     if (radioSingle) radioSingle.checked = true;
@@ -3299,7 +3325,11 @@ function openAdminEditarReservaModal(resData) {
   }
 
   updateEditReservaPreview();
-  triggerOpenModal('modal-admin-editar-reserva-backdrop', 'Editar Horari Reserva');
+  if (resData.isRecurrent) {
+    triggerEditSerieDatesPreview();
+  }
+
+  triggerOpenModal('modal-admin-editar-reserva-backdrop', 'Editar Reserva o Sèrie');
 }
 
 function updateEditReservaPreview() {
@@ -3323,12 +3353,131 @@ function updateEditReservaPreview() {
   }
 }
 
+function triggerEditSerieDatesPreview() {
+  clearTimeout(_editSeriePreviewDebounce);
+  _editSeriePreviewDebounce = setTimeout(loadEditSerieDatesPreview, 250);
+}
+
+async function loadEditSerieDatesPreview() {
+  const listEl = document.getElementById('edit-res-dates-preview-list');
+  const titleEl = document.getElementById('edit-res-preview-title');
+  if (!listEl) return;
+
+  const dataInici = document.getElementById('edit-res-data-inici')?.value;
+  const frequencia = document.getElementById('edit-res-frequencia')?.value || 'setmanal';
+  const customInterval = parseInt(document.getElementById('edit-res-interval-dies')?.value, 10);
+  const repeticions = parseInt(document.getElementById('edit-res-repeticions')?.value, 10) || 4;
+  const saltarTancats = document.getElementById('edit-res-saltar-tancats')?.checked !== false;
+  const activitatId = document.getElementById('edit-res-act-id')?.value || 'torn';
+  const horaInici = document.getElementById('edit-res-hora-inici')?.value || '18:00';
+  const excludeRecId = document.getElementById('edit-res-recurrent-id')?.value || '';
+
+  if (!dataInici) {
+    listEl.innerHTML = '<div style="color: #64748B; font-style: italic;">Selecciona una data d'inici per veure les sessions.</div>';
+    return;
+  }
+
+  listEl.innerHTML = '<div style="color: #64748B; font-style: italic;">Calculant disponibilitat de sessions...</div>';
+
+  try {
+    const res = await Store.previewReservesRecurrents({
+      data_inici: dataInici,
+      frequencia: frequencia,
+      interval_dies: frequencia === 'personalitzat' ? customInterval : null,
+      repeticions: repeticions,
+      activitat_id: activitatId,
+      places: 1,
+      hora_inici: horaInici,
+      saltar_tancats: saltarTancats,
+      exclude_recurrent_id: excludeRecId
+    });
+
+    if (res && res.ok && Array.isArray(res.preview)) {
+      if (titleEl) {
+        titleEl.textContent = `Calendari (${res.preview.length} sessions calculades):`;
+      }
+      listEl.innerHTML = res.preview.map((p, idx) => {
+        const dFmt = formatCatalanFullDate(p.data);
+        const isOk = p.disponible;
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 4px; background: ${isOk ? '#F0FDF4' : '#FEF2F2'}; border: 1px solid ${isOk ? '#BBF7D0' : '#FECACA'};">
+            <div>
+              <strong style="color: #111827; font-size: 11.5px;">${idx + 1}. ${dFmt}</strong>
+            </div>
+            <div>
+              <span class="badge ${isOk ? 'badge-success' : 'badge-danger'}" style="font-size: 10.5px; padding: 1px 6px;">
+                ${isOk ? `Lliure (${p.places_lliures_activitat} pl.)` : `Complet (${p.places_lliures_activitat} pl.)`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (res.dates_saltades && res.dates_saltades.length > 0) {
+        listEl.innerHTML += `
+          <div style="font-size: 10.5px; color: #92400E; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 4px; padding: 3px 6px; margin-top: 3px;">
+            S'han saltat ${res.dates_saltades.length} dia(es) no lectius: ${res.dates_saltades.map(s => s.data).join(', ')}.
+          </div>
+        `;
+      }
+    } else {
+      listEl.innerHTML = `<div style="color: #DC2626; padding: 4px;">${res?.error || "No s'han pogut calcular les sessions"}</div>`;
+    }
+  } catch (err) {
+    listEl.innerHTML = `<div style="color: #DC2626; padding: 4px;">Error: ${err.message}</div>`;
+  }
+}
+
 // Inicialització d'esdeveniments del modal d'edició
 function initAdminEditarReservaModal() {
   const selInici = document.getElementById('edit-res-hora-inici');
   const selDurada = document.getElementById('edit-res-durada');
-  if (selInici) selInici.addEventListener('change', updateEditReservaPreview);
-  if (selDurada) selDurada.addEventListener('change', updateEditReservaPreview);
+  if (selInici) {
+    selInici.addEventListener('change', () => {
+      updateEditReservaPreview();
+      triggerEditSerieDatesPreview();
+    });
+  }
+  if (selDurada) {
+    selDurada.addEventListener('change', updateEditReservaPreview);
+  }
+
+  // Canvi de freqüència o interval
+  const freqSel = document.getElementById('edit-res-frequencia');
+  const customIntervalWrap = document.getElementById('edit-res-custom-interval-wrap');
+  if (freqSel) {
+    freqSel.addEventListener('change', () => {
+      if (customIntervalWrap) {
+        customIntervalWrap.style.display = freqSel.value === 'personalitzat' ? 'block' : 'none';
+      }
+      triggerEditSerieDatesPreview();
+    });
+  }
+
+  // Triggers de previsualització
+  ['edit-res-data-inici', 'edit-res-repeticions', 'edit-res-interval-dies'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', triggerEditSerieDatesPreview);
+      el.addEventListener('change', triggerEditSerieDatesPreview);
+    }
+  });
+
+  const chkSaltar = document.getElementById('edit-res-saltar-tancats');
+  if (chkSaltar) chkSaltar.addEventListener('change', triggerEditSerieDatesPreview);
+
+  // Selector d'abast (Sèrie vs Single)
+  document.querySelectorAll('input[name="edit_res_scope"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const serieBlock = document.getElementById('edit-res-serie-config-block');
+      if (serieBlock) {
+        serieBlock.style.display = radio.value === 'serie' ? 'flex' : 'none';
+      }
+      if (radio.value === 'serie') {
+        triggerEditSerieDatesPreview();
+      }
+    });
+  });
 
   const formEditRes = document.getElementById('form-admin-editar-reserva');
   if (formEditRes && !formEditRes._bound) {
@@ -3370,27 +3519,50 @@ function initAdminEditarReservaModal() {
       }
 
       try {
-        const res = await Store.updateReservaHorari({
-          id: resId,
-          recurrent_id: recId,
-          scope: scope,
-          hora_inici: hInici,
-          hora_fi: hFi,
-          hores: durH,
-          forcar_aforament: forcar
-        });
+        let res = null;
+        if (scope === 'serie') {
+          const dataInici = document.getElementById('edit-res-data-inici')?.value;
+          const frequencia = document.getElementById('edit-res-frequencia')?.value || 'setmanal';
+          const intervalDies = frequencia === 'personalitzat' ? parseInt(document.getElementById('edit-res-interval-dies')?.value, 10) : null;
+          const repeticions = parseInt(document.getElementById('edit-res-repeticions')?.value, 10) || 4;
+          const saltarTancats = document.getElementById('edit-res-saltar-tancats')?.checked !== false;
+
+          res = await Store.updateSerieRecurrent({
+            recurrent_id: recId,
+            id: resId,
+            data_inici: dataInici,
+            frequencia: frequencia,
+            interval_dies: intervalDies,
+            repeticions: repeticions,
+            hora_inici: hInici,
+            hora_fi: hFi,
+            hores: durH,
+            forcar_aforament: forcar,
+            saltar_tancats: saltarTancats
+          });
+        } else {
+          res = await Store.updateReservaHorari({
+            id: resId,
+            recurrent_id: recId,
+            scope: scope,
+            hora_inici: hInici,
+            hora_fi: hFi,
+            hores: durH,
+            forcar_aforament: forcar
+          });
+        }
 
         if (res && res.ok) {
-          showToast(res.message || 'Horari actualitzat correctament.', 'success');
+          showToast(res.message || 'Reserva reprogramada correctament.', 'success');
           if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
           closeAnyModal('modal-admin-editar-reserva-backdrop');
           await refreshAppointmentsDashboard();
         } else {
           if (errEl) {
-            errEl.textContent = res?.error || "No s'ha pogut actualitzar l'horari.";
+            errEl.textContent = res?.error || "No s'ha pogut actualitzar la reserva.";
             errEl.style.display = 'block';
           } else {
-            showToast(res?.error || "Error actualitzant l'horari", 'error');
+            showToast(res?.error || "Error actualitzant la reserva", 'error');
           }
         }
       } catch (err) {
@@ -3403,7 +3575,7 @@ function initAdminEditarReservaModal() {
       } finally {
         if (btnSubmit) {
           btnSubmit.disabled = false;
-          btnSubmit.textContent = 'Desar Nou Horari';
+          btnSubmit.textContent = 'Desar Canvis';
         }
       }
     });
@@ -3413,6 +3585,8 @@ function initAdminEditarReservaModal() {
 if (typeof window !== 'undefined') {
   window.openAdminEditarReservaModal = openAdminEditarReservaModal;
   window.updateEditReservaPreview = updateEditReservaPreview;
+  window.loadEditSerieDatesPreview = loadEditSerieDatesPreview;
+  window.triggerEditSerieDatesPreview = triggerEditSerieDatesPreview;
   window.initAdminEditarReservaModal = initAdminEditarReservaModal;
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAdminEditarReservaModal);

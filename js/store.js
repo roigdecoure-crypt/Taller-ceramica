@@ -1413,6 +1413,23 @@ const Store = {
     return { ok: false, error: 'Mode local no suportat per a la modificació de sèries' };
   },
 
+  async updateSerieRecurrent(serieData) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/update-serie`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serieData)
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error actualitzant sèrie recurrent a l\'API:', e);
+        return { ok: false, error: 'Error de connexió al servidor: ' + e.message };
+      }
+    }
+    return { ok: false, error: 'Mode local no suportat' };
+  },
+
   async updateReservaAssistencia(id, assistit) {
     if (this.mode === 'api') {
       try {

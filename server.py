@@ -1633,10 +1633,10 @@ def get_restriccions_dia(data_str, torn_filtre=None):
 
     return res
 
-def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=4, skip_closed=True, max_search_steps=52, activitat_id=None):
+def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=4, skip_closed=True, max_search_steps=150, activitat_id=None, interval_days=None):
     """
-    Genera una llista de dates ISO (YYYY-MM-DD) segons la freqÃ¼Ã¨ncia i nombre de sessions.
-    Si skip_closed Ã©s True, avanÃ§a en cicles de freqÃ¼Ã¨ncia saltant els dies tancats (i dies amb l'activitat restringida si s'indica activitat_id).
+    Genera una llista de dates ISO (YYYY-MM-DD) segons la freqüència o interval de dies i nombre de sessions.
+    Suporta: diària/consecutiva (1 dia), cada 2 dies, cada 3 dies, setmanal (7 dies), quinzenal (14 dies), mensual o personalitzada (interval_days).
     """
     try:
         cur_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
@@ -1646,8 +1646,26 @@ def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=
     valid_dates = []
     skipped_dates = []
     step = 0
+    search_limit = max(max_search_steps, repetitions * 6)
 
-    while len(valid_dates) < repetitions and step < max_search_steps:
+    # Determinar el pas en dies
+    delta_days = None
+    if interval_days and int(interval_days) > 0:
+        delta_days = int(interval_days)
+    elif frequency in ('diaria', 'diari', 'dies_consecutius', '1_dia', 'consecutiu'):
+        delta_days = 1
+    elif frequency in ('cada_2_dies', '2_dies'):
+        delta_days = 2
+    elif frequency in ('cada_3_dies', '3_dies'):
+        delta_days = 3
+    elif frequency == 'quinzenal':
+        delta_days = 14
+    elif frequency == 'mensual':
+        delta_days = None
+    else: # setmanal per defecte
+        delta_days = 7
+
+    while len(valid_dates) < repetitions and step < search_limit:
         step += 1
         d_str = cur_date.strftime('%Y-%m-%d')
         closed_info = is_dia_tancat(d_str)
@@ -1662,15 +1680,13 @@ def calculate_recurring_dates(start_date_str, frequency='setmanal', repetitions=
             else:
                 valid_dates.append(d_str)
 
-        if frequency == 'quinzenal':
-            cur_date += timedelta(days=14)
-        elif frequency == 'mensual':
+        if frequency == 'mensual' and not delta_days:
             year = cur_date.year + (cur_date.month // 12)
             month = (cur_date.month % 12) + 1
             day = min(cur_date.day, 28)
             cur_date = date(year, month, day)
         else:
-            cur_date += timedelta(days=7)
+            cur_date += timedelta(days=delta_days if delta_days else 7)
 
     return valid_dates, skipped_dates
 
@@ -4650,11 +4666,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path == '/api/reserves/recurrent-preview':
                 data_inici = (data.get('data_inici') or data.get('data') or '').strip()
                 frequencia = (data.get('frequencia') or 'setmanal').strip().lower()
+                interval_dies = data.get('interval_dies') or data.get('interval_days')
+                exclude_rec_id = (data.get('exclude_recurrent_id') or data.get('recurrent_id') or '').strip()
                 repeticions = int(data.get('repeticions') or data.get('sessions') or 4)
                 if repeticions < 1:
                     repeticions = 1
-                if repeticions > 26:
-                    repeticions = 26
+                if repeticions > 52:
+                    repeticions = 52
                 activitat_id = (data.get('activitat_id') or 'torn').strip().lower()
                 places_demanades = int(data.get('places') or 1)
                 saltar_tancats = bool(data.get('saltar_tancats', True))
@@ -4670,30 +4688,50 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if not act_obj:
                     act_obj = act_list[0]
 
-                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats, activitat_id=act_obj['id'])
+                dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats, activitat_id=act_obj['id'], interval_days=interval_dies)
                 max_cap = get_aforament_maxim()
 
                 preview = []
                 with get_db() as conn:
                     cursor = conn.cursor()
                     for d in dates_valides:
-                        cursor.execute('''
-                            SELECT SUM(COALESCE(places, 1)) as total FROM reserves
-                            WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                            )
-                        ''', (d, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        if exclude_rec_id:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as total FROM reserves
+                                WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
+                                  AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, exclude_rec_id, exclude_rec_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        else:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as total FROM reserves
+                                WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, 1 if is_tarda else 0, 1 if is_tarda else 0))
                         tot = cursor.fetchone()['total'] or 0
                         lliures_global = max(0, max_cap - tot)
 
-                        cursor.execute('''
-                            SELECT SUM(COALESCE(places, 1)) as act_tot FROM reserves
-                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                            )
-                        ''', (d, act_obj['id'], act_obj['nom'].lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        if exclude_rec_id:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_tot FROM reserves
+                                WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
+                                  AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, exclude_rec_id, exclude_rec_id, act_obj['id'], act_obj['nom'].lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        else:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_tot FROM reserves
+                                WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, act_obj['id'], act_obj['nom'].lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
                         tot_act = cursor.fetchone()['act_tot'] or 0
                         lliures_act = max(0, act_obj['capacitatMax'] - tot_act)
 
@@ -5003,6 +5041,221 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'ok': True,
                     'message': 'Reserva cancel·lada correctament i plaça alliberada.',
                     'reserva': reserva_dict
+                })
+                return
+
+            elif path == '/api/reserves/update-serie':
+                recurrent_id = (data.get('recurrent_id') or '').strip()
+                res_id = (data.get('id') or data.get('reserva_id') or '').strip()
+                target_key = recurrent_id or res_id
+                if not target_key:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'identificador de la sèrie o d'una de les seves reserves"}, 400)
+                    return
+
+                data_inici = (data.get('data_inici') or data.get('data') or '').strip()
+                frequencia = (data.get('frequencia') or 'setmanal').strip().lower()
+                interval_dies = data.get('interval_dies') or data.get('interval_days')
+                repeticions = int(data.get('repeticions') or data.get('sessions') or 4)
+                if repeticions < 1:
+                    repeticions = 1
+                if repeticions > 52:
+                    repeticions = 52
+
+                nova_hora_inici = (data.get('hora_inici') or '').strip()
+                nova_hora_fi = (data.get('hora_fi') or '').strip()
+                forcar_aforament = bool(data.get('forcar_aforament', False))
+                saltar_tancats = bool(data.get('saltar_tancats', True))
+
+                if not data_inici:
+                    self.send_json({'ok': False, 'error': "Cal indicar la data d'inici de la sèrie"}, 400)
+                    return
+                if not nova_hora_inici or not nova_hora_fi:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'hora d'inici i de fi"}, 400)
+                    return
+
+                # Calcular hores durada
+                try:
+                    t1 = datetime.strptime(nova_hora_inici, '%H:%M')
+                    t2 = datetime.strptime(nova_hora_fi, '%H:%M')
+                    diff_h = (t2 - t1).total_seconds() / 3600.0
+                    hores_val = max(0.5, round(diff_h, 2))
+                except Exception:
+                    hores_val = float(data.get('hores') or 2.0)
+
+                is_tarda = (nova_hora_inici >= '14:00')
+                nova_franja = 'T1' if is_tarda else 'M1'
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+
+                    # Obtenir reserves existents de la sèrie
+                    cursor.execute("SELECT * FROM reserves WHERE id = ?", (target_key,))
+                    base_row = cursor.fetchone()
+
+                    effective_rec_id = recurrent_id
+                    if not effective_rec_id and base_row:
+                        effective_rec_id = base_row['recurrent_id']
+                        if not effective_rec_id and base_row['id'].startswith('RES-'):
+                            parts = base_row['id'].split('-')
+                            if len(parts) >= 4:
+                                effective_rec_id = '-'.join(parts[:3])
+
+                    if not effective_rec_id:
+                        effective_rec_id = target_key
+
+                    cursor.execute('''
+                        SELECT * FROM reserves 
+                        WHERE (recurrent_id = ? OR id LIKE ? || '%')
+                          AND LOWER(estat) NOT LIKE 'cancel%'
+                          AND LOWER(estat) != 'eliminada'
+                        ORDER BY data ASC, hora_inici ASC
+                    ''', (effective_rec_id, effective_rec_id))
+                    existing_rows = [row_to_dict(r) for r in cursor.fetchall()]
+
+                    if not existing_rows:
+                        if base_row:
+                            existing_rows = [row_to_dict(base_row)]
+                        else:
+                            self.send_json({'ok': False, 'error': "No s'ha trobat cap reserva activa per a aquesta sèrie"}, 404)
+                            return
+
+                    ref_meta = existing_rows[0]
+                    student_id = ref_meta.get('student_id') or ''
+                    student_nom = ref_meta.get('student_nom') or ''
+                    telefon = ref_meta.get('telefon') or ''
+                    email = ref_meta.get('email') or ''
+                    activitat = ref_meta.get('activitat') or 'Torn'
+                    activitat_id = (ref_meta.get('activitat_id') or 'torn').strip().lower()
+                    places = int(ref_meta.get('places') or 1)
+                    paga_senyal = ref_meta.get('paga_senyal') or 0
+                    val_regal = ref_meta.get('val_regal') or 0
+                    codi_val_regal = ref_meta.get('codi_val_regal') or ''
+
+                    # Calcular les noves dates de la sèrie
+                    dates_valides, dates_saltades = calculate_recurring_dates(
+                        data_inici,
+                        frequency=frequencia,
+                        repetitions=repeticions,
+                        skip_closed=saltar_tancats,
+                        activitat_id=activitat_id,
+                        interval_days=interval_dies
+                    )
+
+                    if not dates_valides:
+                        self.send_json({'ok': False, 'error': "No s'ha pogut programar cap sessió amb aquests paràmetres (dies tancats o restringits)"}, 400)
+                        return
+
+                    # Comprovar aforament per a cadascuna de les noves dates (excloent la sèrie pròpia)
+                    if not forcar_aforament:
+                        max_cap = get_aforament_maxim()
+                        act_list = get_activitats_config()
+                        act_obj = next((a for a in act_list if a['id'] == activitat_id or a['nom'].lower() == activitat_id), None)
+                        cap_act = act_obj['capacitatMax'] if act_obj else 4
+
+                        for d in dates_valides:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as tot FROM reserves
+                                WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
+                                  AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, effective_rec_id, effective_rec_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                            tot_global = cursor.fetchone()['tot'] or 0
+                            if tot_global + places > max_cap:
+                                self.send_json({
+                                    'ok': False,
+                                    'error': f"Aforament complet el {d} (queden {max(0, max_cap - tot_global)} places lliures). Pots activar 'Permetre sobrepassar aforament' per autoritzar-ho."
+                                }, 400)
+                                return
+
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as tot_act FROM reserves
+                                WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
+                                  AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?)
+                                  AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d, effective_rec_id, effective_rec_id, activitat_id, activitat.lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
+                            tot_act = cursor.fetchone()['tot_act'] or 0
+                            if tot_act + places > cap_act:
+                                self.send_json({
+                                    'ok': False,
+                                    'error': f"Places de {activitat} completes el {d} (queden {max(0, cap_act - tot_act)} places). Pots activar 'Permetre sobrepassar aforament' per autoritzar-ho."
+                                }, 400)
+                                return
+
+                    # Execució del canvi
+                    N = len(dates_valides)
+                    M = len(existing_rows)
+                    K = min(N, M)
+                    now_iso = get_now().isoformat()
+
+                    updated_reserves = []
+                    cancelled_reserves = []
+
+                    # 1. Actualitzar les K sessions compartides
+                    for i in range(K):
+                        r_curr = existing_rows[i]
+                        d_new = dates_valides[i]
+                        note_txt = f"[Recurrent {i+1}/{N}]"
+                        if r_curr.get('notes') and '[Recurrent' not in r_curr['notes']:
+                            note_txt = f"{r_curr['notes']} {note_txt}".strip()
+
+                        cursor.execute('''
+                            UPDATE reserves 
+                            SET data = ?, hora_inici = ?, hora_fi = ?, franja = ?, hores = ?, recurrent_id = ?, notes = ?
+                            WHERE id = ?
+                        ''', (d_new, nova_hora_inici, nova_hora_fi, nova_franja, hores_val, effective_rec_id, note_txt, r_curr['id']))
+
+                        cursor.execute("SELECT * FROM reserves WHERE id = ?", (r_curr['id'],))
+                        updated_reserves.append(row_to_dict(cursor.fetchone()))
+
+                    # 2. Si s'ha allargat la sèrie (N > M), crear les noves sessions
+                    if N > M:
+                        for i in range(M, N):
+                            new_id = f"{effective_rec_id}-{i+1}"
+                            d_new = dates_valides[i]
+                            note_txt = f"[Recurrent {i+1}/{N}]"
+
+                            cursor.execute('''
+                                INSERT INTO reserves (
+                                    id, student_id, student_nom, data, hora_inici, hora_fi, franja,
+                                    activitat, activitat_id, places, telefon, email, estat, hores,
+                                    notes, created_at, recurrent_id, paga_senyal, val_regal, codi_val_regal
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmada', ?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                new_id, student_id, student_nom, d_new, nova_hora_inici, nova_hora_fi, nova_franja,
+                                activitat, activitat_id, places, telefon, email, hores_val,
+                                note_txt, now_iso, effective_rec_id, paga_senyal, val_regal, codi_val_regal
+                            ))
+                            cursor.execute("SELECT * FROM reserves WHERE id = ?", (new_id,))
+                            updated_reserves.append(row_to_dict(cursor.fetchone()))
+
+                    # 3. Si s'ha escurçat la sèrie (N < M), cancel·lar les sessions sobrants
+                    elif N < M:
+                        for i in range(N, M):
+                            r_canc = existing_rows[i]
+                            cursor.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE id = ?", (r_canc['id'],))
+                            cursor.execute("SELECT * FROM reserves WHERE id = ?", (r_canc['id'],))
+                            cancelled_reserves.append(row_to_dict(cursor.fetchone()))
+
+                    conn.commit()
+
+                # Sincronitzar canvis a Google Sheets
+                for u in updated_reserves:
+                    sync_to_google_sheets_async('update_reserva', u)
+                for c in cancelled_reserves:
+                    sync_to_google_sheets_async('cancel_reserva', c)
+
+                self.send_json({
+                    'ok': True,
+                    'message': f"Sèrie recurrent reprogramada amb èxit! Total: {N} sessions a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h).",
+                    'total_sessions': N,
+                    'dates': dates_valides,
+                    'recurrent_id': effective_rec_id,
+                    'reserves': updated_reserves
                 })
                 return
 

@@ -2147,13 +2147,13 @@
     </div>
   </div>
 
-  <!-- MODAL: EDITAR HORARI I DURADA DE RESERVA (PUNTUAL O RECURRENT) -->
+  <!-- MODAL: EDITAR HORARI, DATA, DURADA I INTERVAL DE RESERVA (PUNTUAL O SÈRIE) -->
   <div class="modal-backdrop" id="modal-admin-editar-reserva-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
-    <div class="modal-dialog" style="max-width: 480px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);">
+    <div class="modal-dialog" style="max-width: 540px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);">
       <div class="modal-header" style="background: linear-gradient(135deg, #831D1D, #991B1B); color: #FFFFFF; padding: 16px 20px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;" id="modal-edit-res-title">Modificar Horari i Durada</h3>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;" id="modal-edit-res-title">Modificar Reserva / Sèrie Recurrent</h3>
         </div>
         <button type="button" class="modal-close" style="color: #FFFFFF; opacity: 0.85;" onclick="closeAnyModal('modal-admin-editar-reserva-backdrop');">&times;</button>
       </div>
@@ -2161,40 +2161,93 @@
         <input type="hidden" id="edit-res-id" value="">
         <input type="hidden" id="edit-res-recurrent-id" value="">
         <input type="hidden" id="edit-res-date" value="">
+        <input type="hidden" id="edit-res-act-id" value="torn">
 
-        <div class="modal-body" style="padding: 20px; background: #FFFFFF; display: flex; flex-direction: column; gap: 16px;">
+        <div class="modal-body" style="padding: 20px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px; max-height: 75vh; overflow-y: auto;">
           <!-- Info de la reserva actual -->
-          <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+          <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 10px 14px;">
             <div style="font-size: 14px; font-weight: 700; color: #111827;" id="edit-res-client-nom">Client</div>
-            <div style="font-size: 12.5px; color: #4B5563; margin-top: 4px;" id="edit-res-desc">Data actual &bull; Horari actual</div>
+            <div style="font-size: 12px; color: #4B5563; margin-top: 2px;" id="edit-res-desc">Data actual &bull; Horari actual</div>
           </div>
 
           <!-- Selector d'abast (només si és recurrent) -->
           <div id="edit-res-scope-container" style="display: none;">
-            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Aplicar canvi d'horari a:</label>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1F2937; cursor: pointer; padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; background: #FAF9F8;">
-                <input type="radio" name="edit_res_scope" value="serie" checked>
+            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Àmbit de la modificació:</label>
+            <div style="display: flex; gap: 8px;">
+              <label style="flex: 1; display: flex; align-items: flex-start; gap: 6px; font-size: 12.5px; color: #1F2937; cursor: pointer; padding: 8px 10px; border: 1.5px solid #D1D5DB; border-radius: 6px; background: #FAF9F8;" id="label-scope-serie">
+                <input type="radio" name="edit_res_scope" value="serie" checked style="margin-top: 2px;">
                 <div>
-                  <strong style="display: block;">Tota la sèrie recurrent restant</strong>
-                  <span style="font-size: 11.5px; color: #6B7280;" id="edit-res-scope-serie-desc">Aquesta i totes les sessions futures</span>
+                  <strong style="display: block; color: #831D1D;">Tota la sèrie / cicle</strong>
+                  <span style="font-size: 11px; color: #6B7280;" id="edit-res-scope-serie-desc">Dates, interval, sessions i horari</span>
                 </div>
               </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1F2937; cursor: pointer; padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; background: #FAF9F8;">
-                <input type="radio" name="edit_res_scope" value="single">
+              <label style="flex: 1; display: flex; align-items: flex-start; gap: 6px; font-size: 12.5px; color: #1F2937; cursor: pointer; padding: 8px 10px; border: 1.5px solid #D1D5DB; border-radius: 6px; background: #FAF9F8;" id="label-scope-single">
+                <input type="radio" name="edit_res_scope" value="single" style="margin-top: 2px;">
                 <div>
-                  <strong style="display: block;">Només aquesta sessió</strong>
-                  <span style="font-size: 11.5px; color: #6B7280;" id="edit-res-scope-single-desc">Canviar exclusivament el dia seleccionat</span>
+                  <strong style="display: block;">Només aquest dia</strong>
+                  <span style="font-size: 11px; color: #6B7280;" id="edit-res-scope-single-desc">Canviar horari d'aquesta sessió</span>
                 </div>
               </label>
             </div>
           </div>
 
-          <!-- Selectors d'horari -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <!-- Secció de configuració de Sèrie / Monogràfic (Data inici, interval dies, repeticions) -->
+          <div id="edit-res-serie-config-block" style="background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line></svg>
+              <span>Interval de dies i durada de la sèrie</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label for="edit-res-data-inici" style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Data d'inici:</label>
+                <input type="date" id="edit-res-data-inici" class="form-control" style="width: 100%; padding: 6px 10px; font-size: 13px; font-weight: 600; border: 1.5px solid #CBD5E1; border-radius: 6px;">
+              </div>
+              <div>
+                <label for="edit-res-repeticions" style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Nombre de dies / sessions:</label>
+                <input type="number" id="edit-res-repeticions" min="1" max="52" value="4" class="form-control" style="width: 100%; padding: 6px 10px; font-size: 13px; font-weight: 700; border: 1.5px solid #CBD5E1; border-radius: 6px;">
+              </div>
+            </div>
+
+            <div>
+              <label for="edit-res-frequencia" style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Freqüència / Interval entre dies:</label>
+              <select id="edit-res-frequencia" class="form-control" style="width: 100%; padding: 6px 10px; font-size: 13px; font-weight: 600; border: 1.5px solid #CBD5E1; border-radius: 6px;">
+                <option value="setmanal">Setmanal (cada 7 dies &bull; mateix dia)</option>
+                <option value="diaria">Diari &bull; Dies consecutius de taller (Monogràfics/Casals)</option>
+                <option value="cada_2_dies">Cada 2 dies (ex: Dl, Dc, Dv)</option>
+                <option value="cada_3_dies">Cada 3 dies</option>
+                <option value="quinzenal">Quinzenal (cada 14 dies)</option>
+                <option value="mensual">Mensual (1 cop al mes)</option>
+                <option value="personalitzat">Personalitzat (interval exacte de dies)</option>
+              </select>
+            </div>
+
+            <div id="edit-res-custom-interval-wrap" style="display: none;">
+              <label for="edit-res-interval-dies" style="font-size: 11.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 3px;">Interval exacte en dies (cada quants dies):</label>
+              <input type="number" id="edit-res-interval-dies" min="1" max="90" value="1" class="form-control" style="width: 100%; padding: 6px 10px; font-size: 13px; border: 1.5px solid #CBD5E1; border-radius: 6px;">
+            </div>
+
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569; cursor: pointer; margin-top: 2px;">
+              <input type="checkbox" id="edit-res-saltar-tancats" checked>
+              <span>Saltar dies tancats (descans de taller / festius personals)</span>
+            </label>
+
+            <!-- Previsualització en viu de les dates resultants -->
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 6px; padding: 8px 10px;">
+              <div style="font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 6px;" id="edit-res-preview-title">
+                Calendari de sessions calculat:
+              </div>
+              <div id="edit-res-dates-preview-list" style="max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px;">
+                <div style="color: #64748B; font-style: italic;">Calculant dates...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selectors d'horari i durada per sessió -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
               <label for="edit-res-hora-inici" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Hora d'inici:</label>
-              <select id="edit-res-hora-inici" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
+              <select id="edit-res-hora-inici" class="form-control" style="width: 100%; padding: 7px 10px; font-size: 13.5px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
                 <option value="10:00">10:00 (Matí)</option>
                 <option value="10:30">10:30 (Matí)</option>
                 <option value="11:00">11:00 (Matí)</option>
@@ -2211,38 +2264,39 @@
             </div>
 
             <div>
-              <label for="edit-res-durada" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Durada:</label>
-              <select id="edit-res-durada" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
+              <label for="edit-res-durada" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Durada per sessió:</label>
+              <select id="edit-res-durada" class="form-control" style="width: 100%; padding: 7px 10px; font-size: 13.5px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
                 <option value="1.0">1 hora</option>
                 <option value="1.5">1 hora 30 min</option>
                 <option value="2.0" selected>2 hores (Estàndard)</option>
                 <option value="2.5">2 hores 30 min</option>
                 <option value="3.0">3 hores</option>
+                <option value="4.0">4 hores (Intensiu)</option>
               </select>
             </div>
           </div>
 
-          <!-- Resum visual del nou horari -->
-          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 12.5px; color: #1E40AF; font-weight: 600;">Nou interval:</span>
-            <strong style="font-size: 13.5px; color: #1D4ED8;" id="edit-res-horari-preview">18:00 - 20:00 (2 hores)</strong>
+          <!-- Resum visual de l'horari per sessió -->
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; padding: 7px 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: #1E40AF; font-weight: 600;">Horari per sessió:</span>
+            <strong style="font-size: 13px; color: #1D4ED8;" id="edit-res-horari-preview">18:00 - 20:00 (2 hores)</strong>
           </div>
 
           <!-- Checkbox forçar aforament -->
-          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 8px 12px;">
-            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #92400E; cursor: pointer; margin: 0;">
+          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 7px 12px;">
+            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; color: #92400E; cursor: pointer; margin: 0;">
               <input type="checkbox" id="edit-res-forcar-aforament" style="margin-top: 2px;">
-              <span><strong>Permetre sobrepassar l'aforament</strong> si no queden places lliures en el nou horari.</span>
+              <span><strong>Permetre sobrepassar l'aforament</strong> si alguna de les dates està completa.</span>
             </label>
           </div>
 
           <div id="edit-res-error" style="color: #DC2626; font-size: 12.5px; font-weight: 600; display: none;"></div>
         </div>
 
-        <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+        <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
           <button type="button" class="btn btn-secondary btn-sm" onclick="closeAnyModal('modal-admin-editar-reserva-backdrop');">Cancel·lar</button>
-          <button type="submit" class="btn-roig-coure" id="btn-submit-edit-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
-            Desar Nou Horari
+          <button type="submit" class="btn-roig-coure" id="btn-submit-edit-reserva" style="padding: 8px 20px; font-size: 14px; font-weight: 700; cursor: pointer;">
+            Desar Canvis
           </button>
         </div>
       </form>
@@ -2873,14 +2927,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=11.3.1"></script>
-  <script src="lib/html5-qrcode.min.js?v=11.3.1"></script>
-  <script src="js/time-utils.js?v=11.3.1"></script>
-  <script src="js/sound.js?v=11.3.1"></script>
-  <script src="js/qr-engine.js?v=11.3.1"></script>
-  <script src="js/api-config.js?v=11.3.1"></script>
-  <script src="js/store.js?v=11.3.1"></script>
-  <script src="js/reserves-calendar.js?v=11.3.1"></script>
-  <script src="js/admin.js?v=11.3.1"></script>
+  <script src="lib/qrcode.min.js?v=11.4.0"></script>
+  <script src="lib/html5-qrcode.min.js?v=11.4.0"></script>
+  <script src="js/time-utils.js?v=11.4.0"></script>
+  <script src="js/sound.js?v=11.4.0"></script>
+  <script src="js/qr-engine.js?v=11.4.0"></script>
+  <script src="js/api-config.js?v=11.4.0"></script>
+  <script src="js/store.js?v=11.4.0"></script>
+  <script src="js/reserves-calendar.js?v=11.4.0"></script>
+  <script src="js/admin.js?v=11.4.0"></script>
 </body>
 </html>
