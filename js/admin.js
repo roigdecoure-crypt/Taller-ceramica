@@ -3387,10 +3387,10 @@ function initAdminEditarReservaModal() {
           await refreshAppointmentsDashboard();
         } else {
           if (errEl) {
-            errEl.textContent = res?.error || 'No s'ha pogut actualitzar l'horari.';
+            errEl.textContent = res?.error || "No s'ha pogut actualitzar l'horari.";
             errEl.style.display = 'block';
           } else {
-            showToast(res?.error || 'Error actualitzant l'horari', 'error');
+            showToast(res?.error || "Error actualitzant l'horari", 'error');
           }
         }
       } catch (err) {
