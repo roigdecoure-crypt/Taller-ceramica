@@ -5006,6 +5006,127 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path == '/api/reserves/update-horari':
+                res_id = (data.get('id') or data.get('reserva_id') or '').strip()
+                scope = (data.get('scope') or 'single').strip().lower()
+                nova_hora_inici = (data.get('hora_inici') or '').strip()
+                nova_hora_fi = (data.get('hora_fi') or '').strip()
+                forcar_aforament = bool(data.get('forcar_aforament', False))
+
+                if not res_id:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de la reserva"}, 400)
+                    return
+                if not nova_hora_inici or not nova_hora_fi:
+                    self.send_json({'ok': False, 'error': "Cal indicar tant l'hora d'inici com l'hora de fi"}, 400)
+                    return
+
+                # Calcular hores durada
+                try:
+                    t1 = datetime.strptime(nova_hora_inici, '%H:%M')
+                    t2 = datetime.strptime(nova_hora_fi, '%H:%M')
+                    diff_h = (t2 - t1).total_seconds() / 3600.0
+                    hores_val = max(0.5, round(diff_h, 2))
+                except Exception:
+                    hores_val = float(data.get('hores') or 2.0)
+
+                is_tarda = (nova_hora_inici >= '14:00')
+                nova_franja = 'T1' if is_tarda else 'M1'
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT * FROM reserves WHERE id = ?", (res_id,))
+                    target_row = cursor.fetchone()
+                    if not target_row:
+                        self.send_json({'ok': False, 'error': "Reserva no trobada"}, 404)
+                        return
+
+                    target_dict = row_to_dict(target_row)
+                    reserves_to_update = []
+
+                    if scope == 'serie':
+                        # Buscar sèrie recurrent
+                        rec_id = target_dict.get('recurrent_id') or ''
+                        if not rec_id and target_dict.get('id', '').startswith('RES-'):
+                            parts = target_dict['id'].split('-')
+                            if len(parts) >= 4:
+                                rec_id = '-'.join(parts[:3])
+
+                        from_date = target_dict.get('data') or ''
+                        if rec_id:
+                            cursor.execute('''
+                                SELECT * FROM reserves 
+                                WHERE (recurrent_id = ? OR id LIKE ? || '%') 
+                                  AND data >= ? 
+                                  AND LOWER(estat) NOT LIKE 'cancel%' 
+                                  AND LOWER(estat) != 'eliminada'
+                                ORDER BY data ASC
+                            ''', (rec_id, rec_id, from_date))
+                            reserves_to_update = [row_to_dict(r) for r in cursor.fetchall()]
+
+                    if not reserves_to_update:
+                        reserves_to_update = [target_dict]
+
+                    # Comprovar aforament per a cada reserva si no es força
+                    if not forcar_aforament:
+                        max_cap = get_aforament_maxim()
+                        for r_item in reserves_to_update:
+                            d_item = r_item['data']
+                            curr_id = r_item['id']
+                            pl_dem = int(r_item.get('places') or 1)
+                            act_id = (r_item.get('activitat_id') or 'torn').strip().lower()
+                            act_nom = (r_item.get('activitat') or 'Torn').strip().lower()
+
+                            # Aforament global de la franja excloent la reserva pròpia
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as total_ocup FROM reserves
+                                WHERE data = ? AND id != ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (d_item, curr_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                            r_tot = cursor.fetchone()
+                            ocup_tot = r_tot['total_ocup'] or 0
+                            if ocup_tot + pl_dem > max_cap:
+                                torn_desc = "la tarda" if is_tarda else "el matí"
+                                lliures = max(0, max_cap - ocup_tot)
+                                self.send_json({
+                                    'ok': False,
+                                    'error': f"Aforament complet el {d_item} per a {torn_desc} ({nova_hora_inici} - {nova_hora_fi}). Queden {lliures} places lliures (MÃ x. {max_cap}). Pots marcar 'Permetre sobrepassar aforament' per forçar-ho."
+                                }, 400)
+                                return
+
+                    # Executar l'actualització de l'horari
+                    updated_rows = []
+                    for r_item in reserves_to_update:
+                        curr_id = r_item['id']
+                        cursor.execute('''
+                            UPDATE reserves 
+                            SET hora_inici = ?, hora_fi = ?, franja = ?, hores = ?
+                            WHERE id = ?
+                        ''', (nova_hora_inici, nova_hora_fi, nova_franja, hores_val, curr_id))
+                        cursor.execute("SELECT * FROM reserves WHERE id = ?", (curr_id,))
+                        u_row = cursor.fetchone()
+                        if u_row:
+                            u_dict = row_to_dict(u_row)
+                            updated_rows.append(u_dict)
+                    conn.commit()
+
+                # Sincronitzar a Google Sheets
+                for u_dict in updated_rows:
+                    sync_to_google_sheets_async('update_reserva', u_dict)
+
+                cnt = len(updated_rows)
+                msg = f"S'ha actualitzat l'horari de la reserva a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h)." if cnt == 1 else f"S'ha actualitzat l'horari de {cnt} sessions de la sèrie recurrent a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h)."
+                self.send_json({
+                    'ok': True,
+                    'message': msg,
+                    'total_actualitzades': cnt,
+                    'hora_inici': nova_hora_inici,
+                    'hora_fi': nova_hora_fi,
+                    'hores': hores_val
+                })
+                return
+
             elif path == '/api/reserves/assistencia':
                 res_id = (data.get('id') or '').strip()
                 assistit = bool(data.get('assistit', True))

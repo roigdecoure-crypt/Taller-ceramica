@@ -2147,6 +2147,108 @@
     </div>
   </div>
 
+  <!-- MODAL: EDITAR HORARI I DURADA DE RESERVA (PUNTUAL O RECURRENT) -->
+  <div class="modal-backdrop" id="modal-admin-editar-reserva-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
+    <div class="modal-dialog" style="max-width: 480px; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);">
+      <div class="modal-header" style="background: linear-gradient(135deg, #831D1D, #991B1B); color: #FFFFFF; padding: 16px 20px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;" id="modal-edit-res-title">Modificar Horari i Durada</h3>
+        </div>
+        <button type="button" class="modal-close" style="color: #FFFFFF; opacity: 0.85;" onclick="closeAnyModal('modal-admin-editar-reserva-backdrop');">&times;</button>
+      </div>
+      <form id="form-admin-editar-reserva" style="margin: 0;">
+        <input type="hidden" id="edit-res-id" value="">
+        <input type="hidden" id="edit-res-recurrent-id" value="">
+        <input type="hidden" id="edit-res-date" value="">
+
+        <div class="modal-body" style="padding: 20px; background: #FFFFFF; display: flex; flex-direction: column; gap: 16px;">
+          <!-- Info de la reserva actual -->
+          <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+            <div style="font-size: 14px; font-weight: 700; color: #111827;" id="edit-res-client-nom">Client</div>
+            <div style="font-size: 12.5px; color: #4B5563; margin-top: 4px;" id="edit-res-desc">Data actual &bull; Horari actual</div>
+          </div>
+
+          <!-- Selector d'abast (només si és recurrent) -->
+          <div id="edit-res-scope-container" style="display: none;">
+            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Aplicar canvi d'horari a:</label>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1F2937; cursor: pointer; padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; background: #FAF9F8;">
+                <input type="radio" name="edit_res_scope" value="serie" checked>
+                <div>
+                  <strong style="display: block;">Tota la sèrie recurrent restant</strong>
+                  <span style="font-size: 11.5px; color: #6B7280;" id="edit-res-scope-serie-desc">Aquesta i totes les sessions futures</span>
+                </div>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1F2937; cursor: pointer; padding: 6px 10px; border: 1px solid #E5E7EB; border-radius: 6px; background: #FAF9F8;">
+                <input type="radio" name="edit_res_scope" value="single">
+                <div>
+                  <strong style="display: block;">Només aquesta sessió</strong>
+                  <span style="font-size: 11.5px; color: #6B7280;" id="edit-res-scope-single-desc">Canviar exclusivament el dia seleccionat</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Selectors d'horari -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label for="edit-res-hora-inici" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Hora d'inici:</label>
+              <select id="edit-res-hora-inici" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
+                <option value="10:00">10:00 (Matí)</option>
+                <option value="10:30">10:30 (Matí)</option>
+                <option value="11:00">11:00 (Matí)</option>
+                <option value="11:30">11:30 (Matí)</option>
+                <option value="12:00">12:00 (Matí)</option>
+                <option value="16:00">16:00 (Tarda)</option>
+                <option value="16:30">16:30 (Tarda)</option>
+                <option value="17:00">17:00 (Tarda)</option>
+                <option value="17:30">17:30 (Tarda)</option>
+                <option value="18:00">18:00 (Tarda)</option>
+                <option value="18:30">18:30 (Tarda)</option>
+                <option value="19:00">19:00 (Tarda)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="edit-res-durada" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Durada:</label>
+              <select id="edit-res-durada" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 600; border: 1.5px solid #D1D5DB; border-radius: 6px;">
+                <option value="1.0">1 hora</option>
+                <option value="1.5">1 hora 30 min</option>
+                <option value="2.0" selected>2 hores (Estàndard)</option>
+                <option value="2.5">2 hores 30 min</option>
+                <option value="3.0">3 hores</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Resum visual del nou horari -->
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12.5px; color: #1E40AF; font-weight: 600;">Nou interval:</span>
+            <strong style="font-size: 13.5px; color: #1D4ED8;" id="edit-res-horari-preview">18:00 - 20:00 (2 hores)</strong>
+          </div>
+
+          <!-- Checkbox forçar aforament -->
+          <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 8px 12px;">
+            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #92400E; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="edit-res-forcar-aforament" style="margin-top: 2px;">
+              <span><strong>Permetre sobrepassar l'aforament</strong> si no queden places lliures en el nou horari.</span>
+            </label>
+          </div>
+
+          <div id="edit-res-error" style="color: #DC2626; font-size: 12.5px; font-weight: 600; display: none;"></div>
+        </div>
+
+        <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAnyModal('modal-admin-editar-reserva-backdrop');">Cancel·lar</button>
+          <button type="submit" class="btn-roig-coure" id="btn-submit-edit-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
+            Desar Nou Horari
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- MODAL: ENTRADA / SORTIDA MANUAL (ADMIN) -->
   <div class="modal-backdrop" id="modal-admin-manual-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
     <div class="modal-dialog" style="max-width: 440px;">
@@ -2771,14 +2873,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=11.2.1"></script>
-  <script src="lib/html5-qrcode.min.js?v=11.2.1"></script>
-  <script src="js/time-utils.js?v=11.2.1"></script>
-  <script src="js/sound.js?v=11.2.1"></script>
-  <script src="js/qr-engine.js?v=11.2.1"></script>
-  <script src="js/api-config.js?v=11.2.1"></script>
-  <script src="js/store.js?v=11.2.1"></script>
-  <script src="js/reserves-calendar.js?v=11.2.1"></script>
-  <script src="js/admin.js?v=11.2.1"></script>
+  <script src="lib/qrcode.min.js?v=11.3.0"></script>
+  <script src="lib/html5-qrcode.min.js?v=11.3.0"></script>
+  <script src="js/time-utils.js?v=11.3.0"></script>
+  <script src="js/sound.js?v=11.3.0"></script>
+  <script src="js/qr-engine.js?v=11.3.0"></script>
+  <script src="js/api-config.js?v=11.3.0"></script>
+  <script src="js/store.js?v=11.3.0"></script>
+  <script src="js/reserves-calendar.js?v=11.3.0"></script>
+  <script src="js/admin.js?v=11.3.0"></script>
 </body>
 </html>

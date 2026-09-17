@@ -3092,6 +3092,11 @@ async function renderAdminDayAppointments(dateStr) {
               </a>
             ` : ''}
             ${!isCancelled ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-edit-reserva" data-res-id="${r.id}" data-recurrent-id="${recId || r.recurrent_id || ''}" data-is-recurrent="${isRecurrent ? '1' : '0'}" data-client="${escapeHtml(clientNom)}" data-date="${dateStr}" data-hora-inici="${r.hora_inici || '18:00'}" data-hora-fi="${r.hora_fi || '20:00'}" data-hores="${r.hores || 2.0}" data-activitat="${escapeHtml(actNom)}" style="padding: 3px 8px; font-size: 11.5px; color: #1D4ED8; border-color: #BFDBFE; background: #EFF6FF; font-weight: 600;" title="Canviar l'hora i durada d'aquesta reserva">
+                ${isRecurrent ? 'Editar Sèrie' : 'Editar'}
+              </button>
+            ` : ''}
+            ${!isCancelled ? `
               <button type="button" class="btn btn-outline btn-sm btn-app-cancel-reserva" data-res-id="${r.id}" style="padding: 3px 6px; font-size: 11.5px; color: #831D1D; border-color: #E5DDD5;" title="Cancel·lar aquesta sessió">
                 Cancel·lar
               </button>
@@ -3200,6 +3205,220 @@ async function renderAdminDayAppointments(dateStr) {
       }
     });
   });
+
+  // Delegar edició d'horari i durada (puntual o sèrie)
+  tableBody.querySelectorAll('.btn-app-edit-reserva').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openAdminEditarReservaModal({
+        id: btn.dataset.resId,
+        recurrentId: btn.dataset.recurrentId,
+        isRecurrent: btn.dataset.isRecurrent === '1',
+        clientNom: btn.dataset.client,
+        date: btn.dataset.date,
+        horaInici: btn.dataset.horaInici,
+        horaFi: btn.dataset.horaFi,
+        hores: parseFloat(btn.dataset.hores) || 2.0,
+        activitat: btn.dataset.activitat
+      });
+    });
+  });
+}
+
+// ==================== MODAL ADMIN EDITAR HORARI I DURADA ====================
+function openAdminEditarReservaModal(resData) {
+  const modal = document.getElementById('modal-admin-editar-reserva-backdrop');
+  if (!modal) return;
+
+  const idInput = document.getElementById('edit-res-id');
+  const recInput = document.getElementById('edit-res-recurrent-id');
+  const dateInput = document.getElementById('edit-res-date');
+  if (idInput) idInput.value = resData.id || '';
+  if (recInput) recInput.value = resData.recurrentId || '';
+  if (dateInput) dateInput.value = resData.date || '';
+
+  const clientEl = document.getElementById('edit-res-client-nom');
+  const descEl = document.getElementById('edit-res-desc');
+  if (clientEl) clientEl.textContent = resData.clientNom || 'Client';
+  if (descEl) descEl.textContent = `${formatCatalanFullDate(resData.date)} • ${resData.activitat} • Actual: ${resData.horaInici} - ${resData.horaFi} (${resData.hores}h)`;
+
+  const scopeContainer = document.getElementById('edit-res-scope-container');
+  const scopeSerieDesc = document.getElementById('edit-res-scope-serie-desc');
+  const scopeSingleDesc = document.getElementById('edit-res-scope-single-desc');
+  const titleEl = document.getElementById('modal-edit-res-title');
+
+  if (resData.isRecurrent) {
+    if (scopeContainer) scopeContainer.style.display = 'block';
+    if (titleEl) titleEl.textContent = 'Modificar Horari de Sèrie Recurrent';
+    if (scopeSerieDesc) scopeSerieDesc.textContent = `A partir del dia ${formatCatalanFullDate(resData.date)} i totes les sessions següents`;
+    if (scopeSingleDesc) scopeSingleDesc.textContent = `Canviar únicament el dia ${formatCatalanFullDate(resData.date)}`;
+    const radioSerie = document.querySelector('input[name="edit_res_scope"][value="serie"]');
+    if (radioSerie) radioSerie.checked = true;
+  } else {
+    if (scopeContainer) scopeContainer.style.display = 'none';
+    if (titleEl) titleEl.textContent = 'Modificar Horari de la Reserva';
+    const radioSingle = document.querySelector('input[name="edit_res_scope"][value="single"]');
+    if (radioSingle) radioSingle.checked = true;
+  }
+
+  const selInici = document.getElementById('edit-res-hora-inici');
+  const selDurada = document.getElementById('edit-res-durada');
+  const errEl = document.getElementById('edit-res-error');
+  const chkForcar = document.getElementById('edit-res-forcar-aforament');
+
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+  }
+  if (chkForcar) chkForcar.checked = false;
+
+  if (selInici) {
+    let match = false;
+    Array.from(selInici.options).forEach(opt => {
+      if (opt.value === resData.horaInici) {
+        opt.selected = true;
+        match = true;
+      }
+    });
+    if (!match && resData.horaInici) {
+      const customOpt = document.createElement('option');
+      customOpt.value = resData.horaInici;
+      customOpt.textContent = `${resData.horaInici} (Actual)`;
+      customOpt.selected = true;
+      selInici.prepend(customOpt);
+    }
+  }
+
+  if (selDurada) {
+    let durStr = String(resData.hores || 2.0);
+    if (!durStr.includes('.')) durStr += '.0';
+    Array.from(selDurada.options).forEach(opt => {
+      if (opt.value === durStr || parseFloat(opt.value) === parseFloat(resData.hores)) {
+        opt.selected = true;
+      }
+    });
+  }
+
+  updateEditReservaPreview();
+  triggerOpenModal('modal-admin-editar-reserva-backdrop', 'Editar Horari Reserva');
+}
+
+function updateEditReservaPreview() {
+  const selInici = document.getElementById('edit-res-hora-inici');
+  const selDurada = document.getElementById('edit-res-durada');
+  const previewEl = document.getElementById('edit-res-horari-preview');
+  if (!selInici || !selDurada || !previewEl) return;
+
+  const hInici = selInici.value;
+  const durH = parseFloat(selDurada.value) || 2.0;
+
+  try {
+    const [h, m] = hInici.split(':').map(Number);
+    const totalMin = h * 60 + m + Math.round(durH * 60);
+    const endH = Math.floor(totalMin / 60) % 24;
+    const endM = totalMin % 60;
+    const hFi = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+    previewEl.textContent = `${hInici} - ${hFi} (${durH} ${durH === 1 ? 'hora' : 'hores'})`;
+  } catch (e) {
+    previewEl.textContent = `${hInici} (${durH}h)`;
+  }
+}
+
+// Inicialització d'esdeveniments del modal d'edició
+function initAdminEditarReservaModal() {
+  const selInici = document.getElementById('edit-res-hora-inici');
+  const selDurada = document.getElementById('edit-res-durada');
+  if (selInici) selInici.addEventListener('change', updateEditReservaPreview);
+  if (selDurada) selDurada.addEventListener('change', updateEditReservaPreview);
+
+  const formEditRes = document.getElementById('form-admin-editar-reserva');
+  if (formEditRes && !formEditRes._bound) {
+    formEditRes._bound = true;
+    formEditRes.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btnSubmit = document.getElementById('btn-submit-edit-reserva');
+      const errEl = document.getElementById('edit-res-error');
+      if (errEl) {
+        errEl.style.display = 'none';
+        errEl.textContent = '';
+      }
+
+      const resId = document.getElementById('edit-res-id')?.value;
+      const recId = document.getElementById('edit-res-recurrent-id')?.value;
+      const scopeRadio = document.querySelector('input[name="edit_res_scope"]:checked');
+      const scope = scopeRadio ? scopeRadio.value : 'single';
+      const hInici = document.getElementById('edit-res-hora-inici')?.value;
+      const durH = parseFloat(document.getElementById('edit-res-durada')?.value) || 2.0;
+      const forcar = document.getElementById('edit-res-forcar-aforament')?.checked || false;
+
+      if (!hInici) {
+        if (errEl) {
+          errEl.textContent = "Cal seleccionar l'hora d'inici.";
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+
+      const [h, m] = hInici.split(':').map(Number);
+      const totalMin = h * 60 + m + Math.round(durH * 60);
+      const endH = Math.floor(totalMin / 60) % 24;
+      const endM = totalMin % 60;
+      const hFi = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Desant canvis...';
+      }
+
+      try {
+        const res = await Store.updateReservaHorari({
+          id: resId,
+          recurrent_id: recId,
+          scope: scope,
+          hora_inici: hInici,
+          hora_fi: hFi,
+          hores: durH,
+          forcar_aforament: forcar
+        });
+
+        if (res && res.ok) {
+          showToast(res.message || 'Horari actualitzat correctament.', 'success');
+          if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+          closeAnyModal('modal-admin-editar-reserva-backdrop');
+          await refreshAppointmentsDashboard();
+        } else {
+          if (errEl) {
+            errEl.textContent = res?.error || 'No s'ha pogut actualitzar l'horari.';
+            errEl.style.display = 'block';
+          } else {
+            showToast(res?.error || 'Error actualitzant l'horari', 'error');
+          }
+        }
+      } catch (err) {
+        if (errEl) {
+          errEl.textContent = 'Error: ' + err.message;
+          errEl.style.display = 'block';
+        } else {
+          showToast('Error: ' + err.message, 'error');
+        }
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Desar Nou Horari';
+        }
+      }
+    });
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.openAdminEditarReservaModal = openAdminEditarReservaModal;
+  window.updateEditReservaPreview = updateEditReservaPreview;
+  window.initAdminEditarReservaModal = initAdminEditarReservaModal;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminEditarReservaModal);
+  } else {
+    initAdminEditarReservaModal();
+  }
 }
 
 // ==================== MODAL ADMIN NOVA RESERVA D'ALUMNE ====================
