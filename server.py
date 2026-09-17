@@ -540,6 +540,53 @@ def init_db():
             )
         ''')
 
+        # Taula de gestió integral de Monogràfics
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS monografics (
+                id TEXT PRIMARY KEY,
+                titol TEXT NOT NULL,
+                descripcio TEXT DEFAULT '',
+                data_inici TEXT NOT NULL,
+                data_fi TEXT NOT NULL,
+                durada_dies INTEGER NOT NULL DEFAULT 1,
+                hora_inici TEXT NOT NULL,
+                hora_fi TEXT NOT NULL,
+                preu_total REAL NOT NULL,
+                bestreta REAL NOT NULL,
+                places_totals INTEGER NOT NULL DEFAULT 6,
+                actiu INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Taula d'inscripcions a Monogràfics
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS monografics_inscripcions (
+                id TEXT PRIMARY KEY,
+                monografic_id TEXT NOT NULL,
+                nom TEXT NOT NULL,
+                cognoms TEXT DEFAULT '',
+                telefon TEXT NOT NULL,
+                email TEXT NOT NULL,
+                estat_pagament TEXT DEFAULT 'bestreta_pagada',
+                import_pagat REAL NOT NULL DEFAULT 0.0,
+                stripe_session_id TEXT DEFAULT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (monografic_id) REFERENCES monografics (id)
+            )
+        ''')
+
+        # Sanititzar qualsevol format_hms corrupte procedent d'imports de Google Sheets (ex: 'Sat Dec 30 1899...')
+        try:
+            cursor.execute('''
+                UPDATE sessions 
+                SET format_hms = printf('%02d:%02d:%02d', durada_segons / 3600, (durada_segons % 3600) / 60, durada_segons % 60)
+                WHERE format_hms LIKE '%1899%' OR format_hms LIKE '%GMT%' OR length(format_hms) > 10
+            ''')
+            conn.commit()
+        except Exception:
+            pass
+
         # Seeding inicial de tallers si la taula Ã©s buida
         cursor.execute('SELECT COUNT(*) as cnt FROM activitats')
         if cursor.fetchone()['cnt'] == 0:
@@ -3779,12 +3826,54 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     if existing_student:
                         ex_dict = row_to_dict(existing_student)
-                        self.send_json({
-                            'ok': False, 
-                            'duplicate': True,
-                            'error': f"Ja existeix un compte amb aquest correu o telèfon a nom de {ex_dict.get('nom')} ({ex_dict.get('id')}). Pots iniciar sessió directament."
-                        }, 409)
-                        return
+                        ex_email = (ex_dict.get('email') or '').strip().lower()
+                        # Si l'alumne existent prové d'importació d'Excel (sense correu electrònic)
+                        # o si el correu coincideix exactament, vinculem i activem el compte directament!
+                        if not ex_email or ex_email == email.lower():
+                            student_id = ex_dict['id']
+                            cursor.execute('''
+                                UPDATE alumnes 
+                                SET email = ?, pin = ?, nom = COALESCE(NULLIF(?, ''), nom), cognoms = COALESCE(NULLIF(?, ''), cognoms), telefon = COALESCE(NULLIF(?, ''), telefon)
+                                WHERE id = ?
+                            ''', (email, pin, nom, cognoms, telefon, student_id))
+                            conn.commit()
+
+                            # Sincronitzar actualització a Google Sheets
+                            sync_to_google_sheets_async('sync_alumne', {
+                                'id': student_id,
+                                'nom': nom or ex_dict.get('nom'),
+                                'cognoms': cognoms or ex_dict.get('cognoms'),
+                                'telefon': telefon or ex_dict.get('telefon'),
+                                'email': email,
+                                'pin': pin,
+                                'data_alta': ex_dict.get('data_alta', ''),
+                                'notes': ex_dict.get('notes', ''),
+                                'actiu': 1
+                            })
+
+                            activated_student = {
+                                'id': student_id,
+                                'nom': nom or ex_dict.get('nom'),
+                                'cognoms': cognoms or ex_dict.get('cognoms'),
+                                'telefon': telefon or ex_dict.get('telefon'),
+                                'email': email,
+                                'data_alta': ex_dict.get('data_alta')
+                            }
+                            self.send_json({
+                                'ok': True,
+                                'id': student_id,
+                                'alumne': activated_student,
+                                'is_activation': True,
+                                'message': f"Compte activat i vinculat correctament! El teu codi d'alumne és {student_id}."
+                            })
+                            return
+                        else:
+                            self.send_json({
+                                'ok': False, 
+                                'duplicate': True,
+                                'error': f"Ja existeix un compte amb aquest telèfon o correu associat a {ex_dict.get('nom')} ({ex_dict.get('id')}). Pots iniciar sessió amb el teu correu o recuperar la contrasenya."
+                            }, 409)
+                            return
 
                     # Generar nou ID: TC-101, TC-102, ...
                     cursor.execute('SELECT id FROM alumnes WHERE id LIKE "TC-%" ORDER BY id DESC')

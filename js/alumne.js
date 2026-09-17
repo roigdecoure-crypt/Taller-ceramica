@@ -591,7 +591,7 @@ function renderSessionsTable(sessions) {
       <td>${TimeUtils.formatDate(s.data || s.entrada)}</td>
       <td>${TimeUtils.formatTime(s.entrada)}</td>
       <td>${s.sortida ? TimeUtils.formatTime(s.sortida) : '<span class="badge badge-success">En curs</span>'}</td>
-      <td><strong>${s.format_hms || '00:00:00'}</strong></td>
+      <td><strong>${TimeUtils.cleanHms ? TimeUtils.cleanHms(s.format_hms, s.durada_segons) : (s.format_hms || '00:00:00')}</strong></td>
       <td><span class="badge ${s.tipus === 'qr' ? 'badge-info' : 'badge-neutral'}">${s.tipus || 'qr'}</span></td>
     `;
     tbody.appendChild(tr);

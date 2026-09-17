@@ -46,6 +46,25 @@ const TimeUtils = {
   },
 
   /**
+   * Neteja i sanititza cadenes format_hms (evitant formats corruptes d'Excel tipus "Sat Dec 30 1899...")
+   * @param {string} format_hms 
+   * @param {number} durada_segons 
+   * @returns {string} HH:MM:SS net
+   */
+  cleanHms(format_hms, durada_segons = 0) {
+    const s = String(format_hms || '').trim();
+    if (s && !s.includes('1899') && !s.includes('GMT') && s.length <= 10 && /^-?\d{1,3}:\d{2}:\d{2}$/.test(s)) {
+      return s;
+    }
+    if (durada_segons && !isNaN(durada_segons)) {
+      return this.secondsToHms(durada_segons);
+    }
+    const match = s.match(/(\d{2}:\d{2}:\d{2})/);
+    if (match) return match[1];
+    return '00:00:00';
+  },
+
+  /**
    * Converteix una cadena "HH:MM:SS" o "HH:MM" o un nombre decimal d'hores a segons totals
    * @param {string|number} input
    * @returns {number}

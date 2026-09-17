@@ -334,15 +334,19 @@ const Store = {
         if (json.ok && json.alumne) {
           const local = this._getLocalData();
           if (!local.alumnes) local.alumnes = [];
-          local.alumnes.push({ ...json.alumne, pin: studentData.pin || studentData.contrasenya });
+          const exIdx = local.alumnes.findIndex(a => a.id === json.alumne.id);
+          const studentObj = { ...json.alumne, pin: studentData.pin || studentData.contrasenya };
+          if (exIdx >= 0) local.alumnes[exIdx] = studentObj;
+          else local.alumnes.push(studentObj);
           this._saveLocalData(local);
         }
         return json;
       } catch (e) {
-        console.warn('Error registre API, fallback local:', e);
+        console.error('Error registre API:', e);
+        return { ok: false, error: 'No s\'ha pogut connectar amb el servidor del taller. Si us plau, comprova la connexió o intenta-ho de nou.' };
       }
     }
-    // Fallback local
+    // Fallback local només si explícitament estem en mode local
     return await this.saveAlumne(studentData);
   },
 
@@ -545,6 +549,40 @@ const Store = {
         message: `Sortida registrada per a ${student.nom} a les ${TimeUtils.formatTime(now)}. Temps: ${duradaHms}. Saldo disponible: ${balanc.formatBalance}.`
       };
     }
+  },
+
+  async getActiveSessions() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/sessions`);
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.data || json.sessions || []);
+        return list.filter(s => s.estat === 'oberta' || !s.sortida);
+      } catch (e) {
+        console.warn('Error getActiveSessions API, fallback local:', e);
+      }
+    }
+    const data = this._getLocalData();
+    return (data.sessions || []).filter(s => s.estat === 'oberta' || !s.sortida);
+  },
+
+  async getSessions(filter = {}) {
+    if (this.mode === 'api') {
+      try {
+        let url = `${this.apiBase}/api/sessions`;
+        if (filter.student_id) url += `?student_id=${encodeURIComponent(filter.student_id)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.data || json.sessions || []);
+        return list;
+      } catch (e) {
+        console.warn('Error getSessions API, fallback local:', e);
+      }
+    }
+    const data = this._getLocalData();
+    let list = data.sessions || [];
+    if (filter.student_id) list = list.filter(s => s.student_id === filter.student_id);
+    return list;
   },
 
   async forceCloseSession(opts) {
