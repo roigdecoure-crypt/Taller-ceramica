@@ -3373,7 +3373,7 @@ async function loadEditSerieDatesPreview() {
   const excludeRecId = document.getElementById('edit-res-recurrent-id')?.value || '';
 
   if (!dataInici) {
-    listEl.innerHTML = '<div style="color: #64748B; font-style: italic;">Selecciona una data d'inici per veure les sessions.</div>';
+    listEl.innerHTML = '<div style="color: #64748B; font-style: italic;">Selecciona una data d\'inici per veure les sessions.</div>';
     return;
   }
 
