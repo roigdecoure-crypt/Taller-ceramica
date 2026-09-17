@@ -601,13 +601,13 @@
             Alumnes &bull; Família:
           </span>
           <div id="family-pills-list" class="family-pills-list"></div>
-          <button type="button" class="btn-family-add" id="btn-open-vincular-modal" title="Afegir un fill o familiar per gestionar-lo des d'aquest mateix portal">
+          <button type="button" class="btn-family-add" id="btn-open-vincular-modal" onclick="openVincularAlumneModal()" title="Afegir un fill o familiar per gestionar-lo des d'aquest mateix portal">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             <span>Afegir Alumne</span>
           </button>
         </div>
         <div>
-          <button type="button" class="btn-family-all-qrs" id="btn-open-family-qrs-modal" title="Obre tots els QRs de la família per passar per l'escàner del taller d'una sola vegada">
+          <button type="button" class="btn-family-all-qrs" id="btn-open-family-qrs-modal" onclick="openFamilyQrsModal()" title="Obre tots els QRs de la família per passar per l'escàner del taller d'una sola vegada">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             <span>Tots els QRs</span>
           </button>
@@ -1103,11 +1103,11 @@
   </div>
 
   <!-- MODAL: VINCULAR ALUMNE O FAMILIAR -->
-  <div class="modal-backdrop" id="modal-vincular-alumne" style="display: none;">
+  <div class="modal-backdrop" id="modal-vincular-alumne" onclick="if(event.target===this) closeModal(this);">
     <div class="modal-dialog" style="max-width: 420px; text-align: left;">
       <div class="modal-header">
         <h3 style="margin: 0; font-size: 18px; color: var(--color-dark); font-weight: 800;">Vincular Alumne o Familiar</h3>
-        <button type="button" class="modal-close" id="btn-close-vincular-modal">&times;</button>
+        <button type="button" class="modal-close" id="btn-close-vincular-modal" onclick="closeModal(document.getElementById('modal-vincular-alumne'))">&times;</button>
       </div>
       <div style="padding: 16px 0;">
         <p style="font-size: 13px; color: var(--color-muted); margin-top: 0; margin-bottom: 14px; line-height: 1.4;">
@@ -1115,7 +1115,7 @@
         </p>
         <div id="vincular-error-msg" style="display: none; background: #FDEDEC; border: 1px solid #F5C6CB; color: #721C24; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; line-height: 1.4;"></div>
 
-        <form id="form-vincular-alumne">
+        <form id="form-vincular-alumne" onsubmit="handleVincularSubmit(event); return false;">
           <div class="form-group" style="margin-bottom: 12px;">
             <label for="input-vincular-id" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
               Nom o Codi d'Alumne (ex: Marc o TC-102)
@@ -1139,14 +1139,14 @@
   </div>
 
   <!-- MODAL: TOTS ELS QRS DE LA FAMÍLIA -->
-  <div class="modal-backdrop" id="modal-family-qrs" style="display: none;">
+  <div class="modal-backdrop" id="modal-family-qrs" onclick="if(event.target===this) closeModal(this);">
     <div class="modal-dialog" style="max-width: 580px; text-align: left; width: 95%;">
       <div class="modal-header">
         <div>
           <h3 style="margin: 0; font-size: 19px; color: var(--color-dark); font-weight: 800;">QRs d'Entrada de la Família</h3>
           <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-muted);">Pots apropar el mòbil a l'escàner per passar cadascun dels codis QR a l'arribada al taller.</p>
         </div>
-        <button type="button" class="modal-close" id="btn-close-family-qrs-modal">&times;</button>
+        <button type="button" class="modal-close" id="btn-close-family-qrs-modal" onclick="closeModal(document.getElementById('modal-family-qrs'))">&times;</button>
       </div>
       <div style="padding: 16px 0; max-height: 70vh; overflow-y: auto;">
         <div id="family-qrs-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
@@ -1154,7 +1154,7 @@
         </div>
       </div>
       <div style="display: flex; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--color-border);">
-        <button type="button" class="btn btn-outline" id="btn-close-family-qrs-action">Fet</button>
+        <button type="button" class="btn btn-outline" id="btn-close-family-qrs-action" onclick="closeModal(document.getElementById('modal-family-qrs'))">Fet</button>
       </div>
     </div>
   </div>
@@ -1163,14 +1163,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=11.5.3"></script>
-  <script src="js/time-utils.js?v=11.5.3"></script>
-  <script src="js/sound.js?v=11.5.3"></script>
-  <script src="js/qr-engine.js?v=11.5.3"></script>
-  <script src="js/api-config.js?v=11.5.3"></script>
-  <script src="js/store.js?v=11.5.3"></script>
-  <script src="js/reserves-calendar.js?v=11.5.3"></script>
-  <script src="js/alumne.js?v=11.5.3"></script>
+  <script src="lib/qrcode.min.js?v=11.5.4"></script>
+  <script src="js/time-utils.js?v=11.5.4"></script>
+  <script src="js/sound.js?v=11.5.4"></script>
+  <script src="js/qr-engine.js?v=11.5.4"></script>
+  <script src="js/api-config.js?v=11.5.4"></script>
+  <script src="js/store.js?v=11.5.4"></script>
+  <script src="js/reserves-calendar.js?v=11.5.4"></script>
+  <script src="js/alumne.js?v=11.5.4"></script>
 </body>
 </html>
 

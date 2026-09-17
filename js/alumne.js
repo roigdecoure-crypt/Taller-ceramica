@@ -441,19 +441,26 @@ async function renderReservationsSection(studentId) {
 // GestiÃ³ de Finestres Flotants (Modals)
 function openModal(modal) {
   if (!modal) return;
+  if (typeof modal === 'string') modal = document.getElementById(modal);
+  if (!modal) return;
   modal.style.removeProperty('display');
+  modal.style.setProperty('display', 'flex', 'important');
   modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
+window.openModal = openModal;
 
 function closeModal(modal) {
   if (!modal) return;
+  if (typeof modal === 'string') modal = document.getElementById(modal);
+  if (!modal) return;
   modal.classList.remove('active');
-  modal.style.removeProperty('display');
+  modal.style.setProperty('display', 'none', 'important');
   if (!document.querySelector('.modal-backdrop.active')) {
     document.body.style.overflow = '';
   }
 }
+window.closeModal = closeModal;
 
 async function openReservarModal() {
   const modalReservar = document.getElementById('modal-reservar-sessio');
@@ -779,6 +786,25 @@ async function switchActiveStudent(studentId) {
   }
 }
 
+function openVincularAlumneModal() {
+  const modalVincular = document.getElementById('modal-vincular-alumne');
+  const errBox = document.getElementById('vincular-error-msg');
+  if (errBox) errBox.style.display = 'none';
+  const idInput = document.getElementById('input-vincular-id');
+  if (idInput) idInput.value = '';
+  const pinInput = document.getElementById('input-vincular-pin');
+  if (pinInput) pinInput.value = '';
+  if (modalVincular) {
+    openModal(modalVincular);
+  }
+  if (idInput) setTimeout(() => idInput.focus(), 150);
+}
+window.openVincularAlumneModal = openVincularAlumneModal;
+window.handleVincularSubmit = handleVincularSubmit;
+window.openFamilyQrsModal = openFamilyQrsModal;
+window.desvincularAlumne = desvincularAlumne;
+window.switchActiveStudent = switchActiveStudent;
+
 async function handleVincularSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
   const idInput = document.getElementById('input-vincular-id');
@@ -940,6 +966,32 @@ function openFamilyQrsModal() {
 }
 
 function setupEventListeners() {
+  // Esdeveniments de Gestió de Família i Perfils Vinculats
+  const btnOpenVincular = document.getElementById('btn-open-vincular-modal');
+  if (btnOpenVincular) {
+    btnOpenVincular.onclick = openVincularAlumneModal;
+  }
+  const formVincular = document.getElementById('form-vincular-alumne');
+  if (formVincular) {
+    formVincular.onsubmit = handleVincularSubmit;
+  }
+  const btnCloseVincular = document.getElementById('btn-close-vincular-modal');
+  if (btnCloseVincular) {
+    btnCloseVincular.onclick = () => closeModal(document.getElementById('modal-vincular-alumne'));
+  }
+  const btnOpenFamilyQrs = document.getElementById('btn-open-family-qrs-modal');
+  if (btnOpenFamilyQrs) {
+    btnOpenFamilyQrs.onclick = openFamilyQrsModal;
+  }
+  const btnCloseFamilyQrs = document.getElementById('btn-close-family-qrs-modal');
+  if (btnCloseFamilyQrs) {
+    btnCloseFamilyQrs.onclick = () => closeModal(document.getElementById('modal-family-qrs'));
+  }
+  const btnCloseFamilyQrsAct = document.getElementById('btn-close-family-qrs-action');
+  if (btnCloseFamilyQrsAct) {
+    btnCloseFamilyQrsAct.onclick = () => closeModal(document.getElementById('modal-family-qrs'));
+  }
+
   // Commutar visibilitat de la contrasenya (PIN)
   const btnTogglePwd = document.getElementById('btn-toggle-login-pwd');
   const inputPwd = document.getElementById('login-student-password');
