@@ -413,6 +413,17 @@
           <span class="nav-text">Portal Alumne ↗</span>
         </a>
       </li>
+      <li class="sidebar-item" title="Guia d'Ús Pas a Pas de l'Administració">
+        <a href="manual-admin.html" target="_blank" style="color:#831D1D;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;font-weight:700;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Guia d'Ús Admin ↗</span>
+        </a>
+      </li>
       <li class="sidebar-item" id="btn-sidebar-netejar-cau" title="Netejar Cau" onclick="forcarNetejaMemoriaCau();" style="cursor: pointer;">
         <span class="nav-icon" style="color: #64748B;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -1315,10 +1326,11 @@
         <div class="form-group">
           <label>Mètode de Pagament</label>
           <select id="paquet-form-metode" class="form-control">
-            <option value="Stripe">Stripe (Targeta / Apple Pay)</option>
+            <option value="TPV Físic">TPV Físic / Targeta (Taller)</option>
             <option value="Bizum">Bizum</option>
             <option value="Efectiu">Efectiu</option>
             <option value="Transferència">Transferència bancària</option>
+            <option value="Stripe">Stripe (En línia / Web)</option>
           </select>
         </div>
         <div class="form-group">
@@ -2065,8 +2077,23 @@
             </div>
             <div>
               <label for="admin-res-places" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Places:</label>
-              <input type="number" id="admin-res-places" value="1" min="1" max="12" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; text-align: center; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <input type="number" id="admin-res-places" value="1" min="1" max="12" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; text-align: center; border: 1px solid #D1D5DB; border-radius: 6px;" onchange="handleAdminResPlacesChange();" oninput="handleAdminResPlacesChange();">
             </div>
+          </div>
+
+          <!-- Avís i Gestió de Bestreta / Paga i Senyal per a Grups (4+ places) -->
+          <div id="admin-res-group-paga-senyal" style="display: none; background: #FFFBEB; border: 1.5px solid #FCD34D; border-radius: 6px; padding: 12px 14px;">
+            <div style="font-size: 13px; font-weight: 700; color: #92400E; display: flex; align-items: center; justify-content: space-between;">
+              <span>Paga i senyal / Bestreta de grup:</span>
+              <span id="admin-res-paga-senyal-amount" style="font-size: 14px; font-weight: 800; color: #B45309;">40 €</span>
+            </div>
+            <div style="font-size: 11.5px; color: #78350F; margin-top: 3px; margin-bottom: 8px;">
+              Per a reserves de 4 o més places s'aplica una bestreta de 10 € per persona que es descomptarà el dia del taller.
+            </div>
+            <label style="font-size: 12px; font-weight: 600; color: #92400E; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+              <input type="checkbox" id="admin-res-chk-bestreta-cobrada" style="width: 17px; height: 17px; accent-color: #D97706; cursor: pointer;">
+              <span>Marcar la bestreta com a <strong>ja cobrada al taller</strong> (TPV Físic / Efectiu / Bizum)</span>
+            </label>
           </div>
 
           <!-- Hora d'arribada (Matí i Tarda - sessions de 2 hores) -->
@@ -2643,7 +2670,7 @@
           </div>
           <div class="form-group">
             <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Hores de sessió</label>
-            <input type="number" id="val-manual-hores" class="form-control" value="2.0" step="0.5" min="1" max="20" required style="font-size: 13px;">
+            <input type="number" id="val-manual-hores" class="form-control" value="2.0" step="0.5" min="1" max="100" required style="font-size: 13px;" oninput="recalcularPreuValManualHores();">
           </div>
         </div>
 

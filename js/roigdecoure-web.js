@@ -692,7 +692,7 @@
       var radEdat = document.querySelector('input[name="hores-edat"]:checked');
       var esInf = radEdat && radEdat.value === 'infant';
       reqEdat = esInf ? 'infant' : 'adult';
-      articleId = esInf ? 'art_torn_infant' : 'art_torn_adult';
+      articleId = esInf ? 'art_hores_infant' : 'art_hores_adult';
     }
 
     if (btn) {

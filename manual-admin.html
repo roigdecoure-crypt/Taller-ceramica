@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual d'Ús i Guia Pas a Pas | Panell d'Administració Roig de Coure</title>
+  <meta name="description" content="Guia oficial pas a pas de totes les accions, particularitats i procediments del panell d'administració de Roig de Coure.">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="stylesheet" href="css/roigdecoure-web.css?v=3.7">
+  <style>
+    /* Estils específics del Manual */
+    :root {
+      --manual-sidebar-width: 280px;
+    }
+    *, *::before, *::after {
+      border-radius: 0 !important;
+    }
+    body {
+      background: #FAF7F4;
+      color: #2A2421;
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      line-height: 1.7;
+    }
+    .manual-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Menú lateral de navegació del manual */
+    .manual-sidebar {
+      width: var(--manual-sidebar-width);
+      background: #2C221E;
+      color: #FAF7F4;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 18px;
+      flex-shrink: 0;
+      border-right: 1px solid #423B36;
+    }
+    .manual-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #423B36;
+    }
+    .manual-brand h1 {
+      font-family: 'Buffalo', cursive, sans-serif;
+      font-size: 32px;
+      color: #FFFFFF;
+      margin: 0;
+      font-weight: 700;
+    }
+    .manual-brand span {
+      font-size: 12px;
+      color: #DDD7CE;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+    .manual-search {
+      margin-bottom: 20px;
+    }
+    .manual-search input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #181514;
+      border: 1px solid #423B36;
+      color: #FFF;
+      font-size: 13px;
+    }
+    .manual-nav-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .manual-nav-group-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #A39B94;
+      font-weight: 700;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      padding-left: 6px;
+    }
+    .manual-nav-link {
+      display: block;
+      padding: 7px 10px;
+      color: #DDD7CE;
+      font-size: 13px;
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .manual-nav-link:hover, .manual-nav-link.active {
+      background: #382F2A;
+      color: #FFFFFF;
+      border-left-color: #C25E3A;
+    }
+    /* Contingut principal */
+    .manual-main {
+      flex: 1;
+      padding: 40px 48px;
+      max-width: 1000px;
+    }
+    .manual-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 36px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #E8E1DA;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .manual-header-bar h2 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #831D1D;
+      margin: 0;
+    }
+    .btn-return-admin {
+      background: #831D1D;
+      color: #FFF;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-return-admin:hover {
+      background: #631515;
+    }
+    /* Seccions del document */
+    .manual-section {
+      background: #FFFFFF;
+      border: 1px solid #E8E1DA;
+      padding: 32px 36px;
+      margin-bottom: 36px;
+      box-shadow: 0 4px 12px rgba(42,36,33,0.04);
+    }
+    .manual-section-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #831D1D;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid #F3ECE4;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-num {
+      background: #831D1D;
+      color: #FFF;
+      font-size: 14px;
+      font-weight: 800;
+      padding: 2px 8px;
+      display: inline-block;
+    }
+    .action-card {
+      background: #FAF7F5;
+      border: 1px solid #E8E1DA;
+      border-left: 4px solid #5E7E6F;
+      padding: 22px 24px;
+      margin: 20px 0;
+    }
+    .action-card.urgent {
+      border-left-color: #831D1D;
+      background: #FFF8F6;
+    }
+    .action-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #2C221E;
+      margin-bottom: 8px;
+    }
+    .action-meta {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+      flex-wrap: wrap;
+    }
+    .meta-tag {
+      background: #EFE8DF;
+      padding: 2px 8px;
+      font-weight: 700;
+      color: #5C4033;
+    }
+    .meta-tag.green {
+      background: #EEF5F1;
+      color: #2E4B3E;
+    }
+    .meta-tag.red {
+      background: #FDF2F2;
+      color: #831D1D;
+    }
+    .step-list {
+      margin: 14px 0 16px 20px;
+      padding: 0;
+    }
+    .step-list li {
+      margin-bottom: 10px;
+      font-size: 14.5px;
+    }
+    .step-list li strong {
+      color: #831D1D;
+    }
+    .callout {
+      background: #FFFFFF;
+      border: 1px dashed #C4A482;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 13.5px;
+      color: #4A3B32;
+    }
+    .callout-title {
+      font-weight: 800;
+      color: #831D1D;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .keyboard-badge {
+      background: #2A2421;
+      color: #FFF;
+      font-family: monospace;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    @media (max-width: 900px) {
+      .manual-layout { flex-direction: column; }
+      .manual-sidebar { width: 100%; height: auto; position: static; }
+      .manual-main { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="manual-layout">
+    
+    <!-- BARRA LATERAL D'ÍNDEX -->
+    <aside class="manual-sidebar">
+      <div class="manual-brand">
+        <h1>Roig de Coure</h1>
+        <span>Guia Oficial d'Administració</span>
+      </div>
+
+      <div class="manual-search">
+        <input type="text" id="manual-filter-input" placeholder="Cercar acció o mot (ex: nou alumne)..." oninput="filtrarManual(this.value)">
+      </div>
+
+      <ul class="manual-nav-list">
+        <li class="manual-nav-group-title">1. Accés i Seguretat</li>
+        <li><a href="#sec-acces" class="manual-nav-link">Entrar amb PIN & Tancar Sessió</a></li>
+        <li><a href="#sec-canvi-pin" class="manual-nav-link">Canviar el PIN d'accés</a></li>
+
+        <li class="manual-nav-group-title">2. Gestió d'Alumnes</li>
+        <li><a href="#sec-nou-alumne" class="manual-nav-link">Crear un Nou Alumne (+ Nou Alumne)</a></li>
+        <li><a href="#sec-fitxa-alumne" class="manual-nav-link">Fitxa 360° de l'Alumne</a></li>
+        <li><a href="#sec-paquets-hores" class="manual-nav-link">Afegir / Comprar Paquets d'Hores</a></li>
+        <li><a href="#sec-carnet-qr" class="manual-nav-link">Carnet Digital QR & Smartwatches</a></li>
+
+        <li class="manual-nav-group-title">3. Reserves & Calendari</li>
+        <li><a href="#sec-crear-reserva" class="manual-nav-link">Crear una Reserva (+ Nova Reserva)</a></li>
+        <li><a href="#sec-reserves-recurrents" class="manual-nav-link">Reserves Periòdiques (Recurrents)</a></li>
+        <li><a href="#sec-llista-dia" class="manual-nav-link">Llista del Dia & Assistència (Visited)</a></li>
+        <li><a href="#sec-gestio-reserva" class="manual-nav-link">Modificar o Cancel·lar una Reserva</a></li>
+
+        <li class="manual-nav-group-title">4. Assistència en Viu</li>
+        <li><a href="#sec-directe" class="manual-nav-link">Al Taller Ara Mateix (Directe)</a></li>
+        <li><a href="#sec-fitxatge-manual" class="manual-nav-link">Entrada / Sortida Manual</a></li>
+        <li><a href="#sec-scanner" class="manual-nav-link">Escàner QR de Recepció</a></li>
+
+        <li class="manual-nav-group-title">5. Tallers & Calendari Festiu</li>
+        <li><a href="#sec-festius" class="manual-nav-link">Festius i Vacances del Taller</a></li>
+        <li><a href="#sec-restriccions" class="manual-nav-link">Restringir Activitats puntuals</a></li>
+        <li><a href="#sec-aforament" class="manual-nav-link">Control d'Aforament per Torn</a></li>
+
+        <li class="manual-nav-group-title">6. Sincronització & Dades</li>
+        <li><a href="#sec-sheets" class="manual-nav-link">Google Sheets (Hidratar vs Sync)</a></li>
+        <li><a href="#sec-whatsapp" class="manual-nav-link">Notificacions Automàtiques WhatsApp</a></li>
+        <li><a href="#sec-backups" class="manual-nav-link">Còpies de Seguretat (Snapshots)</a></li>
+        <li><a href="#sec-neteja-cau" class="manual-nav-link">Netejar Cau del Navegador</a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTINGUT PRINCIPAL DEL MANUAL -->
+    <main class="manual-main">
+      <div class="manual-header-bar">
+        <div>
+          <h2>Manual Operatiu del Panell d'Administració</h2>
+          <p style="margin: 4px 0 0 0; color: #787069; font-size: 13.5px;">Totes les accions, particularitats, explicació pas a pas i raons de funcionament.</p>
+        </div>
+        <a href="admin.html" class="btn-return-admin">&larr; Tornar a Admin</a>
+      </div>
+
+      <!-- INTRODUCCIÓ -->
+      <section class="manual-section">
+        <h3 style="font-size: 18px; font-weight: 800; color: #2A2421; margin-bottom: 10px;">Com està organitzat el sistema?</h3>
+        <p style="font-size: 14.5px; color: #4A3B32;">
+          El panell d'administració de <strong>Roig de Coure</strong> centralitza tot el cicle operatiu del taller en una única eina autònoma: des de les reserves de clients que arriben per la web pública, fins a la fitxa personal dels alumnes, el control exacte del saldo d'hores (al segon), el marcatge d'assistència presencial i la sincronització de seguretat amb Google Sheets.
+        </p>
+      </section>
+
+      <!-- 1. ACCÉS I SEGURETAT -->
+      <section class="manual-section" id="sec-acces">
+        <div class="manual-section-title">
+          <span class="section-num">1</span>
+          <span>Accés i Seguretat</span>
+        </div>
+
+        <div class="action-card">
+          <div class="action-title">Entrar al Panell d'Administració amb PIN</div>
+          <div class="action-meta">
+            <span class="meta-tag">Pantalla inicial</span>
+            <span class="meta-tag green">Seguretat local</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Evita que ningú aliè a la gestió del taller pugui visualitzar les dades personals dels alumnes, els diners recaptats o modificar reserves.</p>
+          <ul class="step-list">
+            <li>Obre l'enllaç <span class="keyboard-badge">/admin.html</span> en qualsevol dispositiu (ordinador del taller, tauleta o mòbil).</li>
+            <li>A la pantalla de bloqueig central, escriu el teu <strong>PIN d'accés</strong> (el PIN de fàbrica és <span class="keyboard-badge">1234</span>).</li>
+            <li>Prem <strong>Entrar</strong> o la tecla Retorn. El sistema comprova la clau i desbloqueja totes les funcionalitats.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-canvi-pin">
+          <div class="action-title">Com canviar el PIN d'accés de l'Administració</div>
+          <div class="action-meta">
+            <span class="meta-tag">Menú lateral</span>
+            <span class="meta-tag">Configuració</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Si canvies de personal o vols actualitzar la contrasenya del taller per seguretat.</p>
+          <ul class="step-list">
+            <li>Ves al menú lateral esquerre i fes clic a <strong>Configuració</strong>.</li>
+            <li>A l'apartat <em>"Seguretat i PIN"</em>, introdueix el teu PIN actual i després el <strong>Nou PIN</strong> desitjat (de 4 a 8 caràcters).</li>
+            <li>Fes clic a <strong>Desar PIN</strong>. A partir d'aquell moment, el sistema exigirà el nou número.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 2. GESTIÓ D'ALUMNES -->
+      <section class="manual-section" id="sec-nou-alumne">
+        <div class="manual-section-title">
+          <span class="section-num">2</span>
+          <span>Gestió d'Alumnes</span>
+        </div>
+
+        <div class="action-card urgent">
+          <div class="action-title">Crear un Nou Alumne (+ Nou Alumne) — Pas a Pas</div>
+          <div class="action-meta">
+            <span class="meta-tag red">Acció Clau</span>
+            <span class="meta-tag">Botó superior dret</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Registra una persona com a alumne habitual del taller, assignant-li un codi identificador únic (ex: <span class="keyboard-badge">TC-101</span>), un saldo d'hores inicial i generant automàticament el seu carnet digital amb codi QR.</p>
+          
+          <p><strong>Procediment pas a pas:</strong></p>
+          <ul class="step-list">
+            <li>Fes clic al botó roig <strong>+ Nou Alumne</strong> situat a la barra superior dreta del panell. S'obrirà el formulari de registre.</li>
+            <li><strong>Nom i Cognoms (Obligatori):</strong> Escriu el nom i cognoms reals de l'alumne. Aquest nom apareixerà a la pantalla de l'escàner en entrar i als missatges de confirmació.</li>
+            <li><strong>Telèfon mòbil (Molt recomanat):</strong> Format internacional o nacional (ex: <em>+34 683 633 880</em> o <em>683633880</em>). És imprescindible perquè el sistema li pugui enviar notificacions i recordatoris automàtics de WhatsApp.</li>
+            <li><strong>Correu electrònic:</strong> Adreça per enviar confirmacions de compra i restabliment de contrasenyes.</li>
+            <li><strong>Data de Naixement (Crucial):</strong>
+              <div class="callout">
+                <span class="callout-title">Particularitat clau:</span>
+                En triar la data de naixement, el sistema calcula automàticament l'<strong>edat exacta en temps real</strong>. Si té menys de 12 anys, el classifica com a <strong>Tarifa Infantil</strong>; si en té 12 o més, com a <strong>Tarifa Adult</strong>. Això determina automàticament el preu dels seus paquets d'hores a la botiga i a Stripe.
+              </div>
+            </li>
+            <li><strong>PIN personal de l'alumne:</strong> Pots deixar el que genera el sistema o escriure'n un de fàcil (ex: 4 xifres). Aquest PIN serà el que l'alumne farà servir a <span class="keyboard-badge">alumne.html</span> per consultar el seu saldo des de casa.</li>
+            <li><strong>Paquet d'hores inicial:</strong> Si l'alumne ja compra un paquet en donar-se d'alta, selecciona el nombre d'hores (ex: <em>10 hores</em>, <em>20 hores</em>) i el mètode de pagament (<em>Efectiu</em>, <em>Bizum</em>, <em>Targeta/Stripe</em> o <em>Transferència</em>). Si no en compra cap ara, selecciona <em>0 hores</em>.</li>
+            <li><strong>Notes internes:</strong> Camp lliure privat per a anotacions del taller (ex: <em>"Vol aprendre torn des de zero"</em>, <em>"Al·lèrgia a la pols"</em>).</li>
+            <li>Prem <strong>Guardar Alumne</strong>.</li>
+          </ul>
+
+          <div class="callout">
+            <span class="callout-title">Què passa immediatament després de desar?</span>
+            1. Se li assigna un número consecutiu permanent (<span class="keyboard-badge">TC-XXX</span>).<br>
+            2. Es genera el seu carnet digital QR descarregable.<br>
+            3. Si s'ha indicat un paquet inicial, les hores s'incorporen a l'instant al seu balanç.<br>
+            4. Es sincronitza en segon pla amb Google Sheets perquè no es perdi res.
+          </div>
+        </div>
+
+        <div class="action-card" id="sec-fitxa-alumne">
+          <div class="action-title">Fitxa Completa 360° de l'Alumne</div>
+          <div class="action-meta">
+            <span class="meta-tag">Pestanya Alumnes</span>
+            <span class="meta-tag green">Vista integrada</span>
+          </div>
+          <p><strong>Com accedir-hi:</strong> Ves a la pestanya <strong>Alumnes & Clients</strong>. Fes clic a qualsevol fila o al botó <strong>Fitxa</strong> d'un alumne. La pantalla canvia de manera neta mostrant tota la seva informació sense finestres emergents molestes.</p>
+          <p><strong>Què pots fer des de la fitxa 360°:</strong></p>
+          <ul class="step-list">
+            <li><strong>Modificar dades:</strong> Corregir el telèfon, email, edat, o canviar el seu estat a <em>Inactiu</em> si deixa de venir. Fes clic a <strong>Guardar canvis alumne</strong>.</li>
+            <li><strong>Balanç exacte d'hores:</strong> Visualitza a dalt de tot en temps real:
+              <br>• <em>Hores contractades:</em> suma de tots els paquets comprats.
+              <br>• <em>Hores consumides:</em> temps real que ha estat al taller (calculat al segon: <span class="keyboard-badge">HH:MM:SS</span>).
+              <br>• <em>Saldo restant:</em> hores i minuts disponibles actualment.
+            </li>
+            <li><strong>Pestanya Reserves:</strong> Mostra les seves pròximes classes reservades i les passades, amb possibilitat d'afegir-ne una de nova o cancel·lar-ne.</li>
+            <li><strong>Pestanya Sessions & Assistència:</strong> Llistat cronològic de cada vegada que l'alumne ha entrat i sortit del taller pel lector de QR o manualment.
+              <div class="callout">
+                <span class="callout-title">Com gestionar una sessió oblidada (oberta)?</span>
+                Si un alumne va entrar al matí però va marxar sense escanejar la sortida, la sessió apareixerà marcada en groc com a <em>"En curs / Oberta"</em>. Pots fer clic al botó <strong>Tancar Sessió</strong> i indicar l'hora real de sortida o aplicar la durada habitual de 2 hores perquè no es desquadri el balanç.
+              </div>
+            </li>
+            <li><strong>Pestanya Paquets d'Hores:</strong> Històric de totes les compres de paquets amb dates, imports i mètode de pagament.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-paquets-hores">
+          <div class="action-title">Afegir / Comprar un Paquet d'Hores a un Alumne</div>
+          <div class="action-meta">
+            <span class="meta-tag">Des de la taula o la Fitxa 360°</span>
+            <span class="meta-tag green">Saldo</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Quan un alumne compra o renova hores presencialment al taller (pagant per <strong>TPV físic / datàfon</strong>, en efectiu, Bizum o transferència), o quan cal afegir-li hores de compensació.</p>
+          <div class="callout">
+            <span class="callout-title">Com funciona amb el TPV físic (datàfon del taller)?</span>
+            El datàfon físic del teu banc cobra els diners de la targeta directament al teu compte corrent bancari, però no està connectat per xarxa amb aquest software. Per tant, un cop passis la targeta pel TPV i el cobrament estigui fet, fas aquests 3 passos a l'ordinador per sumar-li les hores al seu compte:
+          </div>
+          <ul class="step-list">
+            <li>A la llista d'alumnes o dins la seva fitxa, fes clic al botó <strong>+ Hores</strong> al costat del seu nom.</li>
+            <li>Escriu el nombre d'<strong>Hores a afegir</strong> (ex: <em>4</em>, <em>8</em>, <em>10</em> hores).</li>
+            <li>Introdueix l'<strong>Import cobrat</strong> (ex: <em>120.00 €</em>).</li>
+            <li>A <strong>Mètode de pagament</strong>, selecciona <strong>TPV Físic / Targeta (Taller)</strong> (o Efectiu / Bizum si escau).</li>
+            <li>Escriu el <strong>Concepte</strong> (ex: <em>"Paquet 10h torn cobrat per TPV"</em>).</li>
+            <li>Prem el botó roig <strong>Sumar Hores al Compte</strong>.</li>
+          </ul>
+          <p style="font-size: 13.5px; color: #5E7E6F; font-weight: 700;">
+            Immediatament el seu saldo queda actualitzat (l'alumne ho veu al seu mòbil a alumne.html), es guarda a l'historial i es sincronitza a la pestanya COMPRES de Google Sheets.
+          </p>
+        </div>
+
+        <div class="action-card" id="sec-carnet-qr">
+          <div class="action-title">Generar i Compartir el Carnet Digital QR</div>
+          <div class="action-meta">
+            <span class="meta-tag">Fitxa de l'Alumne</span>
+            <span class="meta-tag">Smartwatch & Apple Wallet</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Permet a l'alumne tenir el seu carnet al mòbil per fitxar presencialment en entrar al taller.</p>
+          <ul class="step-list">
+            <li>A la fitxa de l'alumne, prem <strong>Veure Carnet Digital</strong>.</li>
+            <li>Pots descarregar el carnet en imatge d'alta qualitat, enviar-li l'enllaç directe per WhatsApp o descarregar el fitxer <span class="keyboard-badge">.pkpass</span> per a l'<strong>Apple Wallet</strong> del seu iPhone i Apple Watch.</li>
+            <li>També disposa del <strong>Mode Mat AMOLED</strong>: un fons d'estalvi de bateria i targeta porcellana antirreflexos ideal per a rellotges Galaxy Watch o Pixel Watch.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 3. RESERVES I CALENDARI -->
+      <section class="manual-section" id="sec-crear-reserva">
+        <div class="manual-section-title">
+          <span class="section-num">3</span>
+          <span>Reserves & Calendari</span>
+        </div>
+
+        <div class="action-card urgent">
+          <div class="action-title">Crear una Nova Reserva (+ Nova Reserva)</div>
+          <div class="action-meta">
+            <span class="meta-tag red">Operativa Diària</span>
+            <span class="meta-tag">Barra superior & Calendari</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Registra una reserva manual feta per telèfon, WhatsApp o presencialment al taller, assegurant que no es superi l'aforament.</p>
+          <ul class="step-list">
+            <li>Prem el botó <strong>+ Nova Reserva</strong> a la part superior o a sobre de la llista del dia.</li>
+            <li><strong>Tipus de client:</strong>
+              <br>• Si és un alumne del taller: Tria <em>"Alumne registrat"</em> i escriu el seu nom o ID. El sistema autocompleta el seu telèfon i el vincula a la seva fitxa.
+              <br>• Si és un client nou o val regal: Tria <em>"Client extern / Val regal"</em> i escriu el seu nom, telèfon i email.
+            </li>
+            <li><strong>Activitat:</strong> Tria entre <strong>Torn</strong>, <strong>Modelatge</strong> o <strong>Pintar ceràmica</strong>.
+              <div class="callout">
+                <span class="callout-title">Comprovació automàtica de màxims per activitat:</span>
+                • <strong>Torn:</strong> màxim <strong>4 places físiques</strong> per torn.<br>
+                • <strong>Modelatge:</strong> fins a 8 places.<br>
+                • <strong>Pintar:</strong> fins a 12 places.<br>
+                El sistema no et deixarà reservar més places de les que físicament hi caben.
+              </div>
+            </li>
+            <li><strong>Data i Torn:</strong> Selecciona el dia al calendari i tria el torn:
+              <br>• <strong>Matí (10:00 - 13:00):</strong> Permet triar hora d'arribada esglaonada (10:00, 10:15, 10:30, 10:45 o 11:00).
+              <br>• <strong>Tarda (17:00 - 20:00):</strong> Permet triar hora d'arribada esglaonada (17:00, 17:15, 17:30, 17:45 o 18:00).
+            </li>
+            <li><strong>Nombre de places:</strong> Quantes persones vénen.</li>
+            <li>Prem <strong>Confirmar Reserva</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-reserves-recurrents">
+          <div class="action-title">Reserves Periòdiques (Recurrents) per a Alumnes Fixos</div>
+          <div class="action-meta">
+            <span class="meta-tag">Modal Nova Reserva</span>
+            <span class="meta-tag green">Automatització</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Quan un alumne vol venir cada setmana el mateix dia i hora (ex: <em>"Tots els dijous a les 17:00 durant 8 setmanes"</em>). Evita haver de crear les 8 reserves a mà una per una.</p>
+          <ul class="step-list">
+            <li>Dins del formulari de <strong>+ Nova Reserva</strong>, activa la casella <strong>"Reserva periòdica / recurrent"</strong>.</li>
+            <li>Tria la <strong>Freqüència</strong>: <em>Setmanal</em> (cada 7 dies), <em>Quinzenal</em> (cada 14 dies) o <em>Mensual</em>.</li>
+            <li>Selecciona el <strong>Nombre de sessions</strong> (botons ràpids de 4, 8 o 12 classes, o personalitzat fins a 26).</li>
+            <li>Fes clic a <strong>Previsualitzar Sèrie</strong>:
+              <div class="callout">
+                <span class="callout-title">Què fa la Previsualització intel·ligent?</span>
+                Analitza una per una totes les dates futures. Si alguna cau en dilluns o dimarts (tancat) o en un <strong>dia festiu o vacances</strong> que hagis configurat, el sistema <strong>se la salta automàticament</strong> i busca el següent dia hàbil, informant-te de si hi ha prou aforament a cada sessió.
+              </div>
+            </li>
+            <li>Si tot és correcte, prem <strong>Crear Sèrie Completa</strong>. Totes les classes queden agendades en 1 sol segon amb un codi de sèrie comú.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-llista-dia">
+          <div class="action-title">Gestió del Dia a Dia & Control d'Assistència (Visited)</div>
+          <div class="action-meta">
+            <span class="meta-tag">Pestanya Reserves & Calendari</span>
+            <span class="meta-tag">Columna dreta</span>
+          </div>
+          <p><strong>Com funciona:</strong> En seleccionar qualsevol dia al calendari, la columna de la dreta mostra totes les persones que han de venir aquell dia, separades per activitat i hora.</p>
+          <ul class="step-list">
+            <li><strong>Casella de control "Visited" (Presència):</strong> Quan l'alumne arriba físicament al taller, pots marcar la casella al costat del seu nom. Quedarà marcat en verd com a assistit.</li>
+            <li><strong>Indicadors de color:</strong>
+              <br>• Vermell: Torn de terrissaire.
+              <br>• Verd: Modelatge a mà.
+              <br>• Blau: Pintura sobre ceràmica.
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-bestreta-grups">
+          <div class="action-title">Reserves de Grup (4+ places) & Bestretes / Paga i Senyal (TPV)</div>
+          <div class="action-meta">
+            <span class="meta-tag red">Grups & TPV</span>
+            <span class="meta-tag green">10 € / plaça</span>
+          </div>
+          <p><strong>Com funciona la bestreta:</strong> Per a reserves de 4 o més persones, el taller requereix una paga i senyal de <strong>10 € per plaça</strong> per garantir la reserva de l'espai (ex: 4 persones = 40 €, 6 persones = 60 €).</p>
+
+          <div class="callout">
+            <span class="callout-title">On queda guardada aquesta bestreta?</span>
+            La bestreta queda registrada a la <strong>taula de reserves</strong> del sistema amb l'import exacte al camp <code>paga_senyal</code>, i a les notes de la reserva (ex: <em>[PAGA I SENYAL: 40€ PENDENT]</em> o <em>[BESTRETA COBRADA: 40€ per TPV Físic]</em>). Apareix visible a la llista del dia amb una etiqueta groga si està pendent o verda si ja s'ha cobrat.
+          </div>
+
+          <div class="callout">
+            <span class="callout-title">Com es cobra i es gestiona amb el TPV físic al taller?</span>
+            <strong>Pas 1 (Quan reserven i paguen la bestreta):</strong>
+            <br>• Cobres els diners al datàfon físic del taller (ex: 40 €) o per Bizum.
+            <br>• A la llista de reserves del dia a l'Admin, al costat de la reserva veuràs el botó groc <strong>Cobrar Bestreta (40€)</strong>. Fes-hi clic, tria "TPV Físic" i quedarà marcada com a cobrada immediatament.
+            <br>• Si la reserva la crees tu manualment des de <strong>+ Nova Reserva</strong>, en posar 4 o més places el formulari et mostra l'avís de bestreta i la casella <em>"Marcar la bestreta com a ja cobrada al taller"</em>.
+            <br><br>
+            <strong>Pas 2 (El dia del taller - Liquidació final):</strong>
+            <br>• Quan el grup arriba a fer l'activitat, es calcula el cost total menys la bestreta ja cobrada.
+            <br>• <em>Exemple pràctic:</em> Sessió de grup per a 4 persones a 35 €/persona = <strong>140 € en total</strong>. Com que ja van pagar <strong>40 € de bestreta</strong>, al datàfon del taller <strong>només els cobres la diferència restant: 100 €</strong>.
+            <br>• Tot seguit, marques la casella <strong>Visited (Assistit)</strong> a la reserva per confirmar la sessió.
+          </div>
+        </div>
+
+        <div class="action-card" id="sec-gestio-reserva">
+          <div class="action-title">Modificar o Cancel·lar una Reserva Existent</div>
+          <div class="action-meta">
+            <span class="meta-tag">Columna de reserves</span>
+            <span class="meta-tag red">Acció</span>
+          </div>
+          <p><strong>Procediment:</strong></p>
+          <ul class="step-list">
+            <li>A la llista de reserves del dia, fes clic al botó d'opcions (els 3 punts o botó d'acció) de la reserva corresponent.</li>
+            <li><strong>Reassignar data o hora:</strong> Si l'alumne avisa que no pot venir i vol canviar de dia, pots seleccionar una nova data i franja; el sistema allibera la plaça anterior i ocupa la nova.</li>
+            <li><strong>Cancel·lar reserva:</strong>
+              <div class="callout">
+                <span class="callout-title">Particularitat en reserves recurrents:</span>
+                Si la reserva forma part d'una sèrie periòdica, el sistema et preguntarà:
+                <br>1. <em>"Cancel·lar només aquesta sessió"</em> (les altres sessions futures es mantenen intactes).
+                <br>2. <em>"Cancel·lar tota la sèrie sencera"</em> (elimina totes les sessions futures d'aquell alumne d'un sol cop).
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 4. ASSISTÈNCIA EN VIU I FITXATGE -->
+      <section class="manual-section" id="sec-directe">
+        <div class="manual-section-title">
+          <span class="section-num">4</span>
+          <span>Assistència en Viu & Fitxatge</span>
+        </div>
+
+        <div class="action-card">
+          <div class="action-title">Pestanya "Al Taller Ara Mateix" (Monitorització en Directe)</div>
+          <div class="action-meta">
+            <span class="meta-tag">Menú lateral</span>
+            <span class="meta-tag green">Temps real</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Proporciona una visió instantània de qui està treballant físicament al taller en aquest mateix instant.</p>
+          <ul class="step-list">
+            <li>Mostra el nom de l'alumne, l'hora exacta en què ha entrat i un <strong>cronòmetre en viu</strong> que compta les hores i minuts transcorreguts.</li>
+            <li>Si un alumne marxa i no ha escanejat el codi de sortida, pots prémer directament el botó <strong>Fitxar Sortida</strong> des d'aquesta pantalla. El temps es calcula i es resta del seu paquet a l'instant.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-fitxatge-manual">
+          <div class="action-title">Entrada / Sortida Manual</div>
+          <div class="action-meta">
+            <span class="meta-tag">Menú lateral</span>
+            <span class="meta-tag">Sense càmera</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Quan un alumne arriba o marxa però s'ha deixat el mòbil a casa, no té bateria o el carnet imprès està fet malbé.</p>
+          <ul class="step-list">
+            <li>Fes clic a <strong>Entrada / Sortida Manual</strong> al menú lateral.</li>
+            <li>Cerca l'alumne pel seu nom o codi <span class="keyboard-badge">TC-XXX</span>.</li>
+            <li>Tria l'acció: <strong>Entrada</strong> o <strong>Sortida</strong>.</li>
+            <li>L'hora s'omple per defecte amb l'hora actual exacta, però la pots ajustar si l'alumne va arribar fa 15 minuts.</li>
+            <li>Prem <strong>Registrar</strong>. Té el mateix efecte exacte que haver escanejat el codi QR a la recepció.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-scanner">
+          <div class="action-title">Escàner QR de Recepció (scanner.html)</div>
+          <div class="action-meta">
+            <span class="meta-tag">Eina externa</span>
+            <span class="meta-tag">Mode Standby Discret</span>
+          </div>
+          <p><strong>Com funciona:</strong> És la pantalla que pots deixar oberta en una tauleta o mòbil vell fixat a l'entrada del taller.</p>
+          <ul class="step-list">
+            <li>En repòs, la pantalla està fosca amb el logotip discret de Roig de Coure, <strong>sense mostrar la càmera</strong> per no incomodar ningú ni consumir bateria excessiva.</li>
+            <li>Quan l'alumne apropa el carnet des del seu mòbil o rellotge a la càmera:
+              <br>• Emet un xiulet acústic suau.
+              <br>• Mostra una targeta verda amb el seu nom, l'acció registrada (<em>"Entrada enregistrada"</em> o <em>"Sortida enregistrada"</em>) i el seu saldo d'hores restant.
+              <br>• Després de 3 segons, torna automàticament al mode discret en repòs.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 5. TALLERS I CALENDARI FESTIU -->
+      <section class="manual-section" id="sec-festius">
+        <div class="manual-section-title">
+          <span class="section-num">5</span>
+          <span>Dies Festius, Vacances & Restriccions</span>
+        </div>
+
+        <div class="action-card urgent">
+          <div class="action-title">Configurar Vacances o Dies Festius</div>
+          <div class="action-meta">
+            <span class="meta-tag red">Bloqueig Web</span>
+            <span class="meta-tag">Menú lateral</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Bloqueja dates en què el taller estarà tancat (vacances d'estiu, Nadal, ponts o baixes) perquè cap client pugui reservar a la web aquells dies.</p>
+          <ul class="step-list">
+            <li>Ves a <strong>Festius / Vacances</strong> al menú lateral (o prem el botó ràpid sobre la llista del dia).</li>
+            <li>Indica la <strong>Data d'inici</strong> i la <strong>Data de finalització</strong> (si és només un dia, posa la mateixa data als dos camps).</li>
+            <li>Escriu el <strong>Motiu / Nom</strong> (ex: <em>"Vacances d'Agost"</em>, <em>"Festa Major d'Olot"</em>).</li>
+            <li>Prem <strong>Guardar Període Festiu</strong>.
+              <div class="callout">
+                <span class="callout-title">Efecte instantani:</span>
+                Aquells dies apareixeran en color taronja al calendari d'administració i quedaran completament inhabilitats a la web pública de reserves.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-restriccions">
+          <div class="action-title">Restringir Activitats Específiques (Esdeveniments o Monogràfics)</div>
+          <div class="action-meta">
+            <span class="meta-tag">Menú lateral</span>
+            <span class="meta-tag">Restriccions Tallers</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Si un dissabte a la tarda organitzes un aniversari privat de pintura o un curs monogràfic intensiu de torn i no vols que ningú reservi una altra activitat diferent.</p>
+          <ul class="step-list">
+            <li>Ves a <strong>Restriccions Tallers</strong>.</li>
+            <li>Tria la data o període.</li>
+            <li>Selecciona quina activitat és l'única permesa (o quines queden bloquejades).</li>
+            <li>Indica el motiu (ex: <em>"Torn complet dedicat a monogràfic d'esmalts"</em>).</li>
+            <li>A la web, els clients només podran reservar l'activitat que hagis autoritzat per a aquell dia.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- 6. SINCRONITZACIÓ I DADES -->
+      <section class="manual-section" id="sec-sheets">
+        <div class="manual-section-title">
+          <span class="section-num">6</span>
+          <span>Sincronització, WhatsApp & Còpies de Seguretat</span>
+        </div>
+
+        <div class="action-card">
+          <div class="action-title">Google Sheets: Hidratar des de Sheets vs. Sincronitzar</div>
+          <div class="action-meta">
+            <span class="meta-tag">Pestanya Alumnes</span>
+            <span class="meta-tag green">Doble via</span>
+          </div>
+          <p><strong>Quina diferència hi ha entre els dos botons?</strong></p>
+          <ul class="step-list">
+            <li><strong>Hidratar des de Sheets:</strong> Llegeix el document de Google Sheets i porta les dades cap al sistema local. Fes-lo servir si has modificat files a mà directament al Google Drive i vols que es reflecteixin al programa.</li>
+            <li><strong>Sincronitzar amb Sheets:</strong> Envia tots els alumnes, paquets, sessions i reserves creats al taller cap al Google Sheets perquè el full estigui 100% al dia.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-whatsapp">
+          <div class="action-title">Notificacions Automàtiques de WhatsApp (Meta Cloud API)</div>
+          <div class="action-meta">
+            <span class="meta-tag">Automàtic</span>
+            <span class="meta-tag green">Sense intervenció</span>
+          </div>
+          <p><strong>Com funciona el sistema de missatgeria automàtica:</strong></p>
+          <ul class="step-list">
+            <li><strong>Confirmació immediata:</strong> En fer-se una reserva (a la web o a admin), el client rep un WhatsApp oficial amb tots els detalls, data, hora i adreça.</li>
+            <li><strong>Recordatori a 48 hores:</strong> Dos dies abans de la classe, el sistema envia un avís de recordatori perquè la persona no se n'oblidi.</li>
+            <li><strong>Recordatori el mateix dia (8:00 AM):</strong> El mateix matí de la classe a primera hora, arriba un últim missatge curt amb la informació de benvinguda.</li>
+          </ul>
+        </div>
+
+        <div class="action-card urgent" id="sec-backups">
+          <div class="action-title">Còpies de Seguretat Atòmiques (Snapshots SQLite)</div>
+          <div class="action-meta">
+            <span class="meta-tag red">Seguretat de Dades</span>
+            <span class="meta-tag">Menú lateral</span>
+          </div>
+          <p><strong>Per què serveix:</strong> Garanteix que mai perdis cap dada, fins i tot si es crema l'ordinador o s'espatlla el disc dur.</p>
+          <ul class="step-list">
+            <li>Ves a <strong>Dades & Backup</strong> al menú lateral.</li>
+            <li><strong>Fer còpia ara mateix:</strong> Fes clic a <strong>+ Crear Còpia de Seguretat</strong>. En menys de 1 segon es genera un fitxer atòmic de tota la base de dades.</li>
+            <li><strong>Descarregar al teu ordinador:</strong> Prem la icona de descàrrega al costat de qualsevol còpia per guardar-te el fitxer <span class="keyboard-badge">.db</span> a un llapis USB o disc extern.</li>
+            <li><strong>Restaurar:</strong> Si mai comets un error greu esborrant coses sense voler, pots fer clic a <strong>Restaurar</strong> en una còpia d'ahir. El sistema farà una còpia d'emergència prèvia i deixarà el taller tal com estava en aquell moment.</li>
+          </ul>
+        </div>
+
+        <div class="action-card" id="sec-neteja-cau">
+          <div class="action-title">Netejar Cau del Navegador</div>
+          <div class="action-meta">
+            <span class="meta-tag">Menú lateral</span>
+            <span class="meta-tag">Manteniment</span>
+          </div>
+          <p><strong>Quan fer-ho:</strong> Si has fet canvis a la web o al panell però l'ordinador segueix mostrant la versió vella guardada a la memòria.</p>
+          <ul class="step-list">
+            <li>Fes clic a <strong>Netejar Cau</strong> al final del menú lateral.</li>
+            <li>El sistema desinstal·la els fitxers temporals guardats pel navegador i recarrega la pàgina completament neta i actualitzada.</li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    function filtrarManual(query) {
+      const q = query.toLowerCase().trim();
+      const cards = document.querySelectorAll('.action-card');
+      cards.forEach(c => {
+        const text = c.innerText.toLowerCase();
+        if (!q || text.includes(q)) {
+          c.style.display = 'block';
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

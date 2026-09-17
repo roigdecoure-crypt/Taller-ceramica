@@ -1255,6 +1255,34 @@ const Store = {
     return { ok: true, reserva: newRes };
   },
 
+  async marcarBestretaCobrada(reservaId, metode = 'TPV Físic (Taller)', importPagat = null) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/cobrar-bestreta`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: reservaId, metode: metode, import: importPagat })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error cobrant bestreta:', e);
+        return { ok: false, error: 'Error de connexió al servidor.' };
+      }
+    }
+
+    const data = this._getLocalData();
+    if (data.reserves) {
+      const r = data.reserves.find(x => x.id === reservaId);
+      if (r) {
+        r.estat = 'confirmada';
+        r.notes = (r.notes || '').replace('PENDENT', 'COBRADA') + ` [BESTRETA COBRADA: ${importPagat || (r.places * 10)}€ per ${metode}]`;
+        this._saveLocalData(data);
+        return { ok: true, message: 'Bestreta marcada com a cobrada.', reserva: r };
+      }
+    }
+    return { ok: false, error: 'Reserva no trobada' };
+  },
+
   async cancelarReserva(reservaId) {
     if (this.mode === 'api') {
       try {

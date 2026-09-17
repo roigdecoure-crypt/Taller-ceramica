@@ -573,6 +573,13 @@
           badgeClass = 'badge-tots';
         }
 
+        const isHores = a.id.includes('hores');
+        const hoursText = isHores ? 'Bossa d\'hores (Tria quantitat)' : `${a.hores} hores de sessió`;
+        const priceText = isHores 
+          ? `Des de ${a.edat === 'infant' ? '14,00' : '15,00'} € / h` 
+          : `${Number(a.preu).toFixed(2)} €`;
+        const btnText = isHores ? 'Tria les teves hores' : 'Comprar Val Regal';
+
         return `
           <div class="product-card">
             <div>
@@ -582,12 +589,12 @@
             </div>
             <div>
               <div class="product-meta">
-                <span class="product-hours">${a.hores} hores de taller</span>
-                <span class="product-price">${Number(a.preu).toFixed(2)} €</span>
+                <span class="product-hours">${hoursText}</span>
+                <span class="product-price">${priceText}</span>
               </div>
               <div class="card-actions">
                 <button type="button" class="btn-buy-gift" onclick="obrirModalRegal('${a.id}');">
-                  Comprar Val Regal
+                  ${btnText}
                 </button>
               </div>
             </div>
@@ -596,16 +603,94 @@
       }).join('');
     }
 
+    function calcularPreuHores(hores, esInfant) {
+      const h = Math.max(4, parseInt(hores, 10) || 4);
+      let preuHora = 15;
+      if (!esInfant) {
+        if (h <= 9) preuHora = 15;
+        else if (h <= 19) preuHora = 14;
+        else preuHora = 13;
+      } else {
+        if (h <= 9) preuHora = 14;
+        else if (h <= 19) preuHora = 13;
+        else preuHora = 11;
+      }
+      return { hores: h, preuHora: preuHora, total: h * preuHora };
+    }
+
+    function fixarHores(h) {
+      const inp = document.getElementById('input-quantitat-hores');
+      if (inp) {
+        inp.value = h;
+        actualitzarCalculHores();
+      }
+    }
+
+    function actualitzarCalculHores() {
+      if (!selectedArticle) return;
+      const esInfant = selectedArticle.edat === 'infant';
+      const inpHores = document.getElementById('input-quantitat-hores');
+      let rawVal = inpHores ? parseInt(inpHores.value, 10) : 4;
+      if (isNaN(rawVal) || rawVal < 4) rawVal = 4;
+      
+      const calc = calcularPreuHores(rawVal, esInfant);
+
+      const txtTarifa = document.getElementById('calc-tarifa-txt');
+      if (txtTarifa) txtTarifa.textContent = `${calc.preuHora.toFixed(2).replace('.', ',')} € / hora`;
+
+      const txtTotal = document.getElementById('calc-total-txt');
+      if (txtTotal) txtTotal.textContent = `${calc.total.toFixed(2).replace('.', ',')} €`;
+
+      const summaryHours = document.getElementById('summary-hours');
+      if (summaryHours) summaryHours.textContent = `${calc.hores} hores de taller`;
+
+      const summaryPrice = document.getElementById('summary-price');
+      if (summaryPrice) summaryPrice.textContent = `${calc.total.toFixed(2).replace('.', ',')} €`;
+
+      const btnPay = document.getElementById('btn-submit-pay');
+      if (btnPay) btnPay.textContent = `Pagar ${calc.total.toFixed(2).replace('.', ',')} € (Square)`;
+
+      // Renderitzar targetes de trams
+      const cTrams = document.getElementById('trams-preview-container');
+      if (cTrams) {
+        const trams = !esInfant
+          ? [ { r: '4h - 9h', p: 15, min: 4, max: 9 }, { r: '10h - 19h', p: 14, min: 10, max: 19 }, { r: '20h+', p: 13, min: 20, max: 999 } ]
+          : [ { r: '4h - 9h', p: 14, min: 4, max: 9 }, { r: '10h - 19h', p: 13, min: 10, max: 19 }, { r: '20h+', p: 11, min: 20, max: 999 } ];
+
+        cTrams.innerHTML = trams.map(t => {
+          const act = (calc.hores >= t.min && calc.hores <= t.max) ? 'active' : '';
+          return `
+            <div class="tram-pill ${act}">
+              <div style="font-weight:700;">${t.r}</div>
+              <div style="font-size:12px; font-weight:800;">${t.p} €/h</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
     function obrirModalRegal(artId) {
       selectedArticle = articles.find(a => a.id === artId);
       if (!selectedArticle) return;
 
+      const isHores = selectedArticle.id.includes('hores');
+      const calcBox = document.getElementById('hores-calculator-box');
+
       document.getElementById('input-article-id').value = selectedArticle.id;
       document.getElementById('input-tipus-compra').value = 'val_regal';
       document.getElementById('summary-title').textContent = selectedArticle.nom;
-      document.getElementById('summary-hours').textContent = `${selectedArticle.hores} hores de sessió`;
-      document.getElementById('summary-price').textContent = `${Number(selectedArticle.preu).toFixed(2)} €`;
-      document.getElementById('btn-submit-pay').textContent = `Pagar ${Number(selectedArticle.preu).toFixed(2)} € (Square)`;
+
+      if (isHores) {
+        if (calcBox) calcBox.style.display = 'block';
+        const inpHores = document.getElementById('input-quantitat-hores');
+        if (inpHores) inpHores.value = 4;
+        actualitzarCalculHores();
+      } else {
+        if (calcBox) calcBox.style.display = 'none';
+        document.getElementById('summary-hours').textContent = `${selectedArticle.hores} hores de sessió`;
+        document.getElementById('summary-price').textContent = `${Number(selectedArticle.preu).toFixed(2)} €`;
+        document.getElementById('btn-submit-pay').textContent = `Pagar ${Number(selectedArticle.preu).toFixed(2)} € (Square)`;
+      }
 
       document.getElementById('modal-val-regal').classList.add('active');
     }
@@ -628,6 +713,14 @@
         return;
       }
 
+      const isHores = selectedArticle && selectedArticle.id.includes('hores');
+      let reqHores = null;
+      let reqEdat = null;
+      if (isHores) {
+        reqHores = parseInt(document.getElementById('input-quantitat-hores').value, 10) || 4;
+        reqEdat = selectedArticle.edat || 'adult';
+      }
+
       btn.disabled = true;
       btn.textContent = 'Connexió amb Square...';
 
@@ -639,6 +732,8 @@
           body: JSON.stringify({
             article_id: articleId,
             tipus_compra: tipusCompra,
+            hores: reqHores,
+            edat: reqEdat,
             nom_destinatari: destinatari,
             nom_comprador: comprador,
             email_comprador: email,

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roig de Coure | Taller de Ceràmica a Olot (La Garrotxa) - Torn, Modelatge i Pintura</title>
-  <meta name="description" content="Taller de ceràmica a Olot (La Garrotxa). Classes de torn ceràmic, modelatge, pintura sobre ceràmica, activitats per a parelles, famílies i grups. Reserva la teva plaça o compra un val regal.">
+  <meta name="description" content="Taller de ceràmica a Olot (La Garrotxa). Classes de torn, modelatge, pintura sobre ceràmica, activitats per a parelles, famílies i grups. Reserva la teva plaça o compra un val regal.">
   <link rel="canonical" href="https://www.roigdecoure.cat/">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   
@@ -36,7 +36,7 @@
         "@id": "https://www.roigdecoure.cat/#localbusiness",
         "name": "Roig de Coure",
         "alternateName": "Roig de Coure - Taller de Ceràmica Olot",
-        "description": "Taller de ceràmica a Olot (La Garrotxa). Classes de torn ceràmic, modelatge, pintura sobre ceràmica, tallers per a grups, famílies i parelles, monogràfics, casals i vals regal.",
+        "description": "Taller de ceràmica a Olot (La Garrotxa). Classes de torn, modelatge, pintura sobre ceràmica, tallers per a grups, famílies i parelles, monogràfics, casals i vals regal.",
         "url": "https://www.roigdecoure.cat/",
         "logo": "https://www.roigdecoure.cat/img/web/logo-simbol.webp",
         "image": [
@@ -82,7 +82,7 @@
               "@type": "Offer",
               "itemOffered": {
                 "@type": "Service",
-                "name": "Taller de Torn Ceràmic a Olot",
+                "name": "Taller de Torn a Olot",
                 "description": "Taller pràctic de ceràmica al torn de terrissaire (a partir de 4 hores)."
               }
             },
@@ -174,8 +174,32 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#831D1D">
-  <link rel="stylesheet" href="css/roigdecoure-web.css?v=3.6">
+  <link rel="stylesheet" href="css/roigdecoure-web.css?v=5.1">
+  <style>
+    /* Graella compacta de 3 columnes garantida (2 files de 3 activitats) */
+    .activities-grid-showcase {
+      display: grid !important;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 22px !important;
+      width: 100% !important;
+    }
+    @media (max-width: 980px) {
+      .activities-grid-showcase {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 18px !important;
+      }
+    }
+    @media (max-width: 640px) {
+      .activities-grid-showcase {
+        grid-template-columns: 1fr !important;
+        gap: 18px !important;
+      }
+    }
+    .activity-card {
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+  </style>
   <script>
     try {
       if ('serviceWorker' in navigator) {
@@ -220,6 +244,7 @@
               <li><a href="#casals" class="dropdown-item">Casals</a></li>
             </ul>
           </li>
+          <li><a href="#reserves" class="nav-link">Reservar</a></li>
           <li><a href="#val-regal" class="nav-link">Val regal</a></li>
           <li><a href="botiga.html" class="nav-link" style="color: var(--primary); font-weight: 700;">Botiga</a></li>
           <li><a href="#contacte" class="nav-link">Contacte</a></li>
@@ -254,16 +279,17 @@
 
   <section class="hero-section" id="inici">
     <div class="hero-bg-slider" id="hero-bg-slider">
-      <div class="hero-slide active" style="background-image: url('img/web/torn-banner.jpg');"></div>
-      <div class="hero-slide" style="background-image: url('img/web/classes-torn-modelatge.webp');"></div>
-      <div class="hero-slide" style="background-image: url('img/web/pintar-ceramica-original.webp');"></div>
-      <div class="hero-slide" style="background-image: url('img/web/peces-expo.jpeg');"></div>
-      <div class="hero-slide" style="background-image: url('img/web/grups-families-original.webp');"></div>
+      <div class="hero-slide active" style="background-image: url('img/web/IMG_0223.JPG');"></div>
+      <div class="hero-slide" style="background-image: url('img/web/IMG_0221.JPG');"></div>
+      <div class="hero-slide" style="background-image: url('img/web/IMG_0225.JPG');"></div>
+      <div class="hero-slide" style="background-image: url('img/web/IMG_0228.JPG');"></div>
+      <div class="hero-slide" style="background-image: url('img/web/IMG_0231.JPG');"></div>
+      <div class="hero-slide" style="background-image: url('img/web/IMG_0222.JPG');"></div>
     </div>
     <div class="hero-overlay"></div>
     <div class="container">
       <div class="hero-content">
-        <div class="hero-tag">Espai de Creacio Ceramica a Olot</div>
+        <div class="hero-tag">Espai de Creació Ceràmica a Olot</div>
         <h1 class="hero-title">Roig de Coure</h1>
         <p class="hero-subtitle">Taller de Ceràmica, Torn i Modelatge</p>
         <p class="hero-desc">
@@ -286,7 +312,7 @@
           </div>
           <div class="hero-stat">
             <span class="hero-stat-number">2h</span>
-            <span class="hero-stat-label">Per Sessio</span>
+            <span class="hero-stat-label">Per Sessió</span>
           </div>
           <div class="hero-stat">
             <span class="hero-stat-number">Dc-Dg</span>
@@ -305,6 +331,7 @@
       <button class="hero-dot" data-index="2" aria-label="Foto 3"></button>
       <button class="hero-dot" data-index="3" aria-label="Foto 4"></button>
       <button class="hero-dot" data-index="4" aria-label="Foto 5"></button>
+      <button class="hero-dot" data-index="5" aria-label="Foto 6"></button>
     </div>
   </section>
 
@@ -315,27 +342,26 @@
   <section class="activities-section" id="activitats">
     <div class="container">
       <div class="section-header reveal">
-        <span class="eyebrow">Que oferim</span>
+        <span class="eyebrow">Què oferim</span>
         <h2>Les Nostres Activitats</h2>
-        <p>Cada activitat inclou materials, eines, fornejada de bescuit, esmaltat i cuita final a mes de 1000 graus.</p>
+        <p>Cada activitat inclou els materials, les eines, l'esmaltat i la fornada.</p>
       </div>
 
       <div class="activities-grid-showcase">
 
         <!-- Torn -->
-        <div class="activity-card card-span-6 reveal delay-1" id="torn">
+        <div class="activity-card reveal-left" id="torn">
           <div class="activity-card-media">
-            <img src="img/web/classes-torn-modelatge.webp" alt="Classes de torn ceràmic a Olot - Taller Roig de Coure" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
+            <img src="img/web/classes-torn-modelatge.webp" alt="Classes de torn a Olot - Taller Roig de Coure" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Torn</h3>
             <p class="activity-card-desc">
-              Aprendre l'art de modelar la ceramica al torn. Treballaras amb fang i
-              farem tot el proces: centrat, pujada, modelat, bescuit i esmaltat final.
+              Aprendre l'art de modelar la ceràmica al torn. Treballaràs amb fang i farem tot el procés: centrat, pujada, modelat, bescuit i esmaltat final.
             </p>
             <ul class="activity-features-list">
-              <li class="activity-feature-item"><span class="feature-bullet"></span> classe de torn o acabar treballs de torn</li>
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Tallers a partir de 4 hores (sessions de 2h)</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Torn de terrissaire (sessions 2h)</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Tallers a partir de 4 hores</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Fang, eines i fornejada inclosos</li>
             </ul>
             <a href="#reserves" class="btn btn-primary btn-block" data-book-act="torn">Reservar Plaça</a>
@@ -343,18 +369,17 @@
         </div>
 
         <!-- Modelatge -->
-        <div class="activity-card card-span-6 reveal delay-2" id="modelatge">
+        <div class="activity-card reveal" id="modelatge">
           <div class="activity-card-media">
             <img src="img/web/modelatge-escultura.webp" alt="Modelatge ceràmic a mà a Olot - Taller Roig de Coure" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Modelatge</h3>
             <p class="activity-card-desc">
-              Explora les tecniques de modelatge a ma: xurro, planxa, pessic i escultura lliure.
-              Crea peces uniques amb total llibertat creativa.
+              Explora les tècniques manuals: xurro, planxa, pessic i escultura lliure. Crea peces úniques amb total llibertat creativa.
             </p>
             <ul class="activity-features-list">
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Totes les tecniques de modelatge</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Tècniques de modelatge a mà</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Escultura i peces funcionals</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Ideal per a principiants</li>
             </ul>
@@ -363,83 +388,78 @@
         </div>
 
         <!-- Pintar -->
-        <div class="activity-card card-span-6 reveal delay-3" id="pintar">
+        <div class="activity-card reveal-right" id="pintar">
           <div class="activity-card-media">
             <img src="img/web/pintar-ceramica-original.webp" alt="Pintar ceràmica a Olot - Més de 50 peces a escollir" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Pintar Ceràmica</h3>
             <p class="activity-card-desc">
-              Escull entre mes de 50 models de ceramica cuita i decora-la com mes t'agradi.
-              Pinzells, esmalts, pigments i plantilles inclosos. Tothom ho pot fer!
+              Escull entre més de 50 models de ceràmica cuita i decora-la com vulguis. Pinzells, esmalts, pigments i plantilles inclosos.
             </p>
             <ul class="activity-features-list">
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Mes de 50 peces per escollir</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Més de 50 peces per escollir</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Pintures i eines incloses</li>
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Sense experiencia previa</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Sense experiència prèvia</li>
             </ul>
-            <a href="#reserves" class="btn btn-primary btn-block" data-book-act="pintar">Reservar Plaça per Pintar</a>
+            <a href="#reserves" class="btn btn-primary btn-block" data-book-act="pintar">Reservar per Pintar</a>
           </div>
         </div>
 
         <!-- Grups i Famílies -->
-        <div class="activity-card card-span-6 reveal delay-4" id="grups">
+        <div class="activity-card reveal-left" id="grups">
           <div class="activity-card-media">
             <img src="img/web/grups-families-original.webp" alt="Activitats de ceràmica per a grups i famílies a Olot" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Grups i Famílies</h3>
             <p class="activity-card-desc">
-              Veniu en parella, en familia o en grup d'amics a compartir una experiencia al taller.
-              Perfecte per a aniversaris, trobades i team building d'empresa.
+              Veniu en parella, família o amics a compartir una experiència al taller. Perfecte per a aniversaris, trobades i teambuilding.
             </p>
             <ul class="activity-features-list">
               <li class="activity-feature-item"><span class="feature-bullet"></span> Aniversaris i celebracions</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Sessions a mida per a grups</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Torn, modelatge o pintura</li>
             </ul>
-            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20per%20a%20un%20grup." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar per a Grups</a>
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20per%20a%20un%20grup." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Grups</a>
           </div>
         </div>
 
         <!-- Monogràfics -->
-        <div class="activity-card card-span-6 reveal delay-1" id="monografics">
+        <div class="activity-card reveal" id="monografics">
           <div class="activity-card-media">
             <img src="img/web/monografics-tetera.webp" alt="Cursos monogràfics de ceràmica a Olot i La Garrotxa" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Monogràfics</h3>
-            <h4 style="font-size: 16px; font-weight: 700; color: var(--primary); margin: -4px 0 10px;">Què són els nostres monogràfics?</h4>
-            <p class="activity-card-desc" style="margin-bottom: 12px;">
-              Els monogràfics són cursos intensius on aprofundim en tècniques i temàtiques concretes de la ceràmica. Cada monogràfic té una durada determinada, normalment d’un a tres dies, i se centra en una àrea específica, com ara el modelat a mà, l’esmaltat, el torn o la creació de peces decoratives i utilitàries.
+            <p class="activity-card-desc">
+              Cursos intensius on aprofundim en tècniques i temàtiques concretes: esmaltat, torn, escultures i peces d'autor.
             </p>
-            <p style="font-size: 14px; font-weight: 600; color: var(--secondary); margin-bottom: 8px;">
-              En aquest espai anirem publicant els monogràfics que anem fent
-            </p>
-            <p style="font-size: 14px; font-style: italic; color: var(--muted); margin-bottom: 20px;">
-              Endinsa’t en el món de la ceràmica i descobreix tot el que pots crear amb les teves mans!
-            </p>
+            <ul class="activity-features-list">
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Sessions intensives d'1 a 3 dies</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Tècniques específiques de taller</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Publicació de noves dates</li>
+            </ul>
             <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20cursos%20monografics." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Monogràfics</a>
           </div>
         </div>
 
         <!-- Casals -->
-        <div class="activity-card card-span-6 reveal delay-2" id="casals">
+        <div class="activity-card reveal-right" id="casals">
           <div class="activity-card-media">
             <img src="img/web/casals-infants.webp" alt="Casals de ceràmica per a infants a Olot" width="600" height="400" decoding="async" class="activity-card-img" loading="lazy">
           </div>
           <div class="activity-card-body">
             <h3 class="activity-card-title">Casals</h3>
             <p class="activity-card-desc">
-              Casals de ceràmica per a infants durant les vacances d'hivern,
-              primavera i estiu. Combinem aprenentatge creatiu, argila i diversió.
+              Casals de ceràmica per a infants durant les vacances d'hivern, primavera i estiu. Creativitat, argila i diversió assegurada.
             </p>
             <ul class="activity-features-list">
-              <li class="activity-feature-item"><span class="feature-bullet"></span> Vacances d'estiu, primavera i hivern</li>
+              <li class="activity-feature-item"><span class="feature-bullet"></span> Vacances escolars i estiu</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Ceràmica, torn i modelatge</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Totes les peces cuites incloses</li>
             </ul>
-            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20casals%20infantils." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Informació de Casals</a>
+            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20casals%20infantils." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Informació Casals</a>
           </div>
         </div>
 
@@ -453,12 +473,12 @@
   <section class="booking-section" id="reserves">
     <div class="container container-narrow">
       <div class="section-header reveal">
-        <span class="eyebrow">Reserves en Linia</span>
+        <span class="eyebrow">Reserves en Línia</span>
         <h2>Reserva la teva Plaça</h2>
-        <p>Tria l'activitat, la data i el torn. Confirmacio immediata.</p>
+        <p>Tria l'activitat, la data i el torn. Confirmació immediata.</p>
       </div>
 
-      <div class="booking-wrapper reveal-scale">
+      <div class="booking-wrapper reveal-left">
         <h3 style="font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 16px;">1. Quina activitat t'interessa?</h3>
         <div class="booking-activities-grid">
           <button type="button" class="booking-act-btn selected" data-act="torn">
@@ -470,7 +490,7 @@
             <div class="booking-act-subtitle">modelatge o acabar treballs sense torn</div>
           </button>
           <button type="button" class="booking-act-btn" data-act="pintar">
-            <div class="booking-act-name">Pintar Ceramica</div>
+            <div class="booking-act-name">Pintar Ceràmica</div>
             <div class="booking-act-subtitle">Pintar peces de biscuit ceràmica</div>
           </button>
         </div>
@@ -489,7 +509,7 @@
             </div>
             <div style="margin-top: 14px;">
               <div id="selected-date-label" style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px;">Selecciona una data</div>
-              <div style="font-size: 12px; color: var(--secondary); background: var(--secondary-light); padding: 8px 12px; border-radius: 8px;">
+              <div style="font-size: 12px; color: var(--secondary); background: var(--secondary-light); padding: 8px 12px; border-radius: 0;">
                 Horari: dimecres a diumenge. Dilluns i dimarts descans.
               </div>
             </div>
@@ -511,7 +531,7 @@
 
         <div class="shifts-grid" style="margin-bottom: 24px;">
           <div class="shift-card selected" id="shift-mati" data-shift="mati">
-            <div class="shift-name">Mati</div>
+            <div class="shift-name">Matí</div>
             <div class="shift-hours">10:00 - 13:00</div>
             <div class="shift-spots" id="spots-mati">places disponibles</div>
           </div>
@@ -523,18 +543,18 @@
         </div>
 
         <!-- Avís sobrepassar límit d'aforament -->
-        <div style="margin-bottom: 20px; background: #FAF6F0; border: 1px dashed #D2B48C; border-radius: 8px; padding: 10px 14px; font-size: 12.5px; color: #5C4033; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="margin-bottom: 20px; background: #FAF6F0; border: 1px dashed #D2B48C; border-radius: 0; padding: 10px 14px; font-size: 12.5px; color: #5C4033; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span>Si voleu <strong>sobrepassar el límit d'aforament establert</strong> o assistir en grup, cal <strong>contactar amb administració</strong>.</span>
           </div>
-          <a href="https://wa.me/34683633880?text=Hola!%20Voldria%20consultar%20sobrepassar%20l'aforament%20establert%20per%20a%20una%20reserva" target="_blank" style="color: #2E7D32; font-weight: 700; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; background: #E8F5E9; padding: 4px 10px; border-radius: 6px; border: 1px solid #C8E6C9; white-space: nowrap;">
+          <a href="https://wa.me/34683633880?text=Hola!%20Voldria%20consultar%20sobrepassar%20l'aforament%20establert%20per%20a%20una%20reserva" target="_blank" style="color: #2E7D32; font-weight: 700; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; background: #E8F5E9; padding: 4px 10px; border-radius: 0; border: 1px solid #C8E6C9; white-space: nowrap;">
             WhatsApp: 683 633 880 &rarr;
           </a>
         </div>
 
 
         <div class="form-group">
-          <label class="form-label" for="booking-arrival-time">Hora d'arribada (sessio de 2 hores)</label>
+          <label class="form-label" for="booking-arrival-time">Hora d'arribada (sessió de 2 hores)</label>
           <select class="form-select" id="booking-arrival-time">
             <option value="10:00">10:00 h (fins a les 12:00)</option>
             <option value="10:15">10:15 h (fins a les 12:15)</option>
@@ -557,19 +577,19 @@
               <input type="text" class="form-input" id="client-nom" placeholder="Nom i cognoms" required>
             </div>
             <div class="form-group">
-              <label class="form-label" for="client-tel">Telefon *</label>
+              <label class="form-label" for="client-tel">Telèfon *</label>
               <input type="tel" class="form-input" id="client-tel" placeholder="+34 600 000 000" required>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="client-email">Correu electronic (opcional)</label>
+            <label class="form-label" for="client-email">Correu electrònic (opcional)</label>
             <input type="email" class="form-input" id="client-email" placeholder="el-teu@email.com">
           </div>
           <!-- OPCIONS DE LA RESERVA (SÓC ALUMNE I VAL REGAL) -->
           <div class="booking-options-wrapper" style="margin-top: 18px; margin-bottom: 22px; display: flex; flex-direction: column; gap: 14px;">
 
             <!-- Opció SÓC ALUMNE -->
-            <div class="soc-alumne-card" id="soc-alumne-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
+            <div class="soc-alumne-card" id="soc-alumne-card" style="border: 1.5px solid #E5DDD5; border-radius: 0; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
               <label for="check-soc-alumne" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; user-select: none; margin: 0; width: 100%;">
                 <div style="flex: 1;">
                   <div style="font-weight: 700; font-size: 15px; color: var(--dark);">Sóc un alumne / Sóc alumne</div>
@@ -586,10 +606,10 @@
                 </label>
 
                 <div class="alumne-id-mode-selector" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
-                  <button type="button" class="btn-alumne-mode active" id="btn-mode-nom" data-mode="nom" style="padding: 10px 8px; border: 2px solid var(--primary); background: #FFF8F6; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
+                  <button type="button" class="btn-alumne-mode active" id="btn-mode-nom" data-mode="nom" style="padding: 10px 8px; border: 2px solid var(--primary); background: #FFF8F6; border-radius: 0; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
                     Pel meu nom
                   </button>
-                  <button type="button" class="btn-alumne-mode" id="btn-mode-num" data-mode="num" style="padding: 10px 8px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                  <button type="button" class="btn-alumne-mode" id="btn-mode-num" data-mode="num" style="padding: 10px 8px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 0; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
                     Pel meu número / codi
                   </button>
                 </div>
@@ -600,7 +620,7 @@
                     Escriu el teu nom i cognoms:
                   </label>
                   <div style="display: flex; gap: 8px;">
-                    <input type="text" id="input-student-name" placeholder="Ex: Maria Garcia" class="form-input" style="flex: 1; font-size: 14px; padding: 10px 12px; border: 1.5px solid #D6C7BC; border-radius: 8px; outline: none;">
+                    <input type="text" id="input-student-name" placeholder="Ex: Maria Garcia" class="form-input" style="flex: 1; font-size: 14px; padding: 10px 12px; border: 1.5px solid #D6C7BC; border-radius: 0; outline: none;">
                     <button type="button" id="btn-cercar-nom" class="btn btn-primary" style="padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer;">
                       Verificar
                     </button>
@@ -614,7 +634,7 @@
                     Escriu el teu número o codi d'alumne:
                   </label>
                   <div style="display: flex; gap: 8px;">
-                    <input type="text" id="input-student-num" placeholder="Ex: TC-101 o 101" class="form-input" style="flex: 1; text-transform: uppercase; font-size: 14px; padding: 10px 12px; border: 1.5px solid #D6C7BC; border-radius: 8px; outline: none;">
+                    <input type="text" id="input-student-num" placeholder="Ex: TC-101 o 101" class="form-input" style="flex: 1; text-transform: uppercase; font-size: 14px; padding: 10px 12px; border: 1.5px solid #D6C7BC; border-radius: 0; outline: none;">
                     <button type="button" id="btn-cercar-num" class="btn btn-primary" style="padding: 0 16px; font-weight: 700; font-size: 13px; cursor: pointer;">
                       Cercar
                     </button>
@@ -623,7 +643,7 @@
                 </div>
 
                 <!-- Notificació d'alumne confirmat -->
-                <div id="alumne-identificat-alert" style="display: none; margin-top: 12px; background: #EEF5F1; border: 1.5px solid #5E7E6F; color: #2E4B3E; padding: 10px 14px; border-radius: 8px; font-size: 13px; align-items: center; justify-content: space-between;">
+                <div id="alumne-identificat-alert" style="display: none; margin-top: 12px; background: #EEF5F1; border: 1.5px solid #5E7E6F; color: #2E4B3E; padding: 10px 14px; border-radius: 0; font-size: 13px; align-items: center; justify-content: space-between;">
                   <div>
                     Alumne/a confirmat/da: <strong id="alumne-nom-display">Maria Garcia</strong> (<span id="alumne-id-display">TC-101</span>)
                   </div>
@@ -635,7 +655,7 @@
             </div>
 
             <!-- Opció TINC UN VAL REGAL -->
-            <div class="val-regal-card" id="val-regal-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
+            <div class="val-regal-card" id="val-regal-card" style="border: 1.5px solid #E5DDD5; border-radius: 0; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
               <label for="check-val-regal" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; user-select: none; margin: 0; width: 100%;">
                 <div style="flex: 1;">
                   <div style="font-weight: 700; font-size: 15px; color: var(--dark);">Tinc un val regal</div>
@@ -651,13 +671,13 @@
                   De què és el teu val regal?
                 </label>
                 <div class="val-act-selector" id="val-act-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
-                  <button type="button" class="btn-val-act active" data-act="torn" style="padding: 10px 6px; border: 2px solid var(--primary); background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
+                  <button type="button" class="btn-val-act active" data-act="torn" style="padding: 10px 6px; border: 2px solid var(--primary); background: #FFF; border-radius: 0; font-size: 13px; font-weight: 700; color: var(--primary); cursor: pointer; text-align: center; transition: all 0.2s;">
                     Torn
                   </button>
-                  <button type="button" class="btn-val-act" data-act="modelatge" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                  <button type="button" class="btn-val-act" data-act="modelatge" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 0; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
                     Modelatge
                   </button>
-                  <button type="button" class="btn-val-act" data-act="pintar" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
+                  <button type="button" class="btn-val-act" data-act="pintar" style="padding: 10px 6px; border: 1.5px solid #D6C7BC; background: #FFF; border-radius: 0; font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; text-align: center; transition: all 0.2s;">
                     Pintar
                   </button>
                 </div>
@@ -667,7 +687,7 @@
                   <input type="text" class="form-input" id="val-code-input" placeholder="Ex: RDC-2026-1234">
                 </div>
 
-                <div style="background: #FDF5F5; border: 1px solid #F8B4B4; color: #831D1D; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.4;">
+                <div style="background: #FDF5F5; border: 1px solid #F8B4B4; color: #831D1D; padding: 10px 12px; border-radius: 0; font-size: 12.5px; line-height: 1.4;">
                   <strong>Horari obligatori per a val regal:</strong> Les sessions amb val regal es realitzen exclusivament a <strong>primera hora (10:00 h - 12:00 h)</strong>. El dia de la sessió només caldrà que mostris el teu val físic o digital al taller.
                 </div>
               </div>
@@ -696,16 +716,16 @@
       </div>
 
       <!-- Banner Avís Vals anteriors al 15/09/2026 -->
-      <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 12px; padding: 14px 18px; margin-bottom: 26px; display: flex; align-items: center; gap: 12px; color: #92400E; font-size: 13.5px;">
-        <span style="font-weight: 700; background: #F59E0B; color: #FFF; padding: 3px 8px; border-radius: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Avís Important</span>
+      <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 0; padding: 14px 18px; margin-bottom: 26px; display: flex; align-items: center; gap: 12px; color: #92400E; font-size: 13.5px;">
+        <span style="font-weight: 700; background: #F59E0B; color: #FFF; padding: 3px 8px; border-radius: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Avís Important</span>
         <span>Si el teu val és d'abans del <strong>15/09/2026</strong>, si us plau passeu pel taller a actualitzar-lo i reservar hora. Els vals tenen una validesa de 6 mesos.</span>
       </div>
 
       <div class="gift-grid">
         <div class="reveal-left gift-form-card" style="padding: 26px;">
           <!-- Selector de modalitat: Experiència vs Hores -->
-          <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #F3ECE4; padding: 4px; border-radius: 10px;">
-            <button type="button" id="tab-val-exp" class="gift-tab-btn active" onclick="canviarModalitatRegal('experiencia')">
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #F3ECE4; padding: 4px; border-radius: 0;">
+            <button type="button" id="tab-val-exp" class="gift-tab-btn active" onclick="canviarModalitatRegal('experiència')">
               Val d'Experiència
             </button>
             <button type="button" id="tab-val-hores" class="gift-tab-btn" onclick="canviarModalitatRegal('hores')">
@@ -718,11 +738,11 @@
             <div class="form-group">
               <label class="form-label" for="gift-exp-select">Tria l'experiència</label>
               <select class="form-select" id="gift-exp-select" style="font-size: 14px; padding: 12px;" onchange="actualitzarPreviewRegal();">
-                <option value="art_torn_adult" data-price="60" data-hours="4" data-title="Taller de torn (Adult, 4h)">Taller de torn (Adult, 4h) — 60,00 €</option>
-                <option value="art_torn_infant" data-price="56" data-hours="4" data-title="Taller de torn (Menor de 12 anys, 4h)">Taller de torn (Menor de 12 anys, 4h) — 56,00 €</option>
-                <option value="art_modelatge_adult" data-price="60" data-hours="4" data-title="Taller de modelatge (Adult, 4h)">Taller de modelatge (Adult, 4h) — 60,00 €</option>
-                <option value="art_modelatge_infant" data-price="56" data-hours="4" data-title="Taller de modelatge (Menor de 12 anys, 4h)">Taller de modelatge (Menor de 12 anys, 4h) — 56,00 €</option>
-                <option value="art_pintar_ceramica" data-price="56" data-hours="4" data-title="Pintar ceràmica (Tots els públics, 4h)">Pintar ceràmica (Tots els públics, 4h) — 56,00 €</option>
+                <option value="art_torn_adult" data-price="50" data-hours="2" data-title="Experiència Torn (Adult)">Experiència Torn (Adult, 2h) — 50,00 €</option>
+                <option value="art_torn_infant" data-price="45" data-hours="2" data-title="Experiència Torn (Menor de 12 anys)">Experiència Torn (Menor de 12 anys, 2h) — 45,00 €</option>
+                <option value="art_modelatge_adult" data-price="50" data-hours="2" data-title="Experiència Modelatge (Adult)">Experiència Modelatge (Adult, 2h) — 50,00 €</option>
+                <option value="art_modelatge_infant" data-price="45" data-hours="2" data-title="Experiència Modelatge (Menor de 12 anys)">Experiència Modelatge (Menor de 12 anys, 2h) — 45,00 €</option>
+                <option value="art_pintar_ceramica" data-price="30" data-hours="2" data-title="Pintar ceràmica (Tots els públics)">Pintar ceràmica (Tots els públics, 2h) — 30,00 €</option>
               </select>
             </div>
           </div>
@@ -744,10 +764,10 @@
             <div class="form-group" style="margin-bottom: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
                 <label class="form-label" for="input-web-hores" style="margin-bottom: 0;">Quantitat d'hores</label>
-                <span style="font-size: 11.5px; font-weight: 700; color: #831D1D; background: #FDF2F2; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 6px;">Compra mínima: 4 hores</span>
+                <span style="font-size: 11.5px; font-weight: 700; color: #831D1D; background: #FDF2F2; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 0;">Compra mínima: 4 hores</span>
               </div>
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <input type="number" id="input-web-hores" min="4" max="100" value="10" style="width: 80px; padding: 8px; font-size: 16px; font-weight: 800; text-align: center; border: 1.5px solid #C4A482; border-radius: 8px;" oninput="actualitzarCalculHoresWeb();" onchange="if(this.value<4) this.value=4; actualitzarCalculHoresWeb();">
+                <input type="number" id="input-web-hores" min="4" max="100" value="10" style="width: 80px; padding: 8px; font-size: 16px; font-weight: 800; text-align: center; border: 1.5px solid #C4A482; border-radius: 0;" oninput="actualitzarCalculHoresWeb();" onchange="if(this.value<4) this.value=4; actualitzarCalculHoresWeb();">
                 <span style="font-weight: 600; font-size: 14px;">hores</span>
                 <div style="display: flex; gap: 6px;">
                   <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(4);">4h</button>
@@ -760,7 +780,7 @@
               <!-- Trams de preu visuals (Mínim 4h) -->
               <div id="web-trams-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11.5px; text-align: center; margin-bottom: 10px;"></div>
 
-              <div style="background: #FDFBF7; border: 1px solid #E2D7CC; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="background: #FDFBF7; border: 1px solid #E2D7CC; border-radius: 0; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                   <span style="font-size: 11.5px; color: #6B7280;">Franja de preu:</span>
                   <strong id="web-tarifa-txt" style="display: block; font-size: 13.5px; color: var(--secondary);">14,00 € / h</strong>
@@ -831,14 +851,14 @@
           </div>
 
           <!-- Caixa per consultar un val existent o anar a la botiga -->
-          <div style="margin-top: 20px; background: #FFF; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 18px;">
+          <div style="margin-top: 20px; background: #FFF; border: 1.5px solid #E5E7EB; border-radius: 0; padding: 18px;">
             <h4 style="margin: 0 0 8px 0; font-size: 14px; color: var(--dark); font-weight: 700;">Ja tens un val regal?</h4>
             <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 12px;">Comprova la validesa i hores restants del teu codi:</p>
             <div style="display: flex; gap: 8px;">
-              <input type="text" id="web-cerca-val" placeholder="Ex: REGAL-8X92-23KL" style="flex: 1; padding: 8px 12px; border: 1.5px solid #D1D5DB; border-radius: 6px; font-family: monospace; font-size: 13px; text-transform: uppercase; font-weight: 700;">
+              <input type="text" id="web-cerca-val" placeholder="Ex: REGAL-8X92-23KL" style="flex: 1; padding: 8px 12px; border: 1.5px solid #D1D5DB; border-radius: 0; font-family: monospace; font-size: 13px; text-transform: uppercase; font-weight: 700;">
               <button type="button" class="btn btn-secondary btn-sm" onclick="consultarValWeb();">Consultar</button>
             </div>
-            <div id="web-cerca-val-resultat" style="display: none; margin-top: 10px; font-size: 12.5px; padding: 10px; border-radius: 6px;"></div>
+            <div id="web-cerca-val-resultat" style="display: none; margin-top: 10px; font-size: 12.5px; padding: 10px; border-radius: 0;"></div>
             
             <div style="margin-top: 14px; text-align: center; border-top: 1px solid #F3F4F6; padding-top: 10px;">
               <a href="botiga.html" style="font-size: 13px; font-weight: 700; color: var(--primary); text-decoration: none;">
@@ -860,32 +880,32 @@
     <div class="container">
       <div class="section-header reveal">
         <span class="eyebrow">Dubtes</span>
-        <h2>Preguntes Frequents</h2>
+        <h2>Preguntes Freqüents</h2>
       </div>
-      <div class="faq-accordion reveal">
+      <div class="faq-accordion reveal-right">
         <div class="faq-item">
-          <button class="faq-question" type="button">Cal experiencia previa per venir al taller?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">No! Totes les activitats estan pensades tant per a principiants com per a persones amb experiencia. T'acompanyem en cada pas del proces.</div>
+          <button class="faq-question" type="button">Cal experiència prèvia per venir al taller?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">No! Totes les activitats estan pensades tant per a principiants com per a persones amb experiència. T'acompanyem en cada pas del procés.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question" type="button">Com he de venir vestit/da?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Vine amb roba comoda que no et faci res embrutar. Proporcionem davantals, pero el fang i els esmalts poden esquitxar.</div>
+          <div class="faq-answer">Vine amb roba còmoda que no et faci res embrutar. Proporcionem davantals, però el fang i els esmalts poden esquitxar.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Quan podre recollir les meves peces cuites?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">El proces requereix dues fornejades (bescuit i esmaltada). Normalment les peces estan llestes entre 2 i 4 setmanes. T'avisarem per WhatsApp.</div>
+          <button class="faq-question" type="button">Quan podré recollir les meves peces cuites?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">El procés requereix dues fornejades (bescuit i esmaltada). Normalment les peces estan llestes entre 2 i 4 setmanes. T'avisarem per WhatsApp.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Les peces son aptes per al rentavaixelles i el microones?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Si! Les peces cuites amb esmalts ceramics a mes de 1000 graus son completament aptes per a us alimentari, rentavaixelles i microones.</div>
+          <button class="faq-question" type="button">Les peces són aptes per al rentavaixelles i el microones?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Sí! Les peces cuites amb esmalts ceràmics a més de 1000 graus són completament aptes per a ús alimentari, rentavaixelles i microones.</div>
         </div>
         <div class="faq-item">
           <button class="faq-question" type="button">Com funcionen les reserves per a grups?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Per a grups de mes de 4 persones o aniversaris, contacta'ns per WhatsApp i prepararem una sessio personalitzada.</div>
+          <div class="faq-answer">Per a grups de més de 4 persones o aniversaris, contacta'ns per WhatsApp i prepararem una sessió personalitzada.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Que es el Portal de l'Alumne?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Un espai digital per als alumnes regulars: consulta el saldo d'hores en temps real, carnet QR per al mobil i historial de sessions.</div>
+          <button class="faq-question" type="button">Què és el Portal de l'Alumne?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Un espai digital per als alumnes regulars: consulta el saldo d'hores en temps real, carnet QR per al mòbil i historial de sessions.</div>
         </div>
       </div>
     </div>
@@ -898,14 +918,14 @@
     <div class="container">
       <div class="section-header reveal">
         <span class="eyebrow">On som</span>
-        <h2>Contacte & Ubicacio</h2>
+        <h2>Contacte & Ubicació</h2>
       </div>
       <div class="contact-grid">
         <div class="contact-info-card reveal-left">
           <div class="contact-info-item">
             <div class="contact-icon-box">ADR</div>
             <div>
-              <div class="contact-detail-title">Adreca</div>
+              <div class="contact-detail-title">Adreça</div>
               <div class="contact-detail-text">Plaça Rector Ferrer, 15<br>17800 Olot (Girona)</div>
             </div>
           </div>
@@ -913,13 +933,13 @@
             <div class="contact-icon-box">HOR</div>
             <div>
               <div class="contact-detail-title">Horari</div>
-              <div class="contact-detail-text">De dimecres a diumenge<br>Mati: 10:00 - 13:00<br>Tarda: 17:00 - 20:00<br><em style="font-size: 12px; color: var(--muted);">Dilluns i dimarts tancat</em></div>
+              <div class="contact-detail-text">De dimecres a diumenge<br>Matí: 10:00 - 13:00<br>Tarda: 17:00 - 20:00<br><em style="font-size: 12px; color: var(--muted);">Dilluns i dimarts tancat</em></div>
             </div>
           </div>
           <div class="contact-info-item">
             <div class="contact-icon-box">TEL</div>
             <div>
-              <div class="contact-detail-title">Telefon & WhatsApp</div>
+              <div class="contact-detail-title">Telèfon & WhatsApp</div>
               <div class="contact-detail-text"><a href="tel:+34683633880" style="color: var(--primary); font-weight: 600;">+34 683 633 880</a></div>
             </div>
           </div>
@@ -935,12 +955,12 @@
             <a href="https://maps.google.com/?q=Pla%C3%A7a+Rector+Ferrer+15+Olot" class="btn btn-outline" target="_blank" rel="noopener">Com arribar</a>
           </div>
         </div>
-        <div class="reveal-right" style="border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); min-height: 400px;">
+        <div class="reveal-right" style="border-radius: 0; overflow: hidden; border: 1px solid var(--border); min-height: 400px;">
           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2930.8!2d2.4887!3d42.1808!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12ba91c7dc9e8b3b%3A0x3e0e0e0e0e0e0e0e!2sPla%C3%A7a%20Rector%20Ferrer%2C%2015%2C%2017800%20Olot%2C%20Girona!5e0!3m2!1sca!2ses!4v1693000000000!5m2!1sca!2ses"
-            width="100%" height="100%" style="border:0; min-height: 400px;" allowfullscreen loading="lazy" title="Ubicacio Roig de Coure a Olot"></iframe>
+            width="100%" height="100%" style="border:0; min-height: 400px;" allowfullscreen loading="lazy" title="Ubicació Roig de Coure a Olot"></iframe>
         </div>
       </div>
-      <div class="contact-form-card reveal">
+      <div class="contact-form-card reveal-left">
         <h3 style="font-family: var(--font-serif); font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 20px;">Envia'ns un Missatge</h3>
         <form id="contact-quick-form">
           <div class="booking-controls-row">
@@ -949,13 +969,13 @@
               <input type="text" class="form-input" id="c-nom" placeholder="El teu nom" required>
             </div>
             <div class="form-group">
-              <label class="form-label" for="c-tel">Telefon</label>
+              <label class="form-label" for="c-tel">Telèfon</label>
               <input type="tel" class="form-input" id="c-tel" placeholder="+34 600 000 000">
             </div>
           </div>
           <div class="form-group">
             <label class="form-label" for="c-msg">Missatge *</label>
-            <textarea class="form-input" id="c-msg" rows="4" placeholder="En que et podem ajudar?" required></textarea>
+            <textarea class="form-input" id="c-msg" rows="4" placeholder="En què et podem ajudar?" required></textarea>
           </div>
           <button type="submit" class="btn btn-primary btn-lg btn-block">Enviar per WhatsApp</button>
         </form>
@@ -987,7 +1007,7 @@
         <div class="footer-col">
           <h5>Serveis</h5>
           <ul>
-            <li><a href="#reserves">Reserves en Linia</a></li>
+            <li><a href="#reserves">Reserves en Línia</a></li>
             <li><a href="#val-regal">Val Regal</a></li>
             <li><a href="botiga.html">Botiga</a></li>
             <li><a href="alumne.html">Portal Alumne</a></li>
@@ -1003,7 +1023,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>Roig de Coure &mdash; Taller de Ceramica a Olot</span>
+        <span>Roig de Coure &mdash; Taller de Ceràmica a Olot</span>
         <a href="admin.html" class="footer-admin-link">Acces intern</a>
       </div>
     </div>

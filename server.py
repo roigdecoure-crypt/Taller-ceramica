@@ -635,30 +635,32 @@ def init_db():
         # Netejar icones existents a la taula articles
         cursor.execute("UPDATE articles SET icona = '' WHERE icona IS NOT NULL")
 
-        # Seeding inicial de catàleg d'articles i experiències (sense icones, amb diferenciació Adult / Menor de 12 anys)
-        cursor.execute('SELECT COUNT(*) as cnt FROM articles')
-        if cursor.fetchone()['cnt'] == 0:
-            initial_articles = [
-                ('art_torn_adult', 'Taller de torn (Adult, 4h)', 'Sessió pràctica al torn de terrissaire per a adults (4 hores). Aprèn a centrar, pujar i donar forma.', 60.0, 4.0, 'torn', 'adult', 1, 1, 1, ''),
-                ('art_torn_infant', 'Taller de torn (Menor de 12 anys, 4h)', 'Iniciació al torn de terrissaire adaptada a nens i nenes menors de 12 anys (4 hores).', 56.0, 4.0, 'torn', 'infant', 1, 1, 2, ''),
-                ('art_modelatge_adult', 'Taller de modelatge (Adult, 4h)', 'Modelat de fang amb tècniques de pessic, xurro i planxa per a adults (4 hores). Crea peces úniques.', 60.0, 4.0, 'modelatge', 'adult', 1, 1, 3, ''),
-                ('art_modelatge_infant', 'Taller de modelatge (Menor de 12 anys, 4h)', 'Modelat lliure i creatiu de peces ceràmiques adaptat a menors de 12 anys (4 hores).', 56.0, 4.0, 'modelatge', 'infant', 1, 1, 4, ''),
-                ('art_pintar_ceramica', 'Pintar ceràmica (Tots els públics, 4h)', 'Decora i esmalta peces ceràmiques bescuitades amb colors vius i acabat vidriat (4 hores). Ideal per a totes les edats.', 56.0, 4.0, 'pintar', 'tots', 1, 1, 5, ''),
-                ('art_hores_adult', 'Comprar hores (Adult)', 'Bossa d\'hores de taller per a adults (mínim 4h) per desenvolupar projectes al teu ritme.', 140.0, 10.0, 'torn', 'adult', 1, 1, 6, ''),
-                ('art_hores_infant', 'Comprar hores (Menor de 12 anys)', 'Bossa d\'hores d\'aprenentatge i creació al taller per a menors de 12 anys (mínim 4h).', 130.0, 10.0, 'torn', 'infant', 1, 1, 7, '')
-            ]
-            cursor.executemany('''
+        # Seeding i actualització del catàleg oficial d'experiències i bossa d'hores
+        official_articles = [
+            ('art_torn_adult', 'Experiència Torn (Adult)', 'Sessió pràctica al torn de terrissaire per a adults (2 hores). Aprèn a centrar, pujar i donar forma.', 50.0, 2.0, 'torn', 'adult', 1, 1, 1, ''),
+            ('art_torn_infant', 'Experiència Torn (Menor de 12 anys)', 'Iniciació al torn de terrissaire adaptada a menors de 12 anys (2 hores).', 45.0, 2.0, 'torn', 'infant', 1, 1, 2, ''),
+            ('art_modelatge_adult', 'Experiència Modelatge (Adult)', 'Modelat de fang amb tècniques de pessic, xurro i planxa per a adults (2 hores). Crea peces úniques.', 50.0, 2.0, 'modelatge', 'adult', 1, 1, 3, ''),
+            ('art_modelatge_infant', 'Experiència Modelatge (Menor de 12 anys)', 'Modelat lliure i creatiu de peces ceràmiques adaptat a menors de 12 anys (2 hores).', 45.0, 2.0, 'modelatge', 'infant', 1, 1, 4, ''),
+            ('art_pintar_ceramica', 'Pintar ceràmica (Tots els públics)', 'Decora i esmalta peces ceràmiques bescuitades amb colors vius i acabat vidriat (2 hores). Preu únic per a tothom.', 30.0, 2.0, 'pintar', 'tots', 1, 1, 5, ''),
+            ('art_hores_adult', 'Bossa d\'hores (Adult)', 'Bossa d\'hores de taller per a adults (mínim 4h). Tarifa per trams: 4-9h (15€/h), 10-19h (14€/h), 20h+ (13€/h). Tria la quantitat que vulguis.', 60.0, 4.0, 'torn', 'adult', 1, 1, 6, ''),
+            ('art_hores_infant', 'Bossa d\'hores (Menor de 12 anys)', 'Bossa d\'hores per a menors de 12 anys (mínim 4h). Tarifa per trams: 4-9h (14€/h), 10-19h (13€/h), 20h+ (11€/h). Tria la quantitat que vulguis.', 56.0, 4.0, 'torn', 'infant', 1, 1, 7, '')
+        ]
+        for art in official_articles:
+            cursor.execute('''
                 INSERT INTO articles (id, nom, descripcio, preu, hores, activitat_id, edat, es_val_regal, actiu, ordre, icona)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', initial_articles)
-
-        # Migració de seguretat: cap article ni taller amb menys de 4 hores
-        cursor.execute("UPDATE articles SET hores = 4.0, preu = 60.0, nom = 'Taller de torn (Adult, 4h)' WHERE id = 'art_torn_adult' AND hores < 4.0")
-        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Taller de torn (Menor de 12 anys, 4h)' WHERE id = 'art_torn_infant' AND hores < 4.0")
-        cursor.execute("UPDATE articles SET hores = 4.0, preu = 60.0, nom = 'Taller de modelatge (Adult, 4h)' WHERE id = 'art_modelatge_adult' AND hores < 4.0")
-        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Taller de modelatge (Menor de 12 anys, 4h)' WHERE id = 'art_modelatge_infant' AND hores < 4.0")
-        cursor.execute("UPDATE articles SET hores = 4.0, preu = 56.0, nom = 'Pintar ceràmica (Tots els públics, 4h)' WHERE id = 'art_pintar_ceramica' AND hores < 4.0")
-        cursor.execute("UPDATE articles SET hores = 4.0 WHERE hores < 4.0")
+                ON CONFLICT(id) DO UPDATE SET
+                    nom = excluded.nom,
+                    descripcio = excluded.descripcio,
+                    preu = excluded.preu,
+                    hores = excluded.hores,
+                    activitat_id = excluded.activitat_id,
+                    edat = excluded.edat,
+                    es_val_regal = excluded.es_val_regal,
+                    actiu = excluded.actiu,
+                    ordre = excluded.ordre,
+                    icona = ''
+            ''', art)
 
         # MigraciÃ³ de valors antics a configuraciÃ³ oficial si cal
         cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de CerÃ mica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
@@ -3427,24 +3429,21 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Càlcul dinàmic d'hores si es compren hores (amb trams de preu)
                 req_hores = data.get('hores')
-                if req_hores is not None and int(req_hores) < 4:
-                    self.send_json({'ok': False, 'error': 'La compra mínima és de 4 hores.'}, status=400)
-                    return
-                if article.get('hores') is not None and float(article.get('hores', 0)) < 4.0:
-                    self.send_json({'ok': False, 'error': 'Totes les compres i tallers han de ser de com a mínim 4 hores.'}, status=400)
-                    return
                 is_hores = ('hores' in article['id'].lower() or 'hores' in article['nom'].lower() or req_hores is not None)
                 if is_hores:
+                    if req_hores is not None and int(req_hores) < 4:
+                        self.send_json({'ok': False, 'error': 'La compra mínima de la bossa d\'hores és de 4 hores.'}, status=400)
+                        return
                     es_inf = (article.get('edat') == 'infant' or data.get('edat') == 'infant')
-                    h_num, p_hora, total_import, _ = calcular_preu_hores_trams(req_hores or article.get('hores', 10), es_inf)
+                    h_num, p_hora, total_import, _ = calcular_preu_hores_trams(req_hores or article.get('hores', 4), es_inf)
                     article['hores'] = float(h_num)
                     article['preu'] = total_import
                     edat_label = 'Menor de 12 anys' if es_inf else 'Adult'
-                    nom_article = f"Comprar {h_num} hores ({edat_label} a {int(p_hora)} €/h)"
+                    nom_article = f"Bossa de {h_num} hores ({edat_label} a {int(p_hora)} €/h)"
+                else:
+                    nom_article = article['nom']
 
                 preu_cents = int(round(float(article['preu']) * 100))
-                if not is_hores:
-                    nom_article = article['nom']
                 host_url = self.headers.get('Host', 'localhost:8080')
                 scheme = 'https' if not host_url.startswith('localhost') and not host_url.startswith('127.0.0.1') else 'http'
                 base_domain = f"{scheme}://{host_url}"
@@ -3454,7 +3453,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     # En entorn de desenvolupament sense credencials, creem directament el val per testejar el flux
                     if tipus_compra == 'val_regal':
                         nou_val = crear_val_regal_db(
-                            titol_experiencia=article['nom'],
+                            titol_experiencia=nom_article,
                             hores=article['hores'],
                             activitat_id=article['activitat_id'],
                             nom_destinatari=nom_destinatari or nom_comprador or 'Destinatari Regal',
@@ -3503,7 +3502,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 }
                             }
                         ],
-                        "metadata": {
+                        "metadata": {k: str(v).strip() for k, v in {
                             "article_id": article_id,
                             "tipus_compra": tipus_compra,
                             "nom_destinatari": nom_destinatari,
@@ -3511,8 +3510,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             "email_comprador": email_comprador,
                             "email_destinatari": email_destinatari,
                             "missatge": missatge,
-                            "student_id": student_id
-                        }
+                            "student_id": student_id,
+                            "hores": str(article['hores']),
+                            "preu": str(article['preu']),
+                            "titol": nom_article
+                        }.items() if v and str(v).strip()}
                     },
                     "checkout_options": {
                         "redirect_url": f"{base_domain}/reserva.html?pagament_square=completat"
@@ -3542,6 +3544,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'order_id': payment_link.get('order_id')
                         })
                         return
+                except urllib.error.HTTPError as sq_http_err:
+                    try:
+                        err_body = sq_http_err.read().decode('utf-8')
+                    except Exception:
+                        err_body = str(sq_http_err)
+                    self.send_json({'ok': False, 'error': f"Error connectant amb Square: {err_body}"}, 500)
+                    return
                 except Exception as sq_err:
                     self.send_json({'ok': False, 'error': f"Error connectant amb Square: {str(sq_err)}"}, 500)
                     return
@@ -3585,16 +3594,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 c_w.execute('SELECT * FROM articles WHERE id = ?', (article_id,))
                                 art = c_w.fetchone()
                                 if art:
+                                    val_hores = float(meta.get('hores') or art['hores'])
+                                    val_preu = float(meta.get('preu') or art['preu'])
+                                    val_titol = meta.get('titol') or art['nom']
                                     crear_val_regal_db(
-                                        titol_experiencia=art['nom'],
-                                        hores=art['hores'],
+                                        titol_experiencia=val_titol,
+                                        hores=val_hores,
                                         activitat_id=art['activitat_id'],
                                         nom_destinatari=meta.get('nom_destinatari', 'Destinatari'),
                                         nom_comprador=meta.get('nom_comprador', ''),
                                         email_comprador=meta.get('email_comprador', ''),
                                         email_destinatari=meta.get('email_destinatari', ''),
                                         missatge=meta.get('missatge', ''),
-                                        preu_pagat=art['preu'],
+                                        preu_pagat=val_preu,
                                         metode_pagament='square',
                                         transaccio_id=payment_data.get('id', order_id),
                                         article_id=article_id
@@ -4415,9 +4427,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     estat_res = 'confirmada'
                     if places_demanades >= 4 and not val_regal and not is_soc_alumne:
                         paga_senyal_import = float(places_demanades * 10.0)
-                        estat_res = 'pendent_paga_senyal'
-                        if 'PAGA I SENYAL' not in notes.upper():
-                            notes = f"[PAGA I SENYAL: {int(paga_senyal_import)}€ PENDENT (10€ x {places_demanades}p)] {notes}".strip()
+                        if 'BESTRETA COBRADA' in notes.upper() or 'PAGADA' in notes.upper() or data.get('bestreta_cobrada'):
+                            estat_res = 'confirmada'
+                        else:
+                            estat_res = 'pendent_paga_senyal'
+                            if 'PAGA I SENYAL' not in notes.upper():
+                                notes = f"[PAGA I SENYAL: {int(paga_senyal_import)}€ PENDENT (10€ x {places_demanades}p)] {notes}".strip()
 
                     res_id = f"RES-{int(get_now().timestamp())}-{student_id}"
                     now_iso = get_now().strftime('%Y-%m-%dT%H:%M:%S')
@@ -4875,7 +4890,56 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 self.send_json({
                     'ok': True,
-                    'message': f"AssistÃ¨ncia {'marcada com a present' if assistit else 'restablerta com a pendent'}.",
+                    'message': f"Assistència {'marcada com a present' if assistit else 'restablerta com a pendent'}.",
+                    'reserva': reserva_dict
+                })
+                return
+
+            elif path == '/api/reserves/cobrar-bestreta':
+                res_id = (data.get('id') or '').strip()
+                metode = (data.get('metode') or 'TPV Físic (Taller)').strip()
+                import_pagat = data.get('import')
+
+                if not res_id:
+                    self.send_json({'ok': False, 'error': 'Cal indicar l\'ID de la reserva'}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT * FROM reserves WHERE id = ?", (res_id,))
+                    row = cursor.fetchone()
+                    if not row:
+                        self.send_json({'ok': False, 'error': 'Reserva no trobada'}, 404)
+                        return
+
+                    paga_num = float(row['paga_senyal'] or (row['places'] * 10.0))
+                    if import_pagat:
+                        try:
+                            paga_num = float(import_pagat)
+                        except Exception:
+                            pass
+
+                    old_notes = row['notes'] or ''
+                    cleaned_notes = old_notes.replace('PENDENT', 'COBRADA')
+                    if 'COBRADA' not in cleaned_notes:
+                        cleaned_notes = f"{cleaned_notes} [BESTRETA COBRADA: {int(paga_num)}€ per {metode}]".strip()
+
+                    cursor.execute("""
+                        UPDATE reserves 
+                        SET estat = 'confirmada', paga_senyal = ?, notes = ? 
+                        WHERE id = ?
+                    """, (paga_num, cleaned_notes, res_id))
+                    conn.commit()
+
+                    cursor.execute("SELECT * FROM reserves WHERE id = ?", (res_id,))
+                    row_updated = cursor.fetchone()
+                    reserva_dict = row_to_dict(row_updated)
+
+                sync_to_google_sheets_async('update_reserva_estat', reserva_dict)
+
+                self.send_json({
+                    'ok': True,
+                    'message': f"Bestreta de {int(paga_num)}€ registrada com a cobrada per {metode}.",
                     'reserva': reserva_dict
                 })
                 return

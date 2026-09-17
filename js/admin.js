@@ -3029,13 +3029,28 @@ async function renderAdminDayAppointments(dateStr) {
     const isRecurrent = !!r.recurrent_id;
     const recurrentBadge = isRecurrent ? `<span class="badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;" title="Sèrie de reserves periòdiques">Recurrent</span>` : '';
 
+    const placesNum = parseInt(r.places, 10) || 1;
+    const pagaSenyalVal = parseFloat(r.paga_senyal) || (placesNum >= 4 ? placesNum * 10 : 0);
+    const hasPagaSenyal = pagaSenyalVal > 0 || (r.notes && r.notes.toUpperCase().includes('PAGA I SENYAL')) || (r.notes && r.notes.toUpperCase().includes('BESTRETA'));
+    const isPagaSenyalPendent = hasPagaSenyal && (r.estat === 'pendent_paga_senyal' || (r.notes && r.notes.toUpperCase().includes('PENDENT') && (r.notes.toUpperCase().includes('PAGA I SENYAL') || r.notes.toUpperCase().includes('BESTRETA'))));
+    const isPagaSenyalCobrada = hasPagaSenyal && !isPagaSenyalPendent;
+
+    let bestretaBadge = '';
+    if (hasPagaSenyal) {
+      if (isPagaSenyalPendent) {
+        bestretaBadge = `<span class="badge" style="background: #FEF3C7; color: #92400E; border: 1.5px solid #F59E0B; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; margin-left: 4px;" title="Bestreta de grup pendent de cobrar">Bestreta: ${pagaSenyalVal} € (Pendent)</span>`;
+      } else {
+        bestretaBadge = `<span class="badge" style="background: #D1FAE5; color: #047857; border: 1.5px solid #10B981; font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; margin-left: 4px;" title="Bestreta cobrada correctament">Bestreta: ${pagaSenyalVal} € (Cobrada)</span>`;
+      }
+    }
+
     return `
       <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">
         <td style="font-weight: 700; color: #6B7280; font-size: 12px; width: 32px;">${idx + 1}</td>
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actBadge} ${placesBadge} ${valRegalBadge} ${recurrentBadge}
+            ${slotDesc} &bull; ${actBadge} ${placesBadge} ${valRegalBadge} ${recurrentBadge} ${bestretaBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>
@@ -3052,6 +3067,11 @@ async function renderAdminDayAppointments(dateStr) {
         </td>
         <td style="text-align: right;">
           <div class="app-actions-group">
+            ${isPagaSenyalPendent && !isCancelled ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-cobrar-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-import="${pagaSenyalVal}" style="padding: 3px 8px; font-size: 11.5px; color: #92400E; border-color: #F59E0B; background: #FFFBEB; font-weight: 700;" title="Marcar la bestreta com a cobrada per TPV físic, efectiu o Bizum">
+                Cobrar Bestreta (${pagaSenyalVal}€)
+              </button>
+            ` : ''}
             ${r.student_id && !r.student_id.startsWith('CLI-') ? `
               <button type="button" class="btn btn-outline btn-sm btn-action-view" data-id="${r.student_id}" style="padding: 3px 6px; font-size: 11.5px;" title="Veure Fitxa 360°">
                 Fitxa
@@ -3111,6 +3131,42 @@ async function renderAdminDayAppointments(dateStr) {
         } catch (err) {
           showToast('Error cancel·lant reserva: ' + err.message, 'error');
         }
+      }
+    });
+  });
+
+  // Delegar cobrament de bestreta
+  tableBody.querySelectorAll('.btn-app-cobrar-bestreta').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const resId = btn.dataset.resId;
+      const client = btn.dataset.client;
+      const imp = btn.dataset.import || '40';
+      const opcio = prompt(
+        `Registrar cobrament de la bestreta de ${imp} € per a ${client}:\n\n` +
+        `Escriu el mètode de pagament:\n` +
+        `1 = TPV Físic / Targeta (Taller)\n` +
+        `2 = Bizum\n` +
+        `3 = Efectiu\n\n` +
+        `O prem D'acord per confirmar TPV Físic:`,
+        '1'
+      );
+      if (opcio === null) return;
+
+      let metodeTxt = 'TPV Físic / Targeta (Taller)';
+      if (opcio.trim() === '2' || opcio.toLowerCase().includes('bizum')) metodeTxt = 'Bizum';
+      else if (opcio.trim() === '3' || opcio.toLowerCase().includes('efectiu')) metodeTxt = 'Efectiu';
+
+      try {
+        const res = await Store.marcarBestretaCobrada(resId, metodeTxt, parseFloat(imp));
+        if (res && res.ok) {
+          showToast(`Bestreta de ${imp} € registrada correctament (${metodeTxt}).`, 'success');
+          if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
+          await refreshAppointmentsDashboard();
+        } else {
+          showToast(res?.error || 'Error registrant bestreta', 'error');
+        }
+      } catch (err) {
+        showToast('Error registrant bestreta: ' + err.message, 'error');
       }
     });
   });
@@ -3226,6 +3282,9 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   // Places
   const placesInput = document.getElementById('admin-res-places');
   if (placesInput) placesInput.value = 1;
+  handleAdminResPlacesChange();
+  const chkBestreta = document.getElementById('admin-res-chk-bestreta-cobrada');
+  if (chkBestreta) chkBestreta.checked = false;
 
   // Repeticions per defecte
   const repsInput = document.getElementById('admin-res-repeticions');
@@ -3264,6 +3323,21 @@ function closeAdminNovaReservaModal() {
     }
   }
 }
+
+function handleAdminResPlacesChange() {
+  const pl = parseInt(document.getElementById('admin-res-places')?.value || 1, 10);
+  const box = document.getElementById('admin-res-group-paga-senyal');
+  const amt = document.getElementById('admin-res-paga-senyal-amount');
+  if (box && amt) {
+    if (pl >= 4) {
+      box.style.display = 'block';
+      amt.textContent = `${pl * 10} € (${pl} x 10 €)`;
+    } else {
+      box.style.display = 'none';
+    }
+  }
+}
+window.handleAdminResPlacesChange = handleAdminResPlacesChange;
 
 function toggleAdminReservaClientType() {
   const type = document.querySelector('input[name="admin_res_client_type"]:checked')?.value || 'existent';
@@ -3470,6 +3544,17 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
   const franjaId = (horaInici >= '14:00') ? 'T1' : 'M1';
 
   const notes = document.getElementById('admin-res-notes')?.value?.trim() || '';
+  let finalNotes = notes;
+  const isBestretaCobrada = document.getElementById('admin-res-chk-bestreta-cobrada')?.checked;
+  if (places >= 4) {
+    const importPs = places * 10;
+    if (isBestretaCobrada) {
+      finalNotes = `[BESTRETA COBRADA: ${importPs}€ per TPV Físic (Taller)] ${finalNotes}`.trim();
+    } else {
+      finalNotes = `[PAGA I SENYAL: ${importPs}€ PENDENT (10€ x ${places}p)] ${finalNotes}`.trim();
+    }
+  }
+
   const forcarAforament = isRetryWithForce || (document.getElementById('admin-res-forcar-aforament')?.checked || false);
   const mode = document.querySelector('input[name="admin_res_mode"]:checked')?.value || 'puntual';
 
@@ -3496,7 +3581,8 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         hora_inici: horaInici,
         hora_fi: horaFi,
         hores: 2.0,
-        notes: notes,
+        notes: finalNotes,
+        bestreta_cobrada: isBestretaCobrada,
         forcar_aforament: forcarAforament
       });
 
@@ -3562,7 +3648,8 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         hora_inici: horaInici,
         hora_fi: horaFi,
         hores: 2.0,
-        notes: notes,
+        notes: finalNotes,
+        bestreta_cobrada: isBestretaCobrada,
         forcar_aforament: forcarAforament
       });
 
@@ -5913,6 +6000,21 @@ async function editarValRegal(codi) {
   }
 }
 
+function calcularPreuHoresTramsAdmin(hores, esInfant) {
+  const h = Math.max(4, parseFloat(hores) || 4);
+  let preuHora = 15;
+  if (!esInfant) {
+    if (h <= 9) preuHora = 15;
+    else if (h <= 19) preuHora = 14;
+    else preuHora = 13;
+  } else {
+    if (h <= 9) preuHora = 14;
+    else if (h <= 19) preuHora = 13;
+    else preuHora = 11;
+  }
+  return { hores: h, preuHora: preuHora, total: h * preuHora };
+}
+
 function actualitzarCampsDesDeArticle(artId) {
   if (!artId || artId === 'custom') return;
   const art = adminArticlesList.find(a => a.id === artId);
@@ -5924,8 +6026,30 @@ function actualitzarCampsDesDeArticle(artId) {
 
   if (inpTitol) inpTitol.value = art.nom;
   if (inpHores) inpHores.value = art.hores;
-  if (inpPreu) inpPreu.value = art.preu;
+  if (inpPreu) inpPreu.value = Number(art.preu).toFixed(2);
 }
+
+function recalcularPreuValManualHores() {
+  const sel = document.getElementById('val-manual-article-select');
+  const artId = sel ? sel.value : '';
+  if (!artId || !artId.includes('hores')) return;
+  const art = adminArticlesList.find(a => a.id === artId);
+  if (!art) return;
+
+  const inpHores = document.getElementById('val-manual-hores');
+  const inpPreu = document.getElementById('val-manual-preu');
+  const inpTitol = document.getElementById('val-manual-titol');
+  if (!inpHores || !inpPreu) return;
+
+  const h = parseFloat(inpHores.value) || 4;
+  const esInf = art.edat === 'infant';
+  const calc = calcularPreuHoresTramsAdmin(h, esInf);
+  inpPreu.value = calc.total.toFixed(2);
+  if (inpTitol) {
+    inpTitol.value = `Bossa de ${calc.hores} hores (${esInf ? 'Menor de 12 anys' : 'Adult'})`;
+  }
+}
+window.recalcularPreuValManualHores = recalcularPreuValManualHores;
 
 async function guardarNouValRegalManual() {
   const mode = document.getElementById('val-manual-mode')?.value || 'crear';

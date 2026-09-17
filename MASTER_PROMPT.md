@@ -17,18 +17,31 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
 
 ### 1. REGLA ESTÈTICA GLOBAL I IDENTITAT DE MARCA
 1. **Nom de marca**: "Roig de Coure" (títol destacat, estètica de taller de terrissaire tradicional, càlida i professional).
-2. **Paleta de colors corporativa**:
+2. **Tipografia corporativa estricta**:
+   - Logotip / Nom de marca: `Buffalo` cursiva (`var(--font-script)`).
+   - Tota la resta de textos, títols, subtítols i botons: `Verdana, Geneva, Tahoma, sans-serif` (`var(--font-sans)`).
+   - Prohibit canviar la lletra original o introduir fonts no demanades.
+3. **ZERO REQUADRES ARRODONITS (CANTONADES RECTES OBLIGATÒRIES)**:
+   - Queda terminantment prohibit l'ús de cantonades arrodonides (`border-radius: 0 !important`) a qualsevol part de la web o de l'aplicació.
+   - Totes les targetes, contenidors, botons, camps de formulari, alertes, selectors, marcs i finestres modals han de tenir cantonades rectes a 90 graus.
+   - L'estètica ha de transmetre sobrietat artesanal, puresa de línies, acabat d'estudi ceràmic contemporani i elegància geomètrica neta.
+4. **Paleta de colors corporativa**:
    - Color primari: Roig argila / terracota intens (`#831D1D` / `#C25E3A`).
    - Color secundari i contrast: Verd ceràmic / coure oxidat (`#5E7E6F`, fons suau `#EEF5F1`).
    - Fons i targetes: Blanc pur (`#FFFFFF`), porcellana càlida (`#FAF7F5`, `#FFF8F6`) i to mat antirreflex (`#DDD7CE`).
    - Tipografia: Text principal fosc contrastat (`#2C221E`), lletra secundària neutra (`#6B7280`).
-3. **REGISTRE DE ZERO ICONES I ZERO EMOJIS**:
-   - No utilitzis cap icona (ni FontAwesome, ni icones SVG genèriques, ni iconografies predissenyades) ni cap emoji o emoticona a cap part de l'aplicació (ni a la interfície, ni als botons, ni als títols, ni a les alertes, ni als missatges de confirmació).
-   - L'estètica transmet sobrietat artesanal mitjançant composicions tipogràfiques netes, vores suaus, espaiats equilibrats, badges tipogràfics i caràcters bàsics com '‹' o '›' per a la navegació entre mesos.
-4. **Navegació mòbil (Responsive)**:
-   - A pantalles petites, la barra de navegació superior es plega en un botó d'accés ràpid tipogràfic o menú d'hamburguesa net de 3 línies que desplega els enllaços i es tanca en seleccionar qualsevol opció.
-5. **Idioma**:
-   - Tota la interfície d'usuari, formularis, taules, diàlegs modals, missatges de sistema, dates, hores i codi de cara al públic estan rigorosament en català.
+5. **REGISTRE DE ZERO ICONES I ZERO EMOJIS**:
+   - No utilitzis cap icona (ni FontAwesome, ni icones genèriques, ni iconografies predissenyades) ni cap emoji o emoticona a cap part de l'aplicació (ni a la interfície, ni als botons, ni als títols, ni a les alertes, ni als missatges de confirmació).
+   - L'estètica transmet sobrietat artesanal mitjançant composicions tipogràfiques netes, cantonades rectes, espaiats equilibrats i caràcters bàsics com '‹' o '›' per a la navegació entre mesos.
+6. **Navegació i Menú Principal**:
+   - El menú principal superior a escriptori inclou de manera obligatòria i en aquest ordre:
+     `Activitats` | `Reservar` | `Val regal` | `Botiga` | `Contacte` | `Alumnes`
+   - L'element `Reservar` enllaça directament a la secció de reserves en línia (`#reserves`).
+   - A pantalles mòbils, la barra superior es plega en un menú d'hamburguesa net de 3 línies que es tanca en seleccionar qualsevol opció.
+7. **Rigor Ortogràfic en Català (Normativa IEC)**:
+   - Tota la interfície d'usuari, formularis, taules, diàlegs modals, missatges de sistema, dates, hores i codi estan rigorosament en català normatiu i impecable.
+   - S'han de respectar escrupolosament totes les grafies pròpies: `Preguntes Freqüents` (amb dièresi `ü`), `Ubicació` (amb accent), `Adreça` (amb ce trencada `ç`), `Matí`, `Telèfon`, `Reserves en Línia`, `Confirmació`, `Ceràmica`.
+   - Mantenir els apartats, títols, adreça i dades reals del taller (Plaça Rector Ferrer, 15, Olot). No inventar mai informació inexistent.
 
 ---
 
@@ -51,10 +64,12 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
 ### 3. PÀGINA WEB PÚBLICA I DE RESERVA (`index.html` i `reserva.html`)
 1. **Pàgina d'Inici (`index.html`)**:
    - Filosofia artesanal, descripció de cursos, torns, packs i tarifes.
-   - Calendari integrat de disponibilitat immediata amb botons de selecció de torn (Matí / Tarda) i selector d'hora d'arribada (10:00 a 11:00 al matí, 17:00 a 18:00 a la tarda).
+   - Disseny amb cantonades rectes (`border-radius: 0`), fons càlid, tipografia Verdana neta i Buffalo per al logotip.
+   - Menú de navegació: `Activitats`, `Reservar`, `Val regal`, `Botiga`, `Contacte`, `Alumnes`.
+   - Calendari integrat de disponibilitat immediata amb selecció de torn (Matí / Tarda) i selector d'hora d'arribada (10:00 a 11:00 al matí, 17:00 a 18:00 a la tarda).
    - Formulari de reserva ràpida amb connexió directa a la base de dades i WhatsApp.
 2. **Assistent de Reserva Pas a Pas (`reserva.html`)**:
-   - **Pas 1: Activitat**: Torn, Modelatge o Pintar peces.
+   - **Pas 1: Activitat**: Torn, Modelatge o Pintar ceràmica.
      - *Opció Val Regal*: Permet triar l'activitat sense necessitat d'introduir número de val; assigna automàticament la sessió al primer torn de matí amb nota informativa.
      - *Opció Sóc Alumne (Privacitat Estricta RGPD)*: Sense desplegables públics de noms. Verificació individual per nom complet o codi d'alumne via `GET /api/alumnes/verificar?q=...`. Autocompleta les dades de l'alumne trobat i vincula el seu `student_id`.
    - **Pas 2: Data i Torn (Calendari Visual Incrustat)**:
@@ -98,7 +113,7 @@ Segueix estrictament els requisits funcionals, d'arquitectura, de privacitat i d
    - En repòs no mostra la imatge de la càmera a la pantalla de la recepció. Presenta una pantalla fosca artesanal amb el logotip "Roig de Coure" i un indicador subtil de funcionament.
    - La càmera treballa en segon pla analitzant a 20 FPS amb la llibreria `jsQR`.
 2. **Detecció automàtica i registre instantani**:
-   - En apropar el QR des de mòbil, paper o rellotge: lectura immediata, xiulet suau acústic (Web Audio API), targeta verda emergent amb el nom de l'alumne, tipus d'acció (Entrada o Sortida) i hores restants.
+   - En apropar el QR des de mòbil, paper o rellotge: lectura immediata, xiulet suau acústic (Web Audio API), targeta emergent amb cantonades rectes amb el nom de l'alumne, tipus d'acció (Entrada o Sortida) i hores restants.
    - Retorn automàtic al mode discret després de 3 segons.
 3. **Gestió de cicles oblidats**:
    - Si un alumne entra i no fitxa la sortida, la sessió roman com a oberta sense bloquejar el sistema.
