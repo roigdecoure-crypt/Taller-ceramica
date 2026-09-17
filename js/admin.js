@@ -54,7 +54,7 @@ async function initAdminApp() {
     }
   } catch (e) {}
 
-  const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
+  const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
   if (isAuth) {
     await loadAdminDashboardData();
   }
@@ -4129,7 +4129,7 @@ function initAdminAuth() {
     });
   }
 
-  const isAuth = sessionStorage.getItem('roig_admin_auth') === '1';
+  const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
   if (isAuth) {
     if (lockScreen) lockScreen.style.display = 'none';
   } else {
@@ -4168,7 +4168,7 @@ function initAdminAuth() {
       }
       const data = await res.json();
       if (data.ok) {
-        sessionStorage.setItem('roig_admin_auth', '1');
+        try { localStorage.setItem('roig_admin_auth', '1'); } catch(e){}; try { sessionStorage.setItem('roig_admin_auth', '1'); } catch(e){};
         if (lockScreen) lockScreen.style.display = 'none';
         showToast("Sessió d'administrador iniciada", 'success');
         try {
@@ -4190,7 +4190,7 @@ function initAdminAuth() {
       // Fallback per a mode local/offline si el backend no respon immediatament
       if (pin === '1234') {
         console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
-        sessionStorage.setItem('roig_admin_auth', '1');
+        try { localStorage.setItem('roig_admin_auth', '1'); } catch(e){}; try { sessionStorage.setItem('roig_admin_auth', '1'); } catch(e){};
         if (lockScreen) lockScreen.style.display = 'none';
         showToast('Sessió iniciada en mode local/offline', 'info');
         try { await loadAdminDashboardData(); } catch (dashErr) {}
@@ -4216,7 +4216,7 @@ function initAdminAuth() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       if (confirm('Vols tancar la sessió d\'administració?')) {
-        sessionStorage.removeItem('roig_admin_auth');
+        try { localStorage.removeItem('roig_admin_auth'); } catch(e){}; try { sessionStorage.removeItem('roig_admin_auth'); } catch(e){};
         window.location.reload();
       }
     });
