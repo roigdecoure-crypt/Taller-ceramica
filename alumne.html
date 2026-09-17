@@ -27,6 +27,20 @@
 
   <link rel="stylesheet" href="css/styles.css?v=7.4">
   <link rel="stylesheet" href="css/card.css">
+    <script>
+    try {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) regs[i].unregister();
+        }).catch(function() {});
+      }
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        caches.keys().then(function(names) {
+          for (var j = 0; j < names.length; j++) caches.delete(names[j]);
+        }).catch(function() {});
+      }
+    } catch (swErr) {}
+  </script>
   <style>
     @font-face {
       font-family: 'Buffalo';
@@ -1149,14 +1163,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=11.5.0"></script>
-  <script src="js/time-utils.js?v=11.5.0"></script>
-  <script src="js/sound.js?v=11.5.0"></script>
-  <script src="js/qr-engine.js?v=11.5.0"></script>
-  <script src="js/api-config.js?v=11.5.0"></script>
-  <script src="js/store.js?v=11.5.0"></script>
-  <script src="js/reserves-calendar.js?v=11.5.0"></script>
-  <script src="js/alumne.js?v=11.5.0"></script>
+  <script src="lib/qrcode.min.js?v=11.5.3"></script>
+  <script src="js/time-utils.js?v=11.5.3"></script>
+  <script src="js/sound.js?v=11.5.3"></script>
+  <script src="js/qr-engine.js?v=11.5.3"></script>
+  <script src="js/api-config.js?v=11.5.3"></script>
+  <script src="js/store.js?v=11.5.3"></script>
+  <script src="js/reserves-calendar.js?v=11.5.3"></script>
+  <script src="js/alumne.js?v=11.5.3"></script>
 </body>
 </html>
 

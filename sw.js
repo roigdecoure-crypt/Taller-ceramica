@@ -1,5 +1,5 @@
 // sw.js - Service Worker per al Taller de Ceramica (Actualitzat)
-const CACHE_NAME = "taller-ceramica-v10.0.0-nocache";
+const CACHE_NAME = "taller-ceramica-v11.5.3-nocache";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

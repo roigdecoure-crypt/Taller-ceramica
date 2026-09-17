@@ -316,6 +316,12 @@ function renderDashboard(details) {
   const a = details.alumne;
   const bal = details.balanc;
 
+  try {
+    renderFamilySwitcher();
+  } catch (famErr) {
+    console.warn("Error renderitzant selector de família:", famErr);
+  }
+
   document.getElementById('portal-student-name').textContent = `Hola, ${a.nom}!`;
   document.getElementById('portal-student-id').textContent = a.id;
   document.getElementById('portal-student-alta').textContent = TimeUtils.formatDate(a.data_alta);
@@ -700,18 +706,29 @@ function renderFamilySwitcher() {
   const bar = document.getElementById('portal-family-switcher');
   const listEl = document.getElementById('family-pills-list');
   const btnAllQrs = document.getElementById('btn-open-family-qrs-modal');
-  if (!bar || !listEl || !currentStudent) return;
+  if (!bar || !listEl || !currentStudent || !currentStudent.alumne) return;
 
-  const list = getLinkedStudents();
-  if (list.length === 0) {
-    bar.style.display = 'none';
-    return;
+  let list = getLinkedStudents();
+  const activeId = String(currentStudent.alumne.id).toLowerCase();
+  const existing = list.find(s => String(s.id).toLowerCase() === activeId);
+  const currentPin = localStorage.getItem('logged_student_pin') || sessionStorage.getItem('logged_student_pin') || '';
+
+  if (!existing) {
+    list.unshift({
+      id: currentStudent.alumne.id,
+      nom: currentStudent.alumne.nom,
+      cognoms: currentStudent.alumne.cognoms || '',
+      pin: currentPin
+    });
+    saveLinkedStudents(list);
+  } else if (currentPin && !existing.pin) {
+    existing.pin = currentPin;
+    saveLinkedStudents(list);
   }
 
+  // La barra està SEMPRE visible quan l'alumne ha iniciat sessió
   bar.style.display = 'flex';
   listEl.innerHTML = '';
-
-  const activeId = String(currentStudent.alumne.id).toLowerCase();
 
   list.forEach(s => {
     const pill = document.createElement('div');
@@ -847,50 +864,7 @@ async function desvincularAlumne(studentId, studentName) {
     if (list.length > 0) {
       await switchActiveStudent(list[0].id);
     } else {
-      
-  // Esdeveniments de Gestió de Família i Perfils Vinculats
-  const btnOpenVincular = document.getElementById('btn-open-vincular-modal');
-  const modalVincular = document.getElementById('modal-vincular-alumne');
-  const btnCloseVincular = document.getElementById('btn-close-vincular-modal');
-  const formVincular = document.getElementById('form-vincular-alumne');
-
-  if (btnOpenVincular && modalVincular) {
-    btnOpenVincular.addEventListener('click', () => {
-      const errBox = document.getElementById('vincular-error-msg');
-      if (errBox) errBox.style.display = 'none';
-      const idInput = document.getElementById('input-vincular-id');
-      if (idInput) idInput.value = '';
-      const pinInput = document.getElementById('input-vincular-pin');
-      if (pinInput) pinInput.value = '';
-      openModal(modalVincular);
-      if (idInput) setTimeout(() => idInput.focus(), 150);
-    });
-  }
-
-  if (btnCloseVincular && modalVincular) {
-    btnCloseVincular.addEventListener('click', () => closeModal(modalVincular));
-  }
-
-  if (formVincular) {
-    formVincular.addEventListener('submit', handleVincularSubmit);
-  }
-
-  const btnOpenFamilyQrs = document.getElementById('btn-open-family-qrs-modal');
-  const modalFamilyQrs = document.getElementById('modal-family-qrs');
-  const btnCloseFamilyQrs = document.getElementById('btn-close-family-qrs-modal');
-  const btnCloseFamilyQrsAct = document.getElementById('btn-close-family-qrs-action');
-
-  if (btnOpenFamilyQrs && modalFamilyQrs) {
-    btnOpenFamilyQrs.addEventListener('click', openFamilyQrsModal);
-  }
-  if (btnCloseFamilyQrs && modalFamilyQrs) {
-    btnCloseFamilyQrs.addEventListener('click', () => closeModal(modalFamilyQrs));
-  }
-  if (btnCloseFamilyQrsAct && modalFamilyQrs) {
-    btnCloseFamilyQrsAct.addEventListener('click', () => closeModal(modalFamilyQrs));
-  }
-
-  const btnLogout = document.getElementById('btn-logout');
+      const btnLogout = document.getElementById('btn-logout');
       if (btnLogout) btnLogout.click();
     }
   } else {
