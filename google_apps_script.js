@@ -359,14 +359,30 @@ function readSessions(ss) {
   for (var i = 1; i < values.length; i++) {
     var r = values[i];
     if (!r[0]) continue;
+    var durSec = Number(r[5] || 0);
+    var rawHms = r[6];
+    var cleanHms = "00:00:00";
+    if (rawHms instanceof Date) {
+      cleanHms = Utilities.formatDate(rawHms, "GMT", "HH:mm:ss");
+    } else {
+      var sStr = String(rawHms || "").trim();
+      if (sStr.indexOf("1899") !== -1 || sStr.indexOf("GMT") !== -1 || sStr.length > 10) {
+        var h = Math.floor(durSec / 3600);
+        var m = Math.floor((durSec % 3600) / 60);
+        var s = durSec % 60;
+        cleanHms = (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+      } else {
+        cleanHms = sStr || "00:00:00";
+      }
+    }
     result.push({
       id: String(r[0]).trim(),
       student_id: String(r[1] || "").trim(),
       data: String(r[2] || "").trim(),
       entrada: String(r[3] || "").trim(),
       sortida: r[4] ? String(r[4]).trim() : null,
-      durada_segons: Number(r[5] || 0),
-      format_hms: String(r[6] || "00:00:00").trim(),
+      durada_segons: durSec,
+      format_hms: cleanHms,
       tipus: String(r[7] || "qr").trim(),
       estat: String(r[8] || "oberta").trim(),
       notes: String(r[9] || "").trim()

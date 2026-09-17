@@ -937,6 +937,13 @@ def hydrate_from_google_sheets(target_url=None):
             for s in sessions:
                 if not s.get('id') or not s.get('student_id'):
                     continue
+                dur_sec = int(s.get('durada_segons', 0))
+                raw_hms = str(s.get('format_hms', '')).strip()
+                if '1899' in raw_hms or 'GMT' in raw_hms or len(raw_hms) > 10:
+                    clean_hms = format_hms(dur_sec)
+                else:
+                    clean_hms = raw_hms or format_hms(dur_sec)
+
                 cursor.execute('''
                     INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -953,7 +960,7 @@ def hydrate_from_google_sheets(target_url=None):
                 ''', (
                     s['id'], s['student_id'], s.get('data', ''),
                     s.get('entrada', ''), s.get('sortida'),
-                    int(s.get('durada_segons', 0)), s.get('format_hms', '00:00:00'),
+                    dur_sec, clean_hms,
                     s.get('tipus', 'qr'), s.get('estat', 'oberta'),
                     s.get('notes', '')
                 ))
@@ -2878,6 +2885,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     balance = get_student_balance(real_id)
 
+                    for s in sessions:
+                        dur_sec = s.get('durada_segons') or 0
+                        fh = str(s.get('format_hms') or '').strip()
+                        if '1899' in fh or 'GMT' in fh or len(fh) > 10:
+                            s['format_hms'] = format_hms(dur_sec)
+
                 self.send_json({
                     'ok': True,
                     'alumne': student,
@@ -2910,6 +2923,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     query += ' ORDER BY s.entrada DESC'
                     cursor.execute(query, q_args)
                     rows = [row_to_dict(r) for r in cursor.fetchall()]
+                    for r in rows:
+                        dur_sec = r.get('durada_segons') or 0
+                        fh = str(r.get('format_hms') or '').strip()
+                        if '1899' in fh or 'GMT' in fh or len(fh) > 10:
+                            r['format_hms'] = format_hms(dur_sec)
                 self.send_json({'ok': True, 'data': rows})
                 return
 
