@@ -501,10 +501,10 @@ function renderInlineStudentReserves(reserves) {
   }
 
   reserves.forEach(r => {
-    const isCancelada = r.estat === 'cancel·lada';
+    const isCancelada = !!(r.estat && r.estat.toLowerCase().startsWith('cancel'));
     let estatBadge = '<span class="badge badge-success">Confirmada</span>';
     if (isCancelada) estatBadge = '<span class="badge badge-danger">Cancel·lada</span>';
-    else if (r.estat === 'pendent') estatBadge = '<span class="badge badge-warning">Pendent</span>';
+    else if (r.estat && r.estat.toLowerCase().startsWith('pendent')) estatBadge = '<span class="badge badge-warning">Pendent</span>';
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -2654,7 +2654,7 @@ async function renderAdminCalendar() {
     adminMonthReservesMap = {};
     if (Array.isArray(allRes)) {
       allRes.forEach(r => {
-        if (r.estat !== 'cancel·lada') {
+        if (!r.estat || !r.estat.toLowerCase().startsWith('cancel')) {
           if (!adminMonthReservesMap[r.data]) adminMonthReservesMap[r.data] = [];
           adminMonthReservesMap[r.data].push(r);
         }
@@ -2947,7 +2947,7 @@ async function renderAdminDayAppointments(dateStr) {
     reserves = [];
   }
 
-  const activeReserves = reserves.filter(r => r.estat !== 'cancel·lada');
+  const activeReserves = reserves.filter(r => !r.estat || !r.estat.toLowerCase().startsWith('cancel'));
   if (countDisplay) {
     if (activeReserves.length > 0) {
       const actBreakdown = {};
@@ -2995,7 +2995,7 @@ async function renderAdminDayAppointments(dateStr) {
   // Renderitzar files amb checkbox "Visited"
   tableBody.innerHTML = reserves.map((r, idx) => {
     const isVisited = r.estat === 'assistit';
-    const isCancelled = r.estat === 'cancel·lada';
+    const isCancelled = !!(r.estat && r.estat.toLowerCase().startsWith('cancel'));
     const clientNom = `${r.nom || ''} ${r.cognoms || ''}`.trim() || r.student_nom || r.student_id || 'Client sense nom';
     const slotDesc = (r.hora_inici && r.hora_fi) ? `${r.hora_inici} - ${r.hora_fi}` : (r.franja_id || '');
 
@@ -3026,7 +3026,16 @@ async function renderAdminDayAppointments(dateStr) {
     const placesBadge = `<span class="badge badge-neutral" style="font-size: 11px; padding: 2px 6px;">${r.places || 1} pl.</span>`;
     const isValRegal = r.val_regal === 1 || (r.notes && r.notes.includes('VAL REGAL'));
     const valRegalBadge = isValRegal ? `<span class="badge" style="background: #FDE8E8; color: #831D1D; border: 1px solid #F8B4B4; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">Val regal (${actNom})</span>` : '';
-    const isRecurrent = !!r.recurrent_id;
+    let recId = r.recurrent_id;
+    if (!recId && r.notes && r.notes.includes('Recurrent')) {
+      if (r.id && r.id.startsWith('RES-')) {
+        const parts = r.id.split('-');
+        if (parts.length >= 4) {
+          recId = parts.slice(0, 3).join('-');
+        }
+      }
+    }
+    const isRecurrent = !!(r.recurrent_id || recId || (r.notes && r.notes.includes('Recurrent')));
     const recurrentBadge = isRecurrent ? `<span class="badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;" title="Sèrie de reserves periòdiques">Recurrent</span>` : '';
 
     const placesNum = parseInt(r.places, 10) || 1;
@@ -3088,7 +3097,7 @@ async function renderAdminDayAppointments(dateStr) {
               </button>
             ` : ''}
             ${!isCancelled && isRecurrent ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-serie" data-recurrent-id="${r.recurrent_id}" data-date="${dateStr}" style="padding: 3px 6px; font-size: 11.5px; color: #DC2626; border-color: #FCA5A5; background: #FEF2F2;" title="Cancel·lar totes les sessions futures d'aquesta sèrie">
+              <button type="button" class="btn btn-outline btn-sm btn-app-cancel-serie" data-recurrent-id="${recId || r.recurrent_id || ''}" data-res-id="${r.id}" data-date="${dateStr}" style="padding: 3px 6px; font-size: 11.5px; color: #DC2626; border-color: #FCA5A5; background: #FEF2F2;" title="Cancel·lar totes les sessions futures d'aquesta sèrie">
                 Cancel·lar Sèrie
               </button>
             ` : ''}
@@ -3174,7 +3183,7 @@ async function renderAdminDayAppointments(dateStr) {
   // Delegar cancel·lació de sèrie recurrent sencera
   tableBody.querySelectorAll('.btn-app-cancel-serie').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const recId = btn.dataset.recurrentId;
+      const recId = btn.dataset.recurrentId || btn.dataset.resId;
       const fromDate = btn.dataset.date;
       if (confirm(`Segur que vols cancel·lar totes les sessions pendents d'aquesta sèrie recurrent a partir del dia ${fromDate}? S'alliberaran totes les places.`)) {
         try {

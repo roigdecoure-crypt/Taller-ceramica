@@ -722,6 +722,22 @@ def init_db():
         cursor.execute('UPDATE configuracio SET valor = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec" WHERE clau = "google_sheets_url" AND (valor = "" OR valor IS NULL OR valor LIKE "%AKfycbzfXuSg%")')
         cursor.execute("DELETE FROM reserves WHERE data LIKE '%GMT%' OR data LIKE '%Central European%' OR data LIKE '%hora de verano%' OR id = 'TEST-DEBUG-1'")
 
+        # Normalització d'estats de reserves cancel·lades i lligam de sèries recurrents
+        try:
+            cursor.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE LOWER(estat) LIKE 'cancel%' OR LOWER(estat) LIKE '%lada'")
+        except Exception:
+            pass
+        try:
+            cursor.execute("SELECT id, notes FROM reserves WHERE (recurrent_id IS NULL OR recurrent_id = '') AND notes LIKE '%[Recurrent %'")
+            for r_row in cursor.fetchall():
+                r_id = r_row['id']
+                parts = r_id.split('-')
+                if len(parts) >= 4:
+                    rec_id = '-'.join(parts[:3])
+                    cursor.execute("UPDATE reserves SET recurrent_id = ? WHERE id = ?", (rec_id, r_id))
+        except Exception:
+            pass
+
         # Assegurar persistÃ¨ncia de l'alumne 231F (Ferran Picornell) de l'export oficial
         cursor.execute('''
             INSERT OR IGNORE INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
@@ -4906,44 +4922,58 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             elif path == '/api/reserves/cancel-serie':
                 recurrent_id = (data.get('recurrent_id') or '').strip()
+                res_id = (data.get('id') or data.get('reserva_id') or '').strip()
                 from_date = (data.get('from_date') or data.get('a_partir_de_data') or '').strip()
-                if not recurrent_id:
-                    self.send_json({'ok': False, 'error': "Cal indicar l'identificador de la sÃ¨rie recurrent (recurrent_id)"}, 400)
+                target_key = recurrent_id or res_id
+                if not target_key:
+                    self.send_json({'ok': False, 'error': "Cal indicar l'identificador de la sèrie recurrent (recurrent_id)"}, 400)
                     return
 
                 with get_db() as conn:
                     cursor = conn.cursor()
+                    cursor.execute("SELECT recurrent_id FROM reserves WHERE id = ? LIMIT 1", (target_key,))
+                    r_found = cursor.fetchone()
+                    effective_rec_id = (r_found['recurrent_id'] if r_found and r_found['recurrent_id'] else target_key)
+
+                    query_where = "(recurrent_id = ? OR id LIKE ? || '%')"
+                    query_params = [effective_rec_id, effective_rec_id]
                     if from_date:
-                        cursor.execute("SELECT * FROM reserves WHERE recurrent_id = ? AND data >= ? AND estat != 'cancelÂ·lada'", (recurrent_id, from_date))
-                    else:
-                        cursor.execute("SELECT * FROM reserves WHERE recurrent_id = ? AND estat != 'cancelÂ·lada'", (recurrent_id,))
+                        query_where += " AND data >= ?"
+                        query_params.append(from_date)
+                    query_where += " AND LOWER(estat) NOT LIKE 'cancel%' AND LOWER(estat) != 'eliminada'"
+
+                    cursor.execute(f"SELECT * FROM reserves WHERE {query_where}", query_params)
                     rows = [row_to_dict(r) for r in cursor.fetchall()]
                     if not rows:
-                        self.send_json({'ok': False, 'error': "No s'ha trobat cap reserva activa per a aquesta sÃ¨rie"}, 404)
+                        self.send_json({'ok': False, 'error': "No s'ha trobat cap reserva activa per a aquesta sèrie"}, 404)
                         return
 
+                    update_where = "(recurrent_id = ? OR id LIKE ? || '%')"
+                    update_params = [effective_rec_id, effective_rec_id]
                     if from_date:
-                        cursor.execute("UPDATE reserves SET estat = 'cancelÂ·lada' WHERE recurrent_id = ? AND data >= ?", (recurrent_id, from_date))
-                    else:
-                        cursor.execute("UPDATE reserves SET estat = 'cancelÂ·lada' WHERE recurrent_id = ?", (recurrent_id,))
+                        update_where += " AND data >= ?"
+                        update_params.append(from_date)
+                    update_where += " AND LOWER(estat) NOT LIKE 'cancel%' AND LOWER(estat) != 'eliminada'"
+
+                    cursor.execute(f"UPDATE reserves SET estat = 'cancel·lada' WHERE {update_where}", update_params)
                     conn.commit()
 
                 for r in rows:
-                    r['estat'] = 'cancelÂ·lada'
+                    r['estat'] = 'cancel·lada'
                     sync_to_google_sheets_async('cancel_reserva', r)
 
                 self.send_json({
                     'ok': True,
-                    'message': f"S'han cancelÂ·lat {len(rows)} reserves de la sÃ¨rie recurrent i s'han alliberat les places.",
+                    'message': f"S'han cancel·lat {len(rows)} reserves de la sèrie recurrent i s'han alliberat les places.",
                     'total_cancelades': len(rows),
-                    'recurrent_id': recurrent_id
+                    'recurrent_id': effective_rec_id
                 })
                 return
 
             elif path == '/api/reserves/cancel':
                 res_id = (data.get('id') or '').strip()
                 if not res_id:
-                    self.send_json({'ok': False, 'error': 'Cal indicar l\'ID de la reserva'}, 400)
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de la reserva"}, 400)
                     return
 
                 with get_db() as conn:
@@ -4954,10 +4984,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_json({'ok': False, 'error': 'Reserva no trobada'}, 404)
                         return
 
-                    cursor.execute("UPDATE reserves SET estat = 'cancelÂ·lada' WHERE id = ?", (res_id,))
+                    cursor.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE id = ?", (res_id,))
                     conn.commit()
                     reserva_dict = row_to_dict(row)
-                    reserva_dict['estat'] = 'cancelÂ·lada'
+                    reserva_dict['estat'] = 'cancel·lada'
 
                     cal_name = 'reserves'
                     cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
@@ -4966,12 +4996,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         cal_name = c_row['valor']
                     reserva_dict['calendar_name'] = cal_name
 
-                # Sincronitzar cancelÂ·laciÃ³ a Google Sheets
+                # Sincronitzar cancel·lació a Google Sheets
                 sync_to_google_sheets_async('cancel_reserva', reserva_dict)
 
                 self.send_json({
                     'ok': True,
-                    'message': 'Reserva cancelÂ·lada correctament i plaÃ§a alliberada.',
+                    'message': 'Reserva cancel·lada correctament i plaça alliberada.',
                     'reserva': reserva_dict
                 })
                 return
@@ -5212,7 +5242,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('''
                         SELECT COUNT(*) as cnt FROM reserves 
                         WHERE (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) 
-                        AND LOWER(estat) NOT IN ('cancelÂ·lada', 'cancelÂ·lat', 'eliminada')
+                        AND LOWER(estat) NOT LIKE 'cancel%' AND LOWER(estat) != 'eliminada'
                     ''', (act_id, existing['nom'].lower()))
                     res_cnt = cursor.fetchone()['cnt']
 
@@ -5570,7 +5600,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('''
                         SELECT COUNT(*) as cnt FROM reserves 
                         WHERE (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) 
-                        AND LOWER(estat) NOT IN ('cancelÂ·lada', 'cancelÂ·lat', 'eliminada')
+                        AND LOWER(estat) NOT LIKE 'cancel%' AND LOWER(estat) != 'eliminada'
                     ''', (act_id, existing['nom'].lower()))
                     res_cnt = cursor.fetchone()['cnt']
 
