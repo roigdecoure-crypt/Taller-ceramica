@@ -233,6 +233,42 @@ const Store = {
     return { ok: true, ...details };
   },
 
+  async sollicitarRecuperacioAlumne(identifier) {
+    if (this.mode === 'api' || this.apiBase) {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/sollicitar-recuperacio`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: String(identifier || '').trim() })
+        });
+        return await res.json();
+      } catch (err) {
+        return { ok: false, error: 'Error de connexió: ' + err.message };
+      }
+    }
+    return { ok: false, error: "La recuperació autònoma per WhatsApp requereix connexió al servidor." };
+  },
+
+  async verificarOtpIRestablir(studentId, otp, newPassword) {
+    if (this.mode === 'api' || this.apiBase) {
+      try {
+        const res = await fetch(`${this.apiBase}/api/alumnes/verificar-otp-i-restablir`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            student_id: studentId,
+            otp: String(otp || '').trim(),
+            new_password: String(newPassword || '').trim()
+          })
+        });
+        return await res.json();
+      } catch (err) {
+        return { ok: false, error: 'Error de connexió: ' + err.message };
+      }
+    }
+    return { ok: false, error: "La verificació de codi requereix connexió al servidor." };
+  },
+
   async recuperarPinAlumne(identifier, contact) {
     if (this.mode === 'api') {
       try {
@@ -802,16 +838,27 @@ const Store = {
     return data.config || {};
   },
 
+  getAdminAuthHeaders() {
+    const token = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_token')) || 
+                  (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_token')) || '';
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  },
+
   async saveConfig(cfg) {
     if (this.mode === 'api') {
       try {
         const res = await fetch(`${this.apiBase}/api/config`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(cfg)
         });
         const json = await res.json();
-        if (json.ok) return json;
+        if (res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         this.mode = 'local';
       }
@@ -831,7 +878,18 @@ const Store = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pin: cleanPin })
         });
-        return await res.json();
+        const data = await res.json();
+        if (data && data.ok) {
+          try {
+            localStorage.setItem('roig_admin_auth', '1');
+            localStorage.setItem('roig_admin_role', data.role || 'owner');
+            if (data.token) localStorage.setItem('roig_admin_token', data.token);
+            sessionStorage.setItem('roig_admin_auth', '1');
+            sessionStorage.setItem('roig_admin_role', data.role || 'owner');
+            if (data.token) sessionStorage.setItem('roig_admin_token', data.token);
+          } catch(e) {}
+        }
+        return data;
       } catch (err) {
         console.warn('Error en authAdmin API:', err);
       }
@@ -839,9 +897,33 @@ const Store = {
     const data = this._getLocalData();
     const currentStoredPin = (data.config && data.config.admin_pin) || localStorage.getItem('roig_admin_pin') || '1234';
     if (cleanPin === String(currentStoredPin).trim()) {
-      return { ok: true, message: 'Autenticació correcta' };
+      try {
+        localStorage.setItem('roig_admin_auth', '1');
+        localStorage.setItem('roig_admin_role', 'owner');
+      } catch(e) {}
+      return { ok: true, role: 'owner', message: 'Autenticació correcta' };
     }
     return { ok: false, error: 'PIN incorrecte' };
+  },
+
+  async changeAdminCredentials(payload) {
+    if (this.mode === 'api' || this.apiBase) {
+      try {
+        const token = localStorage.getItem('roig_admin_token') || sessionStorage.getItem('roig_admin_token') || '';
+        const res = await fetch(`${this.apiBase}/api/admin/change-credentials`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (err) {
+        return { ok: false, error: 'Error de connexió: ' + err.message };
+      }
+    }
+    return { ok: true, message: 'Credencials actualitzades localment' };
   },
 
     async changeAdminPin(oldPin, newPin) {
@@ -1746,10 +1828,12 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/festius`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(festiuData)
         });
-        return await res.json();
+        const json = await res.json();
+        if (res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         console.warn('Error creant festiu a l\'API, intentant localment:', e);
       }
@@ -1774,10 +1858,12 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/festius/delete`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify({ id })
         });
-        return await res.json();
+        const json = await res.json();
+        if (res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         console.warn('Error eliminant festiu a l\'API, intentant localment:', e);
       }

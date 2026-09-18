@@ -987,74 +987,57 @@
 
         <div id="recovery-error-msg" style="display: none; background: #FDEDEC; border: 1px solid #F5C6CB; color: #721C24; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px;"></div>
 
-        <!-- Formulari de verificació -->
-        <form id="form-recovery-verify">
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label for="recovery-identifier" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
-              Nom complet o Codi d'Alumne
+        <!-- Pas 1: Sol·licitar codi per WhatsApp -->
+        <form id="form-recovery-step1">
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="recovery-identifier" style="display: block; font-size: 12.5px; font-weight: 700; color: var(--color-dark); margin-bottom: 5px;">
+              Telèfon mòbil, correu electrònic o nom d'alumne
             </label>
-            <input type="text" id="recovery-identifier" class="form-control" placeholder="Ex: Ferran Picornell o 231F" required autocomplete="off">
+            <input type="text" id="recovery-identifier" class="form-control" placeholder="Ex: 683633880 o Ferran Picornell" required autocomplete="off" style="font-size: 14px; padding: 10px 12px; border-radius: 8px;">
           </div>
-
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label for="recovery-contact" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
-              Telèfon mòbil o Correu electrònic
-            </label>
-            <input type="text" id="recovery-contact" class="form-control" placeholder="Ex: 683633880 o correu@exemple.cat" required autocomplete="off">
-          </div>
-
-          <button type="submit" id="btn-submit-recovery" class="btn btn-primary btn-block" style="font-weight: 700; padding: 11px;">
-            Verificar Identitat i Recuperar PIN
+          <button type="submit" id="btn-submit-send-otp" class="btn btn-primary btn-block" style="font-weight: 700; padding: 12px; font-size: 14px; border-radius: 8px;">
+            Enviar Codi de Seguretat per WhatsApp &rarr;
           </button>
         </form>
 
-        <!-- Resultat de recuperació (apareix en verificar amb èxit) -->
-        <div id="recovery-result-box" style="display: none; margin-top: 16px; background: #EEF5F1; border: 1px solid #C3E6CB; border-radius: 10px; padding: 16px;">
-          <div style="font-size: 13px; font-weight: 700; color: #155724; margin-bottom: 6px;" id="recovery-result-greeting">
-            Identitat verificada correctament
-          </div>
-          <div style="font-size: 13px; color: var(--color-dark); margin-bottom: 12px;">
-            La teva contrasenya o PIN actual d'accés és:
-          </div>
-          <div style="background: #FFF; border: 2px dashed #5E7E6F; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 14px;">
-            <span style="font-size: 28px; font-weight: 800; letter-spacing: 4px; color: var(--brand-primary); font-family: monospace;" id="recovery-result-pin">----</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button type="button" id="btn-recovery-login-now" class="btn btn-primary btn-block" style="font-weight: 700;">
-              Accedir ara amb aquesta contrasenya
-            </button>
-            <button type="button" id="btn-recovery-toggle-change" class="btn btn-outline btn-block" style="font-size: 12px; font-weight: 600;">
-              Vull establir una contrasenya nova diferent
-            </button>
-          </div>
-
-          <!-- Formulari per canviar la contrasenya directament -->
-          <div id="recovery-change-box" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid #C3E6CB;">
-            <div class="form-group" style="margin-bottom: 10px;">
-              <label for="recovery-new-pin-input" style="font-size: 12px; font-weight: 700; color: var(--color-dark); display: block; margin-bottom: 4px;">
-                Nova contrasenya (mínim 4 caràcters)
-              </label>
-              <input type="password" id="recovery-new-pin-input" class="form-control" placeholder="Escriu la nova contrasenya" minlength="4">
+        <!-- Pas 2: Introduir codi OTP i nova contrasenya -->
+        <form id="form-recovery-step2" style="display: none; margin-top: 14px;">
+          <div style="background: #EEF5F1; border: 1px solid #C3E6CB; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+            <div style="font-size: 13px; font-weight: 700; color: #155724; margin-bottom: 4px;" id="recovery-otp-phone-msg">
+              Codi enviat al teu WhatsApp!
             </div>
-            <button type="button" id="btn-recovery-save-new-pin" class="btn btn-secondary btn-block" style="font-weight: 700;">
-              Desar Nova Contrasenya i Accedir
+            <div style="font-size: 12px; color: #155724; line-height: 1.4;">
+              Revisa el teu WhatsApp, copia el codi de 6 dígits i defineix la teva nova contrasenya.
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="recovery-otp-code" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
+              Codi de 6 dígits rebut per WhatsApp
+            </label>
+            <input type="text" id="recovery-otp-code" class="form-control" placeholder="123456" maxlength="6" required style="font-size: 22px; text-align: center; letter-spacing: 6px; font-family: monospace; font-weight: 700;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="recovery-new-password" style="display: block; font-size: 12px; font-weight: 700; color: var(--color-dark); margin-bottom: 4px;">
+              Nova contrasenya (mínim 4 caràcters)
+            </label>
+            <input type="password" id="recovery-new-password" class="form-control" placeholder="Escriu la teva nova contrasenya" minlength="4" required style="font-size: 14px; padding: 10px 12px; border-radius: 8px;">
+          </div>
+
+          <button type="submit" id="btn-submit-verify-otp" class="btn btn-primary btn-block" style="font-weight: 700; padding: 12px; font-size: 14px; border-radius: 8px;">
+            Confirmar i Entrar al Portal &rarr;
+          </button>
+          <div style="text-align: center; margin-top: 10px;">
+            <button type="button" id="btn-recovery-back-step1" style="background: none; border: none; font-size: 12px; color: var(--color-muted); text-decoration: underline; cursor: pointer;">
+              &larr; No he rebut el codi o vull canviar el número
             </button>
           </div>
-        </div>
+        </form>
 
-        <!-- Opcions alternatives de recuperació -->
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border);">
-          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--color-muted); margin-bottom: 10px; letter-spacing: 0.5px;">
-            Altres formes de recuperació
-          </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <a id="link-recovery-whatsapp" href="https://wa.me/34683633880?text=Hola,%20s%C3%B3c%20alumne/a%20del%20taller%20i%20necessito%20ajuda%20per%20recuperar%20el%20meu%20PIN%20d'acc%C3%A9s." target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-block" style="text-align: center; text-decoration: none; font-size: 13px; font-weight: 600; color: #155724; border-color: #28a745;">
-              Demanar PIN per WhatsApp al Taller (+34 683 63 38 80)
-            </a>
-            <div style="font-size: 12px; color: var(--color-muted); text-align: center; margin-top: 4px;">
-              També pots demanar el teu PIN personalment al taller o trucant al 683 63 38 80.
-            </div>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); text-align: center;">
+          <div style="font-size: 12px; color: var(--color-muted);">
+            Tens algun problema tècnic? Contacta'ns al <strong>683 63 38 80</strong> o al taller.
           </div>
         </div>
 
@@ -1168,9 +1151,9 @@
   <script src="js/sound.js?v=11.5.4"></script>
   <script src="js/qr-engine.js?v=11.5.4"></script>
   <script src="js/api-config.js?v=11.5.4"></script>
-  <script src="js/store.js?v=11.5.4"></script>
+  <script src="js/store.js?v=12.5.0"></script>
   <script src="js/reserves-calendar.js?v=11.5.4"></script>
-  <script src="js/alumne.js?v=11.5.4"></script>
+  <script src="js/alumne.js?v=12.5.0"></script>
 </body>
 </html>
 

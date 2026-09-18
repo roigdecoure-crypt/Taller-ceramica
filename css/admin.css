@@ -2014,3 +2014,23 @@
 .table tbody tr:last-child td {
   border-bottom: none !important;
 }
+
+/* ==========================================================================
+   ROLS D'ACCÉS (PROPIETARI VS TREBALLADOR / EQUIP)
+   ========================================================================== */
+body.role-staff .sidebar-config-item,
+body.role-staff .staff-hidden {
+  display: none !important;
+}
+
+#badge-admin-role.badge-owner {
+  background: #FAF7F5;
+  color: #831D1D;
+  border: 1px solid #EAD8CE;
+}
+
+#badge-admin-role.badge-staff {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}

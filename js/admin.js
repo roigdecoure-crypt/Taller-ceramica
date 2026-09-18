@@ -56,6 +56,7 @@ async function initAdminApp() {
 
   const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
   if (isAuth) {
+    if (typeof applyAdminRoleUI === 'function') applyAdminRoleUI();
     await loadAdminDashboardData();
   }
 }
@@ -1749,40 +1750,69 @@ function setupEventListeners() {
   // Refrescar llista de snapshots
   document.getElementById('btn-refresh-snapshots')?.addEventListener('click', loadSnapshotsList);
 
-  // Canviar PIN d'Administració
-  document.getElementById('btn-cfg-change-pin')?.addEventListener('click', async () => {
+  // Canviar Credencials de Seguretat (Propietari / Treballador)
+  const btnChangeCreds = document.getElementById('btn-cfg-change-credentials') || document.getElementById('btn-cfg-change-pin');
+  btnChangeCreds?.addEventListener('click', async () => {
     const curInput = document.getElementById('cfg-pin-current');
-    const newInput = document.getElementById('cfg-pin-new');
+    const ownerInput = document.getElementById('cfg-owner-password-new') || document.getElementById('cfg-pin-new');
+    const staffInput = document.getElementById('cfg-staff-password-new');
     const statusEl = document.getElementById('cfg-pin-status');
-    const oldPin = curInput.value.trim();
-    const newPin = newInput.value.trim();
 
-    if (!oldPin || !newPin) {
-      statusEl.style.color = '#831D1D';
-      statusEl.textContent = 'Omple tant el PIN actual com el nou.';
-      statusEl.style.display = 'block';
+    const current_password = curInput ? curInput.value.trim() : '';
+    const owner_password = ownerInput ? ownerInput.value.trim() : '';
+    const staff_password = staffInput ? staffInput.value.trim() : '';
+
+    if (!current_password) {
+      if (statusEl) {
+        statusEl.style.color = '#831D1D';
+        statusEl.textContent = 'Indica la contrasenya actual del Propietari per confirmar els canvis.';
+        statusEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!owner_password && !staff_password) {
+      if (statusEl) {
+        statusEl.style.color = '#831D1D';
+        statusEl.textContent = 'Introdueix almenys una nova contrasenya (de Propietari o de Treballador).';
+        statusEl.style.display = 'block';
+      }
       return;
     }
 
     try {
-      statusEl.style.color = '#6B7280';
-      statusEl.textContent = 'Comprovant i canviant PIN...';
-      statusEl.style.display = 'block';
+      if (statusEl) {
+        statusEl.style.color = '#6B7280';
+        statusEl.textContent = 'Actualitzant claus de seguretat...';
+        statusEl.style.display = 'block';
+      }
 
-      const res = await Store.changeAdminPin(oldPin, newPin);
-      if (res.ok) {
-        statusEl.style.color = '#2E6F40';
-        statusEl.textContent = res.message || 'PIN canviat amb èxit!';
-        curInput.value = '';
-        newInput.value = '';
-        showToast('PIN d\'administració actualitzat!', 'success');
+      const res = await Store.changeAdminCredentials({
+        current_password,
+        owner_password,
+        staff_password
+      });
+
+      if (res && res.ok) {
+        if (statusEl) {
+          statusEl.style.color = '#2E6F40';
+          statusEl.textContent = res.message || 'Claus de seguretat actualitzades amb èxit!';
+        }
+        if (curInput) curInput.value = '';
+        if (ownerInput) ownerInput.value = '';
+        if (staffInput) staffInput.value = '';
+        showToast('Claus de seguretat del taller actualitzades!', 'success');
       } else {
-        statusEl.style.color = '#831D1D';
-        statusEl.textContent = res.error || 'Error canviant el PIN.';
+        if (statusEl) {
+          statusEl.style.color = '#831D1D';
+          statusEl.textContent = (res && res.error) || 'Error actualitzant les claus.';
+        }
       }
     } catch (err) {
-      statusEl.style.color = '#831D1D';
-      statusEl.textContent = 'Error: ' + err.message;
+      if (statusEl) {
+        statusEl.style.color = '#831D1D';
+        statusEl.textContent = 'Error: ' + err.message;
+      }
     }
   });
 
@@ -4532,7 +4562,29 @@ if (typeof window !== 'undefined') {
   window.loadSnapshotsList = loadSnapshotsList;
 }
 
-// --- AUTENTICACIÓ I PANELL DE CONTROL AMB PIN ---
+// --- GESTIÓ DE ROLS I UI D'ADMINISTRACIÓ ---
+function applyAdminRoleUI(role) {
+  const activeRole = role || (typeof localStorage !== 'undefined' ? localStorage.getItem('roig_admin_role') : null) || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('roig_admin_role') : null) || 'owner';
+  const badge = document.getElementById('badge-admin-role');
+  if (activeRole === 'staff') {
+    document.body.classList.add('role-staff');
+    document.body.classList.remove('role-owner');
+    if (badge) {
+      badge.textContent = 'Treballador (Equip)';
+      badge.className = 'badge-staff';
+    }
+  } else {
+    document.body.classList.add('role-owner');
+    document.body.classList.remove('role-staff');
+    if (badge) {
+      badge.textContent = 'Propietari';
+      badge.className = 'badge-owner';
+    }
+  }
+}
+window.applyAdminRoleUI = applyAdminRoleUI;
+
+// --- AUTENTICACIÓ I PANELL DE CONTROL AMB PIN / CONTRASENYA ---
 function initAdminAuth() {
   const lockScreen = document.getElementById('admin-lock-screen');
   const authForm = document.getElementById('form-admin-auth');
@@ -4553,6 +4605,7 @@ function initAdminAuth() {
 
   const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
   if (isAuth) {
+    applyAdminRoleUI();
     if (lockScreen) lockScreen.style.display = 'none';
   } else {
     if (lockScreen) lockScreen.style.display = 'flex';
@@ -4590,9 +4643,20 @@ function initAdminAuth() {
       }
       const data = await res.json();
       if (data.ok) {
-        try { localStorage.setItem('roig_admin_auth', '1'); } catch(e){}; try { sessionStorage.setItem('roig_admin_auth', '1'); } catch(e){};
+        const userRole = data.role || 'owner';
+        try { 
+          localStorage.setItem('roig_admin_auth', '1'); 
+          localStorage.setItem('roig_admin_role', userRole);
+          if (data.token) localStorage.setItem('roig_admin_token', data.token);
+        } catch(e){}; 
+        try { 
+          sessionStorage.setItem('roig_admin_auth', '1'); 
+          sessionStorage.setItem('roig_admin_role', userRole);
+          if (data.token) sessionStorage.setItem('roig_admin_token', data.token);
+        } catch(e){};
+        applyAdminRoleUI(userRole);
         if (lockScreen) lockScreen.style.display = 'none';
-        showToast("Sessió d'administrador iniciada", 'success');
+        showToast(userRole === 'staff' ? "Sessió iniciada com a Treballador (Equip)" : "Sessió d'administrador iniciada (Propietari)", 'success');
         try {
           await loadAdminDashboardData();
         } catch (dashErr) {
@@ -4600,7 +4664,7 @@ function initAdminAuth() {
         }
       } else {
         if (pinError) {
-          pinError.textContent = data.error || 'PIN incorrecte. (El PIN inicial per defecte és 1234)';
+          pinError.textContent = data.error || 'PIN o contrasenya incorrecta.';
           pinError.style.display = 'block';
         }
         if (pinInput) {
@@ -4612,7 +4676,15 @@ function initAdminAuth() {
       // Fallback per a mode local/offline si el backend no respon immediatament
       if (pin === '1234') {
         console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
-        try { localStorage.setItem('roig_admin_auth', '1'); } catch(e){}; try { sessionStorage.setItem('roig_admin_auth', '1'); } catch(e){};
+        try { 
+          localStorage.setItem('roig_admin_auth', '1'); 
+          localStorage.setItem('roig_admin_role', 'owner');
+        } catch(e){}; 
+        try { 
+          sessionStorage.setItem('roig_admin_auth', '1'); 
+          sessionStorage.setItem('roig_admin_role', 'owner');
+        } catch(e){};
+        applyAdminRoleUI('owner');
         if (lockScreen) lockScreen.style.display = 'none';
         showToast('Sessió iniciada en mode local/offline', 'info');
         try { await loadAdminDashboardData(); } catch (dashErr) {}
@@ -4638,7 +4710,16 @@ function initAdminAuth() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       if (confirm('Vols tancar la sessió d\'administració?')) {
-        try { localStorage.removeItem('roig_admin_auth'); } catch(e){}; try { sessionStorage.removeItem('roig_admin_auth'); } catch(e){};
+        try { 
+          localStorage.removeItem('roig_admin_auth'); 
+          localStorage.removeItem('roig_admin_role'); 
+          localStorage.removeItem('roig_admin_token'); 
+        } catch(e){}; 
+        try { 
+          sessionStorage.removeItem('roig_admin_auth'); 
+          sessionStorage.removeItem('roig_admin_role'); 
+          sessionStorage.removeItem('roig_admin_token'); 
+        } catch(e){};
         window.location.reload();
       }
     });

@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=12.4.0">
+  <link rel="stylesheet" href="css/admin.css?v=12.5.0">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <script>
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
@@ -196,21 +196,21 @@
 </head>
 <body class="admin-app-layout">
 
-  <!-- PANTALLA DE BLOQUEIG D'ADMINISTRACIÓ PER PIN -->
+  <!-- PANTALLA DE BLOQUEIG D'ADMINISTRACIÓ PER CLAU / PIN -->
   <div id="admin-lock-screen" style="position: fixed; inset: 0; background: #1A1817; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: #FFFFFF; border-radius: 20px; max-width: 380px; width: 100%; padding: 34px 26px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+    <div style="background: #FFFFFF; border-radius: 20px; max-width: 400px; width: 100%; padding: 36px 28px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
       <div style="font-family: var(--font-script, 'Buffalo', cursive); font-size: 40px; color: var(--color-primary, #831D1D); margin-bottom: 2px;">Roig de Coure</div>
-      <h2 style="font-size: 18px; font-weight: 800; color: #2C221E; margin-bottom: 6px;">Panell de Gestió</h2>
-      <p style="font-size: 13px; color: #8C827A; margin-bottom: 22px; line-height: 1.4;">Introdueix el PIN mestre per gestionar el taller.</p>
+      <h2 style="font-size: 18px; font-weight: 800; color: #2C221E; margin-bottom: 6px;">Panell d'Administració</h2>
+      <p style="font-size: 13px; color: #8C827A; margin-bottom: 20px; line-height: 1.4;">Introdueix la teva clau d'accés (Propietari o Treballador).</p>
       
       <form id="form-admin-auth" onsubmit="if(window.handleAdminAuthSubmit){window.handleAdminAuthSubmit(event);return false;}">
-        <div style="position: relative; margin-bottom: 6px;">
-          <input type="password" id="input-admin-pin" class="form-control" placeholder="PIN (ex: 1234)" autofocus style="font-size: 22px; text-align: center; letter-spacing: 6px; padding: 12px 50px 12px 12px; border-radius: 12px;" maxlength="12" required>
-          <button type="button" id="btn-toggle-admin-pin" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8C827A; font-size: 11px; font-weight: 600; padding: 6px;" title="Mostrar o amagar PIN">Veure</button>
+        <div style="position: relative; margin-bottom: 8px;">
+          <input type="password" id="input-admin-pin" class="form-control" placeholder="Contrasenya o PIN" autofocus style="font-size: 16px; text-align: center; letter-spacing: 2px; padding: 13px 50px 13px 14px; border-radius: 12px;" required autocomplete="current-password">
+          <button type="button" id="btn-toggle-admin-pin" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8C827A; font-size: 11px; font-weight: 600; padding: 6px;" title="Mostrar o amagar clau">Veure</button>
         </div>
-        <div style="font-size: 11px; color: #8C827A; margin-bottom: 12px;">PIN mestre inicial per defecte: <strong>1234</strong></div>
-        <div id="admin-pin-error" style="color: #D32F2F; font-size: 13px; font-weight: 600; margin-bottom: 12px; display: none;">PIN incorrecte. Torna-ho a provar.</div>
-        <button type="submit" class="btn btn-primary btn-block" id="btn-submit-admin-pin" style="padding: 13px; font-size: 15px; font-weight: 700; border-radius: 12px;">Desbloquejar Panell &rarr;</button>
+        <div style="font-size: 11px; color: #8C827A; margin-bottom: 14px; line-height: 1.4;">El panell assignarà automàticament els permisos segons la clau introduïda.</div>
+        <div id="admin-pin-error" style="color: #D32F2F; font-size: 13px; font-weight: 600; margin-bottom: 12px; display: none;">Clau incorrecta. Torna-ho a provar.</div>
+        <button type="submit" class="btn btn-primary btn-block" id="btn-submit-admin-pin" style="padding: 13px; font-size: 15px; font-weight: 700; border-radius: 12px;">Entrar al Panell &rarr;</button>
       </form>
       <div style="margin-top: 20px; border-top: 1px solid #EFEAE6; padding-top: 14px;">
         <a href="index.html" style="font-size: 12px; color: #8C827A; text-decoration: none;">&larr; Tornar a la pàgina d'inici</a>
@@ -319,11 +319,11 @@
         <span class="nav-text">Control Aforament</span>
       </li>
 
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Tallers & Configuració</div>
+      <div class="sidebar-divider sidebar-config-item" id="sidebar-divider-config"></div>
+      <div class="sidebar-section-label sidebar-config-item" id="sidebar-label-config">Tallers & Configuració</div>
 
-      <!-- CONFIGURACIÓ DE TALLERS I SISTEMA -->
-      <li class="sidebar-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
+      <!-- CONFIGURACIÓ DE TALLERS I SISTEMA (Només Propietari) -->
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
         <span class="nav-icon" style="color: #B45309;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -334,7 +334,7 @@
         </span>
         <span class="nav-text">Festius / Vacances</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
         <span class="nav-icon" style="color: #4F46E5;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -343,7 +343,7 @@
         </span>
         <span class="nav-text">Restriccions Tallers</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-tallers" title="Gestió de Tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-tallers" title="Gestió de Tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
         <span class="nav-icon" style="color: #059669;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
@@ -351,7 +351,7 @@
         </span>
         <span class="nav-text">Gestió de Tallers</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
@@ -363,7 +363,7 @@
         </span>
         <span class="nav-text">Disseny & Marca</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-config" title="Configuració" onclick="triggerOpenModal('modal-config-backdrop', 'openConfigModal');" style="cursor: pointer;">
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-config" title="Configuració" onclick="triggerOpenModal('modal-config-backdrop', 'openConfigModal');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
@@ -372,7 +372,7 @@
         </span>
         <span class="nav-text">Configuració</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
+      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
@@ -473,8 +473,9 @@
 
     <!-- Capçalera superior: Títol i Botons d'Acció (Nova Reserva i Nou Alumne) -->
     <header class="admin-top-bar">
-      <div class="top-bar-left">
+      <div class="top-bar-left" style="display: flex; align-items: center; gap: 14px;">
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
+        <span id="badge-admin-role" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #FAF7F5; color: #831D1D; border: 1px solid #EAD8CE; letter-spacing: 0.5px; text-transform: uppercase;">Propietari</span>
       </div>
       <div class="top-bar-actions notranslate" translate="no">
         <button type="button" class="btn-top-nova-reserva" id="btn-top-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" title="Nova Reserva" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; background: #5E7E6F; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(94,126,111,0.25); transition: all 0.15s ease;">
@@ -1685,24 +1686,41 @@
           </div>
         </div>
 
-        <!-- Seguretat i PIN d'Administració -->
-        <div style="background: #FDF8F5; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid #EAD8CE; margin-bottom: 16px;">
-          <div style="font-size: 13px; font-weight: 700; color: var(--color-primary); margin-bottom: 4px;">Seguretat &bull; PIN d'Accés d'Administració</div>
-          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 10px;">Modifica el codi PIN que protegeix l'entrada al panell de gestió.</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: flex-end;">
-            <div>
-              <label style="font-size: 11px; display: block; margin-bottom: 4px;">PIN actual</label>
-              <input type="password" id="cfg-pin-current" class="form-control" placeholder="PIN actual" style="font-size: 13px;">
+        <!-- Seguretat i Rols d'Accés (Propietari i Treballador) -->
+        <div style="background: #FDF8F5; padding: 18px 20px; border-radius: var(--radius-sm); border: 1px solid #EAD8CE; margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: 700; color: var(--color-primary); margin-bottom: 4px;">Seguretat &bull; Rols i Claus d'Accés</div>
+          <p style="font-size: 12px; color: var(--color-muted); margin-bottom: 14px; line-height: 1.4;">
+            Defineix claus independents: el <strong>Propietari</strong> té accés a tot el taller, i el <strong>Treballador / Equip</strong> només pot veure reserves, calendari i assistència (sense accés a preus, dades ni configuracions).
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 700; color: #1F2937; margin-bottom: 8px;">1. Clau del Propietari (Accés Mestre Total)</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label style="font-size: 11px; display: block; margin-bottom: 4px; color: #4B5563;">Contrasenya actual del Propietari</label>
+                  <input type="password" id="cfg-pin-current" class="form-control" placeholder="Contrasenya actual" style="font-size: 13px;">
+                </div>
+                <div>
+                  <label style="font-size: 11px; display: block; margin-bottom: 4px; color: #4B5563;">Nova contrasenya del Propietari</label>
+                  <input type="password" id="cfg-owner-password-new" class="form-control" placeholder="Deixa en blanc si no la canvies" style="font-size: 13px;">
+                </div>
+              </div>
             </div>
-            <div>
-              <label style="font-size: 11px; display: block; margin-bottom: 4px;">Nou PIN</label>
-              <input type="password" id="cfg-pin-new" class="form-control" placeholder="Mínim 4 caràcters" style="font-size: 13px;">
+
+            <div style="background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px;">
+              <div style="font-size: 12px; font-weight: 700; color: #1F2937; margin-bottom: 8px;">2. Clau del Treballador (Accés Restringit a Reserves)</div>
+              <div>
+                <label style="font-size: 11px; display: block; margin-bottom: 4px; color: #4B5563;">Nova contrasenya o PIN del Treballador</label>
+                <input type="password" id="cfg-staff-password-new" class="form-control" placeholder="Ex: empleat2026 o PIN 4 dígits" style="font-size: 13px;">
+              </div>
             </div>
-            <div>
-              <button type="button" class="btn btn-sm btn-primary" id="btn-cfg-change-pin" style="padding: 9px 14px; white-space: nowrap;">Actualitzar PIN</button>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="button" class="btn btn-sm btn-primary" id="btn-cfg-change-credentials" style="padding: 10px 18px; font-weight: 700;">Actualitzar Claus de Seguretat</button>
             </div>
           </div>
-          <div id="cfg-pin-status" style="font-size: 12px; margin-top: 8px; font-weight: 600; display: none;"></div>
+          <div id="cfg-pin-status" style="font-size: 12.5px; margin-top: 10px; font-weight: 600; display: none;"></div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
@@ -2972,8 +2990,8 @@
   <script src="js/sound.js?v=11.4.2"></script>
   <script src="js/qr-engine.js?v=11.4.2"></script>
   <script src="js/api-config.js?v=11.4.2"></script>
-  <script src="js/store.js?v=12.3.0"></script>
+  <script src="js/store.js?v=12.5.0"></script>
   <script src="js/reserves-calendar.js?v=11.4.2"></script>
-  <script src="js/admin.js?v=12.4.0"></script>
+  <script src="js/admin.js?v=12.5.0"></script>
 </body>
 </html>

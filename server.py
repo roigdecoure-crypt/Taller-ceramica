@@ -11,6 +11,7 @@ import re
 import socket
 import sqlite3
 import hashlib
+import secrets
 import io
 import zipfile
 import sys
@@ -138,31 +139,157 @@ def create_manual_snapshot(prefix="ceramica_manual"):
         dest_conn.close()
     return filename
 
-def verify_admin_pin(input_pin):
-    """Verifica si el PIN facilitat coincideix amb el PIN configurat a la BD o env."""
-    if not input_pin:
+def hash_password(password, salt=None):
+    """Genera un hash criptogràfic segur PBKDF2-HMAC-SHA256 amb salt aleatori de 16 bytes."""
+    if not password:
+        return ""
+    if salt is None:
+        salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac('sha256', str(password).encode('utf-8'), salt.encode('utf-8'), 100000)
+    return f"pbkdf2:sha256:100000${salt}${key.hex()}"
+
+def verify_password(password, stored_hash):
+    """Comprova si una contrasenya coincideix amb el hash desat (o suport de compatibilitat per text pla)."""
+    if not password or not stored_hash:
         return False
-    clean_input = str(input_pin).strip()
-    configured_pin = None
-    # 1. Prioritat màxima: El PIN que l'administrador ha desat a la Base de Dades
+    pwd_str = str(password).strip()
+    stored_str = str(stored_hash).strip()
+    if not stored_str.startswith("pbkdf2:sha256:"):
+        # Fallback de compatibilitat per a contrasenyes/PINs antics en text pla
+        return pwd_str == stored_str
+    try:
+        parts = stored_str.split('$')
+        if len(parts) != 3:
+            return False
+        iterations = int(parts[0].split(':')[2])
+        salt = parts[1]
+        expected_hex = parts[2]
+        key = hashlib.pbkdf2_hmac('sha256', pwd_str.encode('utf-8'), salt.encode('utf-8'), iterations)
+        return secrets.compare_digest(key.hex(), expected_hex)
+    except Exception as e:
+        print(f"[Auth] Error verificant hash: {e}")
+        return False
+
+def create_auth_token(role='owner', hours=72):
+    """Crea un token de sessió segur i el desa a la taula auth_tokens."""
+    token = secrets.token_urlsafe(32)
+    now = get_now()
+    expires = now + timedelta(hours=hours)
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'admin_pin'")
+            cursor.execute(
+                "INSERT INTO auth_tokens (token, role, created_at, expires_at) VALUES (?, ?, ?, ?)",
+                (token, role, now.isoformat(), expires.isoformat())
+            )
+            # Neteja de tokens caducats
+            cursor.execute("DELETE FROM auth_tokens WHERE expires_at < ?", (now.isoformat(),))
+            conn.commit()
+    except Exception as e:
+        print(f"[Auth] Error desant token: {e}")
+    return token
+
+def get_token_role(token):
+    """Retorna el rol ('owner' o 'staff') associat al token si és vàlid i vigent."""
+    if not token:
+        return None
+    token_clean = str(token).strip()
+    if token_clean.lower().startswith("bearer "):
+        token_clean = token_clean[7:].strip()
+    now_iso = get_now().isoformat()
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT role FROM auth_tokens WHERE token = ? AND expires_at >= ?",
+                (token_clean, now_iso)
+            )
             row = cursor.fetchone()
-            if row and row['valor'] and str(row['valor']).strip():
-                configured_pin = str(row['valor']).strip()
-    except Exception:
-        pass
-    # 2. Variable d'entorn si no s'ha configurat cap PIN a la BD
-    if not configured_pin:
-        env_pin = os.environ.get('ADMIN_PIN')
-        if env_pin and env_pin.strip():
-            configured_pin = env_pin.strip()
-    # 3. Fallback per defecte
-    if not configured_pin:
-        configured_pin = '1234'
-    return clean_input == configured_pin
+            if row:
+                return row['role']
+    except Exception as e:
+        print(f"[Auth] Error verificant token: {e}")
+    return None
+
+def verify_admin_credentials(input_val):
+    """
+    Verifica la contrasenya / PIN contra Propietari o Treballador.
+    Retorna (True, 'owner'|'staff', token) si és correcte, o (False, None, None).
+    """
+    if not input_val:
+        return False, None, None
+    clean_val = str(input_val).strip()
+
+    owner_hash = None
+    staff_hash = None
+    legacy_pin = None
+
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT clau, valor FROM configuracio WHERE clau IN ('owner_password_hash', 'staff_password_hash', 'admin_pin')")
+            rows = {r['clau']: r['valor'] for r in cursor.fetchall()}
+            owner_hash = rows.get('owner_password_hash')
+            staff_hash = rows.get('staff_password_hash')
+            legacy_pin = rows.get('admin_pin')
+    except Exception as e:
+        print(f"[Auth] Error llegint hashes d'admin: {e}")
+
+    # 1. Comprovar si coincideix amb Propietari (Owner)
+    if owner_hash and verify_password(clean_val, owner_hash):
+        token = create_auth_token('owner', hours=72)
+        return True, 'owner', token
+
+    # Fallback per a legacy_pin o env ADMIN_PIN com a Propietari si no s'ha establert owner_hash
+    env_pin = os.environ.get('ADMIN_PIN') or legacy_pin or '1234'
+    if not owner_hash and clean_val == env_pin.strip():
+        # Inicialitzar automàticament owner_hash
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('owner_password_hash', ?)", (hash_password(clean_val),))
+                conn.commit()
+        except Exception:
+            pass
+        token = create_auth_token('owner', hours=72)
+        return True, 'owner', token
+
+    # 2. Comprovar si coincideix amb Treballador (Staff)
+    if staff_hash and verify_password(clean_val, staff_hash):
+        token = create_auth_token('staff', hours=24)
+        return True, 'staff', token
+
+    return False, None, None
+
+def verify_admin_pin(input_pin):
+    """Compatibilitat retroactiva: verifica si el PIN és vàlid per a qualsevol dels rols."""
+    valid, _, _ = verify_admin_credentials(input_pin)
+    return valid
+
+def get_request_role(handler, data=None):
+    """
+    Identifica el rol ('owner' o 'staff') de la petició analitzant capçaleres o cos.
+    """
+    auth_header = handler.headers.get('Authorization') or handler.headers.get('X-Admin-Token')
+    token = None
+    if auth_header:
+        if auth_header.lower().startswith('bearer '):
+            token = auth_header[7:].strip()
+        else:
+            token = auth_header.strip()
+    if not token and data and isinstance(data, dict):
+        token = data.get('admin_token') or data.get('token')
+    if token:
+        role = get_token_role(token)
+        if role:
+            return role
+
+    # Fallback si s'envia el PIN directament al payload
+    if data and isinstance(data, dict) and data.get('pin'):
+        valid, role, _ = verify_admin_credentials(data.get('pin'))
+        if valid:
+            return role
+    return None
 
 def calculate_age_from_birthdate(birthdate_str):
     """Calcula l'edat exacta en anys a partir de la data de naixement."""
@@ -678,6 +805,47 @@ def init_db():
             cursor.execute("ALTER TABLE reserves ADD COLUMN paga_senyal REAL DEFAULT 0.0")
         except Exception:
             pass
+
+        # Migració de seguretat: Taula de tokens de sessió d'administració (Propietari / Treballador)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS auth_tokens (
+                token TEXT PRIMARY KEY,
+                role TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL
+            )
+        ''')
+
+        # Migració de seguretat: Taula de sol·licituds de restabliment de contrasenya (OTP per WhatsApp)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS password_resets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                otp_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                used INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (student_id) REFERENCES alumnes (id)
+            )
+        ''')
+
+        # Assegurar columna password_hash a la taula alumnes
+        try:
+            cursor.execute("ALTER TABLE alumnes ADD COLUMN password_hash TEXT DEFAULT NULL")
+        except Exception:
+            pass
+
+        # Inicialitzar hashes de Propietari i Treballador si no existeixen
+        try:
+            cursor.execute("SELECT clau, valor FROM configuracio WHERE clau IN ('owner_password_hash', 'staff_password_hash', 'admin_pin')")
+            auth_rows = {r['clau']: r['valor'] for r in cursor.fetchall()}
+            if not auth_rows.get('owner_password_hash'):
+                init_owner_pin = auth_rows.get('admin_pin') or os.environ.get('ADMIN_PIN', '1234')
+                cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('owner_password_hash', ?)", (hash_password(init_owner_pin),))
+            if not auth_rows.get('staff_password_hash'):
+                cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('staff_password_hash', ?)", (hash_password('1234'),))
+        except Exception as e:
+            print(f"[DB] Error inicialitzant hashes d'admin: {e}")
 
         # Netejar icones existents a la taula articles
         cursor.execute("UPDATE articles SET icona = '' WHERE icona IS NOT NULL")
@@ -1428,6 +1596,63 @@ def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='
         print(f"[WhatsApp Meta API] Error: {e}")
         return {'ok': False, 'error': str(e)}
 
+def send_whatsapp_direct(to_phone, message_text):
+    """
+    Envia un missatge de text directe (com codis de recuperació OTP) per Meta WhatsApp Cloud API.
+    """
+    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    if not phone_clean:
+        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
+
+    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
+        phone_clean = '34' + phone_clean
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT clau, valor FROM configuracio WHERE clau IN ("whatsapp_enabled", "whatsapp_meta_phone_id", "whatsapp_meta_token")')
+        cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
+
+    if cfg.get('whatsapp_enabled') != '1':
+        return {'ok': False, 'error': 'WhatsApp Meta API no està activat a la configuració'}
+
+    phone_id = (cfg.get('whatsapp_meta_phone_id') or '').strip()
+    token = (cfg.get('whatsapp_meta_token') or '').strip()
+
+    if not phone_id or not token:
+        return {'ok': False, 'error': 'Cal configurar el Phone Number ID i el Token de Meta a l\'Administració'}
+
+    url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
+    payload = {
+        'messaging_product': 'whatsapp',
+        'recipient_type': 'individual',
+        'to': phone_clean,
+        'type': 'text',
+        'text': {
+            'body': message_text
+        }
+    }
+
+    try:
+        data_bytes = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(
+            url,
+            data=data_bytes,
+            headers={
+                'Authorization': f"Bearer {token}",
+                'Content-Type': 'application/json',
+                'User-Agent': 'TallerCeramicaBackend/1.0'
+            }
+        )
+        with execute_safe_request(req, timeout=15) as resp:
+            res_json = json.loads(resp.read().decode('utf-8'))
+            msg_id = ''
+            if 'messages' in res_json and len(res_json['messages']) > 0 and 'id' in res_json['messages'][0]:
+                msg_id = res_json['messages'][0]['id']
+            return {'ok': True, 'message_id': msg_id, 'meta_response': res_json, 'destinatari': phone_clean}
+    except Exception as e:
+        print(f"[WhatsApp Direct] Error: {e}")
+        return {'ok': False, 'error': str(e)}
+
 def send_whatsapp_meta_async(to_phone, template_name, parameters=None, language_code='ca', on_success_cb=None):
     def _worker():
         res = send_whatsapp_meta(to_phone, template_name, parameters, language_code)
@@ -2165,17 +2390,31 @@ def authenticate_student(cursor, identifier, pin):
     if not student:
         return None, "No s'ha trobat cap alumne amb aquest nom o identificador"
     
-    stored_pin = str(student['pin'] or '').strip()
+    stored_hash = student.get('password_hash')
+    stored_pin = str(student.get('pin') or '').strip()
     input_pin = str(pin or '').strip()
     
-    # Si l'alumne encara no tÃ© cap PIN definit, s'inicialitza amb el que introdueix
-    if not stored_pin and input_pin:
-        cursor.execute("UPDATE alumnes SET pin = ? WHERE id = ?", (input_pin, student['id']))
+    # Si l'alumne encara no té cap contrasenya ni PIN definit, s'inicialitza de forma segura
+    if not stored_hash and not stored_pin and input_pin:
+        new_hash = hash_password(input_pin)
+        cursor.execute("UPDATE alumnes SET password_hash = ?, pin = ? WHERE id = ?", (new_hash, input_pin, student['id']))
+        student['password_hash'] = new_hash
         student['pin'] = input_pin
-        stored_pin = input_pin
+        return student, None
         
-    if stored_pin != input_pin:
-        return None, "Contrasenya (PIN) incorrecta. Revisa el teu PIN o fes servir les opcions de recuperaciÃ³."
+    is_valid = False
+    if stored_hash:
+        is_valid = verify_password(input_pin, stored_hash)
+    elif stored_pin:
+        is_valid = (input_pin == stored_pin)
+        if is_valid:
+            # Migració automàtica i silenciosa al hash PBKDF2
+            new_hash = hash_password(input_pin)
+            cursor.execute("UPDATE alumnes SET password_hash = ? WHERE id = ?", (new_hash, student['id']))
+            student['password_hash'] = new_hash
+            
+    if not is_valid:
+        return None, "Contrasenya o PIN incorrecte. Pots fer servir 'He oblidat la contrasenya' per restablir-la per WhatsApp."
         
     return student, None
 
@@ -3183,7 +3422,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute('SELECT clau, valor FROM configuracio')
                     rows = cursor.fetchall()
-                    cfg = {r['clau']: r['valor'] for r in rows if r['clau'] != 'admin_pin'}
+                    cfg = {r['clau']: r['valor'] for r in rows if r['clau'] not in ('admin_pin', 'owner_password_hash', 'staff_password_hash')}
                 self.send_json({'ok': True, 'config': cfg})
                 return
 
@@ -3274,11 +3513,65 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         try:
             if path == '/api/admin/auth':
-                pin = str(data.get('pin', '')).strip()
-                if verify_admin_pin(pin):
-                    self.send_json({'ok': True, 'token': 'roig_admin_ok', 'message': 'AutenticaciÃ³ correcta'})
+                pin = str(data.get('pin', '') or data.get('password', '')).strip()
+                valid, role, token = verify_admin_credentials(pin)
+                if valid:
+                    role_label = 'Propietari' if role == 'owner' else 'Treballador (Equip)'
+                    self.send_json({
+                        'ok': True,
+                        'token': token,
+                        'role': role,
+                        'message': f"Sessió iniciada correctament com a {role_label}."
+                    })
                 else:
-                    self.send_json({'ok': False, 'error': 'PIN incorrecte'}, 401)
+                    self.send_json({'ok': False, 'error': 'Contrasenya o PIN incorrecte.'}, 401)
+                return
+
+            elif path == '/api/admin/change-credentials':
+                role = get_request_role(self, data)
+                current_pwd = str(data.get('current_password', '')).strip()
+                owner_pwd = str(data.get('owner_password', '')).strip()
+                staff_pwd = str(data.get('staff_password', '')).strip()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT clau, valor FROM configuracio WHERE clau IN ('owner_password_hash', 'admin_pin')")
+                    rows = {r['clau']: r['valor'] for r in cursor.fetchall()}
+                    owner_hash = rows.get('owner_password_hash')
+                    legacy_pin = rows.get('admin_pin')
+
+                # Verificar autorització de Propietari
+                is_authorized = False
+                if role == 'owner':
+                    is_authorized = True
+                elif current_pwd:
+                    if (owner_hash and verify_password(current_pwd, owner_hash)) or (legacy_pin and current_pwd == legacy_pin.strip()):
+                        is_authorized = True
+
+                if not is_authorized:
+                    self.send_json({'ok': False, 'error': 'Cal indicar la contrasenya actual de Propietari per fer canvis de seguretat.'}, 403)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    if owner_pwd:
+                        if len(owner_pwd) < 4:
+                            self.send_json({'ok': False, 'error': 'La contrasenya de Propietari ha de tenir un mínim de 4 caràcters.'}, 400)
+                            return
+                        new_owner_hash = hash_password(owner_pwd)
+                        cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('owner_password_hash', ?)", (new_owner_hash,))
+                        cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('admin_pin', ?)", (owner_pwd,))
+
+                    if staff_pwd:
+                        if len(staff_pwd) < 4:
+                            self.send_json({'ok': False, 'error': 'La contrasenya de Treballador ha de tenir un mínim de 4 caràcters.'}, 400)
+                            return
+                        new_staff_hash = hash_password(staff_pwd)
+                        cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('staff_password_hash', ?)", (new_staff_hash,))
+
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': 'Credencials de seguretat actualitzades correctament.'})
                 return
 
             # ==================================================================
@@ -3815,30 +4108,44 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/admin/change-pin':
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot canviar les claus d\'accés.'}, 403)
+                    return
                 old_pin = str(data.get('oldPin', '')).strip()
                 new_pin = str(data.get('newPin', '')).strip()
                 if not verify_admin_pin(old_pin):
-                    self.send_json({'ok': False, 'error': 'El PIN actual no Ã©s correcte'}, 401)
+                    self.send_json({'ok': False, 'error': 'La contrasenya actual no és correcta'}, 401)
                     return
                 if len(new_pin) < 4:
-                    self.send_json({'ok': False, 'error': 'El nou PIN ha de tenir com a mÃ­nim 4 carÃ cters'}, 400)
+                    self.send_json({'ok': False, 'error': 'La nova contrasenya ha de tenir com a mínim 4 caràcters'}, 400)
                     return
+                new_hash = hash_password(new_pin)
                 with get_db() as conn:
                     cursor = conn.cursor()
+                    cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('owner_password_hash', ?)", (new_hash,))
                     cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('admin_pin', ?)", (new_pin,))
                     conn.commit()
-                self.send_json({'ok': True, 'message': 'PIN d\'administrador actualitzat correctament'})
+                self.send_json({'ok': True, 'message': 'Contrasenya de Propietari actualitzada correctament'})
                 return
 
             elif path == '/api/admin/backups':
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot gestionar còpies de seguretat.'}, 403)
+                    return
                 try:
                     filename = create_manual_snapshot()
-                    self.send_json({'ok': True, 'filename': filename, 'message': f'CÃ²pia de seguretat creada: {filename}'})
+                    self.send_json({'ok': True, 'filename': filename, 'message': f'Còpia de seguretat creada: {filename}'})
                 except Exception as e:
-                    self.send_json({'ok': False, 'error': f'Error creant cÃ²pia: {str(e)}'}, 500)
+                    self.send_json({'ok': False, 'error': f'Error creant còpia: {str(e)}'}, 500)
                 return
 
             elif path == '/api/admin/backups/restore':
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot restaurar còpies de seguretat.'}, 403)
+                    return
                 fname = data.get('filename', '').strip()
                 if not fname:
                     self.send_json({'ok': False, 'error': 'Cal especificar el nom de la cÃ²pia a restaurar'}, 400)
@@ -3889,11 +4196,129 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path == '/api/alumnes/sollicitar-recuperacio':
+                identifier = str(data.get('identifier', '')).strip()
+                if not identifier:
+                    self.send_json({'ok': False, 'error': "Indica el teu telèfon, correu electrònic o nom d'alumne."}, 400)
+                    return
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, identifier, actiu_only=False)
+                    if not student:
+                        # Cerca per telèfon si l'identificador conté dígits
+                        clean_digits = re.sub(r'[^0-9]', '', identifier)
+                        if len(clean_digits) >= 6:
+                            cursor.execute("SELECT * FROM alumnes WHERE telefon LIKE ? OR telefon LIKE ?", (f"%{clean_digits[-9:]}%", f"%{clean_digits}%"))
+                            st_row = cursor.fetchone()
+                            if st_row:
+                                student = row_to_dict(st_row)
+
+                    if not student:
+                        self.send_json({'ok': False, 'error': "No s'ha trobat cap alumne amb aquestes dades."}, 404)
+                        return
+
+                    tel = student.get('telefon') or ''
+                    clean_tel = re.sub(r'[^0-9]', '', tel)
+                    if not clean_tel or len(clean_tel) < 9:
+                        self.send_json({'ok': False, 'error': "La teva fitxa d'alumne no té cap telèfon registrat per rebre el WhatsApp."}, 400)
+                        return
+
+                    # Generar codi OTP de 6 dígits
+                    otp_code = str(secrets.randbelow(900000) + 100000)
+                    otp_hash = hash_password(otp_code)
+                    now_dt = get_now()
+                    expires_dt = now_dt + timedelta(minutes=15)
+
+                    # Inhabilitar sol·licituds anteriors
+                    cursor.execute("UPDATE password_resets SET used = 1 WHERE student_id = ? AND used = 0", (student['id'],))
+                    cursor.execute(
+                        "INSERT INTO password_resets (student_id, otp_hash, expires_at, created_at, used) VALUES (?, ?, ?, ?, 0)",
+                        (student['id'], otp_hash, expires_dt.isoformat(), now_dt.isoformat())
+                    )
+                    conn.commit()
+
+                # Enviar missatge automàtic per Meta WhatsApp API
+                msg_text = (
+                    f"Hola {student['nom']}! 👋\n\n"
+                    f"El teu codi de seguretat per recuperar la contrasenya del Taller de Ceràmica Roig de Coure és:\n\n"
+                    f"👉 *{otp_code}* 👈\n\n"
+                    f"Aquest codi és d'un sol ús i caduca en 15 minuts. Introdueix-lo a la pantalla per triar la teva nova contrasenya."
+                )
+
+                wa_res = send_whatsapp_direct(clean_tel, msg_text)
+                if not wa_res.get('ok'):
+                    # Intentar també per template
+                    wa_res = send_whatsapp_meta(clean_tel, 'recuperacio_contrasenya', [student['nom'], otp_code])
+
+                masked_phone = clean_tel
+                if len(clean_tel) >= 4:
+                    masked_phone = f"...{clean_tel[-4:]}"
+
+                self.send_json({
+                    'ok': True,
+                    'student_id': student['id'],
+                    'student_nom': student['nom'],
+                    'masked_phone': masked_phone,
+                    'whatsapp_sent': bool(wa_res.get('ok')),
+                    'message': f"T'hem enviat un codi de seguretat de 6 dígits al teu WhatsApp acabat en {masked_phone}."
+                })
+                return
+
+            elif path == '/api/alumnes/verificar-otp-i-restablir':
+                student_id = str(data.get('student_id', '')).strip()
+                otp = str(data.get('otp', '')).strip()
+                new_password = str(data.get('new_password', '')).strip()
+
+                if not student_id or not otp or not new_password:
+                    self.send_json({'ok': False, 'error': "Cal facilitar el codi de seguretat i la nova contrasenya."}, 400)
+                    return
+
+                if len(new_password) < 4:
+                    self.send_json({'ok': False, 'error': "La nova contrasenya ha de tenir com a mínim 4 caràcters."}, 400)
+                    return
+
+                now_iso = get_now().isoformat()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT id, otp_hash FROM password_resets WHERE student_id = ? AND used = 0 AND expires_at >= ? ORDER BY id DESC LIMIT 1",
+                        (student_id, now_iso)
+                    )
+                    reset_row = cursor.fetchone()
+                    if not reset_row:
+                        self.send_json({'ok': False, 'error': "El codi de seguretat ha caducat o no és vàlid. Demana'n un de nou."}, 400)
+                        return
+
+                    if not verify_password(otp, reset_row['otp_hash']):
+                        self.send_json({'ok': False, 'error': "Codi de seguretat incorrecte. Revisa el missatge de WhatsApp."}, 400)
+                        return
+
+                    new_hash = hash_password(new_password)
+                    cursor.execute("UPDATE alumnes SET password_hash = ?, pin = ? WHERE id = ?", (new_hash, new_password, student_id))
+                    cursor.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_row['id'],))
+                    conn.commit()
+
+                    student = find_student_by_code(cursor, student_id)
+
+                if student:
+                    try:
+                        sync_to_google_sheets_async('sync_alumne', student)
+                    except Exception as e:
+                        print(f"Avís sync GS alumne nou hash: {e}")
+
+                self.send_json({
+                    'ok': True,
+                    'student': student,
+                    'message': "La teva contrasenya s'ha actualitzat correctament! Ja pots entrar al portal."
+                })
+                return
+
             elif path == '/api/alumnes/recuperar-pin':
                 identifier = str(data.get('identifier', '')).strip()
                 contact = str(data.get('contact', '')).strip()
                 if not identifier or not contact:
-                    self.send_json({'ok': False, 'error': "Cal indicar el nom o codi d'alumne i el telÃ¨fon o correu de contacte"}, 400)
+                    self.send_json({'ok': False, 'error': "Cal indicar el nom o codi d'alumne i el telèfon o correu de contacte"}, 400)
                     return
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -3918,7 +4343,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': "Dades incompletes"}, 400)
                     return
                 if len(new_pin) < 4:
-                    self.send_json({'ok': False, 'error': "La nova contrasenya ha de tenir com a mÃ­nim 4 carÃ cters"}, 400)
+                    self.send_json({'ok': False, 'error': "La nova contrasenya ha de tenir com a mínim 4 caràcters"}, 400)
                     return
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -3926,10 +4351,17 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if not student:
                         self.send_json({'ok': False, 'error': "Alumne no trobat"}, 404)
                         return
-                    if current_pin is not None and student['pin'] and str(student['pin']).strip() != current_pin:
-                        self.send_json({'ok': False, 'error': "La contrasenya actual no Ã©s correcta"}, 401)
-                        return
-                    cursor.execute("UPDATE alumnes SET pin = ? WHERE id = ?", (new_pin, student['id']))
+                    if current_pin is not None:
+                        is_current_valid = False
+                        if student.get('password_hash'):
+                            is_current_valid = verify_password(current_pin, student['password_hash'])
+                        elif student.get('pin'):
+                            is_current_valid = (str(student['pin']).strip() == current_pin)
+                        if not is_current_valid:
+                            self.send_json({'ok': False, 'error': "La contrasenya actual no és correcta"}, 401)
+                            return
+                    new_hash = hash_password(new_pin)
+                    cursor.execute("UPDATE alumnes SET password_hash = ?, pin = ? WHERE id = ?", (new_hash, new_pin, student['id']))
                     conn.commit()
                     updated_st = find_student_by_code(cursor, student['id'])
                 if updated_st:
@@ -5782,21 +6214,29 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/config':
-                # Desar parÃ metres de configuraciÃ³
-                cfg_items = data.items()
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': "Accés restringit: La configuració del taller només pot ser modificada pel Propietari."}, 403)
+                    return
+                # Desar paràmetres de configuració
+                cfg_items = [(k, v) for k, v in data.items() if k not in ('owner_password_hash', 'staff_password_hash', 'admin_token', 'token')]
                 with get_db() as conn:
                     cursor = conn.cursor()
                     for k, v in cfg_items:
                         cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
                     conn.commit()
 
-                # Sincronitzar canvis de configuraciÃ³ i disseny a Google Sheets
+                # Sincronitzar canvis de configuració i disseny a Google Sheets
                 sync_to_google_sheets_async('save_config', dict(cfg_items))
 
-                self.send_json({'ok': True, 'message': 'ConfiguraciÃ³ actualitzada'})
+                self.send_json({'ok': True, 'message': 'Configuració actualitzada'})
                 return
 
             elif path == '/api/festius':
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': "Accés restringit: Els dies festius només poden ser definits pel Propietari."}, 403)
+                    return
                 data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
                 data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
                 nom = (data.get('nom') or 'Dia de Festa').strip()
@@ -5814,10 +6254,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ''', (data_inici, data_fi, nom, motiu, get_now().isoformat()))
                     new_id = cursor.lastrowid
                     conn.commit()
-                self.send_json({'ok': True, 'id': new_id, 'message': 'Dia de festa desat amb Ã¨xit'})
+                self.send_json({'ok': True, 'id': new_id, 'message': 'Dia de festa desat amb èxit'})
                 return
 
             elif path in ('/api/festius/delete', '/api/festius/eliminar'):
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': "Accés restringit: Els dies festius només poden ser definits pel Propietari."}, 403)
+                    return
                 festiu_id = data.get('id')
                 if not festiu_id:
                     self.send_json({'ok': False, 'error': "Cal indicar l'ID del festiu"}, 400)

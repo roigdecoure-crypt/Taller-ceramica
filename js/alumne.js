@@ -1151,6 +1151,8 @@ function setupEventListeners() {
   const modalRecovery = document.getElementById('modal-recuperar-pwd');
   const btnCloseRecovery = document.getElementById('btn-close-recovery-modal');
 
+  let activeRecoveryStudentId = null;
+
   if (btnOpenRecovery && modalRecovery) {
     btnOpenRecovery.addEventListener('click', () => {
       const typedId = (document.getElementById('login-student-id')?.value || '').trim();
@@ -1160,10 +1162,11 @@ function setupEventListeners() {
       }
       const errBox = document.getElementById('recovery-error-msg');
       if (errBox) errBox.style.display = 'none';
-      const resBox = document.getElementById('recovery-result-box');
-      if (resBox) resBox.style.display = 'none';
-      const chgBox = document.getElementById('recovery-change-box');
-      if (chgBox) chgBox.style.display = 'none';
+
+      const step1 = document.getElementById('form-recovery-step1');
+      const step2 = document.getElementById('form-recovery-step2');
+      if (step1) step1.style.display = 'block';
+      if (step2) step2.style.display = 'none';
 
       openModal(modalRecovery);
     });
@@ -1178,92 +1181,49 @@ function setupEventListeners() {
     });
   }
 
-  // Submit recuperaciÃ³ (verificaciÃ³ d'identitat per telÃ¨fon o correu)
-  const formRecovery = document.getElementById('form-recovery-verify');
-  if (formRecovery) {
-    formRecovery.addEventListener('submit', async (e) => {
+  // Pas 1: Sol·licitud del codi OTP per WhatsApp
+  const formRecoveryStep1 = document.getElementById('form-recovery-step1');
+  if (formRecoveryStep1) {
+    formRecoveryStep1.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const identifier = document.getElementById('recovery-identifier').value.trim();
-      const contact = document.getElementById('recovery-contact').value.trim();
+      const identifier = document.getElementById('recovery-identifier')?.value.trim();
       const errBox = document.getElementById('recovery-error-msg');
-      const resBox = document.getElementById('recovery-result-box');
-      const btnSubmit = document.getElementById('btn-submit-recovery');
+      const btnSubmit = document.getElementById('btn-submit-send-otp');
 
+      if (!identifier) return;
       if (errBox) errBox.style.display = 'none';
       if (btnSubmit) {
         btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Verificant identitat...';
+        btnSubmit.textContent = 'Enviant codi per WhatsApp...';
       }
 
       try {
-        const res = await Store.recuperarPinAlumne(identifier, contact);
+        const res = await Store.sollicitarRecuperacioAlumne(identifier);
         if (!res.ok) {
           if (errBox) {
-            errBox.textContent = res.error || 'No s\'han pogut verificar les dades.';
+            errBox.textContent = res.error || "No s'ha pogut tramitar la sol·licitud.";
             errBox.style.display = 'block';
           }
-          if (resBox) resBox.style.display = 'none';
           return;
         }
 
-        // Ãxit de verificaciÃ³
-        if (resBox) {
-          const greetingEl = document.getElementById('recovery-result-greeting');
-          if (greetingEl) greetingEl.textContent = `Identitat verificada: ${res.nom} (Codi ${res.id})`;
-          const pinEl = document.getElementById('recovery-result-pin');
-          if (pinEl) pinEl.textContent = res.pin;
-          resBox.style.display = 'block';
-        }
+        activeRecoveryStudentId = res.student_id;
+        const step1 = document.getElementById('form-recovery-step1');
+        const step2 = document.getElementById('form-recovery-step2');
+        const phoneMsg = document.getElementById('recovery-otp-phone-msg');
 
-        // BotÃ³ per accedir ara directament amb el PIN recuperat
-        const btnLoginNow = document.getElementById('btn-recovery-login-now');
-        if (btnLoginNow) {
-          btnLoginNow.onclick = async () => {
-            closeModal(modalRecovery);
-            document.getElementById('login-student-id').value = res.id;
-            document.getElementById('login-student-password').value = res.pin;
-            await loginStudent(res.id, res.pin, false);
-          };
+        if (phoneMsg) {
+          phoneMsg.textContent = `Codi de 6 dígits enviat al teu WhatsApp acabat en ${res.masked_phone || ''}!`;
         }
-
-        // Toggle per desplegar formulari d'assignaciÃ³ de nova contrasenya
-        const btnToggleChg = document.getElementById('btn-recovery-toggle-change');
-        const chgBox = document.getElementById('recovery-change-box');
-        if (btnToggleChg && chgBox) {
-          btnToggleChg.onclick = () => {
-            chgBox.style.display = chgBox.style.display === 'none' ? 'block' : 'none';
-          };
+        if (step1) step1.style.display = 'none';
+        if (step2) {
+          step2.style.display = 'block';
+          const otpInput = document.getElementById('recovery-otp-code');
+          if (otpInput) {
+            otpInput.value = '';
+            otpInput.focus();
+          }
         }
-
-        // BotÃ³ per desar nova contrasenya directament des de la recuperaciÃ³
-        const btnSaveNew = document.getElementById('btn-recovery-save-new-pin');
-        if (btnSaveNew) {
-          btnSaveNew.onclick = async () => {
-            const newPin = (document.getElementById('recovery-new-pin-input')?.value || '').trim();
-            if (!newPin || newPin.length < 4) {
-              alert('La nova contrasenya ha de tenir com a mÃ­nim 4 carÃ cters.');
-              return;
-            }
-            btnSaveNew.disabled = true;
-            btnSaveNew.textContent = 'Guardant...';
-            try {
-              const chgRes = await Store.canviarPinAlumne(res.id, newPin);
-              if (chgRes.ok) {
-                showToast('Nova contrasenya desada amb Ã¨xit!', 'success');
-                closeModal(modalRecovery);
-                document.getElementById('login-student-id').value = res.id;
-                document.getElementById('login-student-password').value = newPin;
-                await loginStudent(res.id, newPin, false);
-              } else {
-                alert(chgRes.error || 'Error canviant la contrasenya');
-              }
-            } finally {
-              btnSaveNew.disabled = false;
-              btnSaveNew.textContent = 'Desar Nova Contrasenya i Accedir';
-            }
-          };
-        }
-
       } catch (err) {
         if (errBox) {
           errBox.textContent = 'Error: ' + err.message;
@@ -1272,9 +1232,88 @@ function setupEventListeners() {
       } finally {
         if (btnSubmit) {
           btnSubmit.disabled = false;
-          btnSubmit.textContent = 'Verificar Identitat i Recuperar PIN';
+          btnSubmit.textContent = 'Enviar Codi de Seguretat per WhatsApp →';
         }
       }
+    });
+  }
+
+  // Pas 2: Verificació del codi OTP i nova contrasenya
+  const formRecoveryStep2 = document.getElementById('form-recovery-step2');
+  if (formRecoveryStep2) {
+    formRecoveryStep2.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const otp = document.getElementById('recovery-otp-code')?.value.trim();
+      const newPwd = document.getElementById('recovery-new-password')?.value.trim();
+      const errBox = document.getElementById('recovery-error-msg');
+      const btnSubmit = document.getElementById('btn-submit-verify-otp');
+
+      if (!otp || !newPwd || !activeRecoveryStudentId) {
+        if (errBox) {
+          errBox.textContent = 'Completa el codi de 6 dígits i la nova contrasenya.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (newPwd.length < 4) {
+        if (errBox) {
+          errBox.textContent = 'La nova contrasenya ha de tenir almenys 4 caràcters.';
+          errBox.style.display = 'block';
+        }
+        return;
+      }
+
+      if (errBox) errBox.style.display = 'none';
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Verificant i desant...';
+      }
+
+      try {
+        const res = await Store.verificarOtpIRestablir(activeRecoveryStudentId, otp, newPwd);
+        if (!res.ok) {
+          if (errBox) {
+            errBox.textContent = res.error || 'Codi incorrecte o caducat.';
+            errBox.style.display = 'block';
+          }
+          return;
+        }
+
+        showToast('Contrasenya actualitzada amb èxit!', 'success');
+        closeModal(modalRecovery);
+
+        // Iniciar sessió automàticament
+        const studentId = activeRecoveryStudentId;
+        const loginIdEl = document.getElementById('login-student-id');
+        const loginPwdEl = document.getElementById('login-student-password');
+        if (loginIdEl) loginIdEl.value = studentId;
+        if (loginPwdEl) loginPwdEl.value = newPwd;
+        await loginStudent(studentId, newPwd, false);
+      } catch (err) {
+        if (errBox) {
+          errBox.textContent = 'Error: ' + err.message;
+          errBox.style.display = 'block';
+        }
+      } finally {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Confirmar i Entrar al Portal →';
+        }
+      }
+    });
+  }
+
+  // Tornar al pas 1
+  const btnBackStep1 = document.getElementById('btn-recovery-back-step1');
+  if (btnBackStep1) {
+    btnBackStep1.addEventListener('click', () => {
+      const step1 = document.getElementById('form-recovery-step1');
+      const step2 = document.getElementById('form-recovery-step2');
+      const errBox = document.getElementById('recovery-error-msg');
+      if (errBox) errBox.style.display = 'none';
+      if (step1) step1.style.display = 'block';
+      if (step2) step2.style.display = 'none';
     });
   }
 
