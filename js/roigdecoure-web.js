@@ -8,8 +8,22 @@
   const CFG = {
     phone: '34683633880',
     email: 'roigdecoure@gmail.com',
-    capacities: { torn: 4, modelatge: 8, pintar: 12, vidre: 6 },
-    names: { torn: 'Torn', modelatge: 'Modelatge', pintar: 'Pintar Ceramica', vidre: 'Fusio de Vidre' },
+    capacities: {
+      torn: 4,
+      modelatge: 8,
+      pintar: 12,
+      experiencia_torn_adult: 4,
+      experiencia_torn_infant: 4,
+      vidre: 6
+    },
+    names: {
+      torn: 'Torn',
+      modelatge: 'Modelatge',
+      pintar: 'Pintar Ceràmica',
+      experiencia_torn_adult: 'Experiència al torn adults',
+      experiencia_torn_infant: 'Experiència al torn menors 12 anys',
+      vidre: 'Fusió de Vidre'
+    },
     closedWeekdays: [1, 2]
   };
 
@@ -222,10 +236,15 @@
   
   async function loadWebActivitatsConfig() {
     try {
-      var res = await fetch('/api/reserves/activitats?t=' + Date.now());
+      var apiBase = getWebApiBase();
+      var res = await fetch(apiBase + '/api/reserves/activitats?t=' + Date.now());
       var data = await res.json();
       if (data && data.ok && data.activitats) {
         data.activitats.forEach(function(act) {
+          if (act.id) {
+            if (act.capacitatMax) CFG.capacities[act.id] = act.capacitatMax;
+            if (act.nom) CFG.names[act.id] = act.nom;
+          }
           var btn = document.querySelector('.booking-act-btn[data-act="' + act.id + '"]');
           if (btn) {
             if (act.descripcio) {
@@ -238,7 +257,7 @@
             }
             if (act.capacitatMax) {
               var badge = btn.querySelector('.booking-act-badge');
-              if (badge) badge.textContent = act.id === 'torn' ? (act.capacitatMax + ' torns') : (act.capacitatMax + ' places');
+              if (badge) badge.textContent = (act.id === 'torn' || act.id.indexOf('torn') !== -1) ? (act.capacitatMax + ' torns') : (act.capacitatMax + ' places');
             }
           }
         });
@@ -340,6 +359,7 @@
     renderCalendar();
     updateShiftSpots();
   }
+  window.selectActivity = selectActivity;
 
   function selectInitialDate() {
     var d = new Date(); d.setHours(0, 0, 0, 0);
@@ -419,13 +439,30 @@
       var res = await fetch(apiBase + '/api/reserves/disponibilitat?data=' + booking.date + '&activitat=' + booking.activity);
       if (res.ok) {
         var data = await res.json();
-          var fm = data.franges.find(function (f) { return f.id === 'mati' || f.id === 'M1'; });
-          var ft = data.franges.find(function (f) { return f.id === 'tarda' || f.id === 'T1'; });
-          var dispM = fm ? (fm.placesLliures !== undefined ? fm.placesLliures : fm.disponibles) : max;
-          var dispT = ft ? (ft.placesLliures !== undefined ? ft.placesLliures : ft.disponibles) : max;
-          sm.textContent = dispM + ' places disponibles';
-          st.textContent = dispT + ' places disponibles';
-          return;
+        var fm = data.franges.find(function (f) { return f.id === 'mati' || f.id === 'M1'; });
+        var ft = data.franges.find(function (f) { return f.id === 'tarda' || f.id === 'T1'; });
+
+        function getActPlaces(franja) {
+          if (!franja) return max;
+          if (franja.activitats && Array.isArray(franja.activitats)) {
+            var found = franja.activitats.find(function (a) { return a.id === booking.activity; });
+            if (found && found.placesDisponibles !== undefined) {
+              return found.placesDisponibles;
+            }
+          }
+          return franja.placesLliures !== undefined ? Math.min(max, franja.placesLliures) : (franja.disponibles !== undefined ? Math.min(max, franja.disponibles) : max);
+        }
+
+        var dispM = getActPlaces(fm);
+        var dispT = getActPlaces(ft);
+        sm.textContent = dispM + ' places disponibles';
+        st.textContent = dispT + ' places disponibles';
+
+        var cardM = document.querySelector('.shift-card[data-shift="mati"]');
+        var cardT = document.querySelector('.shift-card[data-shift="tarda"]');
+        if (cardM) cardM.classList.toggle('disabled', dispM <= 0);
+        if (cardT) cardT.classList.toggle('disabled', dispT <= 0);
+        return;
       }
     } catch (e) { /* offline */ }
     sm.textContent = max + ' places disponibles';
