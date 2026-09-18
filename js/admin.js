@@ -2973,7 +2973,7 @@ async function renderAdminDayAppointments(dateStr) {
 
   if (!tableBody) return;
 
-  if (reserves.length === 0) {
+  if (activeReserves.length === 0) {
     let emptySubtext = 'Totes les places estan disponibles (12 places).';
     if (dayDisp?.tancat) {
       emptySubtext = escapeHtml(dayDisp.motiu || 'Taller tancat en aquesta data.');
@@ -2984,7 +2984,7 @@ async function renderAdminDayAppointments(dateStr) {
     tableBody.innerHTML = `
       <tr>
         <td colspan="4" class="app-empty-state" style="padding: 32px 16px; text-align: center;">
-          <div style="font-weight: 700; color: #374151; margin-bottom: 4px; font-size: 14px;">No hi ha cap reserva per aquest dia</div>
+          <div style="font-weight: 700; color: #374151; margin-bottom: 4px; font-size: 14px;">No hi ha cap reserva activa per aquest dia</div>
           <div style="color: #6B7280; font-size: 13px;">${emptySubtext}</div>
         </td>
       </tr>
@@ -2992,8 +2992,8 @@ async function renderAdminDayAppointments(dateStr) {
     return;
   }
 
-  // Renderitzar files amb checkbox "Visited"
-  tableBody.innerHTML = reserves.map((r, idx) => {
+  // Renderitzar files de reserves actives (les cancel·lades no surten)
+  tableBody.innerHTML = activeReserves.map((r, idx) => {
     const isVisited = r.estat === 'assistit';
     const isCancelled = !!(r.estat && r.estat.toLowerCase().startsWith('cancel'));
     const clientNom = `${r.nom || ''} ${r.cognoms || ''}`.trim() || r.student_nom || r.student_id || 'Client sense nom';
@@ -5586,10 +5586,30 @@ async function populateNovaReservaActivitats() {
   const actSelect = document.getElementById('admin-res-activitat');
   if (!actSelect) return;
   const currentVal = actSelect.value;
-  const acts = (adminTallersList && adminTallersList.length > 0)
-    ? adminTallersList.filter(a => a.actiu !== false)
-    : await Store.getActivitatsConfig(false);
+  let acts = await Store.getActivitatsConfig(false);
+  if (!Array.isArray(acts) || acts.length === 0) {
+    acts = (adminTallersList && adminTallersList.length > 0)
+      ? adminTallersList.filter(a => a.actiu !== false)
+      : [];
+  }
 
+  if (!acts || acts.length === 0) {
+    acts = [
+      { id: 'torn', nom: 'Torn', capacitatMax: 4 },
+      { id: 'modelatge', nom: 'Modelatge', capacitatMax: 8 },
+      { id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12 }
+    ];
+  }
+
+  // Garantir que les dues noves experiències sempre hi siguin
+  if (!acts.some(a => a.id === 'experiencia_torn_adult')) {
+    acts.push({ id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4 });
+  }
+  if (!acts.some(a => a.id === 'experiencia_torn_infant')) {
+    acts.push({ id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4 });
+  }
+
+  adminTallersList = acts;
   actSelect.innerHTML = acts.map(a => `
     <option value="${a.id}">${escapeHtml(a.nom)} (màx ${a.capacitatMax})</option>
   `).join('');

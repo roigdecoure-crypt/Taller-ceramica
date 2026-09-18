@@ -1205,9 +1205,11 @@ def get_student_balance(student_id):
         }
 
 DEFAULT_ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "SessiÃ³ al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#B91C1C"},
-    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mÃ  i escultura", "capacitatMax": 8, "icon": "", "color": "#047857"},
-    {"id": "pintar", "nom": "Pintar cerÃ mica", "descripcio": "Pintura i esmaltat sobre cerÃ mica", "capacitatMax": 12, "icon": "", "color": "#1D4ED8"}
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#B91C1C"},
+    {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "", "color": "#047857"},
+    {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#1D4ED8"},
+    {"id": "experiencia_torn_adult", "nom": "Experiència al torn adults", "descripcio": "Iniciació pràctica al torn de terrissaire (2h)", "capacitatMax": 4, "icon": "", "color": "#831D1D"},
+    {"id": "experiencia_torn_infant", "nom": "Experiència al torn menors 12 anys", "descripcio": "Iniciació al torn per a infants (2h)", "capacitatMax": 4, "icon": "", "color": "#B45309"}
 ]
 
 def slugify_activity_id(name):
@@ -1794,7 +1796,10 @@ def get_disponibilitat(data_str):
             act_id = act['id']
             act_nom = act['nom'].lower()
             is_blocked = restr_franja['te_restriccio'] and act_id.lower() in restr_franja['bloquejades']
-            ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
+            if act_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in act_id:
+                ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in (r.get('activitat_id') or '').lower() or 'torn' in (r.get('activitat') or '').lower())
+            else:
+                ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
             ocupacio_per_act[act_id] = ocupat_act
             capacitat_max_act = act['capacitatMax']
             lliures_act = max(0, capacitat_max_act - ocupat_act)
@@ -1850,7 +1855,10 @@ def get_disponibilitat(data_str):
     for act in activitats_list:
         act_id = act['id']
         is_blocked = restr_dia['te_restriccio'] and act_id.lower() in restr_dia['bloquejades']
-        total_act_ocupat = sum(int(r.get('places') or 1) for r in active_reserves if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act['nom'].lower())
+        if act_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in act_id:
+            total_act_ocupat = sum(int(r.get('places') or 1) for r in active_reserves if (r.get('activitat_id') or '').lower() in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in (r.get('activitat_id') or '').lower() or 'torn' in (r.get('activitat') or '').lower())
+        else:
+            total_act_ocupat = sum(int(r.get('places') or 1) for r in active_reserves if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act['nom'].lower())
         lliures_act = max(0, act['capacitatMax'] - total_act_ocupat)
         disp_dia = 0 if is_blocked else min(places_lliures_dia, lliures_act)
         activitats_dia.append({
@@ -1956,7 +1964,10 @@ def get_disponibilitat_mes(year, month):
                 continue
 
             if total_lliures_dia > 0:
-                ocupat_act = sum(int(r.get('places') or 1) for r in day_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
+                if act_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in act_id:
+                    ocupat_act = sum(int(r.get('places') or 1) for r in day_res if (r.get('activitat_id') or '').lower() in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in (r.get('activitat_id') or '').lower() or 'torn' in (r.get('activitat') or '').lower())
+                else:
+                    ocupat_act = sum(int(r.get('places') or 1) for r in day_res if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
                 if ocupat_act < act['capacitatMax']:
                     acts_amb_places.append(act_id)
 
@@ -4546,19 +4557,29 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             return
     
                         # Comprovar aforament particular de l'activitat en aquest torn
-                        cursor.execute('''
-                            SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
-                            WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                            )
-                        ''', (data_res, activitat_id, activitat_nom.lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        is_torn_family = activitat_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in activitat_id
+                        if is_torn_family:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
+                                WHERE data = ? AND (LOWER(activitat_id) IN ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') OR LOWER(activitat) LIKE '%torn%') AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (data_res, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        else:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
+                                WHERE data = ? AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?) AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (data_res, activitat_id, activitat_nom.lower(), 1 if is_tarda else 0, 1 if is_tarda else 0))
                         r_act = cursor.fetchone()
                         current_ocupat_act = r_act['act_ocupades'] or 0
                         if current_ocupat_act + places_demanades > act_obj['capacitatMax']:
                             lliures_act = max(0, act_obj['capacitatMax'] - current_ocupat_act)
-                            torn_nom = "la tarda" if is_tarda else "el matÃ­"
-                            self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (MÃ x. {act_obj['capacitatMax']})."}, 400)
+                            torn_nom = "la tarda" if is_tarda else "el matí"
+                            self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (Màx. {act_obj['capacitatMax']})."}, 400)
                             return
     
                     # Proposta 1: Paga i Senyal per a reserves de 4 o més places (10 € / persona)

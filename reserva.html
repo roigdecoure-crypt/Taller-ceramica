@@ -179,9 +179,40 @@
     }
     .act-card .act-top {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: center;
+      gap: 6px;
       margin-bottom: 8px;
+    }
+    .btn-act-info {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #FAF7F5;
+      border: 1px solid #D6C7BC;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      line-height: 1.2;
+    }
+    .btn-act-info:hover {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+    .act-card.active .btn-act-info {
+      background: #FFFFFF;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .act-card.active .btn-act-info:hover {
+      background: var(--primary);
+      color: #FFFFFF;
     }
     .act-card .act-icon {
       display: none;
@@ -193,6 +224,7 @@
       border-radius: 4px;
       background: #EEF5F1;
       color: #5E7E6F;
+      white-space: nowrap;
     }
     .act-card.active .act-cap-badge {
       background: var(--primary);
@@ -691,6 +723,7 @@
           <div class="activities-grid" id="activities-container">
             <div class="act-card active" data-id="torn" data-cap="4">
               <div class="act-top">
+                <button type="button" class="btn-act-info" data-act="torn" title="Més informació">ℹ️ Info</button>
                 <span class="act-cap-badge" id="badge-cap-torn">Màx. 4 torns</span>
               </div>
               <div class="act-title">Torn</div>
@@ -699,6 +732,7 @@
 
             <div class="act-card" data-id="modelatge" data-cap="8">
               <div class="act-top">
+                <button type="button" class="btn-act-info" data-act="modelatge" title="Més informació">ℹ️ Info</button>
                 <span class="act-cap-badge" id="badge-cap-modelatge">Fins a 8 places</span>
               </div>
               <div class="act-title">Modelatge</div>
@@ -707,10 +741,29 @@
 
             <div class="act-card" data-id="pintar" data-cap="12">
               <div class="act-top">
+                <button type="button" class="btn-act-info" data-act="pintar" title="Més informació">ℹ️ Info</button>
                 <span class="act-cap-badge" id="badge-cap-pintar">Fins a 12 places</span>
               </div>
               <div class="act-title">Pintar ceràmica</div>
               <div class="act-desc">Pintar peces de biscuit ceràmica</div>
+            </div>
+
+            <div class="act-card" data-id="experiencia_torn_adult" data-cap="4">
+              <div class="act-top">
+                <button type="button" class="btn-act-info" data-act="experiencia_torn_adult" title="Més informació">ℹ️ Info</button>
+                <span class="act-cap-badge" id="badge-cap-exp-adult">Màx. 4 torns</span>
+              </div>
+              <div class="act-title">Experiència al torn adults</div>
+              <div class="act-desc">Iniciació pràctica al torn de terrissaire (2h)</div>
+            </div>
+
+            <div class="act-card" data-id="experiencia_torn_infant" data-cap="4">
+              <div class="act-top">
+                <button type="button" class="btn-act-info" data-act="experiencia_torn_infant" title="Més informació">ℹ️ Info</button>
+                <span class="act-cap-badge" id="badge-cap-exp-infant">Màx. 4 torns</span>
+              </div>
+              <div class="act-title">Experiència al torn menors 12 anys</div>
+              <div class="act-desc">Iniciació creativa al torn per a infants (2h)</div>
             </div>
           </div>
 
@@ -840,6 +893,16 @@
                   <strong>Horari per a val regal:</strong> Les sessions amb val regal es realitzen preferentment a <strong>primera hora (10:00 h - 12:00 h)</strong>. El dia de la sessió només caldrà que mostris el teu val físic o digital al taller.
                 </div>
               </div>
+            </div>
+
+            <!-- Avís sobrepassar límit d'aforament o grup -->
+            <div class="group-capacity-card" style="border: 1.5px solid #E5DDD5; border-radius: 12px; padding: 14px 16px; background: #FAF7F5; transition: all 0.2s ease;">
+              <p style="margin: 0 0 10px; font-size: 13.5px; color: #4A3B32; line-height: 1.45;">
+                Si voleu <strong>sobrepassar el límit d'aforament establert</strong> o assistir en grup, cal <strong>contactar amb administració</strong>.
+              </p>
+              <a href="https://wa.me/34683633880?text=Hola,%20voldria%20consultar%20per%20sobrepassar%20l'%C3%A0forament%20establert%20o%20assistir%20en%20grup%20al%20taller" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; font-weight: 700; font-size: 13.5px; padding: 8px 16px; border-radius: 8px; text-decoration: none; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                <span>WhatsApp: 683 633 880 &rarr;</span>
+              </a>
             </div>
           </div>
 
@@ -1064,6 +1127,40 @@
     <div style="font-size: 12px; color: #9CA3AF;">Horari: Dilluns a dissabte de 10h a 13h i de 17h a 20h</div>
   </footer>
 
+  <!-- Modal Popup d'Informació de l'Activitat i Preus -->
+  <div id="act-info-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.65); z-index: 10000; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; backdrop-filter: blur(3px);">
+    <div style="background: #FFFFFF; border-radius: 16px; max-width: 520px; width: 100%; padding: 26px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
+      <button type="button" id="btn-close-act-info" style="position: absolute; top: 16px; right: 16px; background: #F3F4F6; border: none; font-size: 20px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #4B5563; font-weight: 700; transition: all 0.15s;" title="Tancar">&times;</button>
+      
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span id="modal-act-badge" style="background: #FDF2F0; color: #831D1D; border: 1px solid #F8D7DA; padding: 3px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Activitat</span>
+      </div>
+
+      <h3 id="modal-act-title" style="margin: 0 0 10px; font-size: 22px; font-weight: 800; color: var(--dark); font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.4px; line-height: 1.25;">Títol de l'Activitat</h3>
+
+      <div id="modal-act-desc" style="font-size: 14px; color: #4B5563; line-height: 1.55; margin-bottom: 16px;">
+        Descripció detallada de l'activitat...
+      </div>
+
+      <div style="background: #FAF8F6; border: 1px solid #EFE8E2; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Què inclou la sessió?</div>
+        <div id="modal-act-includes" style="font-size: 13.5px; color: #4A3B32; line-height: 1.5;">
+          Contingut que inclou...
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; background: #EEF5F1; border: 1.5px solid #C4E3D2; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+        <span style="font-size: 13.5px; font-weight: 600; color: #1E3D30;">Preu de l'activitat:</span>
+        <span id="modal-act-price" style="font-size: 18px; font-weight: 800; color: #065F46;">50,00 €</span>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" id="btn-modal-select-act" class="btn btn-primary" style="flex: 1; padding: 12px; font-size: 14px; font-weight: 700; background: var(--primary); color: #FFF; border: none; border-radius: 8px; cursor: pointer;">Tria aquesta activitat</button>
+        <button type="button" id="btn-modal-cancel" class="btn btn-outline" style="padding: 12px 18px; font-size: 14px; font-weight: 600; border: 1.5px solid var(--border); background: #FFF; color: var(--dark); border-radius: 8px; cursor: pointer;">Tancar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/api-config.js?v=9.0"></script>
   <script>
     const ROIG_API_BASE = (typeof window.getRoigApiBase === 'function' ? window.getRoigApiBase() : (window.ROIG_API_BASE || 'https://taller-ceramica-nb96.onrender.com'));
@@ -1107,40 +1204,73 @@
       return `${y}-${m}-${dd}`;
     }
 
-    // Carregar activitats i capacitats des de l'API
+    // Carregar activitats, preus i capacitats des de l'API / Base de dades
     async function loadActivitatsConfig() {
       try {
-        const res = await fetch(`${ROIG_API_BASE}/api/reserves/activitats?t=` + Date.now());
-        const data = await res.json();
-        if (data.ok && data.activitats) {
-          data.activitats.forEach(act => {
-            if (act.id === 'torn') {
-              state.activitatCapMax = act.capacitatMax;
-              const b = document.getElementById('badge-cap-torn');
-              if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
-            } else if (act.id === 'modelatge') {
-              state.activitatCapMax = act.capacitatMax;
-              const b = document.getElementById('badge-cap-modelatge');
-              if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
-            } else if (act.id === 'pintar') {
-              state.activitatCapMax = act.capacitatMax;
-              const b = document.getElementById('badge-cap-pintar');
-              if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
-            }
+        const [resAct, resArt] = await Promise.all([
+          fetch(`${ROIG_API_BASE}/api/reserves/activitats?t=` + Date.now()).catch(() => null),
+          fetch(`${ROIG_API_BASE}/api/articles?t=` + Date.now()).catch(() => null)
+        ]);
 
-            // Actualitzar descripció i títol dinàmicament des de la base de dades
-            const card = document.querySelector(`.act-card[data-id="${act.id}"]`);
-            if (card) {
-              if (act.descripcio) {
-                const descEl = card.querySelector('.act-desc');
-                if (descEl) descEl.textContent = act.descripcio;
+        if (resAct && resAct.ok) {
+          const data = await resAct.json();
+          if (data.ok && data.activitats) {
+            data.activitats.forEach(act => {
+              if (act.id === 'torn') {
+                state.activitatCapMax = act.capacitatMax;
+                const b = document.getElementById('badge-cap-torn');
+                if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
+              } else if (act.id === 'modelatge') {
+                state.activitatCapMax = act.capacitatMax;
+                const b = document.getElementById('badge-cap-modelatge');
+                if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
+              } else if (act.id === 'pintar') {
+                state.activitatCapMax = act.capacitatMax;
+                const b = document.getElementById('badge-cap-pintar');
+                if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
+              } else if (act.id === 'experiencia_torn_adult') {
+                const b = document.getElementById('badge-cap-exp-adult');
+                if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
+              } else if (act.id === 'experiencia_torn_infant') {
+                const b = document.getElementById('badge-cap-exp-infant');
+                if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
               }
-              if (act.nom) {
-                const titleEl = card.querySelector('.act-title');
-                if (titleEl) titleEl.textContent = act.nom;
+
+              // Actualitzar descripció i títol dinàmicament des de la base de dades
+              const card = document.querySelector(`.act-card[data-id="${act.id}"]`);
+              if (card) {
+                if (act.descripcio) {
+                  const descEl = card.querySelector('.act-desc');
+                  if (descEl) descEl.textContent = act.descripcio;
+                  if (typeof ACTIVITATS_INFO !== 'undefined' && ACTIVITATS_INFO[act.id]) {
+                    ACTIVITATS_INFO[act.id].desc = act.descripcio;
+                  }
+                }
+                if (act.nom) {
+                  const titleEl = card.querySelector('.act-title');
+                  if (titleEl) titleEl.textContent = act.nom;
+                  if (typeof ACTIVITATS_INFO !== 'undefined' && ACTIVITATS_INFO[act.id]) {
+                    ACTIVITATS_INFO[act.id].title = act.nom;
+                  }
+                }
               }
-            }
-          });
+            });
+          }
+        }
+
+        if (resArt && resArt.ok) {
+          const dataArt = await resArt.json();
+          if (dataArt.ok && dataArt.articles && typeof ACTIVITATS_INFO !== 'undefined') {
+            dataArt.articles.forEach(art => {
+              if (art.id === 'art_torn_adult' && ACTIVITATS_INFO['experiencia_torn_adult']) {
+                if (art.preu) ACTIVITATS_INFO['experiencia_torn_adult'].price = `${parseFloat(art.preu).toFixed(2).replace('.', ',')} € (Tot inclòs)`;
+                if (art.descripcio) ACTIVITATS_INFO['experiencia_torn_adult'].desc = art.descripcio;
+              } else if (art.id === 'art_torn_infant' && ACTIVITATS_INFO['experiencia_torn_infant']) {
+                if (art.preu) ACTIVITATS_INFO['experiencia_torn_infant'].price = `${parseFloat(art.preu).toFixed(2).replace('.', ',')} € (Tot inclòs)`;
+                if (art.descripcio) ACTIVITATS_INFO['experiencia_torn_infant'].desc = art.descripcio;
+              }
+            });
+          }
         }
       } catch (e) {
         console.warn('Fallback activitats:', e);
@@ -1615,6 +1745,96 @@
 
       updateSelectedDateDisplay(todayISO);
       renderInlineCalendar(calCurrentYear, calCurrentMonth);
+
+      // Informació i detalls de cada activitat per al popup
+      const ACTIVITATS_INFO = {
+        'torn': {
+          badge: 'Classe / Pràctica',
+          title: 'Torn de terrissaire',
+          desc: 'Sessions dedicades a la creació i perfeccionament de peces al torn elèctric de ceràmica. Ideal per a alumnes habituals o continuïtat de peces (pastar el fang, centrar, donar forma, tornejar o desbastar).',
+          includes: '• Ús del torn elèctric individual.<br>• Eines de terrissaire (retorçadors, espàtules, fils de tall).<br>• Assessorament i acompanyament del professor.',
+          price: 'Segons abonament d’hores o quota d’alumne'
+        },
+        'modelatge': {
+          badge: 'Classe / Pràctica',
+          title: 'Modelatge ceràmic manual',
+          desc: 'Creació de peces ceràmiques utilitzant tècniques manuals: pessic, xurros, planxes, buidat i textures. Una tècnica molt expressiva i lliure sense necessitat de torn.',
+          includes: '• Fang ceràmic de qualitat.<br>• Eines de modelat, corrons, fustes i textures manuals.<br>• Assessorament tècnic del mestre ceramista.',
+          price: 'Segons abonament d’hores o quota d’alumne'
+        },
+        'pintar': {
+          badge: 'Taller Creatiu',
+          title: 'Pintar ceràmica (Esmaltat sobre biscuit)',
+          desc: 'Tria una peça artesanal de biscuit feta al nostre taller (com una tassa, un bol, un plat o una figura) i gaudeix decorant-la i pintant-la amb esmalts ceràmics. Un cop acabada, nosaltres l’enfornem a alta temperatura perquè quedi brillant, resistent i apta per a ús alimentari.',
+          includes: '• Peça ceràmica en biscuit a triar al taller.<br>• Pintures, esmalts especials, pinzells, esponges i materials.<br>• Enfornat i cocció final al forn ceràmic.',
+          price: 'Segons la peça triada (a partir de 15 €)'
+        },
+        'experiencia_torn_adult': {
+          badge: 'Experiència de 2 hores',
+          title: 'Experiència al torn adults',
+          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn per primer cop sense necessitat de cap coneixement previ. Aprendràs a preparar el fang, pastar, centrar la pella sobre el plat giratori, obrir i aixecar les parets per crear les teves primeres peces ceràmiques (com bols o tasses).',
+          includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Retoc, assecat i primera cocció (biscuit) de la teva peça al forn ceràmic perquè te la puguis endur a casa un cop cuita.',
+          price: '50,00 € (Tot inclòs)'
+        },
+        'experiencia_torn_infant': {
+          badge: 'Experiència de 2 hores (Infants)',
+          title: 'Experiència al torn menors 12 anys',
+          desc: 'Una experiència sensorial, creativa i molt divertida adreçada especialment a infants menors de 12 anys. Acompanyats en tot moment pel ceramista, aprendran la màgia de transformar una bola de fang en una peça real amb les seves pròpies mans al torn, d’una manera propera, engrescadora i adaptada al seu ritme.',
+          includes: '• Torn elèctric adaptat durant 2 hores.<br>• Fang especial suau, davantal i eines segures per a infants.<br>• Guia constant i atenció personalitzada.<br>• Cocció de la peça al forn perquè la puguin conservar per sempre.',
+          price: '45,00 € (Tot inclòs)'
+        }
+      };
+
+      const infoModal = document.getElementById('act-info-modal');
+      let currentModalActId = null;
+
+      function openActInfoModal(actId) {
+        const info = ACTIVITATS_INFO[actId];
+        if (!info || !infoModal) return;
+        currentModalActId = actId;
+        document.getElementById('modal-act-badge').textContent = info.badge;
+        document.getElementById('modal-act-title').textContent = info.title;
+        document.getElementById('modal-act-desc').textContent = info.desc;
+        document.getElementById('modal-act-includes').innerHTML = info.includes;
+        document.getElementById('modal-act-price').textContent = info.price;
+        infoModal.style.display = 'flex';
+      }
+
+      function closeActInfoModal() {
+        if (infoModal) infoModal.style.display = 'none';
+        currentModalActId = null;
+      }
+
+      document.querySelectorAll('.btn-act-info').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const actId = btn.dataset.act;
+          openActInfoModal(actId);
+        });
+      });
+
+      const btnCloseModal = document.getElementById('btn-close-act-info');
+      if (btnCloseModal) btnCloseModal.addEventListener('click', closeActInfoModal);
+
+      const btnCancelModal = document.getElementById('btn-modal-cancel');
+      if (btnCancelModal) btnCancelModal.addEventListener('click', closeActInfoModal);
+
+      if (infoModal) {
+        infoModal.addEventListener('click', (e) => {
+          if (e.target === infoModal) closeActInfoModal();
+        });
+      }
+
+      const btnSelectFromModal = document.getElementById('btn-modal-select-act');
+      if (btnSelectFromModal) {
+        btnSelectFromModal.addEventListener('click', () => {
+          if (currentModalActId) {
+            const targetCard = document.querySelector(`.act-card[data-id="${currentModalActId}"]`);
+            if (targetCard) targetCard.click();
+          }
+          closeActInfoModal();
+        });
+      }
 
       // Selecció d'activitats
       document.querySelectorAll('.act-card').forEach(card => {
