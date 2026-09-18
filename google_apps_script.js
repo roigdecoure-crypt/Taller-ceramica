@@ -954,11 +954,21 @@ function checkCalendarSync(ss) {
   if (values.length <= 1) return { status: "success", cancelled_ids: [], count: 0 };
 
   var now = new Date();
-  var sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  // Comprovar des de fa 2 dies fins a 90 dies vista (les reserves futures actives)
+  var twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
   var ninetyDaysLater = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-  var allCals = [];
-  try { allCals = CalendarApp.getAllCalendars() || []; } catch (e) {}
+  var targetCal = getRoigDeCoureCalendar("reserves");
+  var defCal = null;
+  try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) {}
+
+  // Llista dels 2 calendaris principals rellevants per estalviar crides API
+  var checkCals = [];
+  if (targetCal) checkCals.push(targetCal);
+  if (defCal && (!targetCal || defCal.getId() !== targetCal.getId())) {
+    checkCals.push(defCal);
+  }
+
   var cancelled_ids = [];
 
   for (var i = 1; i < values.length; i++) {
@@ -968,36 +978,38 @@ function checkCalendarSync(ss) {
     var dateStr = String(row[4] || "").trim();
     var calEventId = String(row[14] || "").trim();
 
-    // Només comprovar reserves que estiguessin confirmades / pendents
+    // Només comprovar reserves actives / confirmades
     if (!resId || estat.indexOf("cancel") !== -1 || estat === "eliminada") continue;
 
     var resDate = parseDateTimeRobust(dateStr, row[5] || "10:00");
-    if (!resDate || resDate < sevenDaysAgo || resDate > ninetyDaysLater) continue;
+    if (!resDate || resDate < twoDaysAgo || resDate > ninetyDaysLater) continue;
 
-    // Només si té o ha tingut associat un esdeveniment a Google Calendar
+    // Si té associat un esdeveniment a Google Calendar
     if (calEventId) {
       var eventExists = false;
-      try {
-        var ev = CalendarApp.getEventById(calEventId);
-        if (ev) eventExists = true;
-      } catch (e1) {}
 
-      if (!eventExists) {
-        for (var c = 0; c < allCals.length; c++) {
-          try {
-            var evC = allCals[c].getEventById(calEventId);
-            if (evC) { eventExists = true; break; }
-          } catch (e2) {}
-        }
+      // 1. Cerca ràpida directa per ID
+      for (var c = 0; c < checkCals.length; c++) {
+        try {
+          var evC = checkCals[c].getEventById(calEventId);
+          if (evC) { eventExists = true; break; }
+        } catch (e1) {}
       }
 
-      // Si no es troba per ID, fer cerca de seguretat a aquell dia
+      if (!eventExists) {
+        try {
+          var evGlobal = CalendarApp.getEventById(calEventId);
+          if (evGlobal) eventExists = true;
+        } catch (eG) {}
+      }
+
+      // 2. Cerca de seguretat al dia concret només si no s'ha trobat per ID
       if (!eventExists && dateStr) {
         var startOfDay = parseDateTimeRobust(dateStr, "00:00");
         var endOfDay = parseDateTimeRobust(dateStr, "23:59");
-        for (var c2 = 0; c2 < allCals.length; c2++) {
+        for (var c2 = 0; c2 < checkCals.length; c2++) {
           try {
-            var dayEvents = allCals[c2].getEvents(startOfDay, endOfDay);
+            var dayEvents = checkCals[c2].getEvents(startOfDay, endOfDay);
             for (var j = 0; j < dayEvents.length; j++) {
               var d = dayEvents[j].getDescription() || "";
               if (d.indexOf("ID Reserva: " + resId) !== -1 || d.indexOf(resId) !== -1) {
@@ -1007,11 +1019,11 @@ function checkCalendarSync(ss) {
               }
             }
             if (eventExists) break;
-          } catch (e3) {}
+          } catch (eDay) {}
         }
       }
 
-      // Si l'esdeveniment no existeix en cap calendari, s'ha esborrat des de Google Calendar!
+      // 3. Si no existeix al calendari, s'ha esborrat des de Google Calendar!
       if (!eventExists) {
         sheet.getRange(i + 1, 11).setValue("cancel·lada");
         cancelled_ids.push(resId);
@@ -1023,7 +1035,10 @@ function checkCalendarSync(ss) {
   return {
     status: "success",
     cancelled_ids: cancelled_ids,
-    count: cancelled_ids.length
+    count: cancelled_ids.length,
+    message: cancelled_ids.length > 0
+      ? "S'han detectat " + cancelled_ids.length + " reserves suprimides de Google Calendar."
+      : "Google Calendar i l'aplicació estan al dia."
   };
 }
 
