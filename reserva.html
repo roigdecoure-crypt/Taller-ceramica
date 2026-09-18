@@ -100,10 +100,11 @@
       display: inline-block;
     }
     .public-header h1 {
-      font-family: 'Playfair Display', Georgia, serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 26px;
       font-weight: 800;
       color: var(--dark);
+      letter-spacing: -0.5px;
       margin: 0 0 6px;
     }
     .public-header p {
@@ -658,8 +659,10 @@
       display: none;
     }
     .success-view h2 {
-      font-family: 'Playfair Display', Georgia, serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
       color: var(--dark);
       margin: 0 0 8px;
     }
@@ -1216,6 +1219,8 @@
           const data = await resAct.json();
           if (data.ok && data.activitats) {
             data.activitats.forEach(act => {
+              if (act.id === 'experienciatornadult') act.id = 'experiencia_torn_adult';
+              if (act.id === 'experienciatorninfant') act.id = 'experiencia_torn_infant';
               if (act.id === 'torn') {
                 state.activitatCapMax = act.capacitatMax;
                 const b = document.getElementById('badge-cap-torn');

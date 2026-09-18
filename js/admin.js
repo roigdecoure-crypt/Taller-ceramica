@@ -5597,9 +5597,17 @@ async function populateNovaReservaActivitats() {
     acts = [
       { id: 'torn', nom: 'Torn', capacitatMax: 4 },
       { id: 'modelatge', nom: 'Modelatge', capacitatMax: 8 },
-      { id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12 }
+      { id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12 },
+      { id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4 },
+      { id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4 }
     ];
   }
+
+  // Normalitzar identificadors
+  acts.forEach(a => {
+    if (a.id === 'experienciatornadult') a.id = 'experiencia_torn_adult';
+    if (a.id === 'experienciatorninfant') a.id = 'experiencia_torn_infant';
+  });
 
   // Garantir que les dues noves experiències sempre hi siguin
   if (!acts.some(a => a.id === 'experiencia_torn_adult')) {
@@ -5608,6 +5616,14 @@ async function populateNovaReservaActivitats() {
   if (!acts.some(a => a.id === 'experiencia_torn_infant')) {
     acts.push({ id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4 });
   }
+
+  // Deduplicar per id
+  const seenIds = new Set();
+  acts = acts.filter(a => {
+    if (seenIds.has(a.id)) return false;
+    seenIds.add(a.id);
+    return true;
+  });
 
   adminTallersList = acts;
   actSelect.innerHTML = acts.map(a => `
