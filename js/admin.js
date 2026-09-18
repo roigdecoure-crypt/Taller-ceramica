@@ -4698,7 +4698,7 @@ function initAdminAuth() {
       if (timerMsg) clearTimeout(timerMsg);
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Desbloquejar Panell \u2192';
+        submitBtn.textContent = 'Entrar al Panell';
       }
     }
   };

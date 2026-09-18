@@ -1232,7 +1232,7 @@ function setupEventListeners() {
       } finally {
         if (btnSubmit) {
           btnSubmit.disabled = false;
-          btnSubmit.textContent = 'Enviar Codi de Seguretat per WhatsApp →';
+          btnSubmit.textContent = 'Enviar Codi de Seguretat per WhatsApp';
         }
       }
     });
@@ -1298,7 +1298,7 @@ function setupEventListeners() {
       } finally {
         if (btnSubmit) {
           btnSubmit.disabled = false;
-          btnSubmit.textContent = 'Confirmar i Entrar al Portal →';
+          btnSubmit.textContent = 'Confirmar i Entrar al Portal';
         }
       }
     });
