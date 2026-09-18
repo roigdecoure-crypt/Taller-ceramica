@@ -2664,6 +2664,25 @@ async function handleSyncGoogleCalendarClick(silent = false) {
 }
 window.handleSyncGoogleCalendarClick = handleSyncGoogleCalendarClick;
 
+// Auto-sincronització en segon pla totalment automàtica quan la pestanya es fa visible o cada 30s
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    if (document.getElementById('view-reserves')?.classList.contains('active')) {
+      handleSyncGoogleCalendarClick(true);
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && document.getElementById('view-reserves')?.classList.contains('active')) {
+      handleSyncGoogleCalendarClick(true);
+    }
+  });
+  setInterval(() => {
+    if (!document.hidden && document.getElementById('view-reserves')?.classList.contains('active')) {
+      handleSyncGoogleCalendarClick(true);
+    }
+  }, 30000);
+}
+
 async function renderAdminCalendar() {
   const monthTitle = document.getElementById('cal-month-title');
   if (monthTitle) {

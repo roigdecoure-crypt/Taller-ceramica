@@ -1142,3 +1142,74 @@ function sincronitzarTotesLesReservesAlCalendariReserves() {
 
   Logger.log("🎉 Sincronització completada! Total reserves sincronitzades a 'reserves': " + sincronitzades);
 }
+
+/**
+ * ⚡ ACTIVADOR 100% AUTOMÀTIC EN TEMPS REAL:
+ * Executa aquesta funció directament des de l'editor d'Apps Script (fent clic a "Executa"):
+ * 1. Connecta directament el calendari "reserves" d'aquest compte.
+ * 2. Cada vegada que s'elimini o modifiqui una cita a Google Calendar (des del mòbil o navegador),
+ *    Google executarà immediatament 'onCalendarEventChange' en segon pla!
+ * 3. A més, activa un disparador de reforç cada 5 minuts per garantir que mai quedi res desfasat.
+ */
+function configurarSincronitzacioAutomaticaTotal() {
+  var cal = getRoigDeCoureCalendar("reserves");
+  if (!cal) {
+    Logger.log("❌ No s'ha trobat el calendari 'reserves'.");
+    return;
+  }
+
+  // Eliminar activadors previs per evitar duplicats
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    var fn = triggers[i].getHandlerFunction();
+    if (fn === "onCalendarEventChange" || fn === "onMinuteSyncFallback") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+
+  // 1. Activador automàtic per esdeveniment de Google Calendar (execució immediata en canviar o esborrar)
+  ScriptApp.newTrigger("onCalendarEventChange")
+    .forUserCalendar(cal.getId())
+    .onEventUpdated()
+    .create();
+  Logger.log("✅ Activador en temps real de Google Calendar 'reserves' vinculat correctament!");
+
+  // 2. Activador de reforç periòdic cada 5 minuts
+  ScriptApp.newTrigger("onMinuteSyncFallback")
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+  Logger.log("✅ Activador periòdic de seguretat (5 min) activat!");
+
+  Logger.log("🎉 SISTEMA COMPLETAMENT AUTOMÀTIC! Ja no caldrà prémer cap botó per sincronitzar.");
+}
+
+/**
+ * Funció que crida Google Calendar automàticament cada vegada que detecta un canvi o esborrat.
+ */
+function onCalendarEventChange(e) {
+  Logger.log("🔔 [onCalendarEventChange] Canvi detectat a Google Calendar! Sincronitzant...");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var syncRes = checkCalendarSync(ss);
+  
+  // Si hi ha hagut cancel·lacions, avisar immediatament el backend de Render
+  try {
+    UrlFetchApp.fetch("https://taller-ceramica-nb96.onrender.com/api/reserves/sync-calendar", {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      muteHttpExceptions: true
+    });
+    Logger.log("📡 Notificació enviada a Render.");
+  } catch (errRender) {
+    Logger.log("Avís enviant a Render: " + errRender);
+  }
+}
+
+/**
+ * Funció de reforç periòdic cada 5 minuts.
+ */
+function onMinuteSyncFallback() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  checkCalendarSync(ss);
+}
+
