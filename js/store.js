@@ -1329,6 +1329,15 @@ const Store = {
 
     const forcarAforament = Boolean(reservaData.forcar_aforament || reservaData.ignorar_aforament || reservaData.force);
 
+    // 1. L'aforament global del taller es comprova sempre (Màx. 12 places en total)
+    const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
+    const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
+    const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+    const demanades = parseInt(reservaData.places || 1, 10);
+    if (ocupades + demanades > maxCap) {
+      return { ok: false, error: `Aforament global del taller complet per a aquesta franja (Màx. ${maxCap} places en total). No es pot sobrepassar el límit del taller.`, code: 'AFORAMENT_GLOBAL_COMPLET' };
+    }
+
     if (!forcarAforament) {
       // Validar dia de festa
       const customFestiu = (data.dies_festius || []).find(f => reservaData.data >= f.data_inici && reservaData.data <= (f.data_fi || f.data_inici));
@@ -1344,14 +1353,6 @@ const Store = {
         if (bloq.includes(actId)) {
           return { ok: false, error: `L'activitat triada no es pot impartir en aquesta data (${restr.motiu || 'activitat restringida per calendari'}).`, code: 'ACTIVITAT_RESTRINGIDA' };
         }
-      }
-
-      const maxCap = parseInt(data.config?.aforament_maxim_per_franja || 12, 10);
-      const existing = data.reserves.filter(r => r.data === reservaData.data && r.franja === (reservaData.franja || reservaData.franja_id) && r.estat === 'confirmada');
-      const ocupades = existing.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
-      const demanades = parseInt(reservaData.places || 1, 10);
-      if (ocupades + demanades > maxCap) {
-        return { ok: false, error: `Aforament complet per a aquesta franja (Màx. ${maxCap} places).`, code: 'AFORAMENT_COMPLET' };
       }
     }
     const resId = `RES-${Date.now()}-${reservaData.student_id}`;

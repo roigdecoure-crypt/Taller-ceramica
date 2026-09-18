@@ -5062,25 +5062,25 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             if not student_nom:
                                 student_nom = student_id
 
+                    # 1. Comprovar sempre l'aforament global del taller per al torn (Màx. 12 places globals - sempre es manté)
+                    max_cap = get_aforament_maxim()
+                    cursor.execute('''
+                        SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
+                        WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                            (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                            (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                        )
+                    ''', (data_res, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                    r_ocup = cursor.fetchone()
+                    current_ocupat_franja = r_ocup['total_ocupades'] or 0
+                    if current_ocupat_franja + places_demanades > max_cap:
+                        lliures = max(0, max_cap - current_ocupat_franja)
+                        torn_nom = "la tarda (17:00 - 20:00)" if is_tarda else "el matí (10:00 - 13:00)"
+                        self.send_json({'ok': False, 'error': f"Aforament global del taller complet per al torn de {torn_nom}. Queden {lliures} de {max_cap} places en total al taller. No es pot superar el límit físic del local."}, 400)
+                        return
+
+                    # 2. Comprovar aforament particular de l'activitat (només si no s'ha marcat forçar places d'activitat)
                     if not forcar_aforament:
-                        # Comprovar aforament del torn / franja (màxim 12 places per torn)
-                        max_cap = get_aforament_maxim()
-                        cursor.execute('''
-                            SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
-                            WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                            )
-                        ''', (data_res, 1 if is_tarda else 0, 1 if is_tarda else 0))
-                        r_ocup = cursor.fetchone()
-                        current_ocupat_franja = r_ocup['total_ocupades'] or 0
-                        if current_ocupat_franja + places_demanades > max_cap:
-                            lliures = max(0, max_cap - current_ocupat_franja)
-                            torn_nom = "la tarda (17:00 - 20:00)" if is_tarda else "el matí (10:00 - 13:00)"
-                            self.send_json({'ok': False, 'error': f"Aforament complet per al torn de {torn_nom}. Queden {lliures} places lliures (Màx. {max_cap})."}, 400)
-                            return
-    
-                        # Comprovar aforament particular de l'activitat en aquest torn
                         is_torn_family = activitat_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in activitat_id
                         if is_torn_family:
                             cursor.execute('''
@@ -5103,7 +5103,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if current_ocupat_act + places_demanades > act_obj['capacitatMax']:
                             lliures_act = max(0, act_obj['capacitatMax'] - current_ocupat_act)
                             torn_nom = "la tarda" if is_tarda else "el matí"
-                            self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (Màx. {act_obj['capacitatMax']})."}, 400)
+                            self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (Màx. {act_obj['capacitatMax']}). Com a administrador pots activar 'Permetre sobrepassar places d'activitat' si hi ha lloc al taller."}, 400)
                             return
     
                     # Proposta 1: Paga i Senyal per a reserves de 4 o més places (10 € / persona)
@@ -5696,29 +5696,31 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         return
 
                     # Comprovar aforament per a cadascuna de les noves dates (excloent la sèrie pròpia)
-                    if not forcar_aforament:
-                        max_cap = get_aforament_maxim()
-                        act_list = get_activitats_config()
-                        act_obj = next((a for a in act_list if a['id'] == activitat_id or a['nom'].lower() == activitat_id), None)
-                        cap_act = act_obj['capacitatMax'] if act_obj else 4
+                    max_cap = get_aforament_maxim()
+                    act_list = get_activitats_config()
+                    act_obj = next((a for a in act_list if a['id'] == activitat_id or a['nom'].lower() == activitat_id), None)
+                    cap_act = act_obj['capacitatMax'] if act_obj else 4
 
-                        for d in dates_valides:
-                            cursor.execute('''
-                                SELECT SUM(COALESCE(places, 1)) as tot FROM reserves
-                                WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
-                                  AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                                )
-                            ''', (d, effective_rec_id, effective_rec_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
-                            tot_global = cursor.fetchone()['tot'] or 0
-                            if tot_global + places > max_cap:
-                                self.send_json({
-                                    'ok': False,
-                                    'error': f"Aforament complet el {d} (queden {max(0, max_cap - tot_global)} places lliures). Pots activar 'Permetre sobrepassar aforament' per autoritzar-ho."
-                                }, 400)
-                                return
+                    for d in dates_valides:
+                        # 1. Comprovació global estricta (Màx. 12 places simultànies - sempre es manté)
+                        cursor.execute('''
+                            SELECT SUM(COALESCE(places, 1)) as tot FROM reserves
+                            WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
+                              AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                            )
+                        ''', (d, effective_rec_id, effective_rec_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        tot_global = cursor.fetchone()['tot'] or 0
+                        if tot_global + places > max_cap:
+                            self.send_json({
+                                'ok': False,
+                                'error': f"Aforament global del taller complet el {d} (queden {max(0, max_cap - tot_global)} de {max_cap} places en total). No es pot sobrepassar el límit físic del taller."
+                            }, 400)
+                            return
 
+                        # 2. Comprovació de places de l'activitat (només si no es forcen places d'activitat)
+                        if not forcar_aforament:
                             cursor.execute('''
                                 SELECT SUM(COALESCE(places, 1)) as tot_act FROM reserves
                                 WHERE data = ? AND (recurrent_id IS NULL OR (recurrent_id != ? AND id NOT LIKE ? || '%'))
@@ -5732,7 +5734,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             if tot_act + places > cap_act:
                                 self.send_json({
                                     'ok': False,
-                                    'error': f"Places de {activitat} completes el {d} (queden {max(0, cap_act - tot_act)} places). Pots activar 'Permetre sobrepassar aforament' per autoritzar-ho."
+                                    'error': f"Places de {activitat} completes el {d} (queden {max(0, cap_act - tot_act)} places). Pots activar 'Permetre sobrepassar places d'activitat' per autoritzar-ho."
                                 }, 400)
                                 return
 
@@ -5869,34 +5871,33 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if not reserves_to_update:
                         reserves_to_update = [target_dict]
 
-                    # Comprovar aforament per a cada reserva si no es força
-                    if not forcar_aforament:
-                        max_cap = get_aforament_maxim()
-                        for r_item in reserves_to_update:
-                            d_item = r_item['data']
-                            curr_id = r_item['id']
-                            pl_dem = int(r_item.get('places') or 1)
-                            act_id = (r_item.get('activitat_id') or 'torn').strip().lower()
-                            act_nom = (r_item.get('activitat') or 'Torn').strip().lower()
+                    # Comprovar aforament per a cada reserva: el màxim global del taller es respecta sempre
+                    max_cap = get_aforament_maxim()
+                    for r_item in reserves_to_update:
+                        d_item = r_item['data']
+                        curr_id = r_item['id']
+                        pl_dem = int(r_item.get('places') or 1)
+                        act_id = (r_item.get('activitat_id') or 'torn').strip().lower()
+                        act_nom = (r_item.get('activitat') or 'Torn').strip().lower()
 
-                            # Aforament global de la franja excloent la reserva pròpia
-                            cursor.execute('''
-                                SELECT SUM(COALESCE(places, 1)) as total_ocup FROM reserves
-                                WHERE data = ? AND id != ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
-                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
-                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
-                                )
-                            ''', (d_item, curr_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
-                            r_tot = cursor.fetchone()
-                            ocup_tot = r_tot['total_ocup'] or 0
-                            if ocup_tot + pl_dem > max_cap:
-                                torn_desc = "la tarda" if is_tarda else "el matí"
-                                lliures = max(0, max_cap - ocup_tot)
-                                self.send_json({
-                                    'ok': False,
-                                    'error': f"Aforament complet el {d_item} per a {torn_desc} ({nova_hora_inici} - {nova_hora_fi}). Queden {lliures} places lliures (Màx. {max_cap}). Pots marcar 'Permetre sobrepassar aforament' per forçar-ho."
-                                }, 400)
-                                return
+                        # Aforament global de la franja excloent la reserva pròpia
+                        cursor.execute('''
+                            SELECT SUM(COALESCE(places, 1)) as total_ocup FROM reserves
+                            WHERE data = ? AND id != ? AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                            )
+                        ''', (d_item, curr_id, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        r_tot = cursor.fetchone()
+                        ocup_tot = r_tot['total_ocup'] or 0
+                        if ocup_tot + pl_dem > max_cap:
+                            torn_desc = "la tarda" if is_tarda else "el matí"
+                            lliures = max(0, max_cap - ocup_tot)
+                            self.send_json({
+                                'ok': False,
+                                'error': f"Aforament global del taller complet el {d_item} per a {torn_desc} ({nova_hora_inici} - {nova_hora_fi}). Queden {lliures} de {max_cap} places en total. No es pot superar el límit físic del local."
+                            }, 400)
+                            return
 
                     # Executar l'actualització de l'horari
                     updated_rows = []

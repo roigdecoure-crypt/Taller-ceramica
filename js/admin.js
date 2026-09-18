@@ -4476,8 +4476,13 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         }
       } else {
         const errMsg = (res && res.error) || 'Aforament complet o error en les dates';
+        const isGlobalCap = errMsg.toLowerCase().includes('global') || errMsg.toLowerCase().includes('límit físic');
+        if (isGlobalCap) {
+          alert(`AVÍS D'AFORAMENT GLOBAL:\n\n${errMsg}\n\nEl taller ha assolit el límit màxim global de 12 places simultànies en alguna de les dates.`);
+          return;
+        }
         if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('conflicte') || errMsg.toLowerCase().includes('places') || (res && res.code === 'AFORAMENT_COMPLET'))) {
-          if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i crear la sèrie recurrent de totes maneres?`)) {
+          if (confirm(`AVÍS D'AFORAMENT D'ACTIVITAT:\n\n${errMsg}\n\nCom a administrador, vols sobrepassar les places d'aquesta activitat (mantenint sempre el límit global de 12 places del taller)?`)) {
             const chk = document.getElementById('admin-res-forcar-aforament');
             if (chk) chk.checked = true;
             return handleAdminSubmitNovaReserva(e, true);
@@ -4525,8 +4530,13 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         }
       } else {
         const errMsg = (res && res.error) || 'Aforament complet o dia no disponible';
+        const isGlobalCap = errMsg.toLowerCase().includes('global') || errMsg.toLowerCase().includes('límit físic');
+        if (isGlobalCap) {
+          alert(`AVÍS D'AFORAMENT GLOBAL:\n\n${errMsg}\n\nEl taller ha assolit el límit màxim global de 12 places simultànies. Cal triar un altre torn o data.`);
+          return;
+        }
         if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('places') || errMsg.toLowerCase().includes('complet') || errMsg.toLowerCase().includes('tancat') || (res && res.code === 'AFORAMENT_COMPLET'))) {
-          if (confirm(`AVÍS D'AFORAMENT:\n\n${errMsg}\n\nCom a administrador, vols saltar-te la regla d'aforament i forçar la reserva de totes maneres?`)) {
+          if (confirm(`AVÍS D'AFORAMENT D'ACTIVITAT:\n\n${errMsg}\n\nCom a administrador, vols sobrepassar les places d'aquesta activitat (mantenint sempre el límit global de 12 places del taller)?`)) {
             const chk = document.getElementById('admin-res-forcar-aforament');
             if (chk) chk.checked = true;
             return handleAdminSubmitNovaReserva(e, true);
