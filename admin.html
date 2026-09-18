@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=10.1.0">
+  <link rel="stylesheet" href="css/admin.css?v=12.4.0">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <script>
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
@@ -512,12 +512,19 @@
               <div class="cal-tip-text">
                 Fes clic a qualsevol dia per consultar les reserves i l'aforament
               </div>
-              <div class="cal-nav-row">
-                <h3 class="cal-month-title" id="cal-month-title">Setembre 2026</h3>
+              <div class="cal-nav-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                  <h3 class="cal-month-title" id="cal-month-title">Setembre 2026</h3>
+                  <div class="cal-view-selector" id="cal-view-selector" role="group" aria-label="Tipus de vista">
+                    <button type="button" class="btn-cal-view" data-view="dia">Dia</button>
+                    <button type="button" class="btn-cal-view" data-view="setmana">Setmana</button>
+                    <button type="button" class="btn-cal-view active" data-view="mes">Mes</button>
+                  </div>
+                </div>
                 <div class="cal-nav-buttons">
                   <button type="button" class="btn-cal-today" id="btn-cal-today">Avui</button>
-                  <button type="button" class="btn-cal-arrow" id="btn-cal-prev" title="Mes anterior">&lt;</button>
-                  <button type="button" class="btn-cal-arrow" id="btn-cal-next" title="Mes següent">&gt;</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-prev" title="Anterior">&lt;</button>
+                  <button type="button" class="btn-cal-arrow" id="btn-cal-next" title="Següent">&gt;</button>
                 </div>
               </div>
               <!-- Llegenda visual d'activitats -->
@@ -536,18 +543,35 @@
                 </span>
               </div>
             </div>
-            <div class="cal-grid-container">
-              <div class="cal-weekdays">
-                <div>Dl</div>
-                <div>Dt</div>
-                <div>Dc</div>
-                <div>Dj</div>
-                <div>Dv</div>
-                <div>Ds</div>
-                <div>Dg</div>
+            <div class="cal-grid-container" id="admin-cal-views-wrapper">
+              <!-- VISTA MES -->
+              <div class="cal-view-panel active" id="cal-view-panel-mes">
+                <div class="cal-weekdays">
+                  <div>Dl</div>
+                  <div>Dt</div>
+                  <div>Dc</div>
+                  <div>Dj</div>
+                  <div>Dv</div>
+                  <div>Ds</div>
+                  <div>Dg</div>
+                </div>
+                <div class="cal-days-grid" id="cal-days-grid">
+                  <!-- Es genera dinàmicament per JS -->
+                </div>
               </div>
-              <div class="cal-days-grid" id="cal-days-grid">
-                <!-- Es genera dinàmicament per JS -->
+
+              <!-- VISTA SETMANA -->
+              <div class="cal-view-panel" id="cal-view-panel-setmana" style="display: none;">
+                <div class="cal-week-grid" id="cal-week-grid">
+                  <!-- Es genera dinàmicament per JS -->
+                </div>
+              </div>
+
+              <!-- VISTA DIA -->
+              <div class="cal-view-panel" id="cal-view-panel-dia" style="display: none;">
+                <div class="cal-day-timeline" id="cal-day-timeline">
+                  <!-- Es genera dinàmicament per JS -->
+                </div>
               </div>
             </div>
           </div>
@@ -2950,6 +2974,6 @@
   <script src="js/api-config.js?v=11.4.2"></script>
   <script src="js/store.js?v=12.3.0"></script>
   <script src="js/reserves-calendar.js?v=11.4.2"></script>
-  <script src="js/admin.js?v=12.3.0"></script>
+  <script src="js/admin.js?v=12.4.0"></script>
 </body>
 </html>

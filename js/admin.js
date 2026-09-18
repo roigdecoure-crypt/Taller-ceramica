@@ -2453,6 +2453,24 @@ let adminCalYear = new Date().getFullYear();
 let adminCalMonth = new Date().getMonth() + 1; // 1-12
 let adminMonthDisponibilitat = null;
 let adminMonthReservesMap = {};
+let adminCalendarViewMode = 'mes'; // 'dia' | 'setmana' | 'mes'
+
+function getMondayOfWeek(d) {
+  try {
+    let date;
+    if (!d) date = new Date();
+    else if (typeof d === 'string') date = new Date(d + 'T00:00:00');
+    else date = new Date(d);
+    const day = date.getDay(); // 0 = diumenge, 1 = dilluns...
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+    return monday.toISOString().split('T')[0];
+  } catch (e) {
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
+let adminWeekStartDate = getMondayOfWeek(new Date());
 
 const CATALAN_MONTHS = [
   'Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny',
@@ -2500,21 +2518,64 @@ function escapeHtml(str) {
 }
 
 async function initAppointmentsDashboard() {
-  // Navegació mes anterior / següent / avui
+  // Selector de tipus de vista (Dia, Setmana, Mes)
+  document.querySelectorAll('.btn-cal-view').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetView = btn.dataset.view;
+      if (!targetView || targetView === adminCalendarViewMode) return;
+      adminCalendarViewMode = targetView;
+      document.querySelectorAll('.btn-cal-view').forEach(b => b.classList.toggle('active', b === btn));
+      await renderAdminCalendar();
+    });
+  });
+
+  // Navegació anterior / següent / avui adaptable a la vista
   document.getElementById('btn-cal-prev')?.addEventListener('click', async () => {
-    adminCalMonth--;
-    if (adminCalMonth < 1) {
-      adminCalMonth = 12;
-      adminCalYear--;
+    if (adminCalendarViewMode === 'mes') {
+      adminCalMonth--;
+      if (adminCalMonth < 1) {
+        adminCalMonth = 12;
+        adminCalYear--;
+      }
+    } else if (adminCalendarViewMode === 'setmana') {
+      const curMon = new Date(adminWeekStartDate + 'T00:00:00');
+      curMon.setDate(curMon.getDate() - 7);
+      adminWeekStartDate = curMon.toISOString().split('T')[0];
+      adminCalYear = curMon.getFullYear();
+      adminCalMonth = curMon.getMonth() + 1;
+    } else if (adminCalendarViewMode === 'dia') {
+      const curDay = new Date(adminSelectedDate + 'T00:00:00');
+      curDay.setDate(curDay.getDate() - 1);
+      adminSelectedDate = curDay.toISOString().split('T')[0];
+      adminWeekStartDate = getMondayOfWeek(curDay);
+      adminCalYear = curDay.getFullYear();
+      adminCalMonth = curDay.getMonth() + 1;
+      await renderAdminDayAppointments(adminSelectedDate);
     }
     await renderAdminCalendar();
   });
 
   document.getElementById('btn-cal-next')?.addEventListener('click', async () => {
-    adminCalMonth++;
-    if (adminCalMonth > 12) {
-      adminCalMonth = 1;
-      adminCalYear++;
+    if (adminCalendarViewMode === 'mes') {
+      adminCalMonth++;
+      if (adminCalMonth > 12) {
+        adminCalMonth = 1;
+        adminCalYear++;
+      }
+    } else if (adminCalendarViewMode === 'setmana') {
+      const curMon = new Date(adminWeekStartDate + 'T00:00:00');
+      curMon.setDate(curMon.getDate() + 7);
+      adminWeekStartDate = curMon.toISOString().split('T')[0];
+      adminCalYear = curMon.getFullYear();
+      adminCalMonth = curMon.getMonth() + 1;
+    } else if (adminCalendarViewMode === 'dia') {
+      const curDay = new Date(adminSelectedDate + 'T00:00:00');
+      curDay.setDate(curDay.getDate() + 1);
+      adminSelectedDate = curDay.toISOString().split('T')[0];
+      adminWeekStartDate = getMondayOfWeek(curDay);
+      adminCalYear = curDay.getFullYear();
+      adminCalMonth = curDay.getMonth() + 1;
+      await renderAdminDayAppointments(adminSelectedDate);
     }
     await renderAdminCalendar();
   });
@@ -2524,6 +2585,7 @@ async function initAppointmentsDashboard() {
     adminCalYear = now.getFullYear();
     adminCalMonth = now.getMonth() + 1;
     adminSelectedDate = now.toISOString().split('T')[0];
+    adminWeekStartDate = getMondayOfWeek(now);
     await renderAdminCalendar();
     await renderAdminDayAppointments(adminSelectedDate);
   });
@@ -2688,6 +2750,44 @@ if (typeof window !== 'undefined') {
 }
 
 async function renderAdminCalendar() {
+  // Assegurar botons actius al selector de vista
+  document.querySelectorAll('.btn-cal-view').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === adminCalendarViewMode);
+  });
+
+  const tipText = document.querySelector('.cal-tip-text');
+  const panelMes = document.getElementById('cal-view-panel-mes');
+  const panelSetmana = document.getElementById('cal-view-panel-setmana');
+  const panelDia = document.getElementById('cal-view-panel-dia');
+
+  if (adminCalendarViewMode === 'mes') {
+    if (panelMes) panelMes.style.display = 'block';
+    if (panelSetmana) panelSetmana.style.display = 'none';
+    if (panelDia) panelDia.style.display = 'none';
+    if (tipText) tipText.textContent = "Fes clic a qualsevol dia per consultar les reserves i l'aforament";
+    document.getElementById('btn-cal-prev')?.setAttribute('title', 'Mes anterior');
+    document.getElementById('btn-cal-next')?.setAttribute('title', 'Mes següent');
+    await renderAdminCalendarMonth();
+  } else if (adminCalendarViewMode === 'setmana') {
+    if (panelMes) panelMes.style.display = 'none';
+    if (panelSetmana) panelSetmana.style.display = 'block';
+    if (panelDia) panelDia.style.display = 'none';
+    if (tipText) tipText.textContent = "Consulta les reserves de la setmana. Fes clic a qualsevol dia per veure detalls a sota";
+    document.getElementById('btn-cal-prev')?.setAttribute('title', 'Setmana anterior');
+    document.getElementById('btn-cal-next')?.setAttribute('title', 'Setmana següent');
+    await renderAdminCalendarWeek();
+  } else if (adminCalendarViewMode === 'dia') {
+    if (panelMes) panelMes.style.display = 'none';
+    if (panelSetmana) panelSetmana.style.display = 'none';
+    if (panelDia) panelDia.style.display = 'block';
+    if (tipText) tipText.textContent = "Agenda horària i ocupació del dia seleccionat";
+    document.getElementById('btn-cal-prev')?.setAttribute('title', 'Dia anterior');
+    document.getElementById('btn-cal-next')?.setAttribute('title', 'Dia següent');
+    await renderAdminCalendarDay();
+  }
+}
+
+async function renderAdminCalendarMonth() {
   const monthTitle = document.getElementById('cal-month-title');
   if (monthTitle) {
     monthTitle.textContent = `${CATALAN_MONTHS[adminCalMonth - 1]} ${adminCalYear}`;
@@ -2889,12 +2989,280 @@ async function renderAdminCalendar() {
   grid.querySelectorAll('.cal-day-cell[data-date]').forEach(cell => {
     cell.addEventListener('click', async () => {
       adminSelectedDate = cell.dataset.date;
+      adminWeekStartDate = getMondayOfWeek(adminSelectedDate);
       grid.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('active-day'));
       cell.classList.add('active-day');
       await renderAdminDayAppointments(adminSelectedDate);
       document.getElementById('admin-appointment-list-mount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
+}
+
+async function renderAdminCalendarWeek() {
+  const weekGrid = document.getElementById('cal-week-grid');
+  if (!weekGrid) return;
+
+  const baseMonday = new Date(adminWeekStartDate + 'T00:00:00');
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(baseMonday);
+    d.setDate(baseMonday.getDate() + i);
+    weekDates.push(d.toISOString().split('T')[0]);
+  }
+
+  // Títol del rang de setmana
+  const dStart = new Date(weekDates[0] + 'T00:00:00');
+  const dEnd = new Date(weekDates[6] + 'T00:00:00');
+  let titleStr = '';
+  if (dStart.getMonth() === dEnd.getMonth()) {
+    titleStr = `${dStart.getDate()} – ${dEnd.getDate()} ${CATALAN_MONTHS[dStart.getMonth()]} ${dStart.getFullYear()}`;
+  } else {
+    titleStr = `${dStart.getDate()} ${CATALAN_MONTHS[dStart.getMonth()]} – ${dEnd.getDate()} ${CATALAN_MONTHS[dEnd.getMonth()]} ${dEnd.getFullYear()}`;
+  }
+  const monthTitle = document.getElementById('cal-month-title');
+  if (monthTitle) monthTitle.textContent = titleStr;
+
+  // Carregar disponibilitat del mes si cal
+  if (!adminMonthDisponibilitat || adminCalMonth !== (dStart.getMonth() + 1)) {
+    try {
+      adminMonthDisponibilitat = await Store.getDisponibilitatMes(dStart.getFullYear(), dStart.getMonth() + 1);
+    } catch (e) {
+      adminMonthDisponibilitat = null;
+    }
+  }
+
+  // Carregar totes les reserves actives
+  let allRes = [];
+  try {
+    allRes = await Store.getReserves();
+  } catch (e) {
+    allRes = [];
+  }
+  const weekResMap = {};
+  weekDates.forEach(dt => { weekResMap[dt] = []; });
+  if (Array.isArray(allRes)) {
+    allRes.forEach(r => {
+      if (weekResMap[r.data] && (!r.estat || !r.estat.toLowerCase().startsWith('cancel'))) {
+        weekResMap[r.data].push(r);
+      }
+    });
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const shortDayNames = ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'];
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const dateStr = weekDates[i];
+    const dObj = new Date(dateStr + 'T00:00:00');
+    const dayNum = dObj.getDate();
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === adminSelectedDate;
+    const dayDisp = adminMonthDisponibilitat?.dies?.[dateStr];
+    const isClosed = dayDisp?.tancat;
+    const dayRes = weekResMap[dateStr] || [];
+    
+    // Ordenar reserves per hora
+    dayRes.sort((a, b) => (a.hora_inici || '00:00').localeCompare(b.hora_inici || '00:00'));
+
+    let eventsHtml = '';
+    if (dayRes.length === 0) {
+      if (isClosed) {
+        eventsHtml = `<div class="cal-week-empty-text" style="color: #B45309; font-weight: 600;">Tancat</div>`;
+      } else {
+        eventsHtml = `<div class="cal-week-empty-text">Sense reserves</div>`;
+      }
+    } else {
+      dayRes.slice(0, 5).forEach(r => {
+        let act = 'Torn';
+        const aId = (r.activitat_id || '').toLowerCase();
+        const aNom = (r.activitat || '').toLowerCase();
+        if (aId === 'modelatge' || aNom.includes('modelat')) act = 'Modelatge';
+        else if (aId === 'pintar' || aNom.includes('pinta')) act = 'Pintar ceràmica';
+        else if (aId === 'torn' || aNom.includes('torn')) act = 'Torn';
+        else if (r.activitat) act = r.activitat;
+
+        let borderCol = '#B91C1C';
+        if (act === 'Modelatge') borderCol = '#047857';
+        else if (act.includes('Pintar')) borderCol = '#1D4ED8';
+        
+        const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
+        if (actObj && actObj.color) borderCol = actObj.color;
+
+        const timeLabel = r.hora_inici ? (r.hora_fi ? `${r.hora_inici}-${r.hora_fi}` : r.hora_inici) : '';
+        const placesText = (r.places && parseInt(r.places, 10) > 1) ? ` (${r.places} pl.)` : '';
+
+        eventsHtml += `
+          <div class="cal-week-event-card" style="border-left-color: ${borderCol};" title="${escapeHtml(r.student_nom || 'Reserva')} - ${escapeHtml(act)}${placesText}">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <span class="ev-time">${escapeHtml(timeLabel)}</span>
+              <span style="font-size: 9px; color: ${borderCol}; font-weight: 700;">${escapeHtml(act.substring(0, 4))}</span>
+            </div>
+            <div class="ev-name">${escapeHtml(r.student_nom || 'Alumne')}${placesText}</div>
+          </div>
+        `;
+      });
+
+      if (dayRes.length > 5) {
+        eventsHtml += `
+          <div style="font-size: 10px; text-align: center; color: #831D1D; font-weight: 700; padding: 2px;">
+            +${dayRes.length - 5} reserves més
+          </div>
+        `;
+      }
+    }
+
+    const colClasses = ['cal-week-col'];
+    if (isToday) colClasses.push('is-today');
+    if (isSelected) colClasses.push('active-day');
+
+    html += `
+      <div class="${colClasses.join(' ')}" data-date="${dateStr}">
+        <div class="cal-week-col-header">
+          <span class="day-name">${shortDayNames[i]}</span>
+          <span class="day-num">${dayNum}</span>
+        </div>
+        <div class="cal-week-events-list">
+          ${eventsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  weekGrid.innerHTML = html;
+
+  // Clic a qualsevol columna de dia de la setmana
+  weekGrid.querySelectorAll('.cal-week-col[data-date]').forEach(col => {
+    col.addEventListener('click', async () => {
+      adminSelectedDate = col.dataset.date;
+      weekGrid.querySelectorAll('.cal-week-col').forEach(c => c.classList.remove('active-day'));
+      col.classList.add('active-day');
+      await renderAdminDayAppointments(adminSelectedDate);
+      document.getElementById('admin-appointment-list-mount')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}
+
+async function renderAdminCalendarDay() {
+  const dayTimeline = document.getElementById('cal-day-timeline');
+  if (!dayTimeline) return;
+
+  const monthTitle = document.getElementById('cal-month-title');
+  if (monthTitle) {
+    monthTitle.textContent = formatCatalanFullDate(adminSelectedDate);
+  }
+
+  // Obtenir reserves d'aquest dia
+  let dayReserves = [];
+  try {
+    dayReserves = await Store.getReserves({ data: adminSelectedDate });
+    if (!Array.isArray(dayReserves)) dayReserves = [];
+  } catch (e) {
+    dayReserves = [];
+  }
+  const activeRes = dayReserves.filter(r => !r.estat || !r.estat.toLowerCase().startsWith('cancel'));
+  activeRes.sort((a, b) => (a.hora_inici || '00:00').localeCompare(b.hora_inici || '00:00'));
+
+  // Desglossament per activitats
+  let placesTorn = 0;
+  let placesModelatge = 0;
+  let placesPintar = 0;
+  activeRes.forEach(r => {
+    const pl = parseInt(r.places, 10) || 1;
+    const aId = (r.activitat_id || '').toLowerCase();
+    const aNom = (r.activitat || '').toLowerCase();
+    if (aId === 'modelatge' || aNom.includes('modelat')) placesModelatge += pl;
+    else if (aId === 'pintar' || aNom.includes('pinta')) placesPintar += pl;
+    else placesTorn += pl;
+  });
+  const totalPlaces = placesTorn + placesModelatge + placesPintar;
+
+  // Agrupar per franges horàries
+  const slotsMap = {};
+  activeRes.forEach(r => {
+    const timeKey = r.hora_inici ? (r.hora_fi ? `${r.hora_inici} – ${r.hora_fi}` : `${r.hora_inici} h`) : 'Horari no especificat';
+    if (!slotsMap[timeKey]) slotsMap[timeKey] = [];
+    slotsMap[timeKey].push(r);
+  });
+
+  const slotKeys = Object.keys(slotsMap).sort();
+
+  let slotsHtml = '';
+  if (slotKeys.length === 0) {
+    slotsHtml = `
+      <div style="background: #FAF7F5; border: 1.5px dashed #D1D5DB; border-radius: 8px; padding: 32px 20px; text-align: center; color: #6B7280;">
+        <div style="font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 6px;">Cap reserva programada per a aquest dia</div>
+        <div style="font-size: 13px;">Totes les places de Torn (4), Modelatge (8) i Pintura (12) estan completament lliures.</div>
+        <button type="button" class="btn btn-primary" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal('${adminSelectedDate}');}" style="margin-top: 14px; background: #831D1D; color: #FFFFFF; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; cursor: pointer;">
+          + Crear primera reserva
+        </button>
+      </div>
+    `;
+  } else {
+    slotKeys.forEach(slotKey => {
+      const list = slotsMap[slotKey];
+      const slotPlaces = list.reduce((acc, r) => acc + (parseInt(r.places, 10) || 1), 0);
+
+      let itemsHtml = '';
+      list.forEach(r => {
+        let act = 'Torn';
+        const aId = (r.activitat_id || '').toLowerCase();
+        const aNom = (r.activitat || '').toLowerCase();
+        if (aId === 'modelatge' || aNom.includes('modelat')) act = 'Modelatge';
+        else if (aId === 'pintar' || aNom.includes('pinta')) act = 'Pintar ceràmica';
+        else if (aId === 'torn' || aNom.includes('torn')) act = 'Torn';
+        else if (r.activitat) act = r.activitat;
+
+        let borderCol = '#B91C1C';
+        if (act === 'Modelatge') borderCol = '#047857';
+        else if (act.includes('Pintar')) borderCol = '#1D4ED8';
+        const actObj = (adminTallersList || []).find(a => a.nom.toLowerCase() === act.toLowerCase() || a.id.toLowerCase() === act.toLowerCase());
+        if (actObj && actObj.color) borderCol = actObj.color;
+
+        const plText = (r.places && parseInt(r.places, 10) > 1) ? `${r.places} places` : `1 plaça`;
+
+        itemsHtml += `
+          <div class="cal-day-slot-event-item" style="border-left-color: ${borderCol};">
+            <div class="cal-day-slot-event-info">
+              <span class="cal-day-slot-event-name">${escapeHtml(r.student_nom || 'Alumne')}</span>
+              <span class="cal-day-slot-event-sub">${escapeHtml(act)} \u2022 ${plText} \u2022 Tel: ${escapeHtml(r.telefon || 'Sense telèfon')}</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${borderCol}18; color: ${borderCol};">
+              ${escapeHtml(act)}
+            </span>
+          </div>
+        `;
+      });
+
+      slotsHtml += `
+        <div class="cal-day-slot-card has-events">
+          <div class="cal-day-slot-header">
+            <span class="cal-day-slot-time">${escapeHtml(slotKey)}</span>
+            <span class="cal-day-slot-count">${list.length} reserva/es \u2014 ${slotPlaces} places ocupades</span>
+          </div>
+          <div class="cal-day-slot-events-grid">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  dayTimeline.innerHTML = `
+    <div class="cal-day-header-summary">
+      <div class="cal-day-summary-title">
+        Resum d'Ocupació del Dia: <strong>${totalPlaces} / 12 places ocupades</strong>
+      </div>
+      <div class="cal-day-summary-badges">
+        <span class="cal-day-summary-badge" style="background: #B91C1C;">Torn: ${placesTorn} / 4</span>
+        <span class="cal-day-summary-badge" style="background: #047857;">Modelatge: ${placesModelatge} / 8</span>
+        <span class="cal-day-summary-badge" style="background: #1D4ED8;">Pintar: ${placesPintar} / 12</span>
+      </div>
+    </div>
+    <div class="cal-day-slots-list">
+      ${slotsHtml}
+    </div>
+  `;
 }
 
 async function renderAdminDayAppointments(dateStr) {
