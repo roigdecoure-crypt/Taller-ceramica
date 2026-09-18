@@ -2633,6 +2633,37 @@ async function refreshAppointmentsDashboard() {
   await renderAdminDayAppointments(adminSelectedDate);
 }
 
+async function handleSyncGoogleCalendarClick(silent = false) {
+  const btn = document.getElementById('btn-sync-calendar-quick');
+  if (btn && !silent) {
+    btn.disabled = true;
+    btn.innerHTML = '🔄 Sincronitzant...';
+  }
+  try {
+    const res = await Store.syncGoogleCalendar();
+    if (res && res.ok) {
+      const cnt = res.count || (res.cancelled_ids ? res.cancelled_ids.length : 0);
+      if (cnt > 0) {
+        showToast(`Google Calendar: s'han detectat i cancel·lat ${cnt} reserva/es suprimides del calendari.`, 'info');
+        await refreshAppointmentsDashboard();
+      } else if (!silent) {
+        showToast('Google Calendar: sincronització correcta, cap reserva pendent de cancel·lar.', 'success');
+      }
+    } else if (!silent) {
+      showToast(res.error || res.message || 'No s\'ha pogut sincronitzar amb Google Calendar.', 'warning');
+    }
+  } catch (err) {
+    console.warn('Error a handleSyncGoogleCalendarClick:', err);
+    if (!silent) showToast('Error sincronitzant Google Calendar: ' + err.message, 'error');
+  } finally {
+    if (btn && !silent) {
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Google Calendar';
+    }
+  }
+}
+window.handleSyncGoogleCalendarClick = handleSyncGoogleCalendarClick;
+
 async function renderAdminCalendar() {
   const monthTitle = document.getElementById('cal-month-title');
   if (monthTitle) {

@@ -1089,6 +1089,55 @@ def hydrate_from_google_sheets(target_url=None):
         print(f"[Google Sheets] {err_msg}")
         return {'ok': False, 'error': err_msg}
 
+def sync_calendar_from_google(target_url=None):
+    """
+    Comprova si hi ha reserves suprimides a Google Calendar i actualitza SQLite a 'cancel·lada'.
+    Garanteix la sincronització bidireccional Google Calendar -> Aplicació.
+    """
+    url = (target_url or get_google_sheets_url() or '').strip()
+    if not url:
+        return {'ok': False, 'message': 'Cap URL de Google Sheets configurat.', 'count': 0, 'cancelled_ids': []}
+
+    try:
+        sep = '&' if '?' in url else '?'
+        req_url = f"{url}{sep}action=check_calendar_sync&t={int(time.time())}"
+        req = urllib.request.Request(
+            req_url,
+            headers={'User-Agent': 'TallerCeramicaBackend/1.0', 'Accept': 'application/json'}
+        )
+        with execute_safe_request(req, timeout=25) as resp:
+            raw = resp.read().decode('utf-8')
+            res = json.loads(raw)
+            if res.get('status') == 'success':
+                cancelled_ids = res.get('cancelled_ids') or []
+                updated_count = 0
+                if cancelled_ids:
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        placeholders = ', '.join(['?'] * len(cancelled_ids))
+                        cursor.execute(f"""
+                            UPDATE reserves 
+                            SET estat = 'cancel·lada' 
+                            WHERE id IN ({placeholders}) 
+                            AND LOWER(estat) NOT LIKE 'cancel%' 
+                            AND LOWER(estat) != 'eliminada'
+                        """, cancelled_ids)
+                        updated_count = cursor.rowcount
+                        conn.commit()
+                msg = f"Sincronització completada: {len(cancelled_ids)} reserves suprimides a Google Calendar s'han cancel·lat." if cancelled_ids else "Google Calendar i l'aplicació estan al dia."
+                return {
+                    'ok': True,
+                    'count': len(cancelled_ids),
+                    'updated_in_db': updated_count,
+                    'cancelled_ids': cancelled_ids,
+                    'message': msg
+                }
+            else:
+                return {'ok': False, 'error': res.get('message') or 'Resposta no vàlida de Google Apps Script', 'count': 0, 'cancelled_ids': []}
+    except Exception as e:
+        print(f"[sync_calendar_from_google] Error: {e}")
+        return {'ok': False, 'error': str(e), 'count': 0, 'cancelled_ids': []}
+
 def sync_to_google_sheets_async(action, payload):
     """
     Envia esdeveniments de forma asÃ­ncrona a Google Sheets en segon pla.
@@ -1144,14 +1193,26 @@ def sync_to_google_sheets_async(action, payload):
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
 
-# HidrataciÃ³ inicial en segon pla per no bloquejar l'arrencada del servidor
+# Hidratació inicial en segon pla per no bloquejar l'arrencada del servidor
 def _hydrate_background():
     try:
         hydrate_from_google_sheets()
     except Exception as e:
-        print(f"[Google Sheets] AvÃ­s inicialitzant hidrataciÃ³: {e}")
+        print(f"[Google Sheets] Avís inicialitzant hidratació: {e}")
 
 threading.Thread(target=_hydrate_background, daemon=True).start()
+
+# Treballador periòdic en segon pla per sincronitzar cancel·lacions de Google Calendar
+def _calendar_sync_worker():
+    time.sleep(45)  # Esperar 45s a l'arrencada
+    while True:
+        try:
+            sync_calendar_from_google()
+        except Exception as e:
+            print(f"[Background Calendar Sync] Avís: {e}")
+        time.sleep(300)  # Cada 5 minuts
+
+threading.Thread(target=_calendar_sync_worker, daemon=True).start()
 
 def row_to_dict(row):
     return dict(row) if row else None
@@ -3036,6 +3097,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     any_val, mes_val = now.year, now.month
                 disp_mes = get_disponibilitat_mes(any_val, mes_val)
                 self.send_json({'ok': True, **disp_mes})
+                return
+
+            elif path == '/api/reserves/sync-calendar':
+                res = sync_calendar_from_google()
+                self.send_json(res, 200 if res.get('ok') else 400)
                 return
 
             elif path in ('/api/reserves/activitats', '/api/activitats'):
@@ -5065,6 +5131,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path == '/api/reserves/sync-calendar':
+                res = sync_calendar_from_google()
+                self.send_json(res, 200 if res.get('ok') else 400)
+                return
+
             elif path == '/api/reserves/update-serie':
                 recurrent_id = (data.get('recurrent_id') or '').strip()
                 res_id = (data.get('id') or data.get('reserva_id') or '').strip()
@@ -5944,7 +6015,18 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('DELETE FROM reserves WHERE id = ?', (res_id,))
                     conn.commit()
 
-                if row:
+                res_dict = row_to_dict(row) if row else None
+                if res_dict:
+                    cal_name = 'reserves'
+                    with get_db() as conn2:
+                        c2 = conn2.cursor()
+                        c2.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
+                        cr = c2.fetchone()
+                        if cr and cr['valor']:
+                            cal_name = cr['valor']
+                    res_dict['calendar_name'] = cal_name
+                    sync_to_google_sheets_async('delete_reserva', res_dict)
+                else:
                     sync_to_google_sheets_async('delete_reserva', {'id': res_id})
                 self.send_json({'ok': True, 'message': 'Reserva eliminada'})
                 return

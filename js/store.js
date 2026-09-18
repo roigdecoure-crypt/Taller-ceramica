@@ -1323,6 +1323,59 @@ const Store = {
     return { ok: false, error: 'Reserva no trobada' };
   },
 
+  async syncGoogleCalendar() {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/reserves/sync-calendar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const json = await res.json();
+        if (json.ok && json.cancelled_ids && json.cancelled_ids.length > 0) {
+          const local = this._getLocalData();
+          if (local.reserves) {
+            local.reserves.forEach(r => {
+              if (json.cancelled_ids.includes(r.id)) {
+                r.estat = 'cancel·lada';
+              }
+            });
+            this._saveLocalData(local);
+          }
+        }
+        return json;
+      } catch (e) {
+        console.warn('Error sincronitzant Google Calendar amb API:', e);
+      }
+    }
+
+    // Fallback directe a Google Apps Script si no hi ha connexió amb API backend
+    try {
+      const cfg = await this.getConfig();
+      const url = cfg.google_sheets_url;
+      if (!url) return { ok: false, error: 'Cap URL de Google Sheets/Calendar configurat', count: 0, cancelled_ids: [] };
+      const sep = url.includes('?') ? '&' : '?';
+      const res = await fetch(`${url}${sep}action=check_calendar_sync&t=${Date.now()}`);
+      const json = await res.json();
+      if (json.status === 'success') {
+        const cancelled = json.cancelled_ids || [];
+        if (cancelled.length > 0) {
+          const local = this._getLocalData();
+          if (local.reserves) {
+            local.reserves.forEach(r => {
+              if (cancelled.includes(r.id)) r.estat = 'cancel·lada';
+            });
+            this._saveLocalData(local);
+          }
+        }
+        return { ok: true, cancelled_ids: cancelled, count: cancelled.length, message: json.message };
+      }
+      return { ok: false, error: json.message || 'Error comprovant Google Calendar', count: 0, cancelled_ids: [] };
+    } catch (err) {
+      console.warn('Error sincronitzant directament amb Apps Script:', err);
+      return { ok: false, error: err.message, count: 0, cancelled_ids: [] };
+    }
+  },
+
   async cancelarReserva(reservaId) {
     if (this.mode === 'api') {
       try {

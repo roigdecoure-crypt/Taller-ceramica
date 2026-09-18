@@ -64,6 +64,9 @@
 
       if (typeof refreshAppointmentsDashboard === 'function' && tab === 'reserves') {
         refreshAppointmentsDashboard();
+        if (typeof handleSyncGoogleCalendarClick === 'function') {
+          handleSyncGoogleCalendarClick(true);
+        }
       } else if (typeof refreshStudentsList === 'function' && tab === 'alumnes') {
         refreshStudentsList();
       } else if (typeof populateDesignerStudentSelect === 'function' && tab === 'carnet-designer') {
@@ -561,6 +564,9 @@
                 </h2>
               </div>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-sync-calendar-quick" onclick="handleSyncGoogleCalendarClick();" title="Sincronitzar i detectar cancel·lacions de Google Calendar" style="border-color: #2563EB; color: #1E40AF; background: #EFF6FF; white-space: nowrap; flex-shrink: 0; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                  🔄 Google Calendar
+                </button>
                 <button type="button" class="btn btn-outline btn-sm" id="btn-admin-dia-festiu-quick" onclick="if(typeof openAdminFestiusModal==='function'){openAdminFestiusModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');}" style="border-color: #D97706; color: #92400E; background: #FFFBEB; white-space: nowrap; flex-shrink: 0; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
                   Festiu / Vacances
                 </button>
@@ -2942,8 +2948,8 @@
   <script src="js/sound.js?v=11.4.2"></script>
   <script src="js/qr-engine.js?v=11.4.2"></script>
   <script src="js/api-config.js?v=11.4.2"></script>
-  <script src="js/store.js?v=12.0.1"></script>
+  <script src="js/store.js?v=12.1.0"></script>
   <script src="js/reserves-calendar.js?v=11.4.2"></script>
-  <script src="js/admin.js?v=12.0.1"></script>
+  <script src="js/admin.js?v=12.1.0"></script>
 </body>
 </html>

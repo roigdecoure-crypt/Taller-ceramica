@@ -21,6 +21,14 @@ function doGet(e) {
     return jsonResponse({ status: "ok", missatge: "Connexio activa amb Google Sheets del Taller de Ceramica!" });
   }
 
+  if (action === "check_calendar_sync" || action === "sync_from_calendar") {
+    return jsonResponse(checkCalendarSync(SpreadsheetApp.getActiveSpreadsheet()));
+  }
+
+  if (action === "list_calendars") {
+    return jsonResponse(listAllCalendars());
+  }
+
   // Per defecte retorna totes les dades per a la hidratacio inicial
   return handleGetAll();
 }
@@ -87,6 +95,10 @@ function doPost(e) {
         }
       }
       return jsonResponse({ status: "success", message: "Configuracio actualitzada a Google Sheets" });
+    } else if (action === "check_calendar_sync" || action === "sync_from_calendar") {
+      return jsonResponse(checkCalendarSync(ss));
+    } else if (action === "list_calendars") {
+      return jsonResponse(listAllCalendars());
     }
 
     return jsonResponse({ status: "error", message: "Accio desconeguda: " + action });
@@ -778,47 +790,112 @@ function syncCalendarEvent(r) {
   }
 }
 
-function deleteCalendarEvent(r) {
+function deleteCalendarEvent(r, ss) {
   try {
-    if (!r) return;
-    var targetCalName = r.calendar_name || "reserves";
-    var cal = getRoigDeCoureCalendar(targetCalName);
-    if (!cal) return;
+    if (!r || !r.id) return false;
 
-    var event = null;
-    if (r.calendar_event_id) {
+    // 1. Recuperar dades de la reserva des del full si falten al payload
+    var sheet = ss ? ss.getSheetByName("Reserves") : null;
+    if (!sheet) {
       try {
-        event = cal.getEventById(r.calendar_event_id);
-      } catch (e) {}
+        var activeSs = SpreadsheetApp.getActiveSpreadsheet();
+        if (activeSs) sheet = activeSs.getSheetByName("Reserves");
+      } catch (eSheet) {}
     }
 
-    // També comprovar el calendari per defecte per si s'havia creat allà inicialment
-    try {
-      var defCal = CalendarApp.getDefaultCalendar();
-      if (defCal && defCal.getId() !== cal.getId() && r.calendar_event_id) {
-        var defEvent = defCal.getEventById(r.calendar_event_id);
-        if (defEvent) defEvent.deleteEvent();
-      }
-    } catch (eDef) {}
-
-    if (!event && r.data && r.hora_inici && r.hora_fi) {
-      var startTime = parseDateTimeRobust(r.data, r.hora_inici);
-      var endTime = parseDateTimeRobust(r.data, r.hora_fi);
-      var existingEvents = cal.getEvents(startTime, endTime);
-      for (var j = 0; j < existingEvents.length; j++) {
-        var d = existingEvents[j].getDescription() || "";
-        if (d.indexOf("ID Reserva: " + r.id) !== -1) {
-          event = existingEvents[j];
+    if (sheet && (!r.calendar_event_id || !r.data)) {
+      var sheetVals = sheet.getDataRange().getValues();
+      for (var sIdx = 1; sIdx < sheetVals.length; sIdx++) {
+        if (String(sheetVals[sIdx][0]).trim() === String(r.id).trim()) {
+          if (!r.calendar_event_id && sheetVals[sIdx][14]) r.calendar_event_id = String(sheetVals[sIdx][14]).trim();
+          if (!r.data && sheetVals[sIdx][4]) r.data = sheetVals[sIdx][4];
+          if (!r.hora_inici && sheetVals[sIdx][5]) r.hora_inici = sheetVals[sIdx][5];
+          if (!r.hora_fi && sheetVals[sIdx][6]) r.hora_fi = sheetVals[sIdx][6];
+          if (!r.student_nom && sheetVals[sIdx][2]) r.student_nom = sheetVals[sIdx][2];
           break;
         }
       }
     }
 
+    var targetCalName = r.calendar_name || "reserves";
+    var cal = getRoigDeCoureCalendar(targetCalName);
+    var allCals = [];
+    try {
+      if (typeof CalendarApp !== "undefined") {
+        allCals = CalendarApp.getAllCalendars() || [];
+      }
+    } catch (eAllC) {}
+
+    var event = null;
+
+    // 2. Cerca directa per ID d'esdeveniment (calendar_event_id)
+    if (r.calendar_event_id) {
+      // 2a. Al calendari seleccionat
+      if (cal) {
+        try { event = cal.getEventById(r.calendar_event_id); } catch (e) {}
+      }
+      // 2b. Al calendari per defecte de Google
+      if (!event) {
+        try {
+          var defCal = CalendarApp.getDefaultCalendar();
+          if (defCal) event = defCal.getEventById(r.calendar_event_id);
+        } catch (eDef) {}
+      }
+      // 2c. A qualsevol calendari de l'usuari
+      if (!event) {
+        for (var c = 0; c < allCals.length; c++) {
+          try {
+            var evTry = allCals[c].getEventById(r.calendar_event_id);
+            if (evTry) { event = evTry; break; }
+          } catch (eC) {}
+        }
+      }
+    }
+
+    // 3. Cerca de seguretat (fallback) pel text de la reserva durant tot el dia complet
+    if (!event && r.data) {
+      var startOfDay = parseDateTimeRobust(r.data, "00:00");
+      var endOfDay = parseDateTimeRobust(r.data, "23:59");
+
+      // Cerca a tots els calendaris
+      for (var ac = 0; ac < allCals.length; ac++) {
+        try {
+          var dayEvents = allCals[ac].getEvents(startOfDay, endOfDay);
+          for (var j = 0; j < dayEvents.length; j++) {
+            var desc = dayEvents[j].getDescription() || "";
+            var title = dayEvents[j].getTitle() || "";
+            // Coincidència exacta per ID de reserva a la descripció
+            if (desc.indexOf("ID Reserva: " + r.id) !== -1 || (r.id && desc.indexOf(r.id) !== -1)) {
+              event = dayEvents[j];
+              break;
+            }
+            // Coincidència pel nom de l'alumne i hora d'arribada si no hi ha ID
+            if (r.student_nom && r.hora_inici && title.indexOf(r.student_nom) !== -1) {
+              var evStart = dayEvents[j].getStartTime();
+              var rTargetTime = parseDateTimeRobust(r.data, r.hora_inici);
+              if (Math.abs(evStart.getTime() - rTargetTime.getTime()) <= 45 * 60 * 1000) {
+                event = dayEvents[j];
+                break;
+              }
+            }
+          }
+          if (event) break;
+        } catch (eDay) {}
+      }
+    }
+
+    // 4. Si s'ha trobat, esborrar l'esdeveniment
     if (event) {
       event.deleteEvent();
+      Logger.log("🗑️ Esdeveniment de Google Calendar eliminat amb èxit per a la reserva: " + r.id);
+      return true;
+    } else {
+      Logger.log("ℹ️ No s'ha trobat cap esdeveniment a Google Calendar per esborrar (Reserva: " + r.id + ")");
+      return false;
     }
   } catch (err) {
     Logger.log("Avís cancel·lant esdeveniment a Google Calendar: " + err.toString());
+    return false;
   }
 }
 
@@ -830,10 +907,16 @@ function cancelReservaRow(ss, r) {
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(r.id).trim()) {
       sheet.getRange(i + 1, 11).setValue("cancel·lada");
+      if (!r.calendar_event_id && values[i][14]) {
+        r.calendar_event_id = String(values[i][14]).trim();
+      }
+      if (!r.data && values[i][4]) r.data = values[i][4];
+      if (!r.hora_inici && values[i][5]) r.hora_inici = values[i][5];
+      if (!r.hora_fi && values[i][6]) r.hora_fi = values[i][6];
       break;
     }
   }
-  deleteCalendarEvent(r);
+  deleteCalendarEvent(r, ss);
 }
 
 function deleteReservaRow(ss, resId) {
@@ -845,6 +928,7 @@ function deleteReservaRow(ss, resId) {
     if (String(values[i][0]).trim() === String(resId).trim()) {
       var rObj = {
         id: resId,
+        student_nom: values[i][2],
         data: values[i][4],
         hora_inici: values[i][5],
         hora_fi: values[i][6],
@@ -852,10 +936,109 @@ function deleteReservaRow(ss, resId) {
         calendar_name: "reserves"
       };
       sheet.deleteRow(i + 1);
-      deleteCalendarEvent(rObj);
+      deleteCalendarEvent(rObj, ss);
       return;
     }
   }
+}
+
+function checkCalendarSync(ss) {
+  if (typeof CalendarApp === "undefined") {
+    return { status: "error", message: "CalendarApp no disponible" };
+  }
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Reserves");
+  if (!sheet) return { status: "error", message: "Pestanya Reserves no trobada" };
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return { status: "success", cancelled_ids: [], count: 0 };
+
+  var now = new Date();
+  var sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  var ninetyDaysLater = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+  var allCals = [];
+  try { allCals = CalendarApp.getAllCalendars() || []; } catch (e) {}
+  var cancelled_ids = [];
+
+  for (var i = 1; i < values.length; i++) {
+    var row = values[i];
+    var resId = String(row[0] || "").trim();
+    var estat = String(row[10] || "").trim().toLowerCase();
+    var dateStr = String(row[4] || "").trim();
+    var calEventId = String(row[14] || "").trim();
+
+    // Només comprovar reserves que estiguessin confirmades / pendents
+    if (!resId || estat.indexOf("cancel") !== -1 || estat === "eliminada") continue;
+
+    var resDate = parseDateTimeRobust(dateStr, row[5] || "10:00");
+    if (!resDate || resDate < sevenDaysAgo || resDate > ninetyDaysLater) continue;
+
+    // Només si té o ha tingut associat un esdeveniment a Google Calendar
+    if (calEventId) {
+      var eventExists = false;
+      try {
+        var ev = CalendarApp.getEventById(calEventId);
+        if (ev) eventExists = true;
+      } catch (e1) {}
+
+      if (!eventExists) {
+        for (var c = 0; c < allCals.length; c++) {
+          try {
+            var evC = allCals[c].getEventById(calEventId);
+            if (evC) { eventExists = true; break; }
+          } catch (e2) {}
+        }
+      }
+
+      // Si no es troba per ID, fer cerca de seguretat a aquell dia
+      if (!eventExists && dateStr) {
+        var startOfDay = parseDateTimeRobust(dateStr, "00:00");
+        var endOfDay = parseDateTimeRobust(dateStr, "23:59");
+        for (var c2 = 0; c2 < allCals.length; c2++) {
+          try {
+            var dayEvents = allCals[c2].getEvents(startOfDay, endOfDay);
+            for (var j = 0; j < dayEvents.length; j++) {
+              var d = dayEvents[j].getDescription() || "";
+              if (d.indexOf("ID Reserva: " + resId) !== -1 || d.indexOf(resId) !== -1) {
+                eventExists = true;
+                sheet.getRange(i + 1, 15).setValue(dayEvents[j].getId());
+                break;
+              }
+            }
+            if (eventExists) break;
+          } catch (e3) {}
+        }
+      }
+
+      // Si l'esdeveniment no existeix en cap calendari, s'ha esborrat des de Google Calendar!
+      if (!eventExists) {
+        sheet.getRange(i + 1, 11).setValue("cancel·lada");
+        cancelled_ids.push(resId);
+        Logger.log("⚠️ Reserva " + resId + " detectada com a suprimida a Google Calendar -> cancel·lada!");
+      }
+    }
+  }
+
+  return {
+    status: "success",
+    cancelled_ids: cancelled_ids,
+    count: cancelled_ids.length
+  };
+}
+
+function listAllCalendars() {
+  if (typeof CalendarApp === "undefined") return { status: "error", message: "CalendarApp no disponible" };
+  var cals = CalendarApp.getAllCalendars();
+  var list = [];
+  for (var i = 0; i < cals.length; i++) {
+    list.push({
+      name: cals[i].getName(),
+      id: cals[i].getId(),
+      isDefault: (CalendarApp.getDefaultCalendar() && CalendarApp.getDefaultCalendar().getId() === cals[i].getId())
+    });
+  }
+  return { status: "success", calendars: list };
 }
 
 /**
