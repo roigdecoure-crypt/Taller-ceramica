@@ -1529,7 +1529,7 @@ DEFAULT_INFO_ACTIVITATS = {
     "grups": {
         "titol": "Activitats per a Grups i Famílies",
         "subtitol": "Celebracions, aniversaris, trobades i teambuilding",
-        "descripcio": "Veniu en parella, família o amics a compartir una experiència al taller. Us preparem una sessió a mida i exclusiva adaptada a les vostres preferències i nivell.\n\nPodeu combinar torn de terrissaire, modelatge ceràmic o pintura sobre ceràmica.",
+        "descripcio": "Veniu en parella, família o amics a compartir una experiència al taller. Us preparem una sessió a mida i exclusiva adaptada a les vostres preferències i nivell.\n\nPodeu combinar torn, modelatge o pintar ceràmica.",
         "detalls": "• Sessions a mida de 2 o més hores.\n• Tot el fang ceràmic, eines, davantals i materials inclosos.\n• Acompanyament personalitzat del mestre ceramista.\n• Enfornat i cocció final de totes les peces perquè us les endugueu a casa.",
         "dates": "Horaris a convenir de dimecres a diumenge.",
         "preu": "Preu segons el nombre de persones i durada de l'activitat.",
@@ -1539,7 +1539,7 @@ DEFAULT_INFO_ACTIVITATS = {
         "titol": "Cursos Monogràfics i Intensius",
         "subtitol": "Tècniques específiques de taller, esmaltat, torn avançat i peces d'autor",
         "descripcio": "Cursos intensius i tallers monogràfics d'1 a 3 dies, orientats a aprofundir en aspectes concrets del món ceràmic.\n\nIdeal tant per a alumnes que volen avançar de nivell com per a creadors que volen dominar una tècnica específica.",
-        "detalls": "• Sessions intensives temàtiques (Raku, esmaltat, escultures, teteres...).\n• Grups reduïts per a una atenció propera i detallada.\n• Materials de primera qualitat i coccions especials incloses.",
+        "detalls": "",
         "dates": "Programació de noves convocatòries periòdiques. Consulta'ns les pròximes dates disponibles!",
         "preu": "Segons la durada i la temàtica del monogràfic.",
         "whatsapp_msg": "Hola Roig de Coure! Voldria informació sobre els pròxims cursos monogràfics programats."
@@ -1548,7 +1548,7 @@ DEFAULT_INFO_ACTIVITATS = {
         "titol": "Casals de Ceràmica per a Infants",
         "subtitol": "Creativitat, argila i diversió durant les vacances escolars",
         "descripcio": "Casals de ceràmica per a infants i joves durant les vacances d'estiu, Setmana Santa i Nadal.\n\nUn espai segur, inspirador i artístic on aprendre la màgia de transformar el fang amb les mans, provar el torn elèctric i pintar les seves pròpies creacions.",
-        "detalls": "• Torn elèctric adaptat, modelatge manual i pintura creativa.\n• Monitors i ceramistes amb experiència pedagògica.\n• Totes les peces es couen al forn perquè se les enduguin com a record permanent.",
+        "detalls": "",
         "dates": "Vacances d'estiu (juliol i agost), Setmana Santa i vacances de Nadal.",
         "preu": "Inscripcions per setmanes o dies solts.",
         "whatsapp_msg": "Hola Roig de Coure! Voldria informació sobre els casals infantils de ceràmica."

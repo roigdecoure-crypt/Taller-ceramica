@@ -2796,7 +2796,7 @@
 
   <!-- MODAL: GESTIÓ D'INFORMACIÓ D'ACTIVITATS WEB (GRUPS, MONOGRÀFICS, CASALS) -->
   <div class="modal-backdrop" id="modal-admin-info-activitats-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(30, 26, 24, 0.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" onclick="if(event.target===this) closeAnyModal('modal-admin-info-activitats-backdrop');">
-    <div class="modal-dialog" style="background: #FFFFFF; border-radius: 16px; max-width: 820px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.35); padding: 24px; box-sizing: border-box; position: relative; z-index: 100000;">
+    <div class="modal-dialog" style="background: #FFFFFF; border-radius: 0; max-width: 820px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.35); padding: 24px; box-sizing: border-box; position: relative; z-index: 100000;">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid #E5E7EB; padding-bottom: 14px;">
         <div>
           <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">Informació Web: Grups, Monogràfics i Casals</h3>
@@ -2807,9 +2807,9 @@
 
       <!-- Pestanyes d'Activitat -->
       <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB;">
-        <button type="button" class="btn-tab-act-info active" id="tab-btn-act-grups" onclick="switchAdminActInfoTab('grups');" style="padding: 9px 16px; font-weight: 700; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid #831D1D; color: #831D1D; font-size: 13.5px;">Grups i Famílies</button>
-        <button type="button" class="btn-tab-act-info" id="tab-btn-act-monografics" onclick="switchAdminActInfoTab('monografics');" style="padding: 9px 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #6B7280; font-size: 13.5px;">Monogràfics</button>
-        <button type="button" class="btn-tab-act-info" id="tab-btn-act-casals" onclick="switchAdminActInfoTab('casals');" style="padding: 9px 16px; font-weight: 600; border: none; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #6B7280; font-size: 13.5px;">Casals Infantils</button>
+        <button type="button" class="btn-tab-act-info active" id="tab-btn-act-grups" onclick="switchAdminActInfoTab('grups');" style="padding: 9px 16px; font-weight: 700; border: none; border-radius: 0; background: transparent; cursor: pointer; border-bottom: 3px solid #831D1D; color: #831D1D; font-size: 13.5px;">Grups i Famílies</button>
+        <button type="button" class="btn-tab-act-info" id="tab-btn-act-monografics" onclick="switchAdminActInfoTab('monografics');" style="padding: 9px 16px; font-weight: 600; border: none; border-radius: 0; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #6B7280; font-size: 13.5px;">Monogràfics</button>
+        <button type="button" class="btn-tab-act-info" id="tab-btn-act-casals" onclick="switchAdminActInfoTab('casals');" style="padding: 9px 16px; font-weight: 600; border: none; border-radius: 0; background: transparent; cursor: pointer; border-bottom: 3px solid transparent; color: #6B7280; font-size: 13.5px;">Casals Infantils</button>
       </div>
 
       <!-- Formulari d'Edició -->
@@ -2819,44 +2819,44 @@
         <div style="display: flex; flex-direction: column; gap: 14px;">
           <div>
             <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Títol Principal del Pop-up *</label>
-            <input type="text" id="admin-act-info-titol" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;" required>
+            <input type="text" id="admin-act-info-titol" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 0;" required>
           </div>
 
           <div>
             <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Subtítol / Estat destacat</label>
-            <input type="text" id="admin-act-info-subtitol" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px;">
+            <input type="text" id="admin-act-info-subtitol" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0;">
           </div>
 
           <div>
             <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Descripció general i proposta</label>
-            <textarea id="admin-act-info-descripcio" rows="3" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px; font-family: inherit; resize: vertical;"></textarea>
+            <textarea id="admin-act-info-descripcio" rows="3" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0; font-family: inherit; resize: vertical;"></textarea>
           </div>
 
           <div>
             <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Què inclou i característiques (un punt per línia amb '•')</label>
-            <textarea id="admin-act-info-detalls" rows="4" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px; font-family: inherit; resize: vertical;"></textarea>
+            <textarea id="admin-act-info-detalls" rows="4" class="form-control" placeholder="Deixa-ho buit si no hi ha detalls a mostrar..." style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0; font-family: inherit; resize: vertical;"></textarea>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             <div>
               <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Dates o Programació Actual</label>
-              <input type="text" id="admin-act-info-dates" class="form-control" placeholder="Ex: Dissabte 24 d'octubre (10 a 14h)" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <input type="text" id="admin-act-info-dates" class="form-control" placeholder="Ex: Dissabte 24 d'octubre (10 a 14h)" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0;">
             </div>
             <div>
               <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Preu / Condicions</label>
-              <input type="text" id="admin-act-info-preu" class="form-control" placeholder="Ex: 50 € / sessió (materials inclosos)" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px;">
+              <input type="text" id="admin-act-info-preu" class="form-control" placeholder="Ex: 50 € / sessió (materials inclosos)" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0;">
             </div>
           </div>
 
           <div>
-            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Missatge predeterminat de WhatsApp (en prémer el botó)</label>
-            <input type="text" id="admin-act-info-whatsapp" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 6px;">
+            <label style="display: block; font-size: 12.5px; font-weight: 700; color: #374151; margin-bottom: 4px;">Missatge predeterminat de WhatsApp (en prémer el botó Consultar)</label>
+            <input type="text" id="admin-act-info-whatsapp" class="form-control" style="width: 100%; padding: 8px 12px; font-size: 13.5px; border: 1px solid #D1D5DB; border-radius: 0;">
           </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; padding-top: 14px; border-top: 1px solid #E5E7EB;">
-          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-info-activitats-backdrop');">Tancar</button>
-          <button type="submit" class="btn btn-primary" id="btn-save-admin-act-info">Desar Contingut de l'Activitat</button>
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-info-activitats-backdrop');" style="border-radius: 0;">Tancar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-admin-act-info" style="border-radius: 0;">Desar Contingut de l'Activitat</button>
         </div>
       </form>
     </div>
