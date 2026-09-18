@@ -819,12 +819,8 @@ function deleteCalendarEvent(r, ss) {
 
     var targetCalName = r.calendar_name || "reserves";
     var cal = getRoigDeCoureCalendar(targetCalName);
-    var allCals = [];
-    try {
-      if (typeof CalendarApp !== "undefined") {
-        allCals = CalendarApp.getAllCalendars() || [];
-      }
-    } catch (eAllC) {}
+    var defCal = null;
+    try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) {}
 
     var event = null;
 
@@ -835,37 +831,31 @@ function deleteCalendarEvent(r, ss) {
         try { event = cal.getEventById(r.calendar_event_id); } catch (e) {}
       }
       // 2b. Al calendari per defecte de Google
-      if (!event) {
-        try {
-          var defCal = CalendarApp.getDefaultCalendar();
-          if (defCal) event = defCal.getEventById(r.calendar_event_id);
-        } catch (eDef) {}
+      if (!event && defCal) {
+        try { event = defCal.getEventById(r.calendar_event_id); } catch (eDef) {}
       }
-      // 2c. A qualsevol calendari de l'usuari
+      // 2c. Global
       if (!event) {
-        for (var c = 0; c < allCals.length; c++) {
-          try {
-            var evTry = allCals[c].getEventById(r.calendar_event_id);
-            if (evTry) { event = evTry; break; }
-          } catch (eC) {}
-        }
+        try { event = CalendarApp.getEventById(r.calendar_event_id); } catch (eGlob) {}
       }
     }
 
-    // 3. Cerca de seguretat (fallback) pel text de la reserva durant tot el dia complet
+    // 3. Cerca de seguretat (fallback) pel text de la reserva durant tot el dia (només a reserves i defecte)
     if (!event && r.data) {
       var startOfDay = parseDateTimeRobust(r.data, "00:00");
       var endOfDay = parseDateTimeRobust(r.data, "23:59");
+      var calsToSearch = [];
+      if (cal) calsToSearch.push(cal);
+      if (defCal && (!cal || defCal.getId() !== cal.getId())) calsToSearch.push(defCal);
 
-      // Cerca a tots els calendaris
-      for (var ac = 0; ac < allCals.length; ac++) {
+      for (var ac = 0; ac < calsToSearch.length; ac++) {
         try {
-          var dayEvents = allCals[ac].getEvents(startOfDay, endOfDay);
+          var dayEvents = calsToSearch[ac].getEvents(startOfDay, endOfDay);
           for (var j = 0; j < dayEvents.length; j++) {
             var desc = dayEvents[j].getDescription() || "";
             var title = dayEvents[j].getTitle() || "";
             // Coincidència exacta per ID de reserva a la descripció
-            if (desc.indexOf("ID Reserva: " + r.id) !== -1 || (r.id && desc.indexOf(r.id) !== -1)) {
+            if ((r.id && desc.indexOf("ID Reserva: " + r.id) !== -1) || (r.id && desc.indexOf(r.id) !== -1)) {
               event = dayEvents[j];
               break;
             }
@@ -954,7 +944,6 @@ function checkCalendarSync(ss) {
   if (values.length <= 1) return { status: "success", cancelled_ids: [], count: 0 };
 
   var now = new Date();
-  // Comprovar des de fa 2 dies fins a 90 dies vista (les reserves futures actives)
   var twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
   var ninetyDaysLater = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
@@ -962,14 +951,37 @@ function checkCalendarSync(ss) {
   var defCal = null;
   try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) {}
 
-  // Llista dels 2 calendaris principals rellevants per estalviar crides API
-  var checkCals = [];
-  if (targetCal) checkCals.push(targetCal);
-  if (defCal && (!targetCal || defCal.getId() !== targetCal.getId())) {
-    checkCals.push(defCal);
+  // Recollir TOTS els esdeveniments dels calendaris en NOMÉS 1 o 2 crides API totals (molt ràpid i evita timeouts!)
+  var existingEventIds = {};
+  var resIdToCalEventMap = {};
+
+  var calsToScan = [];
+  if (targetCal) calsToScan.push(targetCal);
+  if (defCal && (!targetCal || defCal.getId() !== targetCal.getId())) calsToScan.push(defCal);
+
+  for (var c = 0; c < calsToScan.length; c++) {
+    try {
+      var batchEvents = calsToScan[c].getEvents(twoDaysAgo, ninetyDaysLater);
+      for (var e = 0; e < batchEvents.length; e++) {
+        var ev = batchEvents[e];
+        var evId = ev.getId();
+        existingEventIds[evId] = true;
+        var shortId = evId.split("@")[0];
+        existingEventIds[shortId] = true;
+
+        var desc = ev.getDescription() || "";
+        var match = desc.match(/ID Reserva:\s*([A-Za-z0-9\-_]+)/);
+        if (match && match[1]) {
+          resIdToCalEventMap[match[1]] = evId;
+        }
+      }
+    } catch (eScan) {
+      Logger.log("Avís escanejant calendari: " + eScan);
+    }
   }
 
   var cancelled_ids = [];
+  var modified = false;
 
   for (var i = 1; i < values.length; i++) {
     var row = values[i];
@@ -984,52 +996,30 @@ function checkCalendarSync(ss) {
     var resDate = parseDateTimeRobust(dateStr, row[5] || "10:00");
     if (!resDate || resDate < twoDaysAgo || resDate > ninetyDaysLater) continue;
 
-    // Si té associat un esdeveniment a Google Calendar
+    // Comprovar si té calEventId
     if (calEventId) {
-      var eventExists = false;
+      var calShortId = calEventId.split("@")[0];
+      var eventExists = existingEventIds[calEventId] || existingEventIds[calShortId];
 
-      // 1. Cerca ràpida directa per ID
-      for (var c = 0; c < checkCals.length; c++) {
-        try {
-          var evC = checkCals[c].getEventById(calEventId);
-          if (evC) { eventExists = true; break; }
-        } catch (e1) {}
+      if (!eventExists && resIdToCalEventMap[resId]) {
+        values[i][14] = resIdToCalEventMap[resId];
+        eventExists = true;
+        modified = true;
       }
 
+      // Si no existeix ni per ID ni a la descripció del període, s'ha esborrat de Google Calendar!
       if (!eventExists) {
-        try {
-          var evGlobal = CalendarApp.getEventById(calEventId);
-          if (evGlobal) eventExists = true;
-        } catch (eG) {}
-      }
-
-      // 2. Cerca de seguretat al dia concret només si no s'ha trobat per ID
-      if (!eventExists && dateStr) {
-        var startOfDay = parseDateTimeRobust(dateStr, "00:00");
-        var endOfDay = parseDateTimeRobust(dateStr, "23:59");
-        for (var c2 = 0; c2 < checkCals.length; c2++) {
-          try {
-            var dayEvents = checkCals[c2].getEvents(startOfDay, endOfDay);
-            for (var j = 0; j < dayEvents.length; j++) {
-              var d = dayEvents[j].getDescription() || "";
-              if (d.indexOf("ID Reserva: " + resId) !== -1 || d.indexOf(resId) !== -1) {
-                eventExists = true;
-                sheet.getRange(i + 1, 15).setValue(dayEvents[j].getId());
-                break;
-              }
-            }
-            if (eventExists) break;
-          } catch (eDay) {}
-        }
-      }
-
-      // 3. Si no existeix al calendari, s'ha esborrat des de Google Calendar!
-      if (!eventExists) {
-        sheet.getRange(i + 1, 11).setValue("cancel·lada");
+        values[i][10] = "cancel·lada";
         cancelled_ids.push(resId);
-        Logger.log("⚠️ Reserva " + resId + " detectada com a suprimida a Google Calendar -> cancel·lada!");
+        modified = true;
+        Logger.log("⚠️ Reserva " + resId + " esborrada de Google Calendar -> marcada com a cancel·lada!");
       }
     }
+  }
+
+  // Guardar canvis en bloc a Google Sheets en una sola operació (instantani)
+  if (modified) {
+    sheet.getDataRange().setValues(values);
   }
 
   return {
