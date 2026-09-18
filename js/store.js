@@ -907,18 +907,26 @@ const Store = {
   },
 
   async changeAdminCredentials(payload) {
-    if (this.mode === 'api' || this.apiBase) {
+    const apiBase = (typeof getAdminApiBase === 'function' ? getAdminApiBase() : (this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : ''))) || '';
+    if (this.mode === 'api' || apiBase) {
       try {
-        const token = localStorage.getItem('roig_admin_token') || sessionStorage.getItem('roig_admin_token') || '';
-        const res = await fetch(`${this.apiBase}/api/admin/change-credentials`, {
+        const token = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_token')) || 
+                      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_token')) || '';
+        const bodyData = { ...(payload || {}), token: token, admin_token: token };
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const res = await fetch(`${apiBase}/api/admin/change-credentials`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(payload)
+          headers: headers,
+          body: JSON.stringify(bodyData)
         });
-        return await res.json();
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          return await res.json();
+        }
+        return { ok: false, error: `Error del servidor (${res.status}): format de resposta invàlid` };
       } catch (err) {
         return { ok: false, error: 'Error de connexió: ' + err.message };
       }
