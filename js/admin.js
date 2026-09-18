@@ -2412,6 +2412,9 @@ if (typeof window !== 'undefined') {
 }
 
 async function openReservesModal(preselectedDate) {
+  const activeRole = (typeof localStorage !== 'undefined' ? localStorage.getItem('roig_admin_role') : null) || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('roig_admin_role') : null) || 'owner';
+  if (activeRole === 'staff') return;
+
   const modal = document.getElementById('modal-reserves-backdrop');
   if (!modal) return;
 
@@ -4582,6 +4585,10 @@ function applyAdminRoleUI(role) {
     if (badge) {
       badge.textContent = 'Treballador (Equip)';
       badge.className = 'badge-staff';
+    }
+    const currentActiveTab = document.querySelector('.sidebar-item.active')?.dataset?.tab;
+    if (currentActiveTab === 'carnet-designer' && typeof window.switchAdminTab === 'function') {
+      window.switchAdminTab('reserves');
     }
   } else {
     document.body.classList.add('role-owner');

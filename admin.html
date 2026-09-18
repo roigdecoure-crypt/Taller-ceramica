@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=12.5.0">
+  <link rel="stylesheet" href="css/admin.css?v=12.5.5">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <script>
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
@@ -39,6 +39,10 @@
     } catch (swErr) {}
 
     function switchAdminTab(tab) {
+      var activeRole = (typeof localStorage !== 'undefined' ? localStorage.getItem('roig_admin_role') : null) || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('roig_admin_role') : null) || 'owner';
+      if (activeRole === 'staff' && tab === 'carnet-designer') {
+        tab = 'reserves';
+      }
       document.querySelectorAll('.sidebar-item[data-tab]').forEach(function(i) {
         if (i.dataset.tab === tab) i.classList.add('active');
         else i.classList.remove('active');
@@ -263,7 +267,7 @@
         </span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
-      <li class="sidebar-item" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets" onclick="switchAdminTab('carnet-designer');" style="cursor: pointer;">
+      <li class="sidebar-item staff-hidden" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets" onclick="switchAdminTab('carnet-designer');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="5" width="20" height="14" rx="2"></rect>
@@ -308,7 +312,7 @@
         </span>
         <span class="nav-text">Entrada / Sortida Manual</span>
       </li>
-      <li class="sidebar-item" id="btn-sidebar-aforament" title="Control d'Aforament" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');" style="cursor: pointer;">
+      <li class="sidebar-item staff-hidden" id="btn-sidebar-aforament" title="Control d'Aforament" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');" style="cursor: pointer;">
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -888,7 +892,7 @@
     </section>
  
     <!-- PESTANYA 4: DISSENYADOR DE CARNETS -->
-    <section class="admin-tab-view" id="view-carnet-designer">
+    <section class="admin-tab-view staff-hidden" id="view-carnet-designer">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div>
           <h2 style="font-size: 22px; font-weight: 800; color: #2C221E; margin: 0;">Dissenyador de Carnets</h2>
@@ -2992,6 +2996,6 @@
   <script src="js/api-config.js?v=11.4.2"></script>
   <script src="js/store.js?v=12.5.4"></script>
   <script src="js/reserves-calendar.js?v=11.4.2"></script>
-  <script src="js/admin.js?v=12.5.4"></script>
+  <script src="js/admin.js?v=12.5.5"></script>
 </body>
 </html>
