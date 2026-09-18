@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-server.py - Servidor Python amb SQLite i API REST per al Taller de CerÃ mica
+server.py - Servidor Python amb SQLite i API REST per al Taller de Ceràmica
 """
 
 import http.server
@@ -31,9 +31,9 @@ except Exception:
 
 def get_now():
     """
-    Retorna la data i hora actual a la zona horÃ ria oficial del taller (Europe/Madrid).
-    Evita el desplaÃ§ament d'1 o 2 hores quan el servidor s'executa a plataformes al nÃºvol (Render, Docker, etc.) en UTC.
-    Retorna un datetime naive que contÃ© exactament l'hora local de Catalunya.
+    Retorna la data i hora actual a la zona horària oficial del taller (Europe/Madrid).
+    Evita el desplaçament d'1 o 2 hores quan el servidor s'executa a plataformes al núvol (Render, Docker, etc.) en UTC.
+    Retorna un datetime naive que conté exactament l'hora local de Catalunya.
     """
     if LOCAL_TZ is not None:
         try:
@@ -95,7 +95,7 @@ def get_db():
     return conn
 
 def clean_old_backups(days=30):
-    """Purga automÃ ticament els fitxers de cÃ²pia mÃ©s antics de X dies."""
+    """Purga automàticament els fitxers de còpia més antics de X dies."""
     try:
         if not os.path.exists(BACKUP_DIR):
             return
@@ -113,7 +113,7 @@ def clean_old_backups(days=30):
         print(f"[Backup] Error netejant backups antics: {e}")
 
 def create_daily_snapshot_if_needed():
-    """Crea una cÃ²pia de seguretat SQLite del dia d'avui si encara no existeix."""
+    """Crea una còpia de seguretat SQLite del dia d'avui si encara no existeix."""
     try:
         os.makedirs(BACKUP_DIR, exist_ok=True)
         today_str = get_now().strftime('%Y-%m-%d')
@@ -128,7 +128,7 @@ def create_daily_snapshot_if_needed():
         print(f"[Backup] Error creant snapshot diari: {e}")
 
 def create_manual_snapshot(prefix="ceramica_manual"):
-    """Crea un snapshot de la base de dades a peticiÃ³."""
+    """Crea un snapshot de la base de dades a petició."""
     os.makedirs(BACKUP_DIR, exist_ok=True)
     ts = get_now().strftime('%Y%m%d_%H%M%S')
     filename = f"{prefix}_{ts}.db"
@@ -336,7 +336,7 @@ DEFAULT_CARNET_CONFIG = {
 
 def get_carnet_config(conn=None):
     """
-    Retorna la configuraciÃ³ de disseny del carnet emmagatzemada a la BD o la configuraciÃ³ per defecte.
+    Retorna la configuració de disseny del carnet emmagatzemada a la BD o la configuració per defecte.
     """
     cfg = dict(DEFAULT_CARNET_CONFIG)
     try:
@@ -358,13 +358,13 @@ def get_carnet_config(conn=None):
         if should_close:
             conn.close()
     except Exception as e:
-        print(f"[Carnet Config] Error llegint configuraciÃ³: {e}")
+        print(f"[Carnet Config] Error llegint configuració: {e}")
     return cfg
 
 def generate_carnet_svg(student, config=None):
     """
-    Genera el codi SVG vectorial autÃ²nom del carnet d'alumne segons la configuraciÃ³ del taller.
-    Format CR80 (proporciÃ³ 1.586 : 1, 1012 x 638 px).
+    Genera el codi SVG vectorial autònom del carnet d'alumne segons la configuració del taller.
+    Format CR80 (proporció 1.586 : 1, 1012 x 638 px).
     """
     if not config:
         config = get_carnet_config()
@@ -385,7 +385,7 @@ def generate_carnet_svg(student, config=None):
 
     script_font = "'Borel', 'Buffalo', cursive" if font_style != 'modern' else "system-ui, -apple-system, sans-serif"
 
-    # Silueta vectorial artesanal del bol cerÃ mic
+    # Silueta vectorial artesanal del bol ceràmic
     bowl_markup = ''
     if show_bowl:
         if custom_logo and '<svg' in custom_logo:
@@ -398,9 +398,9 @@ def generate_carnet_svg(student, config=None):
 
     divider_markup = f'''<line x1="60" y1="435" x2="560" y2="435" stroke="{text_color}" stroke-width="2" stroke-dasharray="12, 8" opacity="0.65"/>''' if show_divider else ''
 
-    tel_markup = f'''<text x="60" y="585" font-family="{script_font}" font-size="22" fill="{text_color}">TelÃ¨fon:</text><text x="160" y="585" font-family="Roboto, sans-serif" font-size="22" font-weight="600" fill="#1f1f1f">{telefon}</text>''' if vis.get('telefon') and telefon else ''
+    tel_markup = f'''<text x="60" y="585" font-family="{script_font}" font-size="22" fill="{text_color}">Telèfon:</text><text x="160" y="585" font-family="Roboto, sans-serif" font-size="22" font-weight="600" fill="#1f1f1f">{telefon}</text>''' if vis.get('telefon') and telefon else ''
 
-    # QR box amb representaciÃ³ vectorial neta
+    # QR box amb representació vectorial neta
     qr_svg = f'''
     <g transform="translate(680, 240)">
       <rect x="0" y="0" width="260" height="260" rx="16" fill="#ffffff" stroke="{text_color}" stroke-width="2" filter="drop-shadow(0px 4px 10px rgba(0,0,0,0.08))"/>
@@ -436,13 +436,13 @@ def generate_carnet_svg(student, config=None):
       @import url('https://fonts.googleapis.com/css2?family=Borel&amp;family=Roboto:wght@400;500;700&amp;display=swap');
     </style>
   </defs>
-  <!-- Fons de la targeta en proporciÃ³ CR80 -->
+  <!-- Fons de la targeta en proporció CR80 -->
   <rect x="0" y="0" width="1012" height="638" rx="28" ry="28" fill="{bg_color}" stroke="{text_color}" stroke-opacity="0.25" stroke-width="2"/>
 
   <!-- Marca Roig de Coure -->
   <text x="60" y="105" font-family="{script_font}" font-size="46" font-weight="bold" fill="{text_color}">{brand_name}</text>
 
-  <!-- Bol de cerÃ mica artesanal -->
+  <!-- Bol de ceràmica artesanal -->
   {bowl_markup}
 
   <!-- Camps de l'Alumne -->
@@ -542,7 +542,7 @@ def init_db():
                 FOREIGN KEY (student_id) REFERENCES alumnes (id)
             )
         ''')
-        # MigraciÃ³ de columnes addicionals per a bases de dades existents
+        # Migració de columnes addicionals per a bases de dades existents
         for col, col_type in [
             ('telefon', "TEXT DEFAULT ''"),
             ('activitat_id', "TEXT DEFAULT 'torn'"),
@@ -562,19 +562,19 @@ def init_db():
             except Exception:
                 pass
 
-        # MigraciÃ³ de columna edat a la taula alumnes si no existeix
+        # Migració de columna edat a la taula alumnes si no existeix
         try:
             cursor.execute("ALTER TABLE alumnes ADD COLUMN edat INTEGER DEFAULT NULL")
         except Exception:
             pass
 
-        # MigraciÃ³ de columna data_naixement a la taula alumnes si no existeix
+        # Migració de columna data_naixement a la taula alumnes si no existeix
         try:
             cursor.execute("ALTER TABLE alumnes ADD COLUMN data_naixement TEXT DEFAULT NULL")
         except Exception:
             pass
 
-        # Taula de configuraciÃ³
+        # Taula de configuració
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS configuracio (
                 clau TEXT PRIMARY KEY,
@@ -714,13 +714,13 @@ def init_db():
         except Exception:
             pass
 
-        # Seeding inicial de tallers si la taula Ã©s buida
+        # Seeding inicial de tallers si la taula és buida
         cursor.execute('SELECT COUNT(*) as cnt FROM activitats')
         if cursor.fetchone()['cnt'] == 0:
             initial_tallers = [
-                ('torn', 'Torn', 'SessiÃ³ al torn de terrissaire', 4, '#B91C1C', 1, 1),
-                ('modelatge', 'Modelatge', 'Modelat de fang a mÃ  i escultura', 8, '#047857', 1, 2),
-                ('pintar', 'Pintar cerÃ mica', 'Pintura i esmaltat sobre cerÃ mica', 12, '#1D4ED8', 1, 3)
+                ('torn', 'Torn', 'Sessió al torn de terrissaire', 4, '#B91C1C', 1, 1),
+                ('modelatge', 'Modelatge', 'Modelat de fang a mà i escultura', 8, '#047857', 1, 2),
+                ('pintar', 'Pintar ceràmica', 'Pintura i esmaltat sobre ceràmica', 12, '#1D4ED8', 1, 3)
             ]
             cursor.executemany('''
                 INSERT INTO activitats (id, nom, descripcio, capacitat_max, color, actiu, ordre)
@@ -742,16 +742,16 @@ def init_db():
             except Exception:
                 pass
 
-        # Franges horÃ ries oficials: MatÃ­ (10:00 - 13:00) i Tarda (17:00 - 20:00) de 2 hores (Roig de Coure)
+        # Franges horàries oficials: Matí (10:00 - 13:00) i Tarda (17:00 - 20:00) de 2 hores (Roig de Coure)
         default_franges_json = json.dumps([
-            {"id": "M1", "nom": "MatÃ­ (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0},
+            {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0},
             {"id": "T1", "nom": "Tarda (17:00 - 20:00)", "inici": "17:00", "fi": "20:00", "hores": 2.0}
         ], ensure_ascii=False)
 
-        # Valors de configuraciÃ³ inicials per defecte si no existeixen
+        # Valors de configuració inicials per defecte si no existeixen
         default_config = {
             'taller_nom': "Roig de Coure",
-            'taller_subtitol': "Taller d'Art i CerÃ mica",
+            'taller_subtitol': "Taller d'Art i Ceràmica",
             'taller_telefon': "+34 600 000 000",
             'taller_email': "roigdecoure@gmail.com",
             'taller_logo_url': "img/logo.png",
@@ -877,8 +877,8 @@ def init_db():
                     icona = ''
             ''', art)
 
-        # MigraciÃ³ de valors antics a configuraciÃ³ oficial si cal
-        cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de CerÃ mica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
+        # Migració de valors antics a configuració oficial si cal
+        cursor.execute('UPDATE configuracio SET valor = "Roig de Coure" WHERE clau = "taller_nom" AND (valor = "Taller de Ceràmica" OR valor = "Taller de Ceramica" OR valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = "#831D1D" WHERE clau = "brand_primary" AND (valor = "#C25E3A" OR valor = "#7A3026" OR valor IS NULL OR valor = "")')
         cursor.execute('UPDATE configuracio SET valor = "12" WHERE clau = "aforament_maxim_per_franja" AND (valor = "" OR valor IS NULL)')
         cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = "franges_horaries" AND (valor NOT LIKE "%T1%" OR valor LIKE "%mati_1%" OR valor LIKE "%F1%")', (default_franges_json,))
@@ -906,13 +906,13 @@ def init_db():
         except Exception:
             pass
 
-        # Assegurar persistÃ¨ncia de l'alumne 231F (Ferran Picornell) de l'export oficial
+        # Assegurar persistència de l'alumne 231F (Ferran Picornell) de l'export oficial
         cursor.execute('''
             INSERT OR IGNORE INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
             VALUES ('231F', 'Ferran', 'Picornell', '+34683633880', '', '3880', '2026-01-01', 'Debe Recargar', 1)
         ''')
 
-        # Dades inicials de demostraciÃ³ si la base de dades Ã©s buida
+        # Dades inicials de demostració si la base de dades és buida
         cursor.execute('SELECT COUNT(*) as count FROM alumnes')
         if cursor.fetchone()['count'] == 0:
             now_iso = datetime.now().isoformat()
@@ -935,10 +935,10 @@ def init_db():
                 ('PK-103-1', 'TC-103', ?, 20.0, 72000, 'Pack 20 Hores Taller Lliure', 220.0, 'Targeta', 'Compra inicial')
             ''', (now_iso, now_iso, now_iso))
 
-            # SessiÃ³ d'exemple tancada per a Maria
+            # Sessió d'exemple tancada per a Maria
             cursor.execute('''
                 INSERT INTO sessions (id, student_id, data, entrada, sortida, durada_segons, format_hms, tipus, estat, notes)
-                VALUES ('SES-DEMO-1', 'TC-101', '2026-09-01', '2026-09-01T10:00:00', '2026-09-01T11:45:20', 6320, '01:45:20', 'qr', 'tancada', 'SessiÃ³ de torn')
+                VALUES ('SES-DEMO-1', 'TC-101', '2026-09-01', '2026-09-01T10:00:00', '2026-09-01T11:45:20', 6320, '01:45:20', 'qr', 'tancada', 'Sessió de torn')
             ''')
         conn.commit()
 
@@ -946,7 +946,7 @@ init_db()
 create_daily_snapshot_if_needed()
 
 def get_google_sheets_url():
-    """ObtÃ© l'URL de Google Sheets des de la base de dades (prioritari) o variable d'entorn (Render)"""
+    """Obté l'URL de Google Sheets des de la base de dades (prioritari) o variable d'entorn (Render)"""
     NEW_DEFAULT_URL = "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec"
 
     # 1. Comprovar base de dades (prioritari per si es canvia des d'admin.html)
@@ -967,7 +967,7 @@ def get_google_sheets_url():
     if env_url and 'AKfycbzfXuSg' not in env_url:
         return env_url
 
-    # 3. Fallback a la nova URL activa amb sincronitzaciÃ³ de Google Calendar
+    # 3. Fallback a la nova URL activa amb sincronització de Google Calendar
     return NEW_DEFAULT_URL
 
 def sanitize_date_str(val):
@@ -999,7 +999,7 @@ class AppsScriptRedirectHandler(urllib.request.HTTPRedirectHandler):
     Gestiona correctament les redireccions 302 de Google Apps Script.
     Quan Google Apps Script rep un POST, respon amb 302 redirigint a
     https://script.googleusercontent.com/macros/echo?... que requereix
-    una peticiÃ³ GET sense el body original ni capÃ§aleres Content-Length.
+    una petició GET sense el body original ni capçaleres Content-Length.
     """
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         new_req = super().redirect_request(req, fp, code, msg, headers, newurl)
@@ -1032,15 +1032,15 @@ def execute_safe_request(req, timeout=30):
 
 def hydrate_from_google_sheets(target_url=None):
     """
-    DescÃ rrega inicial i bolcat (hidrataciÃ³) des de Google Sheets cap a SQLite.
-    Garanteix la persistÃ¨ncia total a Render fins i tot desprÃ©s de reinicis de contenidor.
+    Descàrrega inicial i bolcat (hidratació) des de Google Sheets cap a SQLite.
+    Garanteix la persistència total a Render fins i tot després de reinicis de contenidor.
     """
     url = (target_url or get_google_sheets_url()).strip()
     if not url:
         print("[Google Sheets] Cap URL configurat. S'utilitza la base de dades local SQLite.")
         return {'ok': False, 'message': 'Cap URL de Google Sheets configurat.'}
 
-    print(f"[Google Sheets] Iniciant hidrataciÃ³ des de Google Sheets...")
+    print(f"[Google Sheets] Iniciant hidratació des de Google Sheets...")
     try:
         req_url = url
         if 'action=' not in req_url:
@@ -1154,7 +1154,7 @@ def hydrate_from_google_sheets(target_url=None):
                 if not r.get('id') or not r.get('student_id'):
                     continue
 
-                # Detectar columnes desplaÃ§ades del full antic
+                # Detectar columnes desplaçades del full antic
                 raw_tel = str(r.get('telefon') or '').strip()
                 raw_data = str(r.get('data') or '').strip()
 
@@ -1221,12 +1221,12 @@ def hydrate_from_google_sheets(target_url=None):
                     cal_id
                 ))
 
-            # 5. Bolcar configuraciÃ³
+            # 5. Bolcar configuració
             for k, v in config.items():
                 if k:
                     if k == 'aforament_maxim_per_franja' and (str(v).strip() == '' or v is None):
                         v = '12'
-                    if k == 'taller_nom' and str(v) in ('Taller de CerÃ mica', 'Taller de Ceramica', ''):
+                    if k == 'taller_nom' and str(v) in ('Taller de Ceràmica', 'Taller de Ceramica', ''):
                         v = 'Roig de Coure'
                     if k == 'franges_horaries':
                         try:
@@ -1240,7 +1240,7 @@ def hydrate_from_google_sheets(target_url=None):
 
             conn.commit()
 
-        msg = f"HidrataciÃ³ completada: {len(alumnes)} alumnes, {len(paquets)} paquets, {len(sessions)} sessions, {len(reserves)} reserves sincronitzades des de Google Sheets."
+        msg = f"Hidratació completada: {len(alumnes)} alumnes, {len(paquets)} paquets, {len(sessions)} sessions, {len(reserves)} reserves sincronitzades des de Google Sheets."
         print(f"[Google Sheets] {msg}")
         return {
             'ok': True,
@@ -1253,7 +1253,7 @@ def hydrate_from_google_sheets(target_url=None):
             }
         }
     except Exception as e:
-        err_msg = f"Error durant la hidrataciÃ³: {str(e)}"
+        err_msg = f"Error durant la hidratació: {str(e)}"
         print(f"[Google Sheets] {err_msg}")
         return {'ok': False, 'error': err_msg}
 
@@ -1334,8 +1334,8 @@ def sync_calendar_from_google(target_url=None):
 
 def sync_to_google_sheets_async(action, payload):
     """
-    Envia esdeveniments de forma asÃ­ncrona a Google Sheets en segon pla.
-    No bloqueja la resposta de la peticiÃ³ de l'usuari/escÃ ner.
+    Envia esdeveniments de forma asíncrona a Google Sheets en segon pla.
+    No bloqueja la resposta de la petició de l'usuari/escàner.
     """
     def _worker():
         url = get_google_sheets_url()
@@ -1347,7 +1347,7 @@ def sync_to_google_sheets_async(action, payload):
                 'payload': payload,
                 'timestamp': datetime.now().isoformat()
             }
-            # Compatibilitat total: si Ã©s sync_all o entitats concretes, exposar tambÃ© a nivell arrel
+            # Compatibilitat total: si és sync_all o entitats concretes, exposar també a nivell arrel
             if action == 'sync_all' and isinstance(payload, dict):
                 req_dict.update(payload)
             elif action == 'sync_alumne':
@@ -1382,7 +1382,7 @@ def sync_to_google_sheets_async(action, payload):
                 except Exception:
                     pass
         except Exception as e:
-            print(f"[Google Sheets Sync] AvÃ­s enviant '{action}': {e}")
+            print(f"[Google Sheets Sync] Avís enviant '{action}': {e}")
 
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
@@ -1468,7 +1468,7 @@ DEFAULT_ACTIVITATS = [
 ]
 
 def slugify_activity_id(name):
-    """Genera un identificador vÃ lid (slug) a partir del nom del taller"""
+    """Genera un identificador vàlid (slug) a partir del nom del taller"""
     import unicodedata
     nfkd = unicodedata.normalize('NFKD', str(name or ''))
     clean = ''.join([c for c in nfkd if not unicodedata.combining(c)])
@@ -1477,7 +1477,7 @@ def slugify_activity_id(name):
     return slug or f"taller-{int(time.time())}"
 
 def get_activitats_config(include_inactive=False):
-    """Retorna la llista d'activitats oficials i dinÃ miques des de la base de dades"""
+    """Retorna la llista d'activitats oficials i dinàmiques des de la base de dades"""
     try:
         with get_db() as conn:
             cursor = conn.cursor()
@@ -1517,7 +1517,7 @@ def get_activitats_config(include_inactive=False):
                     })
                 return result
     except Exception as e:
-        print(f"[get_activitats_config] AvÃ­s consultant activitats DB: {e}")
+        print(f"[get_activitats_config] Avís consultant activitats DB: {e}")
 
     # Fallback predeterminat si no s'ha pogut llegir la taula
     return DEFAULT_ACTIVITATS
@@ -1527,14 +1527,14 @@ ACTIVITATS = DEFAULT_ACTIVITATS
 
 def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='ca'):
     """
-    Envia un missatge mitjanÃ§ant l'API oficial Meta WhatsApp Cloud API (directament, sense intermediaris).
-    DocumentaciÃ³ oficial: https://developers.facebook.com/docs/whatsapp/cloud-api
+    Envia un missatge mitjançant l'API oficial Meta WhatsApp Cloud API (directament, sense intermediaris).
+    Documentació oficial: https://developers.facebook.com/docs/whatsapp/cloud-api
     """
     phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
     if not phone_clean:
-        return {'ok': False, 'error': 'TelÃ¨fon buit o no vÃ lid'}
+        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
 
-    # Assegurar prefix internacional (Espanya 34 per defecte si en tÃ© 9)
+    # Assegurar prefix internacional (Espanya 34 per defecte si en té 9)
     if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
         phone_clean = '34' + phone_clean
 
@@ -1544,13 +1544,13 @@ def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='
         cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
 
     if cfg.get('whatsapp_enabled') != '1':
-        return {'ok': False, 'error': 'WhatsApp Meta API no estÃ  activat a la configuraciÃ³'}
+        return {'ok': False, 'error': 'WhatsApp Meta API no està activat a la configuració'}
 
     phone_id = (cfg.get('whatsapp_meta_phone_id') or '').strip()
     token = (cfg.get('whatsapp_meta_token') or '').strip()
 
     if not phone_id or not token:
-        return {'ok': False, 'error': 'Cal configurar el Phone Number ID i el Token de Meta a l\'AdministraciÃ³'}
+        return {'ok': False, 'error': 'Cal configurar el Phone Number ID i el Token de Meta a l\'Administració'}
 
     url = f"https://graph.facebook.com/v20.0/{phone_id}/messages"
 
@@ -1726,7 +1726,7 @@ def start_whatsapp_scheduler():
                     send_whatsapp_meta_async(r['telefon'], tpl_48, [nom, data_res, hora, act], on_success_cb=_mark_done_48)
 
             except Exception as e:
-                print(f"[WhatsApp Scheduler] AvÃ­s: {e}")
+                print(f"[WhatsApp Scheduler] Avís: {e}")
 
             # Comprovar cada 15 minuts
             time.sleep(900)
@@ -1798,7 +1798,7 @@ def calcular_hora_fi_2h(hora_inici_str):
         return "12:00"
 
 DEFAULT_FRANGES = [
-    {"id": "M1", "nom": "MatÃ­ (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0},
+    {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0},
     {"id": "T1", "nom": "Tarda (17:00 - 20:00)", "inici": "17:00", "fi": "20:00", "hores": 2.0}
 ]
 
@@ -1809,11 +1809,11 @@ FESTIUS_CATALUNYA = [
     {"data": "2026-04-06", "nom": "Dilluns de Pasqua"},
     {"data": "2026-05-01", "nom": "Festa del Treball"},
     {"data": "2026-06-24", "nom": "Sant Joan"},
-    {"data": "2026-08-15", "nom": "L'AssumpciÃ³"},
+    {"data": "2026-08-15", "nom": "L'Assumpció"},
     {"data": "2026-09-11", "nom": "Diada Nacional de Catalunya"},
     {"data": "2026-10-12", "nom": "Festa Nacional d'Espanya"},
     {"data": "2026-11-01", "nom": "Tots Sants"},
-    {"data": "2026-12-06", "nom": "Dia de la ConstituciÃ³"},
+    {"data": "2026-12-06", "nom": "Dia de la Constitució"},
     {"data": "2026-12-08", "nom": "La Immaculada"},
     {"data": "2026-12-25", "nom": "Nadal"},
     {"data": "2026-12-26", "nom": "Sant Esteve"}
@@ -1823,7 +1823,7 @@ def is_dia_tancat(data_str):
     try:
         dt = datetime.strptime(data_str, '%Y-%m-%d')
     except Exception:
-        return {'tancat': True, 'motiu': 'Data no vÃ lida'}
+        return {'tancat': True, 'motiu': 'Data no vàlida'}
 
     # Dilluns (0) i Dimarts (1) tancat per descans setmanal. Obrim Dimecres (2) a Diumenge (6).
     weekday = dt.weekday()
@@ -2437,7 +2437,7 @@ def recover_student_pin(cursor, identifier, contact):
         matched = True
         
     if not matched:
-        return None, "El telÃ¨fon o correu electrÃ²nic no coincideix amb el registrat a la fitxa de l'alumne."
+        return None, "El telèfon o correu electrònic no coincideix amb el registrat a la fitxa de l'alumne."
         
     pin = student['pin'] or '1234'
     return {'id': student['id'], 'nom': student['nom'], 'pin': pin}, None
@@ -2488,15 +2488,15 @@ def generate_pkpass(student, balance=None):
             "auxiliaryFields": [
                 {
                     "key": "codi",
-                    "label": "CODI ACCÃS",
+                    "label": "CODI ACCÉS",
                     "value": student_id
                 }
             ],
             "backFields": [
                 {
                     "key": "info",
-                    "label": "Instruccions d'Ãºs",
-                    "value": "Apropa aquest codi a l'escÃ ner del taller per registrar automÃ ticament entrada o sortida. Si portes Apple Watch, activa el passi al canell prement dues vegades el botÃ³ lateral."
+                    "label": "Instruccions d'ús",
+                    "value": "Apropa aquest codi a l'escàner del taller per registrar automàticament entrada o sortida. Si portes Apple Watch, activa el passi al canell prement dues vegades el botó lateral."
                 },
                 {
                     "key": "alumne_id",
@@ -2505,13 +2505,13 @@ def generate_pkpass(student, balance=None):
                 },
                 {
                     "key": "telefon",
-                    "label": "TelÃ¨fon Alumne",
+                    "label": "Telèfon Alumne",
                     "value": student.get('telefon') or "No especificat"
                 },
                 {
                     "key": "espai",
                     "label": "Espai",
-                    "value": "Roig de Coure - CerÃ mica"
+                    "value": "Roig de Coure - Ceràmica"
                 }
             ]
         },
@@ -3116,7 +3116,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'isRestoreable': False
                     })
                 
-                # 2. CÃ²pies histÃ²riques
+                # 2. Còpies històriques
                 if os.path.exists(BACKUP_DIR):
                     for fname in sorted(os.listdir(BACKUP_DIR), reverse=True):
                         if fname.endswith('.db'):
@@ -3146,7 +3146,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     target_path = os.path.join(BACKUP_DIR, safe_name)
                 
                 if not os.path.exists(target_path) or not os.path.isfile(target_path):
-                    self.send_json({'ok': False, 'error': 'Arxiu de cÃ²pia no trobat'}, 404)
+                    self.send_json({'ok': False, 'error': 'Arxiu de còpia no trobat'}, 404)
                     return
                 
                 with open(target_path, 'rb') as f:
@@ -3175,7 +3175,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/alumnes/verificar':
-                # VerificaciÃ³ privada d'alumne per a la reserva pÃºblica (sense exposar la llista d'alumnes)
+                # Verificació privada d'alumne per a la reserva pública (sense exposar la llista d'alumnes)
                 query_str = urllib.parse.parse_qs(url.query).get('q', [''])[0].strip()
                 if not query_str:
                     self.send_json({'ok': True, 'found': False, 'message': 'Cal indicar un nom o codi'})
@@ -3197,7 +3197,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             }
                         })
                     else:
-                        self.send_json({'ok': True, 'found': False, 'message': 'No s\'ha trobat cap alumne actiu amb aquest nom o nÃºmero'})
+                        self.send_json({'ok': True, 'found': False, 'message': 'No s\'ha trobat cap alumne actiu amb aquest nom o número'})
                 return
 
             elif path == '/api/wallet/pass':
@@ -3454,7 +3454,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/export':
-                # ExportaciÃ³ de backup complet JSON
+                # Exportació de backup complet JSON
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('SELECT * FROM alumnes')
@@ -4148,22 +4148,22 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 fname = data.get('filename', '').strip()
                 if not fname:
-                    self.send_json({'ok': False, 'error': 'Cal especificar el nom de la cÃ²pia a restaurar'}, 400)
+                    self.send_json({'ok': False, 'error': 'Cal especificar el nom de la còpia a restaurar'}, 400)
                     return
                 safe_name = os.path.basename(fname)
                 backup_file = os.path.join(BACKUP_DIR, safe_name)
                 if not os.path.exists(backup_file) or not safe_name.endswith('.db'):
-                    self.send_json({'ok': False, 'error': 'Arxiu de cÃ²pia no trobat o invÃ lid'}, 404)
+                    self.send_json({'ok': False, 'error': 'Arxiu de còpia no trobat o invàlid'}, 404)
                     return
                 try:
-                    # Crear backup de protecciÃ³ de l'estat actual abans de restaurar
+                    # Crear backup de protecció de l'estat actual abans de restaurar
                     create_manual_snapshot(prefix="ceramica_pre_restore")
                     with sqlite3.connect(backup_file) as src_conn:
                         with get_db() as dest_conn:
                             src_conn.backup(dest_conn)
-                    self.send_json({'ok': True, 'message': f'Base de dades restaurada amb Ã¨xit des de {safe_name}'})
+                    self.send_json({'ok': True, 'message': f'Base de dades restaurada amb èxit des de {safe_name}'})
                 except Exception as e:
-                    self.send_json({'ok': False, 'error': f'Error restaurant cÃ²pia: {str(e)}'}, 500)
+                    self.send_json({'ok': False, 'error': f'Error restaurant còpia: {str(e)}'}, 500)
             elif path == '/api/alumnes/auth':
                 identifier = str(data.get('identifier', '')).strip()
                 pin = str(data.get('pin', '')).strip()
@@ -4524,14 +4524,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     except (ValueError, TypeError):
                         edat = None
 
-                # Si es facilita data_naixement, calcular l'edat automÃ ticament
+                # Si es facilita data_naixement, calcular l'edat automàticament
                 if data_naixement:
                     calc_age = calculate_age_from_birthdate(data_naixement)
                     if calc_age is not None:
                         edat = calc_age
 
                 if not nom:
-                    self.send_json({'ok': False, 'error': 'El nom Ã©s obligatori'}, 400)
+                    self.send_json({'ok': False, 'error': 'El nom és obligatori'}, 400)
                     return
 
                 with get_db() as conn:
@@ -4585,7 +4585,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/checkin':
-                # Check-in / Check-out intelÂ·ligent per codi QR o ID
+                # Check-in / Check-out intel·ligent per codi QR o ID
                 code = (data.get('code') or '').strip()
                 if not code:
                     self.send_json({'ok': False, 'error': 'Codi d\'alumne buit'}, 400)
@@ -4612,7 +4612,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     now_iso = now.strftime('%Y-%m-%dT%H:%M:%S')
                     today = now.strftime('%Y-%m-%d')
 
-                    # Comprovar si tÃ© una sessiÃ³ oberta
+                    # Comprovar si té una sessió oberta
                     cursor.execute('''
                         SELECT * FROM sessions 
                         WHERE student_id = ? AND estat = "oberta" 
@@ -4620,15 +4620,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ''', (student_id,))
                     open_session = row_to_dict(cursor.fetchone())
 
-                    # Decidir l'acciÃ³: si requested_action Ã©s 'auto', depÃ¨n de si tÃ© sessiÃ³ oberta
+                    # Decidir l'acció: si requested_action és 'auto', depèn de si té sessió oberta
                     should_checkin = (requested_action == 'entrada') or (requested_action == 'auto' and not open_session)
                     should_checkout = (requested_action == 'sortida') or (requested_action == 'auto' and open_session)
 
                     if should_checkin:
                         # INICIAR ENTRADA (Check-in)
-                        # Si ja en tenia una d'oberta i forcem nova entrada, tanquem la prÃ¨via per seguretat
+                        # Si ja en tenia una d'oberta i forcem nova entrada, tanquem la prèvia per seguretat
                         if open_session:
-                            cursor.execute('UPDATE sessions SET estat = "tancada_forÃ§ada", notes = "ReemplaÃ§ada per nova entrada manual" WHERE id = ?', (open_session['id'],))
+                            cursor.execute('UPDATE sessions SET estat = "tancada_forçada", notes = "Reemplaçada per nova entrada manual" WHERE id = ?', (open_session['id'],))
 
                         session_id = f"SES-{now.strftime('%Y%m%d%H%M%S')}-{student_id}"
                         cursor.execute('''
@@ -4637,7 +4637,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         ''', (session_id, student_id, today, now_iso, tipus))
                         conn.commit()
 
-                        # Sincronitzar nova sessiÃ³ oberta a Google Sheets
+                        # Sincronitzar nova sessió oberta a Google Sheets
                         sync_to_google_sheets_async('checkin', {
                             'id': session_id,
                             'student_id': student_id,
@@ -4668,7 +4668,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if not open_session:
                             self.send_json({
                                 'ok': False,
-                                'error': f"{student['nom']} no tÃ© cap entrada activa registrada. Per registrar una classe passada utilitza 'SessiÃ³ Manual'."
+                                'error': f"{student['nom']} no té cap entrada activa registrada. Per registrar una classe passada utilitza 'Sessió Manual'."
                             }, 400)
                             return
 
@@ -4713,7 +4713,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         return
 
             elif path == '/api/tancar-cicle':
-                # Tancar un cicle/sessiÃ³ que l'alumne s'ha oblidat de marcar
+                # Tancar un cicle/sessió que l'alumne s'ha oblidat de marcar
                 session_id = data.get('sessionId')
                 student_id = data.get('studentId')
                 durada_manual = data.get('duradaManual') # opcional: "01:30:00" o segons
@@ -4732,14 +4732,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     sess = row_to_dict(cursor.fetchone())
                     if not sess:
-                        self.send_json({'ok': False, 'error': 'No s\'ha trobat cap sessiÃ³ oberta'}, 404)
+                        self.send_json({'ok': False, 'error': 'No s\'ha trobat cap sessió oberta'}, 404)
                         return
 
                     entrada_dt = parse_to_local_dt(sess['entrada'])
 
                     # Determinar sortida i durada
                     if durada_manual:
-                        # duradaManual pot ser "01:30:00" o nÃºmero de segons
+                        # duradaManual pot ser "01:30:00" o número de segons
                         if isinstance(durada_manual, (int, float)):
                             durada_segons = int(durada_manual)
                         else:
@@ -4770,12 +4770,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     cursor.execute('''
                         UPDATE sessions 
-                        SET sortida = ?, durada_segons = ?, format_hms = ?, estat = 'tancada_forÃ§ada', notes = ?
+                        SET sortida = ?, durada_segons = ?, format_hms = ?, estat = 'tancada_forçada', notes = ?
                         WHERE id = ?
                     ''', (sortida_iso, durada_segons, durada_hms, notes, sess['id']))
                     conn.commit()
 
-                    # Sincronitzar tancament forÃ§at a Google Sheets
+                    # Sincronitzar tancament forçat a Google Sheets
                     sync_to_google_sheets_async('force_close', {
                         'id': sess['id'],
                         'student_id': sess['student_id'],
@@ -4785,7 +4785,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'durada_segons': durada_segons,
                         'format_hms': durada_hms,
                         'tipus': sess.get('tipus', 'manual'),
-                        'estat': 'tancada_forÃ§ada',
+                        'estat': 'tancada_forçada',
                         'notes': notes
                     })
 
@@ -4849,7 +4849,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/sessions/manual':
-                # CreaciÃ³ o ediciÃ³ manual de sessiÃ³
+                # Creació o edició manual de sessió
                 sess_id = data.get('id')
                 student_id = data.get('studentId')
                 entrada = data.get('entrada')
@@ -4882,7 +4882,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         ''', (sess_id, student_id, data_sess, entrada, sortida, durada_segons, durada_hms, notes))
                     conn.commit()
 
-                # Sincronitzar sessiÃ³ manual a Google Sheets
+                # Sincronitzar sessió manual a Google Sheets
                 sync_to_google_sheets_async('manual_session', {
                     'id': sess_id,
                     'student_id': student_id,
@@ -4903,7 +4903,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'id': sess_id,
                     'duradaHms': durada_hms,
                     'balanc': balanc,
-                    'message': 'SessiÃ³ desada correctament'
+                    'message': 'Sessió desada correctament'
                 })
                 return
 
@@ -4951,7 +4951,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': 'Cal indicar la data de la reserva'}, 400)
                     return
 
-                # Si han marcat l'opciÃ³ "SÃ³c alumne" o han indicat un student_id / codi d'alumne
+                # Si han marcat l'opció "Sóc alumne" o han indicat un student_id / codi d'alumne
                 is_soc_alumne = bool(data.get('soc_alumne') or data.get('is_student') or data.get('isStudent'))
                 if is_soc_alumne or (student_id and not student_id.startswith('CLI-')):
                     with get_db() as conn_check:
@@ -4969,10 +4969,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         elif is_soc_alumne and not student_id:
                             student_id = f"ALU-{int(get_now().timestamp())}"
 
-                # Si Ã©s un client no alumne (reserva des de la web pÃºblica reserva.html)
+                # Si és un client no alumne (reserva des de la web pública reserva.html)
                 if not student_id:
                     if not student_nom or not telefon:
-                        self.send_json({'ok': False, 'error': 'Cal indicar el teu nom complet i telÃ¨fon de contacte per a la reserva'}, 400)
+                        self.send_json({'ok': False, 'error': 'Cal indicar el teu nom complet i telèfon de contacte per a la reserva'}, 400)
                         return
                     student_id = f"CLI-{int(get_now().timestamp())}"
 
@@ -5044,7 +5044,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if not franja_obj:
                     franja_obj = next((f for f in franges if (f.get('inici') or '') >= '14:00'), None) if is_tarda else next((f for f in franges if (f.get('inici') or '') < '14:00'), None)
                 if not franja_obj:
-                    franja_obj = {"id": franja_id, "nom": "Tarda (17:00 - 20:00)" if is_tarda else "MatÃ­ (10:00 - 13:00)", "inici": "17:00" if is_tarda else "10:00", "fi": "20:00" if is_tarda else "13:00", "hores": 2.0}
+                    franja_obj = {"id": franja_id, "nom": "Tarda (17:00 - 20:00)" if is_tarda else "Matí (10:00 - 13:00)", "inici": "17:00" if is_tarda else "10:00", "fi": "20:00" if is_tarda else "13:00", "hores": 2.0}
 
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -5063,7 +5063,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 student_nom = student_id
 
                     if not forcar_aforament:
-                        # Comprovar aforament del torn / franja (mÃ xim 12 places per torn)
+                        # Comprovar aforament del torn / franja (màxim 12 places per torn)
                         max_cap = get_aforament_maxim()
                         cursor.execute('''
                             SELECT SUM(COALESCE(places, 1)) as total_ocupades FROM reserves
@@ -5076,8 +5076,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         current_ocupat_franja = r_ocup['total_ocupades'] or 0
                         if current_ocupat_franja + places_demanades > max_cap:
                             lliures = max(0, max_cap - current_ocupat_franja)
-                            torn_nom = "la tarda (17:00 - 20:00)" if is_tarda else "el matÃ­ (10:00 - 13:00)"
-                            self.send_json({'ok': False, 'error': f"Aforament complet per al torn de {torn_nom}. Queden {lliures} places lliures (MÃ x. {max_cap})."}, 400)
+                            torn_nom = "la tarda (17:00 - 20:00)" if is_tarda else "el matí (10:00 - 13:00)"
+                            self.send_json({'ok': False, 'error': f"Aforament complet per al torn de {torn_nom}. Queden {lliures} places lliures (Màx. {max_cap})."}, 400)
                             return
     
                         # Comprovar aforament particular de l'activitat en aquest torn
@@ -5178,7 +5178,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Sincronitzar reserva a Google Sheets i Google Calendar
                 sync_to_google_sheets_async('add_reserva', reserva_dict)
 
-                # Disparar confirmaciÃ³ per WhatsApp Meta Cloud API si estÃ  activat
+                # Disparar confirmació per WhatsApp Meta Cloud API si està activat
                 if telefon:
                     with get_db() as conn_wa:
                         cur_wa = conn_wa.cursor()
@@ -5339,7 +5339,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 email = str(al_found['email']).strip()
                 if not student_id:
                     if not student_nom or not telefon:
-                        self.send_json({'ok': False, 'error': "Cal indicar el nom i telÃ¨fon de contacte"}, 400)
+                        self.send_json({'ok': False, 'error': "Cal indicar el nom i telèfon de contacte"}, 400)
                         return
                     student_id = f"CLI-{int(get_now().timestamp())}"
 
@@ -5367,15 +5367,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if not franja_obj:
                     franja_obj = next((f for f in franges if (f.get('inici') or '') >= '14:00'), None) if is_tarda else next((f for f in franges if (f.get('inici') or '') < '14:00'), None)
                 if not franja_obj:
-                    franja_obj = {"id": franja_id, "nom": "Tarda (17:00 - 20:00)" if is_tarda else "MatÃ­ (10:00 - 13:00)", "inici": "17:00" if is_tarda else "10:00", "fi": "20:00" if is_tarda else "13:00", "hores": 2.0}
+                    franja_obj = {"id": franja_id, "nom": "Tarda (17:00 - 20:00)" if is_tarda else "Matí (10:00 - 13:00)", "inici": "17:00" if is_tarda else "10:00", "fi": "20:00" if is_tarda else "13:00", "hores": 2.0}
 
                 # Calcular dates
                 dates_valides, dates_saltades = calculate_recurring_dates(data_inici, frequencia, repeticions, saltar_tancats, activitat_id=activitat_id)
                 if not dates_valides:
-                    self.send_json({'ok': False, 'error': "No s'ha trobat cap data vÃ lida oberta per a aquest perÃ­ode"}, 400)
+                    self.send_json({'ok': False, 'error': "No s'ha trobat cap data vàlida oberta per a aquest període"}, 400)
                     return
 
-                # Comprovar aforament per a totes les dates vÃ lides abans d'inserir
+                # Comprovar aforament per a totes les dates vàlides abans d'inserir
                 dates_amb_conflicte = []
                 max_cap = get_aforament_maxim()
 
@@ -5412,7 +5412,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             current_ocupat_dia = r_ocup['total_ocupades'] or 0
                             if current_ocupat_dia + places_demanades > max_cap:
                                 lliures = max(0, max_cap - current_ocupat_dia)
-                                torn_nom = "tarda" if is_tarda else "matÃ­"
+                                torn_nom = "tarda" if is_tarda else "matí"
                                 dates_amb_conflicte.append(f"{d_val}: Aforament ({torn_nom}) complet ({lliures} lliures de {max_cap})")
                                 continue
     
@@ -5427,21 +5427,21 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             current_ocupat_act = r_act['act_ocupades'] or 0
                             if current_ocupat_act + places_demanades > act_obj['capacitatMax']:
                                 lliures_act = max(0, act_obj['capacitatMax'] - current_ocupat_act)
-                                torn_nom = "tarda" if is_tarda else "matÃ­"
+                                torn_nom = "tarda" if is_tarda else "matí"
                                 dates_amb_conflicte.append(f"{d_val}: Places de {activitat_nom} ({torn_nom}) completes ({lliures_act} lliures de {act_obj['capacitatMax']})")
     
                         if dates_amb_conflicte:
                             err_detail = "; ".join(dates_amb_conflicte[:3])
                             if len(dates_amb_conflicte) > 3:
-                                err_detail += f" (i {len(dates_amb_conflicte) - 3} dates mÃ©s)"
+                                err_detail += f" (i {len(dates_amb_conflicte) - 3} dates més)"
                             self.send_json({
                                 'ok': False,
-                                'error': f"Conflicte d'aforament en algunes dates de la sÃ¨rie: {err_detail}",
+                                'error': f"Conflicte d'aforament en algunes dates de la sèrie: {err_detail}",
                                 'conflictes': dates_amb_conflicte
                             }, 400)
                             return
     
-                        # Crear sÃ¨rie recurrent
+                        # Crear sèrie recurrent
                     recurrent_id = f"REC-{int(get_now().timestamp())}-{student_id}"
                     now_iso = get_now().strftime('%Y-%m-%dT%H:%M:%S')
                     created_reserves = []
@@ -5894,7 +5894,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 lliures = max(0, max_cap - ocup_tot)
                                 self.send_json({
                                     'ok': False,
-                                    'error': f"Aforament complet el {d_item} per a {torn_desc} ({nova_hora_inici} - {nova_hora_fi}). Queden {lliures} places lliures (MÃ x. {max_cap}). Pots marcar 'Permetre sobrepassar aforament' per forçar-ho."
+                                    'error': f"Aforament complet el {d_item} per a {torn_desc} ({nova_hora_inici} - {nova_hora_fi}). Queden {lliures} places lliures (Màx. {max_cap}). Pots marcar 'Permetre sobrepassar aforament' per forçar-ho."
                                 }, 400)
                                 return
 
@@ -6015,7 +6015,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     conn.commit()
 
                 sync_to_google_sheets_async('save_config', {'aforament_maxim_per_franja': str(aforament)})
-                self.send_json({'ok': True, 'aforamentMaxim': aforament, 'message': f'Aforament mÃ xim actualitzat a {aforament} places.'})
+                self.send_json({'ok': True, 'aforamentMaxim': aforament, 'message': f'Aforament màxim actualitzat a {aforament} places.'})
                 return
 
             elif path == '/api/reserves/config-activitats':
@@ -6045,7 +6045,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path == '/api/activitats':
                 nom = (data.get('nom') or data.get('name') or '').strip()
                 if not nom:
-                    self.send_json({'ok': False, 'error': 'El nom del taller Ã©s obligatori'}, 400)
+                    self.send_json({'ok': False, 'error': 'El nom del taller és obligatori'}, 400)
                     return
 
                 try:
@@ -6174,7 +6174,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         cursor.execute('UPDATE activitats SET actiu = 0 WHERE id = ?', (act_id,))
                         conn.commit()
                         action = 'desactivat'
-                        msg = f"El taller '{existing['nom']}' tÃ© reserves associades o Ã©s un taller principal; s'ha desactivat per mantenir l'historial."
+                        msg = f"El taller '{existing['nom']}' té reserves associades o és un taller principal; s'ha desactivat per mantenir l'historial."
                     else:
                         cursor.execute('DELETE FROM activitats WHERE id = ?', (act_id,))
                         conn.commit()
@@ -6202,7 +6202,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/admin/carnet/config', '/api/carnet/config'):
-                # Desar configuraciÃ³ de disseny del carnet
+                # Desar configuració de disseny del carnet
                 carnet_cfg = data.get('config') if isinstance(data, dict) and 'config' in data else data
                 val_str = json.dumps(carnet_cfg, ensure_ascii=False) if isinstance(carnet_cfg, dict) else str(carnet_cfg)
                 with get_db() as conn:
@@ -6308,23 +6308,23 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ''', (data_inici, data_fi, tipus_abast, act_perm_json, act_bloq_json, motiu, torn, get_now().isoformat()))
                     new_id = cursor.lastrowid
                     conn.commit()
-                self.send_json({'ok': True, 'id': new_id, 'message': 'RestricciÃ³ de tallers desada'})
+                self.send_json({'ok': True, 'id': new_id, 'message': 'Restricció de tallers desada'})
                 return
 
             elif path in ('/api/restriccions-activitats/delete', '/api/restriccions-activitats/eliminar'):
                 restr_id = data.get('id')
                 if not restr_id:
-                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de la restricciÃ³"}, 400)
+                    self.send_json({'ok': False, 'error': "Cal indicar l'ID de la restricció"}, 400)
                     return
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('DELETE FROM restriccions_activitats WHERE id = ?', (restr_id,))
                     conn.commit()
-                self.send_json({'ok': True, 'message': 'RestricciÃ³ eliminada'})
+                self.send_json({'ok': True, 'message': 'Restricció eliminada'})
                 return
 
             elif path == '/api/import':
-                # RestauraciÃ³ de backup
+                # Restauració de backup
                 alumnes = data.get('alumnes', [])
                 paquets = data.get('paquets', [])
                 sessions = data.get('sessions', [])
@@ -6376,7 +6376,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     conn.commit()
 
-                # DesprÃ©s d'importar o restaurar, sincronitzar automÃ ticament totes les dades a Google Sheets
+                # Després d'importar o restaurar, sincronitzar automàticament totes les dades a Google Sheets
                 try:
                     with get_db() as conn_sync:
                         c_sync = conn_sync.cursor()
@@ -6398,13 +6398,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         'config': cf_sync
                     })
                 except Exception as sync_err:
-                    print(f"[Import Sync] AvÃ­s sincronitzant post-import: {sync_err}")
+                    print(f"[Import Sync] Avís sincronitzant post-import: {sync_err}")
 
-                self.send_json({'ok': True, 'message': 'Dades restaurades amb Ã¨xit i sincronitzades amb Google Sheets'})
+                self.send_json({'ok': True, 'message': 'Dades restaurades amb èxit i sincronitzades amb Google Sheets'})
                 return
 
             elif path == '/api/sync/hydrate':
-                # Re-hidrataciÃ³ manual des de Google Sheets
+                # Re-hidratació manual des de Google Sheets
                 custom_url = data.get('url') if data else None
                 res = hydrate_from_google_sheets(custom_url)
                 self.send_json(res, 200 if res.get('ok') else 400)
@@ -6436,7 +6436,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'reserves': reserves_all,
                     'config': cfg_all
                 })
-                self.send_json({'ok': True, 'message': 'SincronitzaciÃ³ completa enviada a Google Sheets en segon pla.'})
+                self.send_json({'ok': True, 'message': 'Sincronització completa enviada a Google Sheets en segon pla.'})
                 return
 
             else:
@@ -6473,7 +6473,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     balanc = get_student_balance(student_id) if student_id else None
 
                 sync_to_google_sheets_async('delete_session', {'id': session_id})
-                self.send_json({'ok': True, 'message': 'SessiÃ³ eliminada', 'balanc': balanc})
+                self.send_json({'ok': True, 'message': 'Sessió eliminada', 'balanc': balanc})
                 return
 
             elif path.startswith('/api/reserves/'):
@@ -6531,7 +6531,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute('DELETE FROM restriccions_activitats WHERE id = ?', (restr_id,))
                     conn.commit()
-                self.send_json({'ok': True, 'message': 'RestricciÃ³ eliminada'})
+                self.send_json({'ok': True, 'message': 'Restricció eliminada'})
                 return
 
             elif path.startswith('/api/activitats/'):
@@ -6555,7 +6555,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         cursor.execute('UPDATE activitats SET actiu = 0 WHERE id = ?', (act_id,))
                         conn.commit()
                         action = 'desactivat'
-                        msg = f"El taller '{existing['nom']}' tÃ© reserves associades o Ã©s un taller principal; s'ha desactivat per mantenir l'historial."
+                        msg = f"El taller '{existing['nom']}' té reserves associades o és un taller principal; s'ha desactivat per mantenir l'historial."
                     else:
                         cursor.execute('DELETE FROM activitats WHERE id = ?', (act_id,))
                         conn.commit()
