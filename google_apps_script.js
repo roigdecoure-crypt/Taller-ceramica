@@ -953,6 +953,7 @@ function checkCalendarSync(ss) {
 
   // Recollir TOTS els esdeveniments dels calendaris en NOMÉS 1 o 2 crides API totals (molt ràpid i evita timeouts!)
   var existingEventIds = {};
+  var existingEventsById = {};
   var resIdToCalEventMap = {};
 
   var calsToScan = [];
@@ -966,8 +967,10 @@ function checkCalendarSync(ss) {
         var ev = batchEvents[e];
         var evId = ev.getId();
         existingEventIds[evId] = true;
+        existingEventsById[evId] = ev;
         var shortId = evId.split("@")[0];
         existingEventIds[shortId] = true;
+        existingEventsById[shortId] = ev;
 
         var desc = ev.getDescription() || "";
         var match = desc.match(/ID Reserva:\s*([A-Za-z0-9\-_]+)/);
@@ -981,6 +984,7 @@ function checkCalendarSync(ss) {
   }
 
   var cancelled_ids = [];
+  var updated_reserves = [];
   var modified = false;
 
   for (var i = 1; i < values.length; i++) {
@@ -1007,8 +1011,44 @@ function checkCalendarSync(ss) {
         modified = true;
       }
 
-      // Si no existeix ni per ID ni a la descripció del període, s'ha esborrat de Google Calendar!
-      if (!eventExists) {
+      // Si existeix, comprovar si s'ha mogut de data o hora a Google Calendar!
+      if (eventExists) {
+        var evObj = existingEventsById[calEventId] || existingEventsById[calShortId];
+        if (!evObj && resIdToCalEventMap[resId]) {
+          evObj = existingEventsById[resIdToCalEventMap[resId]];
+        }
+
+        if (evObj) {
+          var evStart = evObj.getStartTime();
+          var evEnd = evObj.getEndTime();
+          var tz = "Europe/Madrid";
+          var evDate = Utilities.formatDate(evStart, tz, "yyyy-MM-dd");
+          var evHoraInici = Utilities.formatDate(evStart, tz, "HH:mm");
+          var evHoraFi = Utilities.formatDate(evEnd, tz, "HH:mm");
+
+          var curDate = String(values[i][4] || "").trim();
+          var curHoraInici = String(values[i][5] || "").trim();
+          var curHoraFi = String(values[i][6] || "").trim();
+
+          // Si la data o l'hora han canviat al calendari, actualitzar-ho automàticament!
+          if ((curDate && evDate && curDate !== evDate) || 
+              (curHoraInici && evHoraInici && curHoraInici !== evHoraInici)) {
+            values[i][4] = evDate;
+            values[i][5] = evHoraInici;
+            if (evHoraFi) values[i][6] = evHoraFi;
+            
+            updated_reserves.push({
+              id: resId,
+              data: evDate,
+              hora_inici: evHoraInici,
+              hora_fi: evHoraFi || curHoraFi
+            });
+            modified = true;
+            Logger.log("🔄 Reserva " + resId + " moguda a Google Calendar: " + curDate + " " + curHoraInici + " -> " + evDate + " " + evHoraInici);
+          }
+        }
+      } else {
+        // Si no existeix ni per ID ni a la descripció del període, s'ha esborrat de Google Calendar!
         values[i][10] = "cancel·lada";
         cancelled_ids.push(resId);
         modified = true;
@@ -1022,13 +1062,18 @@ function checkCalendarSync(ss) {
     sheet.getDataRange().setValues(values);
   }
 
+  var msgParts = [];
+  if (cancelled_ids.length > 0) msgParts.push(cancelled_ids.length + " cancel·lades");
+  if (updated_reserves.length > 0) msgParts.push(updated_reserves.length + " mogudes de dia/hora");
+  var resMessage = msgParts.length > 0 ? "Google Calendar: " + msgParts.join(" i ") : "Google Calendar i l'aplicació estan al dia.";
+
   return {
     status: "success",
     cancelled_ids: cancelled_ids,
+    updated_reserves: updated_reserves,
     count: cancelled_ids.length,
-    message: cancelled_ids.length > 0
-      ? "S'han detectat " + cancelled_ids.length + " reserves suprimides de Google Calendar."
-      : "Google Calendar i l'aplicació estan al dia."
+    updated_count: updated_reserves.length,
+    message: resMessage
   };
 }
 

@@ -1110,10 +1110,13 @@ def sync_calendar_from_google(target_url=None):
             res = json.loads(raw)
             if res.get('status') == 'success':
                 cancelled_ids = res.get('cancelled_ids') or []
+                updated_reserves = res.get('updated_reserves') or []
                 updated_count = 0
-                if cancelled_ids:
-                    with get_db() as conn:
-                        cursor = conn.cursor()
+                rescheduled_count = 0
+                
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    if cancelled_ids:
                         placeholders = ', '.join(['?'] * len(cancelled_ids))
                         cursor.execute(f"""
                             UPDATE reserves 
@@ -1123,13 +1126,36 @@ def sync_calendar_from_google(target_url=None):
                             AND LOWER(estat) != 'eliminada'
                         """, cancelled_ids)
                         updated_count = cursor.rowcount
-                        conn.commit()
-                msg = f"Sincronització completada: {len(cancelled_ids)} reserves suprimides a Google Calendar s'han cancel·lat." if cancelled_ids else "Google Calendar i l'aplicació estan al dia."
+
+                    if updated_reserves:
+                        for u in updated_reserves:
+                            u_id = u.get('id')
+                            u_data = u.get('data')
+                            u_hi = u.get('hora_inici')
+                            u_hf = u.get('hora_fi')
+                            if u_id and u_data and u_hi:
+                                cursor.execute("""
+                                    UPDATE reserves 
+                                    SET data = ?, hora_inici = ?, hora_fi = ?
+                                    WHERE id = ?
+                                """, (u_data, u_hi, u_hf or '', u_id))
+                                if cursor.rowcount > 0:
+                                    rescheduled_count += cursor.rowcount
+                    conn.commit()
+
+                msg_parts = []
+                if cancelled_ids:
+                    msg_parts.append(f"{len(cancelled_ids)} reserves cancel·lades")
+                if rescheduled_count:
+                    msg_parts.append(f"{rescheduled_count} reserves mogudes de dia/hora")
+                msg = f"Sincronització completada: {', '.join(msg_parts)}." if msg_parts else "Google Calendar i l'aplicació estan al dia."
                 return {
                     'ok': True,
                     'count': len(cancelled_ids),
                     'updated_in_db': updated_count,
                     'cancelled_ids': cancelled_ids,
+                    'rescheduled_count': rescheduled_count,
+                    'updated_reserves': updated_reserves,
                     'message': msg
                 }
             else:

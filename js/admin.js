@@ -2642,12 +2642,16 @@ async function handleSyncGoogleCalendarClick(silent = false) {
   try {
     const res = await Store.syncGoogleCalendar();
     if (res && res.ok) {
-      const cnt = res.count || (res.cancelled_ids ? res.cancelled_ids.length : 0);
-      if (cnt > 0) {
-        showToast(`Google Calendar: s'han detectat i cancel·lat ${cnt} reserva/es suprimides del calendari.`, 'info');
+      const cnt = (res.cancelled_ids ? res.cancelled_ids.length : (res.count || 0));
+      const updCnt = (res.updated_reserves ? res.updated_reserves.length : 0) || (res.rescheduled_count || 0) || (res.updated_count || 0);
+      if (cnt > 0 || updCnt > 0) {
+        const parts = [];
+        if (cnt > 0) parts.push(`${cnt} cancel·lada/es`);
+        if (updCnt > 0) parts.push(`${updCnt} moguda/es de dia o hora`);
+        showToast(`Google Calendar: s'han detectat canvis (${parts.join(', ')}).`, 'info');
         await refreshAppointmentsDashboard();
       } else if (!silent) {
-        showToast('Google Calendar: sincronització correcta, cap reserva pendent de cancel·lar.', 'success');
+        showToast('Google Calendar: sincronització correcta, tot al dia.', 'success');
       }
     } else if (!silent) {
       showToast(res.error || res.message || 'No s\'ha pogut sincronitzar amb Google Calendar.', 'warning');

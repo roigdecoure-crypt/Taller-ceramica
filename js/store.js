@@ -1331,15 +1331,30 @@ const Store = {
           headers: { 'Content-Type': 'application/json' }
         });
         const json = await res.json();
-        if (json.ok && json.cancelled_ids && json.cancelled_ids.length > 0) {
+        if (json.ok) {
           const local = this._getLocalData();
+          let modifiedLocal = false;
           if (local.reserves) {
-            local.reserves.forEach(r => {
-              if (json.cancelled_ids.includes(r.id)) {
-                r.estat = 'cancel·lada';
-              }
-            });
-            this._saveLocalData(local);
+            if (json.cancelled_ids && json.cancelled_ids.length > 0) {
+              local.reserves.forEach(r => {
+                if (json.cancelled_ids.includes(r.id)) {
+                  r.estat = 'cancel·lada';
+                  modifiedLocal = true;
+                }
+              });
+            }
+            if (json.updated_reserves && json.updated_reserves.length > 0) {
+              json.updated_reserves.forEach(u => {
+                const r = local.reserves.find(item => item.id === u.id);
+                if (r) {
+                  r.data = u.data;
+                  r.hora_inici = u.hora_inici;
+                  if (u.hora_fi) r.hora_fi = u.hora_fi;
+                  modifiedLocal = true;
+                }
+              });
+            }
+            if (modifiedLocal) this._saveLocalData(local);
           }
         }
         return json;
@@ -1358,16 +1373,39 @@ const Store = {
       const json = await res.json();
       if (json.status === 'success') {
         const cancelled = json.cancelled_ids || [];
-        if (cancelled.length > 0) {
-          const local = this._getLocalData();
-          if (local.reserves) {
+        const updated = json.updated_reserves || [];
+        const local = this._getLocalData();
+        let modifiedLocal = false;
+        if (local.reserves) {
+          if (cancelled.length > 0) {
             local.reserves.forEach(r => {
-              if (cancelled.includes(r.id)) r.estat = 'cancel·lada';
+              if (cancelled.includes(r.id)) {
+                r.estat = 'cancel·lada';
+                modifiedLocal = true;
+              }
             });
-            this._saveLocalData(local);
           }
+          if (updated.length > 0) {
+            updated.forEach(u => {
+              const r = local.reserves.find(item => item.id === u.id);
+              if (r) {
+                r.data = u.data;
+                r.hora_inici = u.hora_inici;
+                if (u.hora_fi) r.hora_fi = u.hora_fi;
+                modifiedLocal = true;
+              }
+            });
+          }
+          if (modifiedLocal) this._saveLocalData(local);
         }
-        return { ok: true, cancelled_ids: cancelled, count: cancelled.length, message: json.message };
+        return { 
+          ok: true, 
+          cancelled_ids: cancelled, 
+          updated_reserves: updated,
+          count: cancelled.length, 
+          rescheduled_count: updated.length,
+          message: json.message 
+        };
       }
       return { ok: false, error: json.message || 'Error comprovant Google Calendar', count: 0, cancelled_ids: [] };
     } catch (err) {
