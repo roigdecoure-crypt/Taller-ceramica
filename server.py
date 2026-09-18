@@ -1525,6 +1525,57 @@ def get_activitats_config(include_inactive=False):
 # Propietat retrocompatible
 ACTIVITATS = DEFAULT_ACTIVITATS
 
+DEFAULT_INFO_ACTIVITATS = {
+    "grups": {
+        "titol": "Activitats per a Grups i Famílies",
+        "subtitol": "Celebracions, aniversaris, trobades i teambuilding",
+        "descripcio": "Veniu en parella, família o amics a compartir una experiència al taller. Us preparem una sessió a mida i exclusiva adaptada a les vostres preferències i nivell.\n\nPodeu combinar torn de terrissaire, modelatge ceràmic o pintura sobre ceràmica.",
+        "detalls": "• Sessions a mida de 2 o més hores.\n• Tot el fang ceràmic, eines, davantals i materials inclosos.\n• Acompanyament personalitzat del mestre ceramista.\n• Enfornat i cocció final de totes les peces perquè us les endugueu a casa.",
+        "dates": "Horaris a convenir de dimecres a diumenge.",
+        "preu": "Preu segons el nombre de persones i durada de l'activitat.",
+        "whatsapp_msg": "Hola Roig de Coure! Voldria informació i disponibilitat per a un grup."
+    },
+    "monografics": {
+        "titol": "Cursos Monogràfics i Intensius",
+        "subtitol": "Tècniques específiques de taller, esmaltat, torn avançat i peces d'autor",
+        "descripcio": "Cursos intensius i tallers monogràfics d'1 a 3 dies, orientats a aprofundir en aspectes concrets del món ceràmic.\n\nIdeal tant per a alumnes que volen avançar de nivell com per a creadors que volen dominar una tècnica específica.",
+        "detalls": "• Sessions intensives temàtiques (Raku, esmaltat, escultures, teteres...).\n• Grups reduïts per a una atenció propera i detallada.\n• Materials de primera qualitat i coccions especials incloses.",
+        "dates": "Programació de noves convocatòries periòdiques. Consulta'ns les pròximes dates disponibles!",
+        "preu": "Segons la durada i la temàtica del monogràfic.",
+        "whatsapp_msg": "Hola Roig de Coure! Voldria informació sobre els pròxims cursos monogràfics programats."
+    },
+    "casals": {
+        "titol": "Casals de Ceràmica per a Infants",
+        "subtitol": "Creativitat, argila i diversió durant les vacances escolars",
+        "descripcio": "Casals de ceràmica per a infants i joves durant les vacances d'estiu, Setmana Santa i Nadal.\n\nUn espai segur, inspirador i artístic on aprendre la màgia de transformar el fang amb les mans, provar el torn elèctric i pintar les seves pròpies creacions.",
+        "detalls": "• Torn elèctric adaptat, modelatge manual i pintura creativa.\n• Monitors i ceramistes amb experiència pedagògica.\n• Totes les peces es couen al forn perquè se les enduguin com a record permanent.",
+        "dates": "Vacances d'estiu (juliol i agost), Setmana Santa i vacances de Nadal.",
+        "preu": "Inscripcions per setmanes o dies solts.",
+        "whatsapp_msg": "Hola Roig de Coure! Voldria informació sobre els casals infantils de ceràmica."
+    }
+}
+
+def get_activitats_info_config():
+    """Retorna la configuració de continguts informatius per a la web (Grups, Monogràfics, Casals)"""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'activitats_info_web'")
+            row = cursor.fetchone()
+            if row and row['valor']:
+                loaded = json.loads(row['valor'])
+                if isinstance(loaded, dict):
+                    res = {}
+                    for k, default_val in DEFAULT_INFO_ACTIVITATS.items():
+                        res[k] = {**default_val, **(loaded.get(k) or {})}
+                    for k, v in loaded.items():
+                        if k not in res and isinstance(v, dict):
+                            res[k] = v
+                    return res
+    except Exception as e:
+        print(f"[get_activitats_info_config] Error: {e}")
+    return DEFAULT_INFO_ACTIVITATS
+
 def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='ca'):
     """
     Envia un missatge mitjançant l'API oficial Meta WhatsApp Cloud API (directament, sense intermediaris).
@@ -3373,6 +3424,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path in ('/api/reserves/activitats', '/api/activitats'):
                 include_inactive = params.get('tots', ['0'])[0] in ('1', 'true', 'True')
                 self.send_json({'ok': True, 'activitats': get_activitats_config(include_inactive=include_inactive)})
+                return
+
+            elif path in ('/api/activitats-info', '/api/info-activitats'):
+                self.send_json({'ok': True, 'info': get_activitats_info_config()})
                 return
 
             elif path == '/api/festius':
@@ -6213,6 +6268,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     conn.commit()
                 sync_to_google_sheets_async('save_config', {'carnet_design': val_str})
                 self.send_json({'ok': True, 'success': True, 'message': 'Disseny de carnet actualitzat', 'config': carnet_cfg if isinstance(carnet_cfg, dict) else json.loads(val_str)})
+                return
+
+            elif path in ('/api/activitats-info', '/api/info-activitats'):
+                role = get_request_role(self, data)
+                if role == 'staff':
+                    self.send_json({'ok': False, 'error': "Accés restringit: La informació de tallers web només pot ser editada pel Propietari."}, 403)
+                    return
+                info_data = data.get('info') or data
+                val_str = json.dumps(info_data, ensure_ascii=False)
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('activitats_info_web', ?)", (val_str,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': "Informació d'activitats desada correctament", 'info': get_activitats_info_config()})
                 return
 
             elif path == '/api/config':

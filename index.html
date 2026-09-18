@@ -422,7 +422,7 @@
               <li class="activity-feature-item"><span class="feature-bullet"></span> Sessions a mida per a grups</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Torn, modelatge o pintura</li>
             </ul>
-            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20per%20a%20un%20grup." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Grups</a>
+            <button type="button" class="btn btn-secondary btn-block btn-info-popup" data-info-act="grups">Consultar Grups</button>
           </div>
         </div>
 
@@ -441,7 +441,7 @@
               <li class="activity-feature-item"><span class="feature-bullet"></span> Tècniques específiques de taller</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Publicació de noves dates</li>
             </ul>
-            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20cursos%20monografics." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Consultar Monogràfics</a>
+            <button type="button" class="btn btn-secondary btn-block btn-info-popup" data-info-act="monografics">Consultar Monogràfics</button>
           </div>
         </div>
 
@@ -460,7 +460,7 @@
               <li class="activity-feature-item"><span class="feature-bullet"></span> Ceràmica, torn i modelatge</li>
               <li class="activity-feature-item"><span class="feature-bullet"></span> Totes les peces cuites incloses</li>
             </ul>
-            <a href="https://wa.me/34683633880?text=Hola%20Roig%20de%20Coure!%20Vull%20informacio%20dels%20casals%20infantils." class="btn btn-secondary btn-block" target="_blank" rel="noopener">Informació Casals</a>
+            <button type="button" class="btn btn-secondary btn-block btn-info-popup" data-info-act="casals">Informació Casals</button>
           </div>
         </div>
 
@@ -1039,6 +1039,30 @@
     </div>
   </footer>
 
+  <!-- MODAL INFORMATIU D'ACTIVITATS (GRUPS, MONOGRÀFICS, CASALS) -->
+  <div class="modal-overlay" id="modal-activitat-info" onclick="if(event.target===this) closeActInfoModal();">
+    <div class="modal-card" style="position: relative; max-width: 620px; width: 92%; max-height: 88vh; overflow-y: auto; padding: 30px 26px;">
+      <button type="button" class="modal-close-btn" id="modal-act-info-close" onclick="closeActInfoModal();" aria-label="Tancar">&times;</button>
+      
+      <div style="margin-bottom: 18px; padding-right: 28px;">
+        <span class="eyebrow" id="modal-act-info-badge" style="display: inline-block; margin-bottom: 6px;">Informació del Taller</span>
+        <h3 id="modal-act-info-title" style="font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: var(--dark); margin: 0 0 6px 0; line-height: 1.25;"></h3>
+        <p id="modal-act-info-subtitle" style="font-size: 13.5px; color: var(--primary); font-weight: 600; margin: 0;"></p>
+      </div>
+
+      <div id="modal-act-info-body" style="font-size: 14.5px; color: #374151; line-height: 1.65; margin-bottom: 22px;"></div>
+
+      <div style="display: flex; gap: 10px; flex-direction: column;">
+        <a href="#" id="modal-act-info-wa-btn" class="btn btn-primary btn-block" target="_blank" rel="noopener" style="text-align: center; font-size: 14px; font-weight: 700; padding: 12px 18px;">
+          Demanar Informació o Reservar per WhatsApp
+        </a>
+        <button type="button" class="btn btn-outline btn-block" onclick="closeActInfoModal();" style="font-size: 13px; padding: 9px 14px;">
+          Tancar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DE CONFIRMACIO -->
   <div class="modal-overlay" id="booking-modal">
     <div class="modal-card" style="position: relative;">
@@ -1056,6 +1080,6 @@
   </div>
 
   <script src="js/api-config.js?v=7.5"></script>
-  <script src="js/roigdecoure-web.js?v=3.6"></script>
+  <script src="js/roigdecoure-web.js?v=3.7"></script>
 </body>
 </html>

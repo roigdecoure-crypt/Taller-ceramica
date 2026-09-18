@@ -7398,4 +7398,158 @@ async function provarConnexioSquare() {
 }
 window.provarConnexioSquare = provarConnexioSquare;
 
+// ==========================================================================
+// GESTIÓ D'INFORMACIÓ D'ACTIVITATS WEB (GRUPS, MONOGRÀFICS, CASALS)
+// ==========================================================================
+
+let adminActInfoState = {
+  grups: {
+    titol: "Activitats per a Grups i Famílies",
+    subtitol: "Celebracions, aniversaris, trobades i teambuilding",
+    descripcio: "Veniu en parella, família o amics a compartir una experiència al taller. Us preparem una sessió a mida i exclusiva adaptada a les vostres preferències i nivell.\n\nPodeu combinar torn de terrissaire, modelatge ceràmic o pintura sobre ceràmica.",
+    detalls: "• Sessions a mida de 2 o més hores.\n• Tot el fang ceràmic, eines, davantals i materials inclosos.\n• Acompanyament personalitzat del mestre ceramista.\n• Enfornat i cocció final de totes les peces perquè us les endugueu a casa.",
+    dates: "Horaris a convenir de dimecres a diumenge.",
+    preu: "Preu segons el nombre de persones i durada de l'activitat.",
+    whatsapp_msg: "Hola Roig de Coure! Voldria informació i disponibilitat per a un grup."
+  },
+  monografics: {
+    titol: "Cursos Monogràfics i Intensius",
+    subtitol: "Tècniques específiques de taller, esmaltat, torn avançat i peces d'autor",
+    descripcio: "Cursos intensius i tallers monogràfics d'1 a 3 dies, orientats a aprofundir en aspectes concrets del món ceràmic.\n\nIdeal tant per a alumnes que volen avançar de nivell com per a creadors que volen dominar una tècnica específica.",
+    detalls: "• Sessions intensives temàtiques (Raku, esmaltat, escultures, teteres...).\n• Grups reduïts per a una atenció propera i detallada.\n• Materials de primera qualitat i coccions especials incloses.",
+    dates: "Programació de noves convocatòries periòdiques. Consulta'ns les pròximes dates disponibles!",
+    preu: "Segons la durada i la temàtica del monogràfic.",
+    whatsapp_msg: "Hola Roig de Coure! Voldria informació sobre els pròxims cursos monogràfics programats."
+  },
+  casals: {
+    titol: "Casals de Ceràmica per a Infants",
+    subtitol: "Creativitat, argila i diversió durant les vacances escolars",
+    descripcio: "Casals de ceràmica per a infants i joves durant les vacances d'estiu, Setmana Santa i Nadal.\n\nUn espai segur, inspirador i artístic on aprendre la màgia de transformar el fang amb les mans, provar el torn elèctric i pintar les seves pròpies creacions.",
+    detalls: "• Torn elèctric adaptat, modelatge manual i pintura creativa.\n• Monitors i ceramistes amb experiència pedagògica.\n• Totes les peces es couen al forn perquè se les enduguin com a record permanent.",
+    dates: "Vacances d'estiu (juliol i agost), Setmana Santa i vacances de Nadal.",
+    preu: "Inscripcions per setmanes o dies solts.",
+    whatsapp_msg: "Hola Roig de Coure! Voldria informació sobre els casals infantils de ceràmica."
+  }
+};
+
+let adminActInfoCurrentType = 'grups';
+
+function renderAdminActInfoForm(type) {
+  adminActInfoCurrentType = type || 'grups';
+  const typeInput = document.getElementById('admin-act-info-current-type');
+  if (typeInput) typeInput.value = adminActInfoCurrentType;
+
+  // Actualitzar botons de pestanyes
+  ['grups', 'monografics', 'casals'].forEach(t => {
+    const btn = document.getElementById('tab-btn-act-' + t);
+    if (btn) {
+      const isActive = t === adminActInfoCurrentType;
+      btn.style.fontWeight = isActive ? '700' : '600';
+      btn.style.borderBottom = isActive ? '3px solid #831D1D' : '3px solid transparent';
+      btn.style.color = isActive ? '#831D1D' : '#6B7280';
+    }
+  });
+
+  const cur = adminActInfoState[adminActInfoCurrentType] || {};
+  const titolEl = document.getElementById('admin-act-info-titol');
+  const subEl = document.getElementById('admin-act-info-subtitol');
+  const descEl = document.getElementById('admin-act-info-descripcio');
+  const detallsEl = document.getElementById('admin-act-info-detalls');
+  const datesEl = document.getElementById('admin-act-info-dates');
+  const preuEl = document.getElementById('admin-act-info-preu');
+  const waEl = document.getElementById('admin-act-info-whatsapp');
+
+  if (titolEl) titolEl.value = cur.titol || '';
+  if (subEl) subEl.value = cur.subtitol || '';
+  if (descEl) descEl.value = cur.descripcio || '';
+  if (detallsEl) detallsEl.value = cur.detalls || '';
+  if (datesEl) datesEl.value = cur.dates || '';
+  if (preuEl) preuEl.value = cur.preu || '';
+  if (waEl) waEl.value = cur.whatsapp_msg || '';
+}
+
+function saveAdminActInfoCurrentFormState() {
+  const type = adminActInfoCurrentType || 'grups';
+  if (!adminActInfoState[type]) adminActInfoState[type] = {};
+  adminActInfoState[type].titol = document.getElementById('admin-act-info-titol')?.value.trim() || '';
+  adminActInfoState[type].subtitol = document.getElementById('admin-act-info-subtitol')?.value.trim() || '';
+  adminActInfoState[type].descripcio = document.getElementById('admin-act-info-descripcio')?.value.trim() || '';
+  adminActInfoState[type].detalls = document.getElementById('admin-act-info-detalls')?.value.trim() || '';
+  adminActInfoState[type].dates = document.getElementById('admin-act-info-dates')?.value.trim() || '';
+  adminActInfoState[type].preu = document.getElementById('admin-act-info-preu')?.value.trim() || '';
+  adminActInfoState[type].whatsapp_msg = document.getElementById('admin-act-info-whatsapp')?.value.trim() || '';
+}
+
+function switchAdminActInfoTab(type) {
+  saveAdminActInfoCurrentFormState();
+  renderAdminActInfoForm(type);
+}
+window.switchAdminActInfoTab = switchAdminActInfoTab;
+
+async function openAdminInfoActivitatsModal() {
+  const activeRole = (typeof localStorage !== 'undefined' ? localStorage.getItem('roig_admin_role') : null) || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('roig_admin_role') : null) || 'owner';
+  if (activeRole === 'staff') {
+    showToast("Accés restringit: Només el propietari pot editar la informació del web.", "error");
+    return;
+  }
+
+  try {
+    const apiBase = Store && Store.apiBase ? Store.apiBase : '';
+    const res = await fetch(`${apiBase}/api/activitats-info?t=${Date.now()}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok && data.info) {
+        adminActInfoState = { ...adminActInfoState, ...data.info };
+      }
+    }
+  } catch (e) {
+    console.warn("Error carregant activitats info:", e);
+  }
+
+  renderAdminActInfoForm('grups');
+  const modal = document.getElementById('modal-admin-info-activitats-backdrop');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+window.openAdminInfoActivitatsModal = openAdminInfoActivitatsModal;
+
+async function handleSaveAdminActInfo(event) {
+  if (event) event.preventDefault();
+  saveAdminActInfoCurrentFormState();
+
+  const btn = document.getElementById('btn-save-admin-act-info');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Desant...';
+  }
+
+  try {
+    const apiBase = Store && Store.apiBase ? Store.apiBase : '';
+    const headers = Store && Store.getAdminAuthHeaders ? Store.getAdminAuthHeaders() : { 'Content-Type': 'application/json' };
+    const res = await fetch(`${apiBase}/api/activitats-info`, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ info: adminActInfoState })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      showToast("Contingut d'activitats desat i publicat al web amb èxit!", "success");
+      if (data.info) adminActInfoState = data.info;
+      closeAnyModal('modal-admin-info-activitats-backdrop');
+    } else {
+      showToast(data.error || "No s'ha pogut desar la informació.", "error");
+    }
+  } catch (err) {
+    showToast("Error de connexió en desar la informació: " + err.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+}
+window.handleSaveAdminActInfo = handleSaveAdminActInfo;
+
 

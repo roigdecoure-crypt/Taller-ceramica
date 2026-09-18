@@ -41,6 +41,7 @@
     initFaqAccordion();
     initContactForm();
     initSocAlumneAndValRegal();
+    initActivitatsInfoPopups();
   }
 
   if (document.readyState === 'loading') {
@@ -1043,6 +1044,128 @@
         this.style.borderColor = 'var(--primary)'; this.style.color = 'var(--primary)'; this.classList.add('active');
         var act = this.getAttribute('data-act');
         selectActivity(act);
+      });
+    });
+  }
+
+  /* ==== POPUPS INFORMATIUS D'ACTIVITATS (GRUPS, MONOGRÀFICS, CASALS) ==== */
+  var activitatsInfoData = null;
+
+  async function loadActivitatsInfo() {
+    try {
+      var apiBase = getWebApiBase();
+      var res = await fetch(apiBase + '/api/activitats-info?t=' + Date.now());
+      if (res.ok) {
+        var data = await res.json();
+        if (data && data.ok && data.info) {
+          activitatsInfoData = data.info;
+        }
+      }
+    } catch (e) {
+      console.warn('Fallback activitats info');
+    }
+  }
+
+  function getFallbackActInfo(type) {
+    var defaults = {
+      grups: {
+        titol: "Activitats per a Grups i Famílies",
+        subtitol: "Celebracions, aniversaris, trobades i teambuilding",
+        descripcio: "Veniu en parella, família o amics a compartir una experiència al taller. Us preparem una sessió a mida i exclusiva adaptada a les vostres preferències i nivell.\n\nPodeu combinar torn de terrissaire, modelatge ceràmic o pintura sobre ceràmica.",
+        detalls: "• Sessions a mida de 2 o més hores.\n• Tot el fang ceràmic, eines, davantals i materials inclosos.\n• Acompanyament personalitzat del mestre ceramista.\n• Enfornat i cocció final de totes les peces perquè us les endugueu a casa.",
+        dates: "Horaris a convenir de dimecres a diumenge.",
+        preu: "Preu segons el nombre de persones i durada de l'activitat.",
+        whatsapp_msg: "Hola Roig de Coure! Voldria informació i disponibilitat per a un grup."
+      },
+      monografics: {
+        titol: "Cursos Monogràfics i Intensius",
+        subtitol: "Tècniques específiques de taller, esmaltat, torn avançat i peces d'autor",
+        descripcio: "Cursos intensius i tallers monogràfics d'1 a 3 dies, orientats a aprofundir en aspectes concrets del món ceràmic.\n\nIdeal tant per a alumnes que volen avançar de nivell com per a creadors que volen dominar una tècnica específica.",
+        detalls: "• Sessions intensives temàtiques (Raku, esmaltat, escultures, teteres...).\n• Grups reduïts per a una atenció propera i detallada.\n• Materials de primera qualitat i coccions especials incloses.",
+        dates: "Programació de noves convocatòries periòdiques. Consulta'ns les pròximes dates disponibles!",
+        preu: "Segons la durada i la temàtica del monogràfic.",
+        whatsapp_msg: "Hola Roig de Coure! Voldria informació sobre els pròxims cursos monogràfics programats."
+      },
+      casals: {
+        titol: "Casals de Ceràmica per a Infants",
+        subtitol: "Creativitat, argila i diversió durant les vacances escolars",
+        descripcio: "Casals de ceràmica per a infants i joves durant les vacances d'estiu, Setmana Santa i Nadal.\n\nUn espai segur, inspirador i artístic on aprendre la màgia de transformar el fang amb les mans, provar el torn elèctric i pintar les seves pròpies creacions.",
+        detalls: "• Torn elèctric adaptat, modelatge manual i pintura creativa.\n• Monitors i ceramistes amb experiència pedagògica.\n• Totes les peces es couen al forn perquè se les enduguin com a record permanent.",
+        dates: "Vacances d'estiu (juliol i agost), Setmana Santa i vacances de Nadal.",
+        preu: "Inscripcions per setmanes o dies solts.",
+        whatsapp_msg: "Hola Roig de Coure! Voldria informació sobre els casals infantils de ceràmica."
+      }
+    };
+    return defaults[type] || defaults.grups;
+  }
+
+  function openActInfoModal(type) {
+    var modal = document.getElementById('modal-activitat-info');
+    if (!modal) return;
+    var info = (activitatsInfoData && activitatsInfoData[type]) ? activitatsInfoData[type] : getFallbackActInfo(type);
+
+    var titleEl = document.getElementById('modal-act-info-title');
+    var subEl = document.getElementById('modal-act-info-subtitle');
+    var badgeEl = document.getElementById('modal-act-info-badge');
+    var bodyEl = document.getElementById('modal-act-info-body');
+    var waBtn = document.getElementById('modal-act-info-wa-btn');
+
+    if (badgeEl) {
+      if (type === 'grups') badgeEl.textContent = 'Grups i Famílies';
+      else if (type === 'monografics') badgeEl.textContent = 'Cursos Monogràfics';
+      else if (type === 'casals') badgeEl.textContent = 'Casals Infantils';
+    }
+    if (titleEl) titleEl.textContent = info.titol || '';
+    if (subEl) subEl.textContent = info.subtitol || '';
+
+    var html = '';
+    if (info.descripcio) {
+      html += '<div style="margin-bottom: 16px; white-space: pre-line;">' + esc(info.descripcio) + '</div>';
+    }
+    if (info.detalls) {
+      html += '<div style="background: #FAF7F5; border: 1.5px solid #EAD8CE; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">';
+      html += '<div style="font-weight: 700; color: #831D1D; font-size: 13px; margin-bottom: 8px;">Què inclou i característiques:</div>';
+      html += '<div style="white-space: pre-line; font-size: 13.5px; color: #4B5563; line-height: 1.6;">' + esc(info.detalls) + '</div>';
+      html += '</div>';
+    }
+    if (info.dates || info.preu) {
+      html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">';
+      if (info.dates) {
+        html += '<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px; font-size: 13px;">';
+        html += '<strong style="display: block; color: #111827; margin-bottom: 3px; font-size: 12.5px;">Dates i Programació:</strong>';
+        html += '<span style="color: #4B5563;">' + esc(info.dates) + '</span></div>';
+      }
+      if (info.preu) {
+        html += '<div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px 14px; font-size: 13px;">';
+        html += '<strong style="display: block; color: #111827; margin-bottom: 3px; font-size: 12.5px;">Preus i Condicions:</strong>';
+        html += '<span style="color: #4B5563;">' + esc(info.preu) + '</span></div>';
+      }
+      html += '</div>';
+    }
+    if (bodyEl) bodyEl.innerHTML = html;
+
+    if (waBtn) {
+      var msg = info.whatsapp_msg || ('Hola Roig de Coure! Voldria informació sobre ' + (info.titol || 'aquesta activitat') + '.');
+      waBtn.href = 'https://wa.me/' + CFG.phone + '?text=' + encodeURIComponent(msg);
+    }
+
+    modal.classList.add('active');
+  }
+  window.openActInfoModal = openActInfoModal;
+
+  function closeActInfoModal() {
+    var modal = document.getElementById('modal-activitat-info');
+    if (modal) modal.classList.remove('active');
+  }
+  window.closeActInfoModal = closeActInfoModal;
+
+  function initActivitatsInfoPopups() {
+    loadActivitatsInfo();
+    document.querySelectorAll('[data-info-act]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var actType = this.getAttribute('data-info-act');
+        openActInfoModal(actType);
       });
     });
   }
