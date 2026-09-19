@@ -5002,7 +5002,7 @@ async function executarEnviamentDirecteBestretaWhatsApp(targetMode = 'business')
   if (btnWeb) btnWeb.disabled = true;
 
   try {
-    const res = await Store.generarLinkBestreta(null, places, nom, tel, importVal);
+    const res = await Store.generarLinkBestreta('direct', places, nom, tel, importVal);
     const checkoutUrl = (res && res.ok && res.checkout_url) ? res.checkout_url : `Bizum o efectiu (${importVal} €)`;
 
     if (urlInput) urlInput.value = (res && res.ok && res.checkout_url) ? res.checkout_url : '';

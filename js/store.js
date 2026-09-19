@@ -1422,11 +1422,12 @@ const Store = {
   async generarLinkBestreta(reservaId, places = 4, nom = '', telefon = '', importVal = null) {
     if (this.mode === 'api') {
       try {
+        const safeReservaId = (reservaId && String(reservaId).trim()) ? String(reservaId).trim() : 'direct';
         const res = await fetch(`${this.apiBase}/api/checkout/paga-senyal`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            reserva_id: reservaId,
+            reserva_id: safeReservaId,
             places: places,
             nom: nom,
             telefon: telefon,
