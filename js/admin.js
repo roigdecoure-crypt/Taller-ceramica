@@ -3545,7 +3545,7 @@ async function renderAdminDayAppointments(dateStr) {
               </button>
             ` : ''}
             ${r.telefon ? `
-              <a href="https://wa.me/${r.telefon.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
+              <a href="https://web.whatsapp.com/send?phone=${r.telefon.replace(/[^0-9]/g, '').length === 9 ? '34' + r.telefon.replace(/[^0-9]/g, '') : r.telefon.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp Web">
                 WhatsApp
               </a>
             ` : ''}
@@ -4710,7 +4710,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
 }
 
 // --- GESTIÓ I ENVIAMENT D'ENLLAÇ DE BESTRETA / PAGA I SENYAL (SQUARE / WHATSAPP) ---
-function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl) {
+function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl, mode = 'web') {
   let cleanTel = (tel || '').replace(/\D/g, '');
   if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
 
@@ -4735,7 +4735,13 @@ Per confirmar definitivament la teva reserva, pots fer el pagament de la bestret
 Moltes gràcies i fins aviat!
 Taller de Ceràmica Roigdecoure`;
 
-  return `https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`;
+  if (mode === 'web') {
+    // Obrir directament l'aplicació web de WhatsApp (web.whatsapp.com)
+    return `https://web.whatsapp.com/send?phone=${cleanTel}&text=${encodeURIComponent(msg)}`;
+  } else {
+    // Obrir via wa.me (aplicació d'escriptori o mòbil)
+    return `https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`;
+  }
 }
 
 async function openAdminLinkBestretaModal(resData) {
@@ -4751,6 +4757,8 @@ async function openAdminLinkBestretaModal(resData) {
   const errorMsgEl = document.getElementById('modal-link-bestreta-error-msg');
   const contentEl = document.getElementById('modal-link-bestreta-content');
   const urlInput = document.getElementById('modal-link-bestreta-url');
+  const waWebBtn = document.getElementById('btn-whatsapp-web-bestreta');
+  const waAppBtn = document.getElementById('btn-whatsapp-app-bestreta');
   const waBtn = document.getElementById('btn-whatsapp-enllac-bestreta');
   const btnCobrarManual = document.getElementById('modal-link-bestreta-btn-cobrar-manual');
 
@@ -4764,6 +4772,14 @@ async function openAdminLinkBestretaModal(resData) {
   const horaStr = resData.hora_inici || '10:00';
   const placesVal = parseInt(resData.places || 1, 10);
   const importVal = parseFloat(resData.paga_senyal || resData.import || (placesVal * 10));
+
+  function setWhatsAppUrls(link) {
+    const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'web');
+    const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'app');
+    if (waWebBtn) waWebBtn.href = webUrl;
+    if (waAppBtn) waAppBtn.href = appUrl;
+    if (waBtn) waBtn.href = webUrl;
+  }
 
   if (clientEl) clientEl.textContent = clientNom;
   if (detallEl) detallEl.textContent = `${dataFmt} a les ${horaStr} h • ${placesVal} places`;
@@ -4798,7 +4814,7 @@ async function openAdminLinkBestretaModal(resData) {
     if (errorEl) errorEl.style.display = 'none';
     if (contentEl) contentEl.style.display = 'flex';
     if (urlInput) urlInput.value = resData.checkout_url;
-    if (waBtn) waBtn.href = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url);
+    setWhatsAppUrls(resData.checkout_url);
     return;
   }
 
@@ -4813,7 +4829,7 @@ async function openAdminLinkBestretaModal(resData) {
       if (loadingEl) loadingEl.style.display = 'none';
       if (contentEl) contentEl.style.display = 'flex';
       if (urlInput) urlInput.value = res.checkout_url;
-      if (waBtn) waBtn.href = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url);
+      setWhatsAppUrls(res.checkout_url);
     } else {
       if (loadingEl) loadingEl.style.display = 'none';
       if (errorEl) errorEl.style.display = 'block';
