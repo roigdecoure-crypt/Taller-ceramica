@@ -3163,6 +3163,17 @@
           </div>
         </div>
 
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">📲 Telèfon / WhatsApp Comprador</label>
+            <input type="tel" id="val-manual-telefon" class="form-control" placeholder="+34 600 000 000" style="font-size: 13px;">
+          </div>
+          <div class="form-group">
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">✉️ Email Comprador (opcional)</label>
+            <input type="email" id="val-manual-email" class="form-control" placeholder="client@exemple.cat" style="font-size: 13px;">
+          </div>
+        </div>
+
         <div class="form-group" style="margin-bottom: 14px;">
           <label style="display: block; font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 4px;">Dedicatòria o Missatge personalitzat (opcional)</label>
           <textarea id="val-manual-missatge" class="form-control" rows="2" placeholder="Escriu aquí unes paraules boniques..." style="font-size: 13px;"></textarea>
@@ -3209,6 +3220,57 @@
     </div>
   </div>
 
+  <!-- MODAL: VAL REGAL GENERAT AMB ÈXIT (ENVIAR WHATSAPP / PDF / COPIAR) -->
+  <div class="modal-backdrop" id="modal-admin-val-generat-exit" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.55); align-items: center; justify-content: center;" onclick="if(event.target===this) closeAnyModal('modal-admin-val-generat-exit');">
+    <div class="modal-dialog" style="max-width: 520px; width: 92%; margin: 30px auto; background: #FFF; border-radius: 14px; padding: 26px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+      <div style="text-align: center; margin-bottom: 18px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; background: #DCFCE7; color: #16A34A; font-size: 26px; margin-bottom: 10px;">
+          ✓
+        </div>
+        <h3 style="margin: 0 0 6px 0; font-size: 19px; font-weight: 800; color: #1E293B;">Val Regal Emès amb Èxit!</h3>
+        <p style="margin: 0; font-size: 13px; color: #64748B;">El val regal s'ha registrat al taller. Pots enviar-ne una còpia al client ara mateix.</p>
+      </div>
+
+      <!-- Targeta de resum -->
+      <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #CBD5E1; padding-bottom: 10px; margin-bottom: 10px;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Codi del Val</span>
+          <span id="modal-exit-val-codi" style="font-family: monospace; font-size: 18px; font-weight: 800; color: #831D1D; letter-spacing: 1px;">-</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12.5px;">
+          <div><span style="color: #64748B;">Experiència:</span> <strong id="modal-exit-val-titol" style="color: #1E293B;">-</strong></div>
+          <div><span style="color: #64748B;">Durada:</span> <strong id="modal-exit-val-hores" style="color: #1E293B;">-</strong></div>
+          <div><span style="color: #64748B;">Destinatari:</span> <strong id="modal-exit-val-destinatari" style="color: #1E293B;">-</strong></div>
+          <div><span style="color: #64748B;">Comprador:</span> <strong id="modal-exit-val-comprador" style="color: #1E293B;">-</strong></div>
+          <div style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between;">
+            <div><span style="color: #64748B;">Telèfon:</span> <strong id="modal-exit-val-telefon" style="color: #059669;">-</strong></div>
+            <span id="modal-exit-val-caducitat" style="font-size: 11.5px; color: #94A3B8;">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botons d'acció ràpida -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" id="btn-modal-exit-enviar-wa" class="btn btn-primary" style="background: #16A34A; border-color: #16A34A; font-weight: 700; padding: 12px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);">
+          <span>📲</span> <span>Enviar Còpia per WhatsApp</span>
+        </button>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <button type="button" id="btn-modal-exit-imprimir-pdf" class="btn btn-outline" style="padding: 9px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📄</span> <span>Targeta / PDF</span>
+          </button>
+          <button type="button" id="btn-modal-exit-copiar-text" class="btn btn-outline" style="padding: 9px; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>📋</span> <span>Copiar Text</span>
+          </button>
+        </div>
+
+        <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-val-generat-exit');" style="margin-top: 4px; padding: 7px; font-size: 12.5px; color: #64748B;">
+          Fet / Tancar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: ESCÀNER QR DE VALS REGAL PER A TAULETA / MÒBIL -->
   <div class="modal-backdrop" id="modal-scan-val-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) tancarEscannerValRegal();">
     <div class="modal-card" style="max-width: 520px; width: 92%; margin: 30px auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
@@ -3249,14 +3311,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=12.7.6"></script>
-  <script src="lib/html5-qrcode.min.js?v=12.7.6"></script>
-  <script src="js/time-utils.js?v=12.7.6"></script>
-  <script src="js/sound.js?v=12.7.6"></script>
-  <script src="js/qr-engine.js?v=12.7.6"></script>
-  <script src="js/api-config.js?v=12.7.6"></script>
-  <script src="js/store.js?v=12.7.6"></script>
-  <script src="js/reserves-calendar.js?v=12.7.6"></script>
-  <script src="js/admin.js?v=12.7.6"></script>
+  <script src="lib/qrcode.min.js?v=12.7.7"></script>
+  <script src="lib/html5-qrcode.min.js?v=12.7.7"></script>
+  <script src="js/time-utils.js?v=12.7.7"></script>
+  <script src="js/sound.js?v=12.7.7"></script>
+  <script src="js/qr-engine.js?v=12.7.7"></script>
+  <script src="js/api-config.js?v=12.7.7"></script>
+  <script src="js/store.js?v=12.7.7"></script>
+  <script src="js/reserves-calendar.js?v=12.7.7"></script>
+  <script src="js/admin.js?v=12.7.7"></script>
 </body>
 </html>

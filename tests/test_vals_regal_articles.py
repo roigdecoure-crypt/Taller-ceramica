@@ -27,6 +27,8 @@ class TestValsRegalIArticles(unittest.TestCase):
             activitat_id='torn',
             nom_destinatari='Marta Garcia',
             nom_comprador='Jordi Prat',
+            telefon_comprador='+34612345678',
+            email_comprador='jordi@exemple.cat',
             missatge='Per molts anys Marta!',
             preu_pagat=50.0,
             metode_pagament='square'
@@ -35,11 +37,14 @@ class TestValsRegalIArticles(unittest.TestCase):
         self.assertTrue(val['codi'].startswith('REGAL-'))
         self.assertEqual(val['estat'], 'actiu')
         self.assertEqual(val['nom_destinatari'], 'Marta Garcia')
+        self.assertEqual(val['telefon_comprador'], '+34612345678')
+        self.assertEqual(val['email_comprador'], 'jordi@exemple.cat')
         self.assertEqual(val['hores'], 2.0)
 
         val_trobat = server.get_val_regal_db(val['codi'])
         self.assertIsNotNone(val_trobat)
         self.assertEqual(val_trobat['codi'], val['codi'])
+        self.assertEqual(val_trobat['telefon_comprador'], '+34612345678')
 
     def test_03_generar_targeta_html_imprimible(self):
         val = server.crear_val_regal_db(
@@ -93,6 +98,7 @@ class TestValsRegalIArticles(unittest.TestCase):
             'codi': codi,
             'nom_destinatari': 'Carla Puig Vives',
             'nom_comprador': 'Joan Vives',
+            'telefon_comprador': '+34699887766',
             'missatge': 'Felicitats!',
             'titol_experiencia': 'Taller de torn (Adult)',
             'hores': 2.0,
@@ -116,6 +122,7 @@ class TestValsRegalIArticles(unittest.TestCase):
         val_db = server.get_val_regal_db(codi)
         self.assertEqual(val_db['nom_destinatari'], 'Carla Puig Vives')
         self.assertEqual(val_db['nom_comprador'], 'Joan Vives')
+        self.assertEqual(val_db['telefon_comprador'], '+34699887766')
         self.assertEqual(val_db['missatge'], 'Felicitats!')
         self.assertEqual(val_db['data_caducitat'], '2027-12-31')
 

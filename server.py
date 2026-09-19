@@ -681,6 +681,7 @@ def init_db():
                 activitat_id TEXT DEFAULT 'torn',
                 nom_comprador TEXT DEFAULT '',
                 email_comprador TEXT DEFAULT '',
+                telefon_comprador TEXT DEFAULT '',
                 nom_destinatari TEXT NOT NULL,
                 email_destinatari TEXT DEFAULT '',
                 missatge TEXT DEFAULT '',
@@ -696,6 +697,12 @@ def init_db():
                 notes TEXT DEFAULT ''
             )
         ''')
+
+        # Migració de columna telefon_comprador a vals_regal si no existeix
+        try:
+            cursor.execute("ALTER TABLE vals_regal ADD COLUMN telefon_comprador TEXT DEFAULT ''")
+        except Exception:
+            pass
 
         # Taula de gestió integral de Monogràfics
         cursor.execute('''
@@ -2687,7 +2694,7 @@ def get_val_regal_db(codi):
         return row_to_dict(r) if r else None
 
 def crear_val_regal_db(titol_experiencia, hores, activitat_id, nom_destinatari,
-                       nom_comprador='', email_comprador='', email_destinatari='',
+                       nom_comprador='', email_comprador='', telefon_comprador='', email_destinatari='',
                        missatge='', preu_pagat=0.0, metode_pagament='manual',
                        transaccio_id='', article_id=None, dies_validesa=180):
     """Crea un nou val regal amb codi únic i data de caducitat a 6 mesos (180 dies) per defecte."""
@@ -2708,13 +2715,13 @@ def crear_val_regal_db(titol_experiencia, hores, activitat_id, nom_destinatari,
         cursor.execute('''
             INSERT INTO vals_regal (
                 codi, article_id, titol_experiencia, hores, activitat_id,
-                nom_comprador, email_comprador, nom_destinatari, email_destinatari,
+                nom_comprador, email_comprador, telefon_comprador, nom_destinatari, email_destinatari,
                 missatge, preu_pagat, data_creacio, data_caducitat, estat,
                 metode_pagament, transaccio_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actiu', ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actiu', ?, ?)
         ''', (
             codi, article_id, titol_experiencia, float(hores or 4.0), activitat_id or 'torn',
-            nom_comprador.strip(), email_comprador.strip(), nom_destinatari.strip(), email_destinatari.strip(),
+            nom_comprador.strip(), email_comprador.strip(), telefon_comprador.strip(), nom_destinatari.strip(), email_destinatari.strip(),
             missatge.strip(), float(preu_pagat or 0.0), data_creacio, data_caducitat,
             metode_pagament, transaccio_id
         ))
@@ -3753,6 +3760,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 nom_destinatari = (data.get('nom_destinatari') or data.get('destinatari') or '').strip()
                 nom_comprador = (data.get('nom_comprador') or data.get('comprador') or '').strip()
                 email_comprador = (data.get('email_comprador') or '').strip()
+                telefon_comprador = (data.get('telefon_comprador') or data.get('telefon') or '').strip()
                 email_destinatari = (data.get('email_destinatari') or '').strip()
                 missatge = (data.get('missatge') or '').strip()
                 preu = float(data.get('preu') or 0.0)
@@ -3771,6 +3779,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     nom_destinatari=nom_destinatari,
                     nom_comprador=nom_comprador,
                     email_comprador=email_comprador,
+                    telefon_comprador=telefon_comprador,
                     email_destinatari=email_destinatari,
                     missatge=missatge,
                     preu_pagat=preu,
@@ -3819,6 +3828,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 nom_destinatari = (data.get('nom_destinatari') or '').strip()
                 nom_comprador = (data.get('nom_comprador') or '').strip()
                 email_comprador = (data.get('email_comprador') or '').strip()
+                telefon_comprador = (data.get('telefon_comprador') or data.get('telefon') or '').strip()
                 missatge = (data.get('missatge') or '').strip()
                 titol = (data.get('titol_experiencia') or '').strip()
                 hores = float(data.get('hores') or 2.0)
@@ -3834,11 +3844,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute('''
                         UPDATE vals_regal
-                        SET nom_destinatari = ?, nom_comprador = ?, email_comprador = ?,
+                        SET nom_destinatari = ?, nom_comprador = ?, email_comprador = ?, telefon_comprador = ?,
                             missatge = ?, titol_experiencia = ?, hores = ?,
                             preu_pagat = ?, data_caducitat = ?, estat = ?
                         WHERE UPPER(TRIM(codi)) = ?
-                    ''', (nom_destinatari, nom_comprador, email_comprador, missatge, titol, hores, preu, data_caducitat, estat, codi))
+                    ''', (nom_destinatari, nom_comprador, email_comprador, telefon_comprador, missatge, titol, hores, preu, data_caducitat, estat, codi))
                     if cursor.rowcount == 0:
                         self.send_json({'ok': False, 'error': 'Val regal no trobat a la base de dades'}, 404)
                         return

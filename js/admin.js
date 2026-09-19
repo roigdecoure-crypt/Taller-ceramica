@@ -7089,7 +7089,10 @@ function renderitzarTaulaValsRegal() {
       badgeText = 'Anul·lat';
     }
 
-    const compradorTxt = v.nom_comprador ? v.nom_comprador : '<span style="color:var(--color-muted);">-</span>';
+    let compradorHtml = v.nom_comprador ? `<div>${escapeHtml(v.nom_comprador)}</div>` : '<span style="color:var(--color-muted);">-</span>';
+    if (v.telefon_comprador) {
+      compradorHtml += `<div style="font-size: 11px; color: #16A34A; font-weight: 600; margin-top: 2px;">📲 ${escapeHtml(v.telefon_comprador)}</div>`;
+    }
     const caducitatTxt = escapeHtml(v.data_caducitat || '-');
     const preuTxt = (v.preu_pagat !== undefined && v.preu_pagat !== null) ? `${Number(v.preu_pagat).toFixed(2)} €` : '-';
     const safeCodi = escapeHtml(v.codi);
@@ -7110,12 +7113,15 @@ function renderitzarTaulaValsRegal() {
           <strong style="color: var(--color-dark);">${escapeHtml(v.nom_destinatari)}</strong>
           ${v.missatge ? `<div style="font-size: 11px; color: #4B5563; font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(v.missatge)}">«${escapeHtml(v.missatge)}»</div>` : ''}
         </td>
-        <td>${escapeHtml(compradorTxt)}</td>
+        <td>${compradorHtml}</td>
         <td style="font-size: 12px; color: var(--color-muted);">${(v.data_creacio || '').slice(0, 10)}</td>
         <td style="font-size: 12px; font-weight: 600;">${caducitatTxt}</td>
         <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td style="text-align: right;">
           <div style="display: inline-flex; gap: 6px;">
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #16A34A; border-color: #86EFAC; background: #F0FDF4;" onclick="enviarValRegalWhatsApp('${safeCodi}');" title="Enviar còpia d'aquest val per WhatsApp al client">
+              📲 WhatsApp
+            </button>
             <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarValRegal('${safeCodi}');" title="Editar dades d'aquest val regal">
               Editar
             </button>
@@ -7385,6 +7391,10 @@ async function obrirModalCrearValRegal() {
   document.getElementById('val-manual-hores').value = '2.0';
   document.getElementById('val-manual-destinatari').value = '';
   document.getElementById('val-manual-comprador').value = '';
+  const elTel = document.getElementById('val-manual-telefon');
+  if (elTel) elTel.value = '';
+  const elMail = document.getElementById('val-manual-email');
+  if (elMail) elMail.value = '';
   document.getElementById('val-manual-missatge').value = '';
   document.getElementById('val-manual-preu').value = '50.00';
 
@@ -7424,6 +7434,10 @@ async function editarValRegal(codi) {
   document.getElementById('val-manual-hores').value = val.hores || 2.0;
   document.getElementById('val-manual-destinatari').value = val.nom_destinatari || '';
   document.getElementById('val-manual-comprador').value = val.nom_comprador || '';
+  const elEditTel = document.getElementById('val-manual-telefon');
+  if (elEditTel) elEditTel.value = val.telefon_comprador || '';
+  const elEditMail = document.getElementById('val-manual-email');
+  if (elEditMail) elEditMail.value = val.email_comprador || '';
   document.getElementById('val-manual-missatge').value = val.missatge || '';
   document.getElementById('val-manual-preu').value = val.preu_pagat || 0.0;
   
@@ -7504,6 +7518,8 @@ async function guardarNouValRegalManual() {
   const hores = parseFloat(document.getElementById('val-manual-hores')?.value || 2.0);
   const destinatari = document.getElementById('val-manual-destinatari')?.value?.trim();
   const comprador = document.getElementById('val-manual-comprador')?.value?.trim();
+  const telefon = document.getElementById('val-manual-telefon')?.value?.trim() || '';
+  const email = document.getElementById('val-manual-email')?.value?.trim() || '';
   const missatge = document.getElementById('val-manual-missatge')?.value?.trim();
   const preu = parseFloat(document.getElementById('val-manual-preu')?.value || 0.0);
   const metode = document.getElementById('val-manual-metode')?.value || 'efectiu';
@@ -7529,6 +7545,8 @@ async function guardarNouValRegalManual() {
           hores: hores,
           nom_destinatari: destinatari,
           nom_comprador: comprador,
+          telefon_comprador: telefon,
+          email_comprador: email,
           missatge: missatge,
           preu_pagat: preu,
           data_caducitat: caducitat,
@@ -7571,6 +7589,8 @@ async function guardarNouValRegalManual() {
         activitat_id: activitatId,
         nom_destinatari: destinatari,
         nom_comprador: comprador,
+        telefon_comprador: telefon,
+        email_comprador: email,
         missatge: missatge,
         preu: preu,
         metode_pagament: metode
@@ -7582,11 +7602,20 @@ async function guardarNouValRegalManual() {
       showToast(`Val regal ${data.codi} emès correctament!`, 'success');
       closeAnyModal('modal-admin-nou-val-backdrop');
       
-      // Obrir automàticament la targeta imprimible
-      imprimirValRegal(data.codi);
-      
       // Recarregar la llista
       await carregarLlistaValsRegal();
+
+      // Obrir modal de confirmació amb accions ràpides (WhatsApp, PDF, Copiar)
+      const valGenerat = data.val || {
+        codi: data.codi,
+        titol_experiencia: titol || 'Taller de Ceràmica',
+        hores: hores,
+        nom_destinatari: destinatari,
+        nom_comprador: comprador,
+        telefon_comprador: telefon,
+        data_caducitat: ''
+      };
+      mostrarModalValCreatExit(valGenerat);
     } else {
       showToast(data?.error || 'No s\'ha pogut crear el val.', 'error');
     }
@@ -7594,6 +7623,173 @@ async function guardarNouValRegalManual() {
     showToast('Error de connexió emetent el val: ' + err.message, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar i Emetre Val Regal'; }
+  }
+}
+
+function formatWhatsAppValRegalUrl(tel, val, mode = 'business') {
+  let cleanTel = (tel || '').replace(/\D/g, '');
+  if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
+
+  const codi = val.codi || '';
+  const titol = val.titol_experiencia || 'Taller de Ceràmica';
+  const destinatario = val.nom_destinatari || 'destinatari/a';
+  const comprador = val.nom_comprador ? ` de part de ${val.nom_comprador}` : '';
+  const hores = val.hores ? `${val.hores} hores` : '';
+  const dataCad = val.data_caducitat ? val.data_caducitat : '';
+
+  const pdfUrl = `https://roigdecoure.cat/api/vals-regal/${encodeURIComponent(codi)}/pdf`;
+  const reservaUrl = `https://roigdecoure.cat/reserva.html?val=${encodeURIComponent(codi)}`;
+
+  const msg = 
+`Hola! Aquí tens el teu Val Regal de Roig de Coure Ceràmica:
+
+🎁 Experiència: ${titol}${hores ? ` (${hores})` : ''}
+👤 Per a: ${destinatario}${comprador}
+🔖 Codi del Val: ${codi}
+${dataCad ? `⏳ Vàlid fins al: ${dataCad}\n` : ''}
+📄 Descarregar targeta regal (PDF per imprimir o desar):
+👉 ${pdfUrl}
+
+📅 Per reservar dia i hora de taller directament:
+👉 ${reservaUrl}
+
+Qualsevol dubte o pregunta, ens pots respondre a aquest missatge o trucar-nos. Moltes gràcies!
+Taller de Ceràmica Roigdecoure`;
+
+  const encodedMsg = encodeURIComponent(msg);
+
+  // Si és Android i mode business / app -> Intent directe de WhatsApp Business (com.whatsapp.w4b)
+  if (isAndroid() && (mode === 'business' || mode === 'app')) {
+    return `intent://api.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}#Intent;package=com.whatsapp.w4b;scheme=https;end;`;
+  }
+
+  // Si és mòbil en general (iOS / altres):
+  if (isMobileDevice()) {
+    if (mode === 'web') {
+      return `https://api.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}`;
+    }
+    return `whatsapp://send?phone=${cleanTel}&text=${encodedMsg}`;
+  }
+
+  // A l'ordinador (PC / Windows / Mac):
+  if (mode === 'web') {
+    return `https://web.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}`;
+  } else {
+    // App nativa d'ordinador (WhatsApp Beta / Desktop a Windows)
+    return `whatsapp://send?phone=${cleanTel}&text=${encodedMsg}`;
+  }
+}
+
+function mostrarModalValCreatExit(val) {
+  if (!val || !val.codi) return;
+
+  const codiEl = document.getElementById('modal-exit-val-codi');
+  const titolEl = document.getElementById('modal-exit-val-titol');
+  const horesEl = document.getElementById('modal-exit-val-hores');
+  const destEl = document.getElementById('modal-exit-val-destinatari');
+  const compEl = document.getElementById('modal-exit-val-comprador');
+  const telEl = document.getElementById('modal-exit-val-telefon');
+  const cadEl = document.getElementById('modal-exit-val-caducitat');
+  const btnWa = document.getElementById('btn-modal-exit-enviar-wa');
+  const btnPdf = document.getElementById('btn-modal-exit-imprimir-pdf');
+  const btnCopy = document.getElementById('btn-modal-exit-copiar-text');
+
+  if (codiEl) codiEl.textContent = val.codi;
+  if (titolEl) titolEl.textContent = val.titol_experiencia || 'Taller de Ceràmica';
+  if (horesEl) horesEl.textContent = `${val.hores || 2} hores`;
+  if (destEl) destEl.textContent = val.nom_destinatari || '-';
+  if (compEl) compEl.textContent = val.nom_comprador || '-';
+  if (telEl) telEl.textContent = val.telefon_comprador || '(Sense telèfon indicat)';
+  if (cadEl) cadEl.textContent = val.data_caducitat ? `Caduca: ${val.data_caducitat}` : '';
+
+  if (btnWa) {
+    btnWa.onclick = () => {
+      let tel = (val.telefon_comprador || '').trim();
+      if (!tel) {
+        tel = prompt("Introdueix el telèfon mòbil / WhatsApp del client per enviar-li el val:", "");
+        if (!tel) return;
+      }
+      const waUrl = formatWhatsAppValRegalUrl(tel, val, 'business');
+      obrirEnllacWhatsApp(waUrl);
+    };
+  }
+
+  if (btnPdf) {
+    btnPdf.onclick = () => {
+      imprimirValRegal(val.codi);
+    };
+  }
+
+  if (btnCopy) {
+    btnCopy.onclick = () => {
+      copiarTextValRegal(val.codi);
+    };
+  }
+
+  if (typeof triggerOpenModal === 'function') {
+    triggerOpenModal('modal-admin-val-generat-exit');
+  } else {
+    const m = document.getElementById('modal-admin-val-generat-exit');
+    if (m) m.style.display = 'flex';
+  }
+}
+
+function enviarValRegalWhatsApp(codi, optTel) {
+  const val = (adminValsRegalList || []).find(v => v.codi === codi);
+  if (!val) {
+    showToast('Val regal no trobat a la llista.', 'error');
+    return;
+  }
+
+  let tel = optTel || (val.telefon_comprador || '').trim();
+  if (!tel) {
+    tel = prompt(`Introdueix el telèfon mòbil / WhatsApp del client per enviar el val regal '${codi}':`, "");
+    if (!tel) return;
+  }
+
+  const waUrl = formatWhatsAppValRegalUrl(tel, val, 'business');
+  obrirEnllacWhatsApp(waUrl);
+}
+
+function copiarTextValRegal(codi) {
+  const val = (adminValsRegalList || []).find(v => v.codi === codi);
+  if (!val) {
+    showToast('Val no trobat.', 'error');
+    return;
+  }
+
+  const titol = val.titol_experiencia || 'Taller de Ceràmica';
+  const destinatario = val.nom_destinatari || 'destinatari/a';
+  const comprador = val.nom_comprador ? ` de part de ${val.nom_comprador}` : '';
+  const hores = val.hores ? `${val.hores} hores` : '';
+  const dataCad = val.data_caducitat ? val.data_caducitat : '';
+  const pdfUrl = `https://roigdecoure.cat/api/vals-regal/${encodeURIComponent(codi)}/pdf`;
+  const reservaUrl = `https://roigdecoure.cat/reserva.html?val=${encodeURIComponent(codi)}`;
+
+  const text = 
+`Hola! Aquí tens el teu Val Regal de Roig de Coure Ceràmica:
+
+🎁 Experiència: ${titol}${hores ? ` (${hores})` : ''}
+👤 Per a: ${destinatario}${comprador}
+🔖 Codi del Val: ${codi}
+${dataCad ? `⏳ Data de caducitat: ${dataCad}\n` : ''}
+📄 Descarregar targeta regal (PDF per imprimir o desar):
+👉 ${pdfUrl}
+
+📅 Per reservar dia i hora de taller directament:
+👉 ${reservaUrl}
+
+Qualsevol dubte o pregunta, ens pots respondre a aquest missatge o trucar-nos. Moltes gràcies!
+Taller de Ceràmica Roigdecoure`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('Text del val copiat al porta-retalls!', 'success');
+    }).catch(() => {
+      prompt('Copia el text del val regal:', text);
+    });
+  } else {
+    prompt('Copia el text del val regal:', text);
   }
 }
 
@@ -7637,6 +7833,10 @@ window.actualitzarCampsDesDeArticle = actualitzarCampsDesDeArticle;
 window.guardarNouValRegalManual = guardarNouValRegalManual;
 window.imprimirValRegal = imprimirValRegal;
 window.anullarValRegal = anullarValRegal;
+window.formatWhatsAppValRegalUrl = formatWhatsAppValRegalUrl;
+window.mostrarModalValCreatExit = mostrarModalValCreatExit;
+window.enviarValRegalWhatsApp = enviarValRegalWhatsApp;
+window.copiarTextValRegal = copiarTextValRegal;
 window.carregarCatalegArticles = carregarCatalegArticles;
 window.obrirModalCrearArticle = obrirModalCrearArticle;
 window.editarArticle = editarArticle;
