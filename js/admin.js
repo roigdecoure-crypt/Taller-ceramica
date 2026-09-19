@@ -83,6 +83,7 @@ async function loadAdminDashboardData() {
   }
   try { carregarLlistaValsRegal(); } catch(e) { console.warn('carregarLlistaValsRegal error:', e); }
   try { carregarCatalegArticles(); } catch(e) { console.warn('carregarCatalegArticles error:', e); }
+  try { carregarResumMensualAdmin(); } catch(e) { console.warn('carregarResumMensualAdmin error:', e); }
 }
 
 function showToast(message, type = 'info') {
@@ -946,9 +947,12 @@ function setupEventListeners() {
     document.getElementById('admin-sidebar')?.classList.toggle('collapsed');
   });
 
-  // Tancar menú en mòbil quan es clica un element del menú (sense avortar enllaços <a>)
+  // Tancar menú en mòbil quan es clica un element del menú (sense avortar enllaços <a> ni grups desplegables)
   document.querySelectorAll('.admin-sidebar .sidebar-item').forEach(item => {
     item.addEventListener('click', (e) => {
+      if (item.classList.contains('sidebar-toggle-group')) {
+        return;
+      }
       const link = item.querySelector('a');
       if (link && (e.target === link || link.contains(e.target))) {
         setTimeout(() => {
@@ -8237,5 +8241,109 @@ async function handleSaveAdminActInfo(event) {
   }
 }
 window.handleSaveAdminActInfo = handleSaveAdminActInfo;
+
+// ==========================================================================
+// RESUM MENSUAL RÀPID DEL TALLER (PUNT 4)
+// ==========================================================================
+async function carregarResumMensualAdmin(mesParam) {
+  const selectMes = document.getElementById('select-resum-mes');
+  const periodLabel = document.getElementById('resum-m-period-label');
+  const card = document.getElementById('card-resum-mensual');
+  if (!card) return;
+
+  // 1. Inicialitzar el selector de mesos (darrers 12 mesos) si encara està buit
+  if (selectMes && selectMes.options.length === 0) {
+    const MESOS_NOMS = ['Gener', 'Febrer', 'Març', 'Abril', 'Maig', 'Juny', 'Juliol', 'Agost', 'Setembre', 'Octubre', 'Novembre', 'Desembre'];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const val = `${yyyy}-${mm}`;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = `${MESOS_NOMS[d.getMonth()]} ${yyyy}`;
+      if (i === 0) opt.selected = true;
+      selectMes.appendChild(opt);
+    }
+  }
+
+  // 2. Restaurar estat plegat/desplegat des de localStorage
+  try {
+    const isCollapsed = localStorage.getItem('roig_admin_resum_collapsed') === '1';
+    if (isCollapsed && !card.classList.contains('collapsed')) {
+      card.classList.add('collapsed');
+      const arrow = document.getElementById('resum-toggle-arrow');
+      const text = document.getElementById('resum-toggle-text');
+      if (arrow) arrow.style.transform = 'rotate(180deg)';
+      if (text) text.textContent = 'Desplegar';
+    }
+  } catch (e) {}
+
+  const mesSeleccionat = mesParam || (selectMes ? selectMes.value : '') || '';
+  if (selectMes && mesSeleccionat && selectMes.value !== mesSeleccionat) {
+    selectMes.value = mesSeleccionat;
+  }
+
+  if (periodLabel) periodLabel.textContent = 'Actualitzant mètriques...';
+
+  try {
+    const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : (typeof getAdminApiBase === 'function' ? getAdminApiBase() : '');
+    const url = `${apiBase}/api/admin/resum-mensual${mesSeleccionat ? '?mes=' + encodeURIComponent(mesSeleccionat) : ''}`;
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.ok) {
+      if (periodLabel) periodLabel.textContent = `Dades consolidades de ${data.mes_nom}`;
+
+      // Targeta 1: Reserves
+      const elReserves = document.getElementById('resum-stat-reserves');
+      const elPlaces = document.getElementById('resum-stat-places');
+      if (elReserves) elReserves.textContent = data.reserves?.total ?? 0;
+      if (elPlaces) elPlaces.textContent = `${data.reserves?.places ?? 0} places (${data.reserves?.hores ?? 0} h)`;
+
+      // Targeta 2: Sessions / Taller Directe
+      const elHoresSess = document.getElementById('resum-stat-hores-sess');
+      const elSessions = document.getElementById('resum-stat-sessions');
+      if (elHoresSess) elHoresSess.textContent = `${data.sessions?.hores ?? 0} h`;
+      if (elSessions) elSessions.textContent = `${data.sessions?.total ?? 0} sessions presencials`;
+
+      // Targeta 3: Demanda Estrella
+      const elDemandaAct = document.getElementById('resum-stat-demanda-act');
+      const elDemandaHora = document.getElementById('resum-stat-demanda-hora');
+      const actTop = data.demanda?.activitat_top || '-';
+      const actCnt = data.demanda?.activitat_top_cnt || 0;
+      const horaTop = data.demanda?.hora_top || '-';
+      const horaCnt = data.demanda?.hora_top_cnt || 0;
+      if (elDemandaAct) {
+        elDemandaAct.textContent = actTop !== '-' ? `${actTop} (${actCnt})` : 'Sense dades';
+      }
+      if (elDemandaHora) {
+        elDemandaHora.textContent = horaTop !== '-' ? `Franja top: ${horaTop} h (${horaCnt})` : 'Sense reserves';
+      }
+
+      // Targeta 4: Vendes i Facturació
+      const elIngresos = document.getElementById('resum-stat-ingresos');
+      const elVendesSub = document.getElementById('resum-stat-vendes-sub');
+      const totalIng = Number(data.vendes?.total_ingresos || 0);
+      const packsTot = data.vendes?.packs_total ?? 0;
+      const packsIng = Number(data.vendes?.packs_ingresos || 0);
+      const valsTot = data.vendes?.vals_total ?? 0;
+      const valsIng = Number(data.vendes?.vals_ingresos || 0);
+
+      if (elIngresos) {
+        elIngresos.textContent = `${totalIng.toLocaleString('ca-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
+      }
+      if (elVendesSub) {
+        elVendesSub.textContent = `${packsTot} packs (${packsIng.toLocaleString('ca-ES')} €) • ${valsTot} vals (${valsIng.toLocaleString('ca-ES')} €)`;
+      }
+    }
+  } catch (err) {
+    console.warn('Error carregant resum mensual admin:', err);
+    if (periodLabel) periodLabel.textContent = 'No s\'han pogut carregar les dades del mes';
+  }
+}
+window.carregarResumMensualAdmin = carregarResumMensualAdmin;
+
 
 

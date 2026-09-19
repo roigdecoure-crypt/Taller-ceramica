@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=12.5.5">
+  <link rel="stylesheet" href="css/admin.css?v=12.7.8">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <script>
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
@@ -68,6 +68,9 @@
 
       if (typeof refreshAppointmentsDashboard === 'function' && tab === 'reserves') {
         refreshAppointmentsDashboard();
+        if (typeof carregarResumMensualAdmin === 'function') {
+          carregarResumMensualAdmin();
+        }
         if (typeof handleSyncGoogleCalendarClick === 'function') {
           handleSyncGoogleCalendarClick(true);
         }
@@ -87,6 +90,37 @@
       }
     }
     window.switchAdminTab = switchAdminTab;
+
+    function toggleSidebarGroup(groupId) {
+      var el = document.getElementById(groupId);
+      var arrow = document.getElementById(groupId.replace('sidebar-group-', 'arrow-group-'));
+      var sb = document.getElementById('admin-sidebar');
+      if (sb && sb.classList.contains('collapsed')) {
+        sb.classList.remove('collapsed');
+      }
+      if (el) {
+        var isOpen = el.style.display !== 'none';
+        el.style.display = isOpen ? 'none' : 'block';
+        if (arrow) {
+          arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+      }
+    }
+    window.toggleSidebarGroup = toggleSidebarGroup;
+
+    function toggleResumMensualCard() {
+      var card = document.getElementById('card-resum-mensual');
+      if (!card) return;
+      var isCollapsed = card.classList.toggle('collapsed');
+      var arrow = document.getElementById('resum-toggle-arrow');
+      var text = document.getElementById('resum-toggle-text');
+      if (arrow) arrow.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+      if (text) text.textContent = isCollapsed ? 'Desplegar' : 'Plegar';
+      try {
+        localStorage.setItem('roig_admin_resum_collapsed', isCollapsed ? '1' : '0');
+      } catch(e) {}
+    }
+    window.toggleResumMensualCard = toggleResumMensualCard;
 
     function forcarNetejaMemoriaCau() {
       try {
@@ -267,16 +301,6 @@
         </span>
         <span class="nav-text">Al taller ara mateix</span>
       </li>
-      <li class="sidebar-item staff-hidden" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets" onclick="switchAdminTab('carnet-designer');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-            <line x1="2" y1="10" x2="22" y2="10"></line>
-            <circle cx="6" cy="15" r="1"></circle>
-          </svg>
-        </span>
-        <span class="nav-text">Dissenyador de Carnets</span>
-      </li>
       <li class="sidebar-item" data-tab="vals-regal" id="nav-tab-vals-regal" title="Vals Regal & Catàleg" onclick="switchAdminTab('vals-regal');" style="cursor: pointer;">
         <span class="nav-icon" style="color: #831D1D;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -291,7 +315,7 @@
       </li>
 
       <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Accions & Gestió</div>
+      <div class="sidebar-section-label">Accions Ràpides</div>
 
       <li class="sidebar-item" id="btn-sidebar-nova-reserva" title="Nova Reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" style="cursor: pointer;">
         <span class="nav-icon" style="color: #831D1D;">
@@ -312,152 +336,194 @@
         </span>
         <span class="nav-text">Entrada / Sortida Manual</span>
       </li>
-      <li class="sidebar-item staff-hidden" id="btn-sidebar-aforament" title="Control d'Aforament" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-          </svg>
-        </span>
-        <span class="nav-text">Control Aforament</span>
-      </li>
 
       <div class="sidebar-divider sidebar-config-item" id="sidebar-divider-config"></div>
-      <div class="sidebar-section-label sidebar-config-item" id="sidebar-label-config">Tallers & Configuració</div>
 
-      <!-- CONFIGURACIÓ DE TALLERS I SISTEMA (Només Propietari) -->
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
-        <span class="nav-icon" style="color: #B45309;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-        </span>
-        <span class="nav-text">Festius / Vacances</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
-        <span class="nav-icon" style="color: #4F46E5;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-          </svg>
-        </span>
-        <span class="nav-text">Restriccions Tallers</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-tallers" title="Gestió de Tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
-        <span class="nav-icon" style="color: #059669;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
-        </span>
-        <span class="nav-text">Gestió de Tallers</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-info-activitats" title="Informació Web (Grups, Monogràfics, Casals)" onclick="triggerOpenModal('modal-admin-info-activitats-backdrop', 'openAdminInfoActivitatsModal');" style="cursor: pointer;">
-        <span class="nav-icon" style="color: #047857;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        </span>
-        <span class="nav-text">Info Web Activitats</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
-            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
-            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
-            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
-            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
-          </svg>
-        </span>
-        <span class="nav-text">Disseny & Marca</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-config" title="Configuració" onclick="triggerOpenModal('modal-config-backdrop', 'openConfigModal');" style="cursor: pointer;">
-        <span class="nav-icon">
+      <!-- AJUSTOS & EINES (DESPLEGABLE / COLLAPSIBLE PER NETEJAR LA BARRA) -->
+      <li class="sidebar-item sidebar-toggle-group sidebar-config-item" id="btn-sidebar-ajustos-parent" title="Ajustos & Eines" onclick="toggleSidebarGroup('sidebar-group-ajustos');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #4B5563;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </span>
-        <span class="nav-text">Configuració</span>
-      </li>
-      <li class="sidebar-item sidebar-config-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        <span class="nav-text" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <span>Ajustos & Eines</span>
+          <svg class="sidebar-arrow-icon" id="arrow-group-ajustos" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </span>
-        <span class="nav-text">Dades & Backup</span>
       </li>
 
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section-label">Enllaços & Eines</div>
-
-      <!-- ENLLAÇOS EXTERNS I UTILITATS -->
-      <li class="sidebar-item" title="Escàner QR Mòbil">
-        <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+      <div class="sidebar-sub-menu sidebar-config-item" id="sidebar-group-ajustos" style="display: none;">
+        <li class="sidebar-item sidebar-sub-item staff-hidden" id="btn-sidebar-aforament" title="Control d'Aforament" onclick="triggerOpenModal('modal-reserves-backdrop', 'openReservesModal');" style="cursor: pointer;">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
             </svg>
           </span>
-          <span class="nav-text">Escàner QR ↗</span>
-        </a>
-      </li>
-      <li class="sidebar-item" title="Web Pública Roig de Coure">
-        <a href="index.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-text">Control Aforament</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item staff-hidden" data-tab="carnet-designer" id="nav-tab-carnet-designer" title="Dissenyador de Carnets" onclick="switchAdminTab('carnet-designer');" style="cursor: pointer;">
           <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+              <circle cx="6" cy="15" r="1"></circle>
+            </svg>
+          </span>
+          <span class="nav-text">Dissenyador Carnets</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-festius" title="Dies de Festa / Vacances" onclick="triggerOpenModal('modal-admin-festius-backdrop', 'openAdminFestiusModal');" style="cursor: pointer;">
+          <span class="nav-icon" style="color: #B45309;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </span>
+          <span class="nav-text">Festius / Vacances</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-restriccions" title="Restringir Tallers" onclick="triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');" style="cursor: pointer;">
+          <span class="nav-icon" style="color: #4F46E5;">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
             </svg>
           </span>
-          <span class="nav-text">Web Pública ↗</span>
-        </a>
-      </li>
-      <li class="sidebar-item" title="Portal de l'Alumne">
-        <a href="alumne.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+          <span class="nav-text">Restriccions Tallers</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-tallers" title="Gestió de Tallers" onclick="triggerOpenModal('modal-admin-tallers-backdrop', 'openAdminTallersModal');" style="cursor: pointer;">
+          <span class="nav-icon" style="color: #059669;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Gestió de Tallers</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-info-activitats" title="Informació Web (Grups, Monogràfics, Casals)" onclick="triggerOpenModal('modal-admin-info-activitats-backdrop', 'openAdminInfoActivitatsModal');" style="cursor: pointer;">
+          <span class="nav-icon" style="color: #047857;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          </span>
+          <span class="nav-text">Info Web Activitats</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-branding" title="Disseny & Marca" onclick="triggerOpenModal('modal-branding-backdrop', 'openBrandStudioModal');" style="cursor: pointer;">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
+              <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+              <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+              <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+              <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
             </svg>
           </span>
-          <span class="nav-text">Portal Alumne ↗</span>
-        </a>
-      </li>
-      <li class="sidebar-item" title="Guia d'Ús Pas a Pas de l'Administració">
-        <a href="manual-admin.html" target="_blank" style="color:#831D1D;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;font-weight:700;">
+          <span class="nav-text">Disseny & Marca</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-config" title="Configuració" onclick="triggerOpenModal('modal-config-backdrop', 'openConfigModal');" style="cursor: pointer;">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
           </span>
-          <span class="nav-text">Guia d'Ús Admin ↗</span>
-        </a>
-      </li>
-      <li class="sidebar-item" id="btn-sidebar-netejar-cau" title="Netejar Cau" onclick="forcarNetejaMemoriaCau();" style="cursor: pointer;">
-        <span class="nav-icon" style="color: #64748B;">
+          <span class="nav-text">Configuració</span>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-export" title="Dades & Backup" onclick="triggerOpenModal('modal-backup-backdrop', 'loadSnapshotsList');" style="cursor: pointer;">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Dades & Backup</span>
+        </li>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <!-- ENLLAÇOS & WEB (DESPLEGABLE / COLLAPSIBLE) -->
+      <li class="sidebar-item sidebar-toggle-group" id="btn-sidebar-links-parent" title="Enllaços & Web" onclick="toggleSidebarGroup('sidebar-group-links');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #4B5563;">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
           </svg>
         </span>
-        <span class="nav-text">Netejar Cau</span>
+        <span class="nav-text" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <span>Enllaços & Web</span>
+          <svg class="sidebar-arrow-icon" id="arrow-group-links" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
       </li>
+
+      <div class="sidebar-sub-menu" id="sidebar-group-links" style="display: none;">
+        <li class="sidebar-item sidebar-sub-item" title="Escàner QR Mòbil">
+          <a href="scanner.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </span>
+            <span class="nav-text">Escàner QR ↗</span>
+          </a>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" title="Web Pública Roig de Coure">
+          <a href="index.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </span>
+            <span class="nav-text">Web Pública ↗</span>
+          </a>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" title="Portal de l'Alumne">
+          <a href="alumne.html" target="_blank" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
+            <span class="nav-text">Portal Alumne ↗</span>
+          </a>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" title="Guia d'Ús Pas a Pas de l'Administració">
+          <a href="manual-admin.html" target="_blank" style="color:#831D1D;text-decoration:none;display:flex;align-items:center;gap:12px;width:100%;font-weight:700;">
+            <span class="nav-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </span>
+            <span class="nav-text">Guia d'Ús Admin ↗</span>
+          </a>
+        </li>
+        <li class="sidebar-item sidebar-sub-item" id="btn-sidebar-netejar-cau" title="Netejar Cau" onclick="forcarNetejaMemoriaCau();" style="cursor: pointer;">
+          <span class="nav-icon" style="color: #64748B;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            </svg>
+          </span>
+          <span class="nav-text">Netejar Cau</span>
+        </li>
+      </div>
 
       <div class="sidebar-divider"></div>
 
@@ -521,6 +587,82 @@
         <input type="number" id="admin-cap-modelatge" value="8">
         <input type="number" id="admin-cap-pintar" value="12">
         <button type="button" id="btn-admin-save-capacitats-act"></button>
+      </div>
+
+      <!-- TARGETA DE RESUM MENSUAL RÀPID (PUNT 4) -->
+      <div class="card-resum-mensual" id="card-resum-mensual">
+        <div class="resum-m-header">
+          <div class="resum-m-title-area">
+            <span class="resum-m-icon-badge">📊</span>
+            <div>
+              <h2 class="resum-m-title">Resum Mensual del Taller</h2>
+              <p class="resum-m-subtitle" id="resum-m-period-label">Carregant dades del mes...</p>
+            </div>
+          </div>
+
+          <div class="resum-m-controls">
+            <div class="resum-m-select-wrap">
+              <label for="select-resum-mes" class="sr-only" style="display:none;">Mes:</label>
+              <select id="select-resum-mes" class="resum-m-select" onchange="carregarResumMensualAdmin(this.value)">
+                <!-- Generat dinàmicament per JS amb els darrers 12 mesos -->
+              </select>
+            </div>
+            <button type="button" class="btn-resum-refresh" id="btn-resum-refresh" onclick="carregarResumMensualAdmin(document.getElementById('select-resum-mes').value)" title="Actualitzar mètriques">
+              <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              <span>Refresca</span>
+            </button>
+            <button type="button" class="btn-resum-toggle" id="btn-resum-toggle" onclick="toggleResumMensualCard();" title="Plegar / desplegar resum">
+              <span id="resum-toggle-text">Plegar</span>
+              <svg id="resum-toggle-arrow" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="transition: transform 0.2s;"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="resum-m-body" id="resum-m-body">
+          <div class="resum-m-grid">
+            
+            <!-- Targeta 1: Reserves -->
+            <div class="resum-m-card">
+              <div class="resum-m-card-top">
+                <span class="resum-m-card-label">Reserves Confirmades</span>
+                <span class="resum-m-card-icon" style="background: rgba(94, 126, 111, 0.12); color: #5E7E6F;">📅</span>
+              </div>
+              <div class="resum-m-card-val" id="resum-stat-reserves">0</div>
+              <div class="resum-m-card-sub" id="resum-stat-places">0 places (0 h)</div>
+            </div>
+
+            <!-- Targeta 2: Sessions / Taller Directe -->
+            <div class="resum-m-card">
+              <div class="resum-m-card-top">
+                <span class="resum-m-card-label">Hores al Taller (Sessions)</span>
+                <span class="resum-m-card-icon" style="background: rgba(131, 29, 29, 0.1); color: #831D1D;">⏱️</span>
+              </div>
+              <div class="resum-m-card-val" id="resum-stat-hores-sess">0 h</div>
+              <div class="resum-m-card-sub" id="resum-stat-sessions">0 sessions d'alumnes</div>
+            </div>
+
+            <!-- Targeta 3: Demanda Estrella -->
+            <div class="resum-m-card">
+              <div class="resum-m-card-top">
+                <span class="resum-m-card-label">Demanda Estrella</span>
+                <span class="resum-m-card-icon" style="background: rgba(245, 158, 11, 0.12); color: #D97706;">⭐</span>
+              </div>
+              <div class="resum-m-card-val" id="resum-stat-demanda-act" style="font-size: 19px; line-height: 1.2;">-</div>
+              <div class="resum-m-card-sub" id="resum-stat-demanda-hora">Franja: -</div>
+            </div>
+
+            <!-- Targeta 4: Vendes i Facturació -->
+            <div class="resum-m-card highlight">
+              <div class="resum-m-card-top">
+                <span class="resum-m-card-label">Facturació Estimada</span>
+                <span class="resum-m-card-icon" style="background: rgba(5, 150, 105, 0.12); color: #059669;">💶</span>
+              </div>
+              <div class="resum-m-card-val" id="resum-stat-ingresos" style="color: #047857;">0 €</div>
+              <div class="resum-m-card-sub" id="resum-stat-vendes-sub">0 packs (0 €) • 0 vals (0 €)</div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
       <!-- GRAELLA SPLIT 2 COLUMNES: CALENDARI (ESQUERRA) + LLISTA RESERVES (DRETA) -->
@@ -3311,14 +3453,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=12.7.7"></script>
-  <script src="lib/html5-qrcode.min.js?v=12.7.7"></script>
-  <script src="js/time-utils.js?v=12.7.7"></script>
-  <script src="js/sound.js?v=12.7.7"></script>
-  <script src="js/qr-engine.js?v=12.7.7"></script>
-  <script src="js/api-config.js?v=12.7.7"></script>
-  <script src="js/store.js?v=12.7.7"></script>
-  <script src="js/reserves-calendar.js?v=12.7.7"></script>
-  <script src="js/admin.js?v=12.7.7"></script>
+  <script src="lib/qrcode.min.js?v=12.7.8"></script>
+  <script src="lib/html5-qrcode.min.js?v=12.7.8"></script>
+  <script src="js/time-utils.js?v=12.7.8"></script>
+  <script src="js/sound.js?v=12.7.8"></script>
+  <script src="js/qr-engine.js?v=12.7.8"></script>
+  <script src="js/api-config.js?v=12.7.8"></script>
+  <script src="js/store.js?v=12.7.8"></script>
+  <script src="js/reserves-calendar.js?v=12.7.8"></script>
+  <script src="js/admin.js?v=12.7.8"></script>
 </body>
 </html>

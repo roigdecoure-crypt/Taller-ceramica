@@ -3125,6 +3125,96 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     ]
                 })
                 return
+
+            elif path == '/api/admin/resum-mensual':
+                mes_param = (params.get('mes', [''])[0]).strip()
+                if not mes_param:
+                    mes_param = get_now().strftime('%Y-%m')
+                
+                MESOS_CA = {
+                    '01': 'Gener', '02': 'Febrer', '03': 'Març', '04': 'Abril',
+                    '05': 'Maig', '06': 'Juny', '07': 'Juliol', '08': 'Agost',
+                    '09': 'Setembre', '10': 'Octubre', '11': 'Novembre', '12': 'Desembre'
+                }
+                parts = mes_param.split('-')
+                any_str = parts[0] if len(parts) > 0 else str(get_now().year)
+                mes_num = parts[1] if len(parts) > 1 else str(get_now().month).zfill(2)
+                mes_nom = f"{MESOS_CA.get(mes_num, mes_num)} {any_str}"
+
+                pattern = f"{mes_param}%"
+                with get_db() as conn:
+                    cursor = conn.cursor()
+
+                    # 1. Sessions presencials d'alumnes
+                    cursor.execute("SELECT COUNT(*), COALESCE(SUM(durada_segons), 0) FROM sessions WHERE data LIKE ?", (pattern,))
+                    row_sess = cursor.fetchone()
+                    total_sessions = row_sess[0] if row_sess else 0
+                    total_segons = row_sess[1] if row_sess else 0
+                    total_hores_sess = round(total_segons / 3600.0, 1)
+
+                    # 2. Reserves
+                    cursor.execute("SELECT COUNT(*), COALESCE(SUM(places), 0), COALESCE(SUM(hores), 0) FROM reserves WHERE data LIKE ? AND estat NOT LIKE '%anul%'", (pattern,))
+                    row_res = cursor.fetchone()
+                    total_reserves = row_res[0] if row_res else 0
+                    total_places = row_res[1] if row_res else 0
+                    total_hores_res = row_res[2] if row_res else 0
+
+                    # 3. Franja i activitat més demanades
+                    cursor.execute("SELECT hora_inici, COUNT(*) as cnt FROM reserves WHERE data LIKE ? AND estat NOT LIKE '%anul%' GROUP BY hora_inici ORDER BY cnt DESC LIMIT 1", (pattern,))
+                    row_hora = cursor.fetchone()
+                    top_hora = row_hora['hora_inici'] if row_hora else '-'
+                    top_hora_cnt = row_hora['cnt'] if row_hora else 0
+
+                    cursor.execute("SELECT activitat, COUNT(*) as cnt FROM reserves WHERE data LIKE ? AND estat NOT LIKE '%anul%' GROUP BY activitat ORDER BY cnt DESC LIMIT 1", (pattern,))
+                    row_act = cursor.fetchone()
+                    top_act = row_act['activitat'] if row_act else '-'
+                    top_act_cnt = row_act['cnt'] if row_act else 0
+
+                    # 4. Packs d'hores venuts
+                    cursor.execute("SELECT COUNT(*), COALESCE(SUM(hores), 0), COALESCE(SUM(preu), 0) FROM paquets_hores WHERE data LIKE ?", (pattern,))
+                    row_pk = cursor.fetchone()
+                    total_packs = row_pk[0] if row_pk else 0
+                    total_hores_packs = row_pk[1] if row_pk else 0
+                    total_ingresos_packs = float(row_pk[2]) if row_pk else 0.0
+
+                    # 5. Vals regal venuts
+                    cursor.execute("SELECT COUNT(*), COALESCE(SUM(hores), 0), COALESCE(SUM(preu_pagat), 0) FROM vals_regal WHERE data_creacio LIKE ?", (pattern,))
+                    row_val = cursor.fetchone()
+                    total_vals = row_val[0] if row_val else 0
+                    total_hores_vals = row_val[1] if row_val else 0
+                    total_ingresos_vals = float(row_val[2]) if row_val else 0.0
+
+                self.send_json({
+                    'ok': True,
+                    'mes': mes_param,
+                    'mes_nom': mes_nom,
+                    'sessions': {
+                        'total': total_sessions,
+                        'hores': total_hores_sess
+                    },
+                    'reserves': {
+                        'total': total_reserves,
+                        'places': total_places,
+                        'hores': total_hores_res
+                    },
+                    'demanda': {
+                        'hora_top': top_hora,
+                        'hora_top_cnt': top_hora_cnt,
+                        'activitat_top': top_act,
+                        'activitat_top_cnt': top_act_cnt
+                    },
+                    'vendes': {
+                        'packs_total': total_packs,
+                        'packs_hores': total_hores_packs,
+                        'packs_ingresos': total_ingresos_packs,
+                        'vals_total': total_vals,
+                        'vals_hores': total_hores_vals,
+                        'vals_ingresos': total_ingresos_vals,
+                        'total_ingresos': total_ingresos_packs + total_ingresos_vals
+                    }
+                })
+                return
+
             elif path == '/api/articles':
                 include_inactive = params.get('include_inactive', ['0'])[0] in ('1', 'true')
                 articles = get_articles_catalog(include_inactive=include_inactive)
