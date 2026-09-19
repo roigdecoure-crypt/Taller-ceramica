@@ -3969,8 +3969,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
                 sq_url = f"{api_base}/v2/online-checkout/payment-links"
 
+                dep_prefix = res_id if res_id else 'direct'
                 order_payload = {
-                    "idempotency_key": f"dep_{res_id}_{int(get_now().timestamp())}",
+                    "idempotency_key": f"dep_{dep_prefix}_{int(get_now().timestamp())}_{secrets.token_hex(3)}",
                     "order": {
                         "location_id": sq_loc_id,
                         "line_items": [
@@ -3985,11 +3986,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         ],
                         "metadata": {
                             "tipus_compra": "paga_senyal",
-                            "reserva_id": res_id
+                            "reserva_id": res_id if res_id else "direct"
                         }
                     },
                     "checkout_options": {
-                        "redirect_url": f"{base_domain}/reserva.html?reserva_confirmada={res_id}"
+                        "redirect_url": f"{base_domain}/reserva.html?reserva_confirmada={res_id}" if res_id else f"{base_domain}/reserva.html"
                     }
                 }
 
@@ -4026,6 +4027,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'telefon': tel
                         })
                         return
+                except urllib.error.HTTPError as sq_err:
+                    err_body = sq_err.read().decode('utf-8', errors='ignore')
+                    print("[Square HTTPError Body]:", err_body)
+                    self.send_json({'ok': False, 'error': f"Error connectant amb Square: {err_body}"}, 500)
+                    return
                 except Exception as sq_err:
                     self.send_json({'ok': False, 'error': f"Error connectant amb Square: {str(sq_err)}"}, 500)
                     return

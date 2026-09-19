@@ -4750,7 +4750,7 @@ Taller de Ceràmica Roigdecoure`;
   }
 }
 
-async function openAdminLinkBestretaModal(resData) {
+async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
   if (!resData || !resData.id) return;
   const modal = document.getElementById('modal-admin-link-bestreta');
   if (!modal) return;
@@ -4810,9 +4810,12 @@ async function openAdminLinkBestretaModal(resData) {
     };
   }
 
-  // Mostrar modal
-  modal.style.removeProperty('display');
+  // Mostrar modal de manera garantida
   modal.classList.add('active');
+  modal.style.setProperty('display', 'flex', 'important');
+  modal.style.setProperty('opacity', '1', 'important');
+  modal.style.setProperty('pointer-events', 'auto', 'important');
+  modal.style.setProperty('visibility', 'visible', 'important');
 
   // Si ja tenim la URL
   if (resData.checkout_url) {
@@ -4821,6 +4824,10 @@ async function openAdminLinkBestretaModal(resData) {
     if (contentEl) contentEl.style.display = 'flex';
     if (urlInput) urlInput.value = resData.checkout_url;
     setWhatsAppUrls(resData.checkout_url);
+    if (autoOpenWhatsApp) {
+      const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url, 'web');
+      window.open(webUrl, '_blank');
+    }
     return;
   }
 
@@ -4836,6 +4843,10 @@ async function openAdminLinkBestretaModal(resData) {
       if (contentEl) contentEl.style.display = 'flex';
       if (urlInput) urlInput.value = res.checkout_url;
       setWhatsAppUrls(res.checkout_url);
+      if (autoOpenWhatsApp) {
+        const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url, 'web');
+        window.open(webUrl, '_blank');
+      }
     } else {
       if (loadingEl) loadingEl.style.display = 'none';
       if (errorEl) {
@@ -4844,6 +4855,10 @@ async function openAdminLinkBestretaModal(resData) {
       }
       if (contentEl) contentEl.style.display = 'flex';
       setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
+      if (autoOpenWhatsApp) {
+        const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, `Bizum o efectiu (${importVal} €)`, 'web');
+        window.open(webUrl, '_blank');
+      }
     }
   } catch (err) {
     if (loadingEl) loadingEl.style.display = 'none';
@@ -4853,6 +4868,95 @@ async function openAdminLinkBestretaModal(resData) {
     }
     if (contentEl) contentEl.style.display = 'flex';
     setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
+  }
+}
+
+// --- MODAL DIRECTE D'ENVIAMENT DE BESTRETA PER WHATSAPP (ACCÉS RÀPID) ---
+function openAdminLinkBestretaDirecteModal(prefillTel = '', prefillNom = '', prefillImport = 40, prefillPlaces = 4, prefillData = '') {
+  const modal = document.getElementById('modal-admin-link-bestreta-directe');
+  if (!modal) return;
+
+  const telInput = document.getElementById('direct-bestreta-tel');
+  const nomInput = document.getElementById('direct-bestreta-nom');
+  const importInput = document.getElementById('direct-bestreta-import');
+  const placesInput = document.getElementById('direct-bestreta-places');
+  const dataInput = document.getElementById('direct-bestreta-data');
+  const resultBox = document.getElementById('direct-bestreta-result');
+  const loadingBox = document.getElementById('direct-bestreta-loading');
+  const urlInput = document.getElementById('direct-bestreta-url');
+
+  if (telInput) telInput.value = prefillTel || '';
+  if (nomInput) nomInput.value = prefillNom || '';
+  if (importInput) importInput.value = prefillImport || 40;
+  if (placesInput) placesInput.value = prefillPlaces || 4;
+  if (dataInput) dataInput.value = prefillData || (typeof adminSelectedDate !== 'undefined' ? adminSelectedDate : new Date().toISOString().split('T')[0]);
+  if (resultBox) resultBox.style.display = 'none';
+  if (loadingBox) loadingBox.style.display = 'none';
+  if (urlInput) urlInput.value = '';
+
+  modal.classList.add('active');
+  modal.style.setProperty('display', 'flex', 'important');
+  modal.style.setProperty('opacity', '1', 'important');
+  modal.style.setProperty('visibility', 'visible', 'important');
+  modal.style.setProperty('pointer-events', 'auto', 'important');
+}
+
+async function executarEnviamentDirecteBestretaWhatsApp() {
+  const telInput = document.getElementById('direct-bestreta-tel');
+  const nomInput = document.getElementById('direct-bestreta-nom');
+  const importInput = document.getElementById('direct-bestreta-import');
+  const placesInput = document.getElementById('direct-bestreta-places');
+  const dataInput = document.getElementById('direct-bestreta-data');
+  const resultBox = document.getElementById('direct-bestreta-result');
+  const loadingBox = document.getElementById('direct-bestreta-loading');
+  const urlInput = document.getElementById('direct-bestreta-url');
+  const btn = document.getElementById('btn-executar-enviament-directe-wa');
+
+  const tel = (telInput?.value || '').trim();
+  const nom = (nomInput?.value || '').trim() || 'Client';
+  const importVal = parseFloat(importInput?.value || 40) || 40;
+  const places = parseInt(placesInput?.value || 4, 10) || 4;
+  const dataVal = (dataInput?.value || '').trim();
+
+  if (!tel) {
+    alert('Cal indicar el número de telèfon mòbil del client per obrir WhatsApp.');
+    telInput?.focus();
+    return;
+  }
+
+  if (loadingBox) loadingBox.style.display = 'block';
+  if (resultBox) resultBox.style.display = 'none';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generant enllaç a Square...';
+  }
+
+  try {
+    const res = await Store.generarLinkBestreta(null, places, nom, tel, importVal);
+    const checkoutUrl = (res && res.ok && res.checkout_url) ? res.checkout_url : `Bizum o efectiu (${importVal} €)`;
+
+    if (urlInput) urlInput.value = (res && res.ok && res.checkout_url) ? res.checkout_url : '';
+    if (resultBox && res && res.ok && res.checkout_url) resultBox.style.display = 'flex';
+
+    // Generar URL per WhatsApp Web
+    const waUrl = formatWhatsAppBestretaUrl(tel, nom, dataVal, '10:00', places, importVal, checkoutUrl, 'web');
+
+    // Obrir WhatsApp Web directament en pestanya nova
+    window.open(waUrl, '_blank');
+    showToast("S'ha obert WhatsApp Web amb el missatge de la bestreta preparat!", 'success');
+
+  } catch (err) {
+    console.error('Error en enviament directe WhatsApp:', err);
+    alert('Error generant enllaç: ' + err.message);
+  } finally {
+    if (loadingBox) loadingBox.style.display = 'none';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        📲 Obrir WhatsApp Web i Enviar
+      `;
+    }
   }
 }
 
@@ -4894,6 +4998,8 @@ if (typeof window !== 'undefined') {
   window.handleAdminResDataChange = handleAdminResDataChange;
   window.handleAdminSubmitNovaReserva = handleAdminSubmitNovaReserva;
   window.openAdminLinkBestretaModal = openAdminLinkBestretaModal;
+  window.openAdminLinkBestretaDirecteModal = openAdminLinkBestretaDirecteModal;
+  window.executarEnviamentDirecteBestretaWhatsApp = executarEnviamentDirecteBestretaWhatsApp;
   window.copiarEnllacBestreta = copiarEnllacBestreta;
   window.formatWhatsAppBestretaUrl = formatWhatsAppBestretaUrl;
   window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
