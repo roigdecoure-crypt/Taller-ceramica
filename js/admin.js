@@ -3551,7 +3551,7 @@ async function renderAdminDayAppointments(dateStr) {
               </button>
             ` : ''}
             ${r.telefon ? `
-              <a href="https://web.whatsapp.com/send?phone=${r.telefon.replace(/[^0-9]/g, '').length === 9 ? '34' + r.telefon.replace(/[^0-9]/g, '') : r.telefon.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp Web">
+              <a href="https://api.whatsapp.com/send?phone=${r.telefon.replace(/[^0-9]/g, '').length === 9 ? '34' + r.telefon.replace(/[^0-9]/g, '') : r.telefon.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
                 WhatsApp
               </a>
             ` : ''}
@@ -4715,8 +4715,43 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
   }
 }
 
+// Detectar dispositius Android i mòbils
+function isAndroid() {
+  return /Android/i.test(navigator.userAgent || '');
+}
+
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+}
+
+// Obertura fiable de WhatsApp segons si és mòbil (WhatsApp Business) o ordinador (WhatsApp Beta)
+function obrirEnllacWhatsApp(url) {
+  if (!url) return;
+  const isMobile = isMobileDevice();
+  if (isMobile) {
+    // Al mòbil MAI obrir web.whatsapp.com (mostra error de 'Desde un navegador en tu computadora...')
+    const safeUrl = url.replace('web.whatsapp.com', 'api.whatsapp.com');
+    // Navegar directament llança l'aplicació nativa de WhatsApp / WhatsApp Business al mòbil
+    window.location.href = safeUrl;
+  } else {
+    // A l'ordinador (Windows / Mac)
+    if (url.startsWith('whatsapp://')) {
+      const linkEl = document.createElement('a');
+      linkEl.href = url;
+      document.body.appendChild(linkEl);
+      linkEl.click();
+      setTimeout(() => {
+        try { document.body.removeChild(linkEl); } catch(e) {}
+      }, 300);
+    } else {
+      window.open(url, '_blank');
+    }
+  }
+}
+window.obrirEnllacWhatsApp = obrirEnllacWhatsApp;
+
 // --- GESTIÓ I ENVIAMENT D'ENLLAÇ DE BESTRETA / PAGA I SENYAL (SQUARE / WHATSAPP) ---
-function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl, mode = 'web') {
+function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl, mode = 'business') {
   let cleanTel = (tel || '').replace(/\D/g, '');
   if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
 
@@ -4741,12 +4776,27 @@ Per confirmar definitivament la teva reserva, pots fer el pagament de la bestret
 Moltes gràcies i fins aviat!
 Taller de Ceràmica Roigdecoure`;
 
+  const encodedMsg = encodeURIComponent(msg);
+
+  // Si és Android i mode business / app -> Intent directe de WhatsApp Business (com.whatsapp.w4b)
+  if (isAndroid() && (mode === 'business' || mode === 'app')) {
+    return `intent://send?phone=${cleanTel}&text=${encodedMsg}#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end;`;
+  }
+
+  // Si és mòbil en general (iOS / altres):
+  if (isMobileDevice()) {
+    if (mode === 'web') {
+      return `https://api.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}`;
+    }
+    return `whatsapp://send?phone=${cleanTel}&text=${encodedMsg}`;
+  }
+
+  // A l'ordinador (PC / Windows / Mac):
   if (mode === 'web') {
-    // Obrir directament l'aplicació web de WhatsApp (web.whatsapp.com)
-    return `https://web.whatsapp.com/send?phone=${cleanTel}&text=${encodeURIComponent(msg)}`;
+    return `https://web.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}`;
   } else {
-    // Obrir l'aplicació instal·lada a l'ordinador (WhatsApp Beta / Desktop a Windows)
-    return `whatsapp://send?phone=${cleanTel}&text=${encodeURIComponent(msg)}`;
+    // App nativa d'ordinador (WhatsApp Beta / Desktop a Windows)
+    return `whatsapp://send?phone=${cleanTel}&text=${encodedMsg}`;
   }
 }
 
@@ -4779,10 +4829,23 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
   const importVal = parseFloat(resData.paga_senyal || resData.import || (placesVal * 10));
 
   function setWhatsAppUrls(link) {
+    const isMobile = isMobileDevice();
+    const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'business');
     const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'web');
-    const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'app');
-    if (waWebBtn) waWebBtn.href = webUrl;
-    if (waAppBtn) waAppBtn.href = appUrl;
+    if (waWebBtn) {
+      waWebBtn.href = webUrl;
+      const spanWeb = document.getElementById('btn-whatsapp-web-bestreta-label') || waWebBtn.querySelector('span');
+      if (spanWeb) {
+        spanWeb.textContent = isMobile ? '💬 Obrir a WhatsApp Estàndard' : '🌐 Obrir a WhatsApp Web (Navegador)';
+      }
+    }
+    if (waAppBtn) {
+      waAppBtn.href = appUrl;
+      const spanApp = document.getElementById('btn-whatsapp-app-bestreta-label') || waAppBtn.querySelector('span');
+      if (spanApp) {
+        spanApp.textContent = isMobile ? '📲 Obrir a WhatsApp Business' : "💻 Obrir a l'App WhatsApp Beta (Ordinador)";
+      }
+    }
   }
 
   if (clientEl) clientEl.textContent = clientNom;
@@ -4823,12 +4886,8 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
     if (urlInput) urlInput.value = resData.checkout_url;
     setWhatsAppUrls(resData.checkout_url);
     if (autoOpenWhatsApp) {
-      const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url, 'app');
-      const linkEl = document.createElement('a');
-      linkEl.href = appUrl;
-      document.body.appendChild(linkEl);
-      linkEl.click();
-      document.body.removeChild(linkEl);
+      const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url, 'business');
+      obrirEnllacWhatsApp(appUrl);
     }
     return;
   }
@@ -4846,12 +4905,8 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
       if (urlInput) urlInput.value = res.checkout_url;
       setWhatsAppUrls(res.checkout_url);
       if (autoOpenWhatsApp) {
-        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url, 'app');
-        const linkEl = document.createElement('a');
-        linkEl.href = appUrl;
-        document.body.appendChild(linkEl);
-        linkEl.click();
-        document.body.removeChild(linkEl);
+        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url, 'business');
+        obrirEnllacWhatsApp(appUrl);
       }
     } else {
       if (loadingEl) loadingEl.style.display = 'none';
@@ -4862,12 +4917,8 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
       if (contentEl) contentEl.style.display = 'flex';
       setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
       if (autoOpenWhatsApp) {
-        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, `Bizum o efectiu (${importVal} €)`, 'app');
-        const linkEl = document.createElement('a');
-        linkEl.href = appUrl;
-        document.body.appendChild(linkEl);
-        linkEl.click();
-        document.body.removeChild(linkEl);
+        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, `Bizum o efectiu (${importVal} €)`, 'business');
+        obrirEnllacWhatsApp(appUrl);
       }
     }
   } catch (err) {
@@ -4904,6 +4955,16 @@ function openAdminLinkBestretaDirecteModal(prefillTel = '', prefillNom = '', pre
   if (loadingBox) loadingBox.style.display = 'none';
   if (urlInput) urlInput.value = '';
 
+  const isMobile = isMobileDevice();
+  const labelApp = document.getElementById('btn-executar-enviament-directe-app-label');
+  const labelWeb = document.getElementById('btn-executar-enviament-directe-wa-label');
+  if (labelApp) {
+    labelApp.textContent = isMobile ? '📲 Obrir a WhatsApp Business' : "💻 Obrir a l'App WhatsApp Beta (Ordinador)";
+  }
+  if (labelWeb) {
+    labelWeb.textContent = isMobile ? '💬 Obrir a WhatsApp Estàndard' : '🌐 Obrir al Navegador (WhatsApp Web)';
+  }
+
   modal.classList.add('active');
   modal.style.setProperty('display', 'flex', 'important');
   modal.style.setProperty('opacity', '1', 'important');
@@ -4911,7 +4972,7 @@ function openAdminLinkBestretaDirecteModal(prefillTel = '', prefillNom = '', pre
   modal.style.setProperty('pointer-events', 'auto', 'important');
 }
 
-async function executarEnviamentDirecteBestretaWhatsApp(targetMode = 'app') {
+async function executarEnviamentDirecteBestretaWhatsApp(targetMode = 'business') {
   const telInput = document.getElementById('direct-bestreta-tel');
   const nomInput = document.getElementById('direct-bestreta-nom');
   const importInput = document.getElementById('direct-bestreta-import');
@@ -4947,21 +5008,12 @@ async function executarEnviamentDirecteBestretaWhatsApp(targetMode = 'app') {
     if (urlInput) urlInput.value = (res && res.ok && res.checkout_url) ? res.checkout_url : '';
     if (resultBox && res && res.ok && res.checkout_url) resultBox.style.display = 'flex';
 
-    // Generar URL per a l'App WhatsApp Beta o WhatsApp Web
-    const waUrl = formatWhatsAppBestretaUrl(tel, nom, dataVal, '10:00', places, importVal, checkoutUrl, targetMode);
+    const isMobile = isMobileDevice();
+    const mode = (targetMode === 'business' || (isMobile && targetMode === 'app')) ? 'business' : targetMode;
+    const waUrl = formatWhatsAppBestretaUrl(tel, nom, dataVal, '10:00', places, importVal, checkoutUrl, mode);
 
-    if (targetMode === 'app') {
-      // Obrir directament l'aplicació instal·lada de l'ordinador (WhatsApp Beta)
-      const linkEl = document.createElement('a');
-      linkEl.href = waUrl;
-      document.body.appendChild(linkEl);
-      linkEl.click();
-      document.body.removeChild(linkEl);
-      showToast("S'ha obert l'aplicació WhatsApp Beta de l'ordinador!", 'success');
-    } else {
-      window.open(waUrl, '_blank');
-      showToast("S'ha obert WhatsApp Web al navegador!", 'success');
-    }
+    obrirEnllacWhatsApp(waUrl);
+    showToast(isMobile ? "S'ha obert WhatsApp Business!" : (targetMode === 'app' ? "S'ha obert WhatsApp Beta!" : "S'ha obert WhatsApp Web!"), 'success');
 
   } catch (err) {
     console.error('Error en enviament directe WhatsApp:', err);
