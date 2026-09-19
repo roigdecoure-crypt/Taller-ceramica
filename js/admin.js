@@ -3532,6 +3532,9 @@ async function renderAdminDayAppointments(dateStr) {
         <td style="text-align: right;">
           <div class="app-actions-group">
             ${isPagaSenyalPendent && !isCancelled ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-link-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-tel="${escapeHtml(r.telefon || '')}" data-data="${dateStr}" data-hora="${r.hora_inici || ''}" data-places="${r.places || 1}" data-import="${pagaSenyalVal}" data-link="${escapeHtml(r.paga_senyal_link || '')}" style="padding: 3px 8px; font-size: 11.5px; color: #047857; border-color: #10B981; background: #ECFDF5; font-weight: 700; margin-right: 4px;" title="Generar i enviar l'enllaç de pagament de la bestreta per WhatsApp">
+                Link Bestreta 🔗
+              </button>
               <button type="button" class="btn btn-outline btn-sm btn-app-cobrar-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-import="${pagaSenyalVal}" style="padding: 3px 8px; font-size: 11.5px; color: #92400E; border-color: #F59E0B; background: #FFFBEB; font-weight: 700;" title="Marcar la bestreta com a cobrada per TPV físic, efectiu o Bizum">
                 Cobrar Bestreta (${pagaSenyalVal}€)
               </button>
@@ -3601,6 +3604,32 @@ async function renderAdminDayAppointments(dateStr) {
           showToast('Error cancel·lant reserva: ' + err.message, 'error');
         }
       }
+    });
+  });
+
+  // Delegar obertura de modal link bestreta
+  tableBody.querySelectorAll('.btn-app-link-bestreta').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const resId = btn.getAttribute('data-res-id');
+      const client = btn.getAttribute('data-client');
+      const tel = btn.getAttribute('data-tel');
+      const dataStr = btn.getAttribute('data-data');
+      const horaStr = btn.getAttribute('data-hora');
+      const places = parseInt(btn.getAttribute('data-places') || 1, 10);
+      const imp = parseFloat(btn.getAttribute('data-import') || (places * 10));
+      const link = btn.getAttribute('data-link');
+
+      openAdminLinkBestretaModal({
+        id: resId,
+        student_nom: client,
+        telefon: tel,
+        data: dataStr,
+        hora_inici: horaStr,
+        places: places,
+        paga_senyal: imp,
+        checkout_url: link || ''
+      });
     });
   });
 
@@ -4190,10 +4219,14 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
     actSelect.value = (preselectedActId || 'torn').toLowerCase();
   }
 
-  // Places
+  // Places & Bestreta
   const placesInput = document.getElementById('admin-res-places');
   if (placesInput) placesInput.value = 1;
-  handleAdminResPlacesChange();
+  const inputPs = document.getElementById('admin-res-paga-senyal-input');
+  if (inputPs) {
+    inputPs.value = 10;
+    inputPs.dataset.lastAuto = '10';
+  }
   const chkBestreta = document.getElementById('admin-res-chk-bestreta-cobrada');
   if (chkBestreta) chkBestreta.checked = false;
 
@@ -4211,9 +4244,13 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
     }
   }
 
-  // Forçar aforament reset
+  // Forçar aforament reset i connexió amb bestreta
   const chkForcar = document.getElementById('admin-res-forcar-aforament');
-  if (chkForcar) chkForcar.checked = false;
+  if (chkForcar) {
+    chkForcar.checked = false;
+    chkForcar.onchange = handleAdminResPlacesChange;
+  }
+  handleAdminResPlacesChange();
 
   // Notes
   const notesInput = document.getElementById('admin-res-notes');
@@ -4238,11 +4275,28 @@ function closeAdminNovaReservaModal() {
 function handleAdminResPlacesChange() {
   const pl = parseInt(document.getElementById('admin-res-places')?.value || 1, 10);
   const box = document.getElementById('admin-res-group-paga-senyal');
-  const amt = document.getElementById('admin-res-paga-senyal-amount');
-  if (box && amt) {
-    if (pl >= 4) {
+  const inputPs = document.getElementById('admin-res-paga-senyal-input');
+  const descEl = document.getElementById('admin-res-paga-senyal-desc');
+  const chkForcar = document.getElementById('admin-res-forcar-aforament')?.checked || false;
+
+  if (box) {
+    const shouldShow = (pl >= 4) || chkForcar;
+    if (shouldShow) {
       box.style.display = 'block';
-      amt.textContent = `${pl * 10} € (${pl} x 10 €)`;
+      const defaultAmount = pl * 10;
+      if (inputPs) {
+        if (!inputPs.value || inputPs.dataset.lastAuto === inputPs.value) {
+          inputPs.value = defaultAmount;
+          inputPs.dataset.lastAuto = String(defaultAmount);
+        }
+      }
+      if (descEl) {
+        if (chkForcar && pl < 4) {
+          descEl.textContent = `En sobrepassar l'aforament de l'activitat s'aplica una bestreta de reserva (${inputPs ? inputPs.value : defaultAmount} €) per confirmar la plaça.`;
+        } else {
+          descEl.textContent = `Per a reserves de ${pl} places s'aplica una bestreta de 10 € per persona (${inputPs ? inputPs.value : defaultAmount} €) que es descomptarà el dia del taller.`;
+        }
+      }
     } else {
       box.style.display = 'none';
     }
@@ -4457,12 +4511,20 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
   const notes = document.getElementById('admin-res-notes')?.value?.trim() || '';
   let finalNotes = notes;
   const isBestretaCobrada = document.getElementById('admin-res-chk-bestreta-cobrada')?.checked;
-  if (places >= 4) {
-    const importPs = places * 10;
+  const bestretaBox = document.getElementById('admin-res-group-paga-senyal');
+  const isBestretaActive = Boolean(bestretaBox && bestretaBox.style.display !== 'none');
+  const customPsInput = document.getElementById('admin-res-paga-senyal-input');
+  let importPs = places * 10;
+  if (customPsInput && customPsInput.value) {
+    const parsed = parseFloat(customPsInput.value);
+    if (!isNaN(parsed) && parsed >= 0) importPs = parsed;
+  }
+
+  if (isBestretaActive || places >= 4) {
     if (isBestretaCobrada) {
       finalNotes = `[BESTRETA COBRADA: ${importPs}€ per TPV Físic (Taller)] ${finalNotes}`.trim();
     } else {
-      finalNotes = `[PAGA I SENYAL: ${importPs}€ PENDENT (10€ x ${places}p)] ${finalNotes}`.trim();
+      finalNotes = `[PAGA I SENYAL: ${importPs}€ PENDENT] ${finalNotes}`.trim();
     }
   }
 
@@ -4493,6 +4555,8 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         hora_fi: horaFi,
         hores: 2.0,
         notes: finalNotes,
+        paga_senyal: (isBestretaActive || places >= 4) ? importPs : 0,
+        demanar_bestreta: isBestretaActive && !isBestretaCobrada,
         bestreta_cobrada: isBestretaCobrada,
         forcar_aforament: forcarAforament
       });
@@ -4531,6 +4595,20 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         if (currentViewingStudent && currentViewingStudent.alumne) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
         }
+
+        if (isBestretaActive && !isBestretaCobrada && Array.isArray(res.reserves) && res.reserves.length > 0) {
+          const firstR = res.reserves[0];
+          openAdminLinkBestretaModal({
+            id: firstR.id,
+            student_nom: studentNom,
+            telefon: studentTel,
+            data: firstR.data || dataRes,
+            hora_inici: horaInici,
+            places: places,
+            paga_senyal: firstR.paga_senyal || importPs,
+            checkout_url: firstR.checkout_url || ''
+          });
+        }
       } else {
         const errMsg = (res && res.error) || 'Aforament complet o error en les dates';
         const isGlobalCap = errMsg.toLowerCase().includes('global') || errMsg.toLowerCase().includes('límit físic');
@@ -4539,7 +4617,7 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
           return;
         }
         if (!forcarAforament && (errMsg.toLowerCase().includes('aforament') || errMsg.toLowerCase().includes('conflicte') || errMsg.toLowerCase().includes('places') || (res && res.code === 'AFORAMENT_COMPLET'))) {
-          if (confirm(`AVÍS D'AFORAMENT D'ACTIVITAT:\n\n${errMsg}\n\nCom a administrador, vols sobrepassar les places d'aquesta activitat (mantenint sempre el límit global de 12 places del taller)?`)) {
+          if (confirm(`AVÍS D'AFORAMENT D'ACTIVITAT:\n\n${errMsg}\n\nCom a administrador, vols sobrepassar les places per a aquesta activitat en les dates de la sèrie?`)) {
             const chk = document.getElementById('admin-res-forcar-aforament');
             if (chk) chk.checked = true;
             return handleAdminSubmitNovaReserva(e, true);
@@ -4565,6 +4643,8 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
         hora_fi: horaFi,
         hores: 2.0,
         notes: finalNotes,
+        paga_senyal: (isBestretaActive || places >= 4) ? importPs : 0,
+        demanar_bestreta: isBestretaActive && !isBestretaCobrada,
         bestreta_cobrada: isBestretaCobrada,
         forcar_aforament: forcarAforament
       });
@@ -4584,6 +4664,23 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
 
         if (currentViewingStudent && currentViewingStudent.alumne) {
           openStudentInlineDetail(currentViewingStudent.alumne.id);
+        }
+
+        const createdRes = res.reserva || {};
+        const isPendingBestreta = (createdRes.estat === 'pendent_paga_senyal') ||
+                                  (!isBestretaCobrada && (isBestretaActive || places >= 4 || (createdRes.paga_senyal > 0)));
+
+        if (isPendingBestreta) {
+          openAdminLinkBestretaModal({
+            id: createdRes.id || res.id,
+            student_nom: studentNom,
+            telefon: studentTel,
+            data: dataRes,
+            hora_inici: horaInici,
+            places: places,
+            paga_senyal: createdRes.paga_senyal || importPs,
+            checkout_url: createdRes.checkout_url || res.checkout_url || ''
+          });
         }
       } else {
         const errMsg = (res && res.error) || 'Aforament complet o dia no disponible';
@@ -4612,6 +4709,150 @@ async function handleAdminSubmitNovaReserva(e, isRetryWithForce = false) {
   }
 }
 
+// --- GESTIÓ I ENVIAMENT D'ENLLAÇ DE BESTRETA / PAGA I SENYAL (SQUARE / WHATSAPP) ---
+function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl) {
+  let cleanTel = (tel || '').replace(/\D/g, '');
+  if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
+
+  let dataFmt = dataStr || '';
+  if (dataStr && dataStr.includes('-')) {
+    const parts = dataStr.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      dataFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+  }
+
+  const msg = 
+`Hola ${nom}!
+Hem preparat la teva reserva al Taller de Ceràmica Roigdecoure:
+📅 Data: ${dataFmt}
+⏰ Hora: ${horaStr} h
+👥 Places: ${places} persones
+
+Per confirmar definitivament la teva reserva, pots fer el pagament de la bestreta de ${importVal} € mitjançant aquest enllaç segur:
+👉 ${checkoutUrl}
+
+Moltes gràcies i fins aviat!
+Taller de Ceràmica Roigdecoure`;
+
+  return `https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`;
+}
+
+async function openAdminLinkBestretaModal(resData) {
+  if (!resData || !resData.id) return;
+  const modal = document.getElementById('modal-admin-link-bestreta');
+  if (!modal) return;
+
+  const clientEl = document.getElementById('modal-link-bestreta-client');
+  const detallEl = document.getElementById('modal-link-bestreta-detall');
+  const importEl = document.getElementById('modal-link-bestreta-import');
+  const loadingEl = document.getElementById('modal-link-bestreta-loading');
+  const errorEl = document.getElementById('modal-link-bestreta-error');
+  const errorMsgEl = document.getElementById('modal-link-bestreta-error-msg');
+  const contentEl = document.getElementById('modal-link-bestreta-content');
+  const urlInput = document.getElementById('modal-link-bestreta-url');
+  const waBtn = document.getElementById('btn-whatsapp-enllac-bestreta');
+  const btnCobrarManual = document.getElementById('modal-link-bestreta-btn-cobrar-manual');
+
+  const clientNom = resData.student_nom || resData.nom || 'Client';
+  const dataStr = resData.data || '';
+  let dataFmt = dataStr;
+  if (dataStr && dataStr.includes('-')) {
+    const p = dataStr.split('-');
+    if (p.length === 3 && p[0].length === 4) dataFmt = `${p[2]}/${p[1]}/${p[0]}`;
+  }
+  const horaStr = resData.hora_inici || '10:00';
+  const placesVal = parseInt(resData.places || 1, 10);
+  const importVal = parseFloat(resData.paga_senyal || resData.import || (placesVal * 10));
+
+  if (clientEl) clientEl.textContent = clientNom;
+  if (detallEl) detallEl.textContent = `${dataFmt} a les ${horaStr} h • ${placesVal} places`;
+  if (importEl) importEl.textContent = `${importVal} €`;
+
+  if (btnCobrarManual) {
+    btnCobrarManual.onclick = async () => {
+      if (confirm(`Vols registrar la bestreta de ${importVal} € per a ${clientNom} com a cobrada presencialment (TPV Físic / Efectiu)?`)) {
+        try {
+          const res = await Store.marcarBestretaCobrada(resData.id, 'TPV Físic (Taller)', importVal);
+          if (res && res.ok) {
+            showToast(`Bestreta de ${importVal} € registrada com a cobrada.`, 'success');
+            if (typeof closeAnyModal === 'function') closeAnyModal('modal-admin-link-bestreta');
+            await refreshAppointmentsDashboard();
+          } else {
+            showToast(res?.error || 'Error registrant cobrament de bestreta', 'error');
+          }
+        } catch (err) {
+          showToast('Error: ' + err.message, 'error');
+        }
+      }
+    };
+  }
+
+  // Mostrar modal
+  modal.style.removeProperty('display');
+  modal.classList.add('active');
+
+  // Si ja tenim la URL
+  if (resData.checkout_url) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) errorEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'flex';
+    if (urlInput) urlInput.value = resData.checkout_url;
+    if (waBtn) waBtn.href = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url);
+    return;
+  }
+
+  // Generar mitjançant Square API
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (errorEl) errorEl.style.display = 'none';
+  if (contentEl) contentEl.style.display = 'none';
+
+  try {
+    const res = await Store.generarLinkBestreta(resData.id, placesVal, clientNom, resData.telefon, importVal);
+    if (res && res.ok && res.checkout_url) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (contentEl) contentEl.style.display = 'flex';
+      if (urlInput) urlInput.value = res.checkout_url;
+      if (waBtn) waBtn.href = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url);
+    } else {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'block';
+      if (errorMsgEl) errorMsgEl.textContent = res?.error || "Error generant l'enllaç de pagament Square.";
+    }
+  } catch (err) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) errorEl.style.display = 'block';
+    if (errorMsgEl) errorMsgEl.textContent = err.message;
+  }
+}
+
+function copiarEnllacBestreta() {
+  const input = document.getElementById('modal-link-bestreta-url');
+  const btn = document.getElementById('btn-copiar-enllac-bestreta');
+  if (!input || !input.value) return;
+
+  navigator.clipboard.writeText(input.value).then(() => {
+    if (btn) {
+      const origText = btn.textContent;
+      btn.textContent = 'Copiat! ✅';
+      btn.style.background = '#10B981';
+      btn.style.color = '#FFFFFF';
+      setTimeout(() => {
+        btn.textContent = origText;
+        btn.style.removeProperty('background');
+        btn.style.removeProperty('color');
+      }, 2000);
+    }
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+    if (btn) {
+      btn.textContent = 'Copiat! ✅';
+      setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+    }
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.openReservesModal = openReservesModal;
   window.openAdminNovaReservaModal = openAdminNovaReservaModal;
@@ -4622,6 +4863,9 @@ if (typeof window !== 'undefined') {
   window.updateRecurringPreview = updateRecurringPreview;
   window.handleAdminResDataChange = handleAdminResDataChange;
   window.handleAdminSubmitNovaReserva = handleAdminSubmitNovaReserva;
+  window.openAdminLinkBestretaModal = openAdminLinkBestretaModal;
+  window.copiarEnllacBestreta = copiarEnllacBestreta;
+  window.formatWhatsAppBestretaUrl = formatWhatsAppBestretaUrl;
   window.loadAdminDisponibilitat = typeof loadAdminDisponibilitat !== 'undefined' ? loadAdminDisponibilitat : null;
   window.refreshAppointmentsDashboard = refreshAppointmentsDashboard;
   window.initAppointmentsDashboard = initAppointmentsDashboard;

@@ -1419,6 +1419,29 @@ const Store = {
     return { ok: false, error: 'Reserva no trobada' };
   },
 
+  async generarLinkBestreta(reservaId, places = 4, nom = '', telefon = '', importVal = null) {
+    if (this.mode === 'api') {
+      try {
+        const res = await fetch(`${this.apiBase}/api/checkout/paga-senyal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reserva_id: reservaId,
+            places: places,
+            nom: nom,
+            telefon: telefon,
+            import: importVal
+          })
+        });
+        return await res.json();
+      } catch (e) {
+        console.warn('Error generant enllaç de bestreta:', e);
+        return { ok: false, error: 'Error de connexió al servidor: ' + e.message };
+      }
+    }
+    return { ok: false, error: 'La generació d\'enllaços de pagament requereix connexió activa amb el servidor.' };
+  },
+
   async syncGoogleCalendar() {
     if (this.mode === 'api') {
       try {

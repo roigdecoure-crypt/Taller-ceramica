@@ -584,7 +584,8 @@ def init_db():
             ('whatsapp_notif_dia', "INTEGER DEFAULT 0"),
             ('val_regal', "INTEGER DEFAULT 0"),
             ('codi_val_regal', "TEXT DEFAULT ''"),
-            ('recurrent_id', "TEXT DEFAULT NULL")
+            ('recurrent_id', "TEXT DEFAULT NULL"),
+            ('paga_senyal_link', "TEXT DEFAULT ''")
         ]:
             try:
                 cursor.execute(f"ALTER TABLE reserves ADD COLUMN {col} {col_type}")
@@ -3925,6 +3926,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 places = int(data.get('places') or 4)
                 nom = (data.get('nom') or '').strip()
                 tel = (data.get('telefon') or '').strip()
+                custom_import = data.get('import') or data.get('paga_senyal')
 
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -3933,6 +3935,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if r_row:
                         places = int(r_row['places'] or places)
                         nom = r_row['student_nom'] or nom
+                        tel = r_row['telefon'] or tel
+                        if not custom_import and r_row['paga_senyal'] is not None and float(r_row['paga_senyal']) > 0:
+                            custom_import = float(r_row['paga_senyal'])
                     cursor.execute('SELECT clau, valor FROM configuracio WHERE clau LIKE "square_%"')
                     sq_cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
 
@@ -3940,7 +3945,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 sq_loc_id = (sq_cfg.get('square_location_id') or '').strip()
                 sq_env = (sq_cfg.get('square_environment') or 'sandbox').strip()
 
-                total_dep = places * 10.0
+                if custom_import is not None:
+                    try:
+                        total_dep = float(custom_import)
+                    except Exception:
+                        total_dep = places * 10.0
+                else:
+                    total_dep = places * 10.0
+
                 preu_cents = int(round(total_dep * 100))
 
                 host_url = self.headers.get('Host', 'localhost:8080')
@@ -3948,15 +3960,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 base_domain = f"{scheme}://{host_url}"
 
                 if not sq_token or not sq_loc_id:
-                    with get_db() as conn:
-                        conn.cursor().execute("UPDATE reserves SET estat = 'confirmada', notes = notes || ' [PAGA I SENYAL PAGADA DEMO]' WHERE id = ?", (res_id,))
-                        conn.commit()
                     self.send_json({
-                        'ok': True,
-                        'mode': 'demo_direct',
-                        'checkout_url': f"{base_domain}/reserva.html?reserva_confirmada={res_id}",
-                        'message': 'Simulació de pagament de paga i senyal completada!'
-                    })
+                        'ok': False,
+                        'error': "No s'ha pogut generar l'enllaç de pagament perquè la passarel·la Square no té configurat el token d'accés o la ubicació al sistema del taller."
+                    }, 400)
                     return
 
                 api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
@@ -3968,7 +3975,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "location_id": sq_loc_id,
                         "line_items": [
                             {
-                                "name": f"Paga i Senyal Reserva ({places} places)",
+                                "name": f"Paga i Senyal Reserva - {nom or 'Grup'} ({places} places)",
                                 "quantity": "1",
                                 "base_price_money": {
                                     "amount": preu_cents,
@@ -4001,10 +4008,22 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         sq_res_data = json.loads(resp_sq.read().decode('utf-8'))
                         payment_link = sq_res_data.get('payment_link', {})
                         checkout_url = payment_link.get('url') or payment_link.get('long_url')
+                        if res_id and checkout_url:
+                            try:
+                                with get_db() as conn_up:
+                                    conn_up.cursor().execute("UPDATE reserves SET paga_senyal_link = ?, paga_senyal = ? WHERE id = ?", (checkout_url, total_dep, res_id))
+                                    conn_up.commit()
+                            except Exception as e_up:
+                                print(f"[Paga Senyal] Error desant link a reserves: {e_up}")
+
                         self.send_json({
                             'ok': True,
                             'mode': 'square',
-                            'checkout_url': checkout_url
+                            'checkout_url': checkout_url,
+                            'import': total_dep,
+                            'places': places,
+                            'nom': nom,
+                            'telefon': tel
                         })
                         return
                 except Exception as sq_err:
@@ -5249,17 +5268,27 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             self.send_json({'ok': False, 'error': f"No hi ha prou places per a {activitat_nom} en el torn de {torn_nom}. Queden {lliures_act} places d'aquesta activitat (Màx. {act_obj['capacitatMax']}). Com a administrador pots activar 'Permetre sobrepassar places d'activitat' si hi ha lloc al taller."}, 400)
                             return
     
-                    # Proposta 1: Paga i Senyal per a reserves de 4 o més places (10 € / persona)
+                    # Proposta 1: Paga i Senyal per a reserves de 4 o més places (10 € / persona) o quan es sol·licita bestreta
                     paga_senyal_import = 0.0
                     estat_res = 'confirmada'
-                    if places_demanades >= 4 and not val_regal and not is_soc_alumne:
-                        paga_senyal_import = float(places_demanades * 10.0)
+                    demanar_bestreta = bool(data.get('demanar_bestreta') or data.get('requereix_bestreta') or (data.get('paga_senyal') and float(data.get('paga_senyal')) > 0))
+                    if (places_demanades >= 4 or demanar_bestreta) and not val_regal and not is_soc_alumne:
+                        custom_ps = data.get('paga_senyal') or data.get('bestreta_import')
+                        if custom_ps is not None:
+                            try:
+                                paga_senyal_import = float(custom_ps)
+                            except Exception:
+                                paga_senyal_import = float(places_demanades * 10.0)
+                        else:
+                            paga_senyal_import = float(places_demanades * 10.0)
+
                         if 'BESTRETA COBRADA' in notes.upper() or 'PAGADA' in notes.upper() or data.get('bestreta_cobrada'):
                             estat_res = 'confirmada'
                         else:
                             estat_res = 'pendent_paga_senyal'
-                            if 'PAGA I SENYAL' not in notes.upper():
-                                notes = f"[PAGA I SENYAL: {int(paga_senyal_import)}€ PENDENT (10€ x {places_demanades}p)] {notes}".strip()
+                            if 'PAGA I SENYAL' not in notes.upper() and 'BESTRETA' not in notes.upper():
+                                per_persona = int(round(paga_senyal_import / places_demanades)) if places_demanades else 10
+                                notes = f"[PAGA I SENYAL: {int(paga_senyal_import)}€ PENDENT ({per_persona}€ x {places_demanades}p)] {notes}".strip()
 
                     res_id = f"RES-{int(get_now().timestamp())}-{student_id}"
                     now_iso = get_now().strftime('%Y-%m-%dT%H:%M:%S')
