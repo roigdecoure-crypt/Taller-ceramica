@@ -3495,9 +3495,13 @@ async function renderAdminDayAppointments(dateStr) {
 
     const placesNum = parseInt(r.places, 10) || 1;
     const pagaSenyalVal = parseFloat(r.paga_senyal) || (placesNum >= 4 ? placesNum * 10 : 0);
-    const hasPagaSenyal = pagaSenyalVal > 0 || (r.notes && r.notes.toUpperCase().includes('PAGA I SENYAL')) || (r.notes && r.notes.toUpperCase().includes('BESTRETA'));
-    const isPagaSenyalPendent = hasPagaSenyal && (r.estat === 'pendent_paga_senyal' || (r.notes && r.notes.toUpperCase().includes('PENDENT') && (r.notes.toUpperCase().includes('PAGA I SENYAL') || r.notes.toUpperCase().includes('BESTRETA'))));
-    const isPagaSenyalCobrada = hasPagaSenyal && !isPagaSenyalPendent;
+    const isCobradaExplicit = Boolean(
+      (r.notes && (r.notes.toUpperCase().includes('BESTRETA COBRADA') || r.notes.toUpperCase().includes('PAGADA PER SQUARE') || r.notes.toUpperCase().includes('PAGA I SENYAL PAGADA'))) ||
+      r.bestreta_cobrada
+    );
+    const hasPagaSenyal = (pagaSenyalVal > 0) || (placesNum >= 4) || (r.notes && (r.notes.toUpperCase().includes('PAGA I SENYAL') || r.notes.toUpperCase().includes('BESTRETA')));
+    const isPagaSenyalPendent = hasPagaSenyal && !isCobradaExplicit && (r.estat !== 'cancel·lada');
+    const isPagaSenyalCobrada = hasPagaSenyal && isCobradaExplicit;
 
     let bestretaBadge = '';
     if (hasPagaSenyal) {
@@ -3531,13 +3535,15 @@ async function renderAdminDayAppointments(dateStr) {
         </td>
         <td style="text-align: right;">
           <div class="app-actions-group">
-            ${isPagaSenyalPendent && !isCancelled ? `
-              <button type="button" class="btn btn-outline btn-sm btn-app-link-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-tel="${escapeHtml(r.telefon || '')}" data-data="${dateStr}" data-hora="${r.hora_inici || ''}" data-places="${r.places || 1}" data-import="${pagaSenyalVal}" data-link="${escapeHtml(r.paga_senyal_link || '')}" style="padding: 3px 8px; font-size: 11.5px; color: #047857; border-color: #10B981; background: #ECFDF5; font-weight: 700; margin-right: 4px;" title="Generar i enviar l'enllaç de pagament de la bestreta per WhatsApp">
+            ${hasPagaSenyal && !isCancelled ? `
+              <button type="button" class="btn btn-outline btn-sm btn-app-link-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-tel="${escapeHtml(r.telefon || '')}" data-data="${dateStr}" data-hora="${r.hora_inici || ''}" data-places="${placesNum}" data-import="${pagaSenyalVal || (placesNum * 10)}" data-link="${escapeHtml(r.paga_senyal_link || '')}" style="padding: 3px 8px; font-size: 11.5px; color: #047857; border-color: #10B981; background: #ECFDF5; font-weight: 700; margin-right: 4px;" title="Generar i enviar l'enllaç de pagament de la bestreta per WhatsApp">
                 Link Bestreta 🔗
               </button>
-              <button type="button" class="btn btn-outline btn-sm btn-app-cobrar-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-import="${pagaSenyalVal}" style="padding: 3px 8px; font-size: 11.5px; color: #92400E; border-color: #F59E0B; background: #FFFBEB; font-weight: 700;" title="Marcar la bestreta com a cobrada per TPV físic, efectiu o Bizum">
-                Cobrar Bestreta (${pagaSenyalVal}€)
-              </button>
+              ${!isCobradaExplicit ? `
+                <button type="button" class="btn btn-outline btn-sm btn-app-cobrar-bestreta" data-res-id="${r.id}" data-client="${escapeHtml(clientNom)}" data-import="${pagaSenyalVal || (placesNum * 10)}" style="padding: 3px 8px; font-size: 11.5px; color: #92400E; border-color: #F59E0B; background: #FFFBEB; font-weight: 700;" title="Marcar la bestreta com a cobrada per TPV físic, efectiu o Bizum">
+                  Cobrar Bestreta (${pagaSenyalVal || (placesNum * 10)}€)
+                </button>
+              ` : ''}
             ` : ''}
             ${r.student_id && !r.student_id.startsWith('CLI-') ? `
               <button type="button" class="btn btn-outline btn-sm btn-action-view" data-id="${r.student_id}" style="padding: 3px 6px; font-size: 11.5px;" title="Veure Fitxa 360°">
@@ -4832,13 +4838,21 @@ async function openAdminLinkBestretaModal(resData) {
       setWhatsAppUrls(res.checkout_url);
     } else {
       if (loadingEl) loadingEl.style.display = 'none';
-      if (errorEl) errorEl.style.display = 'block';
-      if (errorMsgEl) errorMsgEl.textContent = res?.error || "Error generant l'enllaç de pagament Square.";
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        if (errorMsgEl) errorMsgEl.textContent = (res?.error || "No s'ha pogut connectar amb Square") + ". Pots enviar el missatge per WhatsApp igualment.";
+      }
+      if (contentEl) contentEl.style.display = 'flex';
+      setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
     }
   } catch (err) {
     if (loadingEl) loadingEl.style.display = 'none';
-    if (errorEl) errorEl.style.display = 'block';
-    if (errorMsgEl) errorMsgEl.textContent = err.message;
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      if (errorMsgEl) errorMsgEl.textContent = err.message + ". Pots enviar el missatge per WhatsApp igualment.";
+    }
+    if (contentEl) contentEl.style.display = 'flex';
+    setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
   }
 }
 
