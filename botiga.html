@@ -381,7 +381,7 @@
         <p>Tria una sessió al torn, modelatge o pintura de ceràmica. Rep la targeta regal al moment amb codi QR i missatge personalitzat.</p>
       </div>
       <div>
-        <a href="reserva.html" class="btn-redeem-banner">Canviar un Val Regal</a>
+        <button type="button" class="btn-redeem-banner" onclick="obrirModalWelcomeVal();" style="border-radius: 0; cursor: pointer;">Canviar un Val Regal</button>
       </div>
     </div>
 
@@ -419,6 +419,38 @@
       <div id="resultat-cerca-val" style="display: none; border-radius: 10px; padding: 16px; margin-top: 14px;"></div>
     </div>
 
+  </div>
+
+  <!-- MODAL BENVINGUDA: CONSULTAR VAL REGAL -->
+  <div class="modal-overlay" id="modal-welcome-val" onclick="if(event.target===this) tancarModalWelcomeVal();">
+    <div class="modal-box" style="border-radius: 0; max-width: 520px; border: 2px solid var(--brand-primary); padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+      <div class="modal-header" style="border-bottom: 2px solid var(--brand-primary); padding-bottom: 12px; margin-bottom: 16px;">
+        <div>
+          <span style="font-size: 11px; font-weight: 800; color: var(--brand-secondary); text-transform: uppercase; letter-spacing: 1.2px; display: block; margin-bottom: 3px;">Taller Roig de Coure</span>
+          <h3 style="margin: 0; color: var(--brand-primary); font-size: 22px; font-weight: 800;">Ja tens un val regal?</h3>
+        </div>
+        <button type="button" class="btn-close" onclick="tancarModalWelcomeVal();" aria-label="Tancar" style="font-size: 28px; line-height: 1; border-radius: 0; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <p style="font-size: 14px; color: #4B5563; line-height: 1.5; margin: 0 0 16px 0;">
+        Comprova la validesa i hores restants del teu codi per bescanviar-lo o reservar la teva sessió al taller:
+      </p>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+        <input type="text" id="modal-cerca-val-input" placeholder="Ex: REGAL-8X92-23KL" style="flex: 1; padding: 11px 14px; border: 1.5px solid #D1D5DB; border-radius: 0; font-family: monospace; font-size: 14px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;" onkeydown="if(event.key==='Enter') verificarValModal();">
+        <button type="button" style="border-radius: 0; background: var(--brand-primary); color: #FFF; padding: 11px 22px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s ease;" onclick="verificarValModal();">
+          Consultar
+        </button>
+      </div>
+
+      <div id="modal-cerca-val-resultat" style="display: none; padding: 14px; border-radius: 0; margin-bottom: 16px; font-size: 13.5px; line-height: 1.5;"></div>
+
+      <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 16px; text-align: center;">
+        <button type="button" onclick="tancarModalWelcomeVal();" style="display: block; width: 100%; background: #FAF7F5; color: var(--brand-primary); border: 1.5px solid #D1D5DB; border-radius: 0; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;">
+          Veure tot el Catàleg i la Botiga Online &rarr;
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL DE COMPRA / PERSONALITZACIÓ DE VAL REGAL -->
@@ -761,7 +793,118 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', carregarArticles);
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function verificarValCodi(codi, resBoxId) {
+      const resBox = document.getElementById(resBoxId);
+      const cleanCodi = (codi || '').trim().toUpperCase();
+      if (!cleanCodi) {
+        if (resBox) {
+          resBox.style.display = 'block';
+          resBox.style.background = '#FEE2E2';
+          resBox.style.color = '#991B1B';
+          resBox.style.border = '1.5px solid #FCA5A5';
+          resBox.textContent = 'Introdueix un codi de val regal.';
+        }
+        return;
+      }
+      if (resBox) {
+        resBox.style.display = 'block';
+        resBox.style.background = '#F3F4F6';
+        resBox.style.color = '#4B5563';
+        resBox.style.border = '1.5px solid #E5E7EB';
+        resBox.textContent = 'Comprovant val...';
+      }
+      try {
+        const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : '';
+        const res = await fetch(`${apiBase}/api/vals-regal/verificar/${encodeURIComponent(cleanCodi)}`);
+        const data = await res.json();
+        if (res.ok && data.ok && data.val) {
+          const v = data.val;
+          const isActiu = (v.estat === 'actiu');
+          const estatTxt = isActiu ? '✓ Val actiu i llest per reservar' : `Estat: ${v.estat}`;
+          const bg = isActiu ? '#ECFDF5' : '#FEF3C7';
+          const col = isActiu ? '#065F46' : '#92400E';
+          const bdr = isActiu ? '#A7F3D0' : '#FCD34D';
+          resBox.style.background = bg;
+          resBox.style.color = col;
+          resBox.style.border = `1.5px solid ${bdr}`;
+          resBox.innerHTML = `
+            <div style="font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">${estatTxt}</div>
+            <div><strong>Experiència:</strong> ${escapeHtml(v.titol_experiencia || 'Taller de ceràmica')} (${v.hores || 2}h)</div>
+            ${v.nom_destinatari ? `<div><strong>Destinatari:</strong> ${escapeHtml(v.nom_destinatari)}</div>` : ''}
+            ${v.nom_comprador ? `<div><strong>De part de:</strong> ${escapeHtml(v.nom_comprador)}</div>` : ''}
+            <div><strong>Caduca el:</strong> ${escapeHtml(v.data_caducitat || '6 mesos')}</div>
+            ${isActiu ? `<div style="margin-top: 10px;"><a href="reserva.html?val=${encodeURIComponent(v.codi)}" style="display:inline-block; background:${col}; color:#FFF; padding:8px 14px; text-decoration:none; font-weight:700; font-size:13px;">Reservar cita ara amb aquest val &rarr;</a></div>` : ''}
+          `;
+        } else {
+          resBox.style.background = '#FEE2E2';
+          resBox.style.color = '#991B1B';
+          resBox.style.border = '1.5px solid #FCA5A5';
+          resBox.textContent = data.error || 'Aquest codi de val no s\'ha trobat.';
+        }
+      } catch (err) {
+        resBox.style.background = '#FEE2E2';
+        resBox.style.color = '#991B1B';
+        resBox.style.border = '1.5px solid #FCA5A5';
+        resBox.textContent = 'Error de connexió: ' + err.message;
+      }
+    }
+
+    function verificarValModal() {
+      const inp = document.getElementById('modal-cerca-val-input');
+      verificarValCodi(inp ? inp.value : '', 'modal-cerca-val-resultat');
+    }
+    window.verificarValModal = verificarValModal;
+
+    function consultarValRegalPublic() {
+      const inp = document.getElementById('input-cerca-val-public');
+      verificarValCodi(inp ? inp.value : '', 'resultat-cerca-val');
+    }
+    window.consultarValRegalPublic = consultarValRegalPublic;
+
+    function obrirModalWelcomeVal() {
+      const m = document.getElementById('modal-welcome-val');
+      if (m) {
+        m.classList.add('active');
+        setTimeout(() => {
+          const inp = document.getElementById('modal-cerca-val-input');
+          if (inp) inp.focus();
+        }, 150);
+      }
+    }
+    window.obrirModalWelcomeVal = obrirModalWelcomeVal;
+
+    function tancarModalWelcomeVal() {
+      const m = document.getElementById('modal-welcome-val');
+      if (m) m.classList.remove('active');
+    }
+    window.tancarModalWelcomeVal = tancarModalWelcomeVal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarArticles();
+      // Obrir automàticament el popup quan s'accedeix a la botiga
+      const params = new URLSearchParams(window.location.search);
+      const valParam = params.get('val') || params.get('codi');
+      setTimeout(() => {
+        obrirModalWelcomeVal();
+        if (valParam) {
+          const inp = document.getElementById('modal-cerca-val-input');
+          if (inp) {
+            inp.value = valParam;
+            verificarValModal();
+          }
+        }
+      }, 350);
+    });
   </script>
 </body>
 </html>
