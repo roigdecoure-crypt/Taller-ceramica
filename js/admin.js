@@ -4780,7 +4780,7 @@ Taller de Ceràmica Roigdecoure`;
 
   // Si és Android i mode business / app -> Intent directe de WhatsApp Business (com.whatsapp.w4b)
   if (isAndroid() && (mode === 'business' || mode === 'app')) {
-    return `intent://send?phone=${cleanTel}&text=${encodedMsg}#Intent;package=com.whatsapp.w4b;scheme=whatsapp;end;`;
+    return `intent://api.whatsapp.com/send?phone=${cleanTel}&text=${encodedMsg}#Intent;package=com.whatsapp.w4b;scheme=https;end;`;
   }
 
   // Si és mòbil en general (iOS / altres):
