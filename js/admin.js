@@ -4745,8 +4745,8 @@ Taller de Ceràmica Roigdecoure`;
     // Obrir directament l'aplicació web de WhatsApp (web.whatsapp.com)
     return `https://web.whatsapp.com/send?phone=${cleanTel}&text=${encodeURIComponent(msg)}`;
   } else {
-    // Obrir via wa.me (aplicació d'escriptori o mòbil)
-    return `https://wa.me/${cleanTel}?text=${encodeURIComponent(msg)}`;
+    // Obrir l'aplicació instal·lada a l'ordinador (WhatsApp Beta / Desktop a Windows)
+    return `whatsapp://send?phone=${cleanTel}&text=${encodeURIComponent(msg)}`;
   }
 }
 
@@ -4765,7 +4765,6 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
   const urlInput = document.getElementById('modal-link-bestreta-url');
   const waWebBtn = document.getElementById('btn-whatsapp-web-bestreta');
   const waAppBtn = document.getElementById('btn-whatsapp-app-bestreta');
-  const waBtn = document.getElementById('btn-whatsapp-enllac-bestreta');
   const btnCobrarManual = document.getElementById('modal-link-bestreta-btn-cobrar-manual');
 
   const clientNom = resData.student_nom || resData.nom || 'Client';
@@ -4784,7 +4783,6 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
     const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, link, 'app');
     if (waWebBtn) waWebBtn.href = webUrl;
     if (waAppBtn) waAppBtn.href = appUrl;
-    if (waBtn) waBtn.href = webUrl;
   }
 
   if (clientEl) clientEl.textContent = clientNom;
@@ -4825,8 +4823,12 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
     if (urlInput) urlInput.value = resData.checkout_url;
     setWhatsAppUrls(resData.checkout_url);
     if (autoOpenWhatsApp) {
-      const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url, 'web');
-      window.open(webUrl, '_blank');
+      const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, resData.checkout_url, 'app');
+      const linkEl = document.createElement('a');
+      linkEl.href = appUrl;
+      document.body.appendChild(linkEl);
+      linkEl.click();
+      document.body.removeChild(linkEl);
     }
     return;
   }
@@ -4844,8 +4846,12 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
       if (urlInput) urlInput.value = res.checkout_url;
       setWhatsAppUrls(res.checkout_url);
       if (autoOpenWhatsApp) {
-        const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url, 'web');
-        window.open(webUrl, '_blank');
+        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, res.checkout_url, 'app');
+        const linkEl = document.createElement('a');
+        linkEl.href = appUrl;
+        document.body.appendChild(linkEl);
+        linkEl.click();
+        document.body.removeChild(linkEl);
       }
     } else {
       if (loadingEl) loadingEl.style.display = 'none';
@@ -4856,8 +4862,12 @@ async function openAdminLinkBestretaModal(resData, autoOpenWhatsApp = false) {
       if (contentEl) contentEl.style.display = 'flex';
       setWhatsAppUrls(`Bizum o efectiu (${importVal} €)`);
       if (autoOpenWhatsApp) {
-        const webUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, `Bizum o efectiu (${importVal} €)`, 'web');
-        window.open(webUrl, '_blank');
+        const appUrl = formatWhatsAppBestretaUrl(resData.telefon, clientNom, dataStr, horaStr, placesVal, importVal, `Bizum o efectiu (${importVal} €)`, 'app');
+        const linkEl = document.createElement('a');
+        linkEl.href = appUrl;
+        document.body.appendChild(linkEl);
+        linkEl.click();
+        document.body.removeChild(linkEl);
       }
     }
   } catch (err) {
@@ -4901,7 +4911,7 @@ function openAdminLinkBestretaDirecteModal(prefillTel = '', prefillNom = '', pre
   modal.style.setProperty('pointer-events', 'auto', 'important');
 }
 
-async function executarEnviamentDirecteBestretaWhatsApp() {
+async function executarEnviamentDirecteBestretaWhatsApp(targetMode = 'app') {
   const telInput = document.getElementById('direct-bestreta-tel');
   const nomInput = document.getElementById('direct-bestreta-nom');
   const importInput = document.getElementById('direct-bestreta-import');
@@ -4910,7 +4920,8 @@ async function executarEnviamentDirecteBestretaWhatsApp() {
   const resultBox = document.getElementById('direct-bestreta-result');
   const loadingBox = document.getElementById('direct-bestreta-loading');
   const urlInput = document.getElementById('direct-bestreta-url');
-  const btn = document.getElementById('btn-executar-enviament-directe-wa');
+  const btnApp = document.getElementById('btn-executar-enviament-directe-app');
+  const btnWeb = document.getElementById('btn-executar-enviament-directe-wa');
 
   const tel = (telInput?.value || '').trim();
   const nom = (nomInput?.value || '').trim() || 'Client';
@@ -4926,10 +4937,8 @@ async function executarEnviamentDirecteBestretaWhatsApp() {
 
   if (loadingBox) loadingBox.style.display = 'block';
   if (resultBox) resultBox.style.display = 'none';
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Generant enllaç a Square...';
-  }
+  if (btnApp) btnApp.disabled = true;
+  if (btnWeb) btnWeb.disabled = true;
 
   try {
     const res = await Store.generarLinkBestreta(null, places, nom, tel, importVal);
@@ -4938,25 +4947,29 @@ async function executarEnviamentDirecteBestretaWhatsApp() {
     if (urlInput) urlInput.value = (res && res.ok && res.checkout_url) ? res.checkout_url : '';
     if (resultBox && res && res.ok && res.checkout_url) resultBox.style.display = 'flex';
 
-    // Generar URL per WhatsApp Web
-    const waUrl = formatWhatsAppBestretaUrl(tel, nom, dataVal, '10:00', places, importVal, checkoutUrl, 'web');
+    // Generar URL per a l'App WhatsApp Beta o WhatsApp Web
+    const waUrl = formatWhatsAppBestretaUrl(tel, nom, dataVal, '10:00', places, importVal, checkoutUrl, targetMode);
 
-    // Obrir WhatsApp Web directament en pestanya nova
-    window.open(waUrl, '_blank');
-    showToast("S'ha obert WhatsApp Web amb el missatge de la bestreta preparat!", 'success');
+    if (targetMode === 'app') {
+      // Obrir directament l'aplicació instal·lada de l'ordinador (WhatsApp Beta)
+      const linkEl = document.createElement('a');
+      linkEl.href = waUrl;
+      document.body.appendChild(linkEl);
+      linkEl.click();
+      document.body.removeChild(linkEl);
+      showToast("S'ha obert l'aplicació WhatsApp Beta de l'ordinador!", 'success');
+    } else {
+      window.open(waUrl, '_blank');
+      showToast("S'ha obert WhatsApp Web al navegador!", 'success');
+    }
 
   } catch (err) {
     console.error('Error en enviament directe WhatsApp:', err);
     alert('Error generant enllaç: ' + err.message);
   } finally {
     if (loadingBox) loadingBox.style.display = 'none';
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-        📲 Obrir WhatsApp Web i Enviar
-      `;
-    }
+    if (btnApp) btnApp.disabled = false;
+    if (btnWeb) btnWeb.disabled = false;
   }
 }
 
