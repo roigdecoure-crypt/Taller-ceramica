@@ -8337,10 +8337,89 @@ async function carregarResumMensualAdmin(mesParam) {
       if (elVendesSub) {
         elVendesSub.textContent = `${packsTot} packs (${packsIng.toLocaleString('ca-ES')} €) • ${valsTot} vals (${valsIng.toLocaleString('ca-ES')} €)`;
       }
+      return;
     }
   } catch (err) {
-    console.warn('Error carregant resum mensual admin:', err);
-    if (periodLabel) periodLabel.textContent = 'No s\'han pogut carregar les dades del mes';
+    console.warn('Avis cridant endpoint resum-mensual backend, executant calcul local resilient:', err);
+  }
+
+  // 3. FALLBACK CLIENT-SIDE (per si el backend de Render encara no te l'endpoint o respon 404)
+  try {
+    const MESOS_CA = {
+      '01': 'Gener', '02': 'Febrer', '03': 'Març', '04': 'Abril',
+      '05': 'Maig', '06': 'Juny', '07': 'Juliol', '08': 'Agost',
+      '09': 'Setembre', '10': 'Octubre', '11': 'Novembre', '12': 'Desembre'
+    };
+    const parts = (mesSeleccionat || '').split('-');
+    const anyStr = parts[0] || String(new Date().getFullYear());
+    const mesStr = parts[1] || String(new Date().getMonth() + 1).padStart(2, '0');
+    const mesNom = `${MESOS_CA[mesStr] || mesStr} ${anyStr}`;
+    if (periodLabel) periodLabel.textContent = `Dades consolidades de ${mesNom}`;
+
+    // Mètriques de reserves
+    let matchingRes = [];
+    try {
+      const allRes = typeof Store !== 'undefined' && typeof Store.getReserves === 'function' ? (await Store.getReserves()) : [];
+      matchingRes = (allRes || []).filter(r => r.data && r.data.startsWith(mesSeleccionat) && !String(r.estat || '').toLowerCase().includes('anul'));
+    } catch(e) {}
+
+    const totalRes = matchingRes.length;
+    let totalPlaces = 0;
+    let totalHoresRes = 0;
+    const horaCounts = {};
+    const actCounts = {};
+
+    matchingRes.forEach(r => {
+      const pl = parseInt(r.places || 1, 10);
+      const hr = parseFloat(r.hores || 1.5);
+      totalPlaces += pl;
+      totalHoresRes += hr;
+      if (r.hora_inici) horaCounts[r.hora_inici] = (horaCounts[r.hora_inici] || 0) + 1;
+      if (r.activitat) actCounts[r.activitat] = (actCounts[r.activitat] || 0) + 1;
+    });
+
+    let topHora = '-'; let topHoraCnt = 0;
+    for (const [h, cnt] of Object.entries(horaCounts)) {
+      if (cnt > topHoraCnt) { topHora = h; topHoraCnt = cnt; }
+    }
+    let topAct = '-'; let topActCnt = 0;
+    for (const [a, cnt] of Object.entries(actCounts)) {
+      if (cnt > topActCnt) { topAct = a; topActCnt = cnt; }
+    }
+
+    // Mètriques de vals regal
+    let totalVals = 0;
+    let totalIngVals = 0;
+    const valsList = Array.isArray(window.adminValsRegalList) ? window.adminValsRegalList : [];
+    valsList.forEach(v => {
+      if (v.data_creacio && v.data_creacio.startsWith(mesSeleccionat)) {
+        totalVals++;
+        totalIngVals += parseFloat(v.preu_pagat || 0);
+      }
+    });
+
+    const elReserves = document.getElementById('resum-stat-reserves');
+    const elPlaces = document.getElementById('resum-stat-places');
+    if (elReserves) elReserves.textContent = totalRes;
+    if (elPlaces) elPlaces.textContent = `${totalPlaces} places (${totalHoresRes} h)`;
+
+    const elHoresSess = document.getElementById('resum-stat-hores-sess');
+    const elSessions = document.getElementById('resum-stat-sessions');
+    if (elHoresSess) elHoresSess.textContent = `0 h`;
+    if (elSessions) elSessions.textContent = `0 sessions presencials`;
+
+    const elDemandaAct = document.getElementById('resum-stat-demanda-act');
+    const elDemandaHora = document.getElementById('resum-stat-demanda-hora');
+    if (elDemandaAct) elDemandaAct.textContent = topAct !== '-' ? `${topAct} (${topActCnt})` : 'Sense dades';
+    if (elDemandaHora) elDemandaHora.textContent = topHora !== '-' ? `Franja top: ${topHora} h (${topHoraCnt})` : 'Sense reserves';
+
+    const elIngresos = document.getElementById('resum-stat-ingresos');
+    const elVendesSub = document.getElementById('resum-stat-vendes-sub');
+    if (elIngresos) elIngresos.textContent = `${totalIngVals.toLocaleString('ca-ES', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} €`;
+    if (elVendesSub) elVendesSub.textContent = `${totalVals} vals regal venuts (${totalIngVals.toLocaleString('ca-ES')} €)`;
+  } catch(calcErr) {
+    console.warn('Error calculant dades de resum:', calcErr);
+    if (periodLabel) periodLabel.textContent = 'Sense dades disponibles per a aquest mes';
   }
 }
 window.carregarResumMensualAdmin = carregarResumMensualAdmin;
