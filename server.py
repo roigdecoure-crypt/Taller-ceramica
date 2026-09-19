@@ -5870,6 +5870,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path == '/api/reserves/update-horari':
                 res_id = (data.get('id') or data.get('reserva_id') or '').strip()
                 scope = (data.get('scope') or 'single').strip().lower()
+                nova_data = (data.get('data') or data.get('nova_data') or '').strip()
                 nova_hora_inici = (data.get('hora_inici') or '').strip()
                 nova_hora_fi = (data.get('hora_fi') or '').strip()
                 forcar_aforament = bool(data.get('forcar_aforament', False))
@@ -5880,6 +5881,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if not nova_hora_inici or not nova_hora_fi:
                     self.send_json({'ok': False, 'error': "Cal indicar tant l'hora d'inici com l'hora de fi"}, 400)
                     return
+
+                if nova_data:
+                    try:
+                        datetime.strptime(nova_data, '%Y-%m-%d')
+                    except ValueError:
+                        self.send_json({'ok': False, 'error': "Format de data invàlid (ha de ser AAAA-MM-DD)"}, 400)
+                        return
 
                 # Calcular hores durada
                 try:
@@ -5930,7 +5938,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     # Comprovar aforament per a cada reserva: el màxim global del taller es respecta sempre
                     max_cap = get_aforament_maxim()
                     for r_item in reserves_to_update:
-                        d_item = r_item['data']
+                        d_item = nova_data if (scope != 'serie' and nova_data) else r_item['data']
                         curr_id = r_item['id']
                         pl_dem = int(r_item.get('places') or 1)
                         act_id = (r_item.get('activitat_id') or 'torn').strip().lower()
@@ -5955,15 +5963,39 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             }, 400)
                             return
 
-                    # Executar l'actualització de l'horari
+                        # Comprovació de límit específic d'activitat si no s'ha marcat forçar
+                        if not forcar_aforament:
+                            limit_act = 4 if ('torn' in act_id or 'torn' in act_nom) else (12 if ('pintar' in act_id or 'pintar' in act_nom) else 8)
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_ocup FROM reserves
+                                WHERE data = ? AND id != ? AND estat IN ('confirmada', 'pendent_paga_senyal') 
+                                  AND (LOWER(activitat_id) = ? OR LOWER(activitat) = ?)
+                                  AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                  )
+                            ''', (d_item, curr_id, act_id, act_nom, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                            r_act = cursor.fetchone()
+                            act_ocup = r_act['act_ocup'] or 0
+                            if act_ocup + pl_dem > limit_act:
+                                torn_desc = "la tarda" if is_tarda else "el matí"
+                                lliures_act = max(0, limit_act - act_ocup)
+                                self.send_json({
+                                    'ok': False,
+                                    'error': f"Places de {r_item.get('activitat', 'l\'activitat')} completes per a {torn_desc} el {d_item} ({act_ocup}/{limit_act} ocupades). Pots marcar la casella 'Permetre sobrepassar places d'activitat' si vols afegir-la igualment (mentre quedi aforament global)."
+                                }, 400)
+                                return
+
+                    # Executar l'actualització del dia i de l'horari
                     updated_rows = []
                     for r_item in reserves_to_update:
                         curr_id = r_item['id']
+                        d_val = nova_data if (scope != 'serie' and nova_data) else r_item['data']
                         cursor.execute('''
                             UPDATE reserves 
-                            SET hora_inici = ?, hora_fi = ?, franja = ?, hores = ?
+                            SET data = ?, hora_inici = ?, hora_fi = ?, franja = ?, hores = ?
                             WHERE id = ?
-                        ''', (nova_hora_inici, nova_hora_fi, nova_franja, hores_val, curr_id))
+                        ''', (d_val, nova_hora_inici, nova_hora_fi, nova_franja, hores_val, curr_id))
                         cursor.execute("SELECT * FROM reserves WHERE id = ?", (curr_id,))
                         u_row = cursor.fetchone()
                         if u_row:
@@ -5976,11 +6008,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     sync_to_google_sheets_async('update_reserva', u_dict)
 
                 cnt = len(updated_rows)
-                msg = f"S'ha actualitzat l'horari de la reserva a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h)." if cnt == 1 else f"S'ha actualitzat l'horari de {cnt} sessions de la sèrie recurrent a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h)."
+                first_date = updated_rows[0]['data'] if updated_rows else nova_data
+                msg = f"S'ha actualitzat la reserva al {first_date} de {nova_hora_inici} a {nova_hora_fi} ({hores_val}h)." if cnt == 1 else f"S'ha actualitzat l'horari de {cnt} sessions de la sèrie recurrent a {nova_hora_inici} - {nova_hora_fi} ({hores_val}h)."
                 self.send_json({
                     'ok': True,
                     'message': msg,
                     'total_actualitzades': cnt,
+                    'data': first_date,
                     'hora_inici': nova_hora_inici,
                     'hora_fi': nova_hora_fi,
                     'hores': hores_val

@@ -15,8 +15,8 @@
   <meta http-equiv="Expires" content="0">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="stylesheet" href="css/styles.css?v=7.3">
-  <link rel="stylesheet" href="css/scanner.css?v=3.2">
+  <link rel="stylesheet" href="css/styles.css?v=7.4">
+  <link rel="stylesheet" href="css/scanner.css?v=3.3">
   <style>
     @font-face {
       font-family: 'Buffalo';
@@ -106,37 +106,37 @@
 
   <!-- MODAL D'OPCIONS DE L'ESCÀNER -->
   <div class="modal-backdrop" id="modal-scanner-options">
-    <div class="modal-dialog" style="max-width: 380px;">
-      <div class="modal-header">
-        <h3>Opcions de l'escàner</h3>
-        <button type="button" class="modal-close" id="btn-close-scanner-options">&times;</button>
+    <div class="modal-dialog" style="max-width: 380px; border-radius: 0; background: #FFFFFF; border: 1.5px solid #E5DDD5; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25); padding: 0; overflow: hidden;">
+      <div class="modal-header" style="background: #831D1D; color: #FFFFFF; padding: 14px 20px; margin-bottom: 0; border-bottom: none; border-radius: 0; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Opcions de l'escàner</h3>
+        <button type="button" class="modal-close" id="btn-close-scanner-options" style="color: #FFFFFF; opacity: 0.85; font-size: 24px; cursor: pointer; background: none; border: none; line-height: 1;">&times;</button>
       </div>
-      <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px; background: #FFFFFF;">
         <div>
-          <label style="font-size: 13px; font-weight: 600; color: #D3CBC4; display: block; margin-bottom: 6px;">Càmera en ús:</label>
-          <select id="select-camera-device" class="form-control" style="background:#2E2825; color:#FFF; border-color:#554F4B; font-size: 14px; width: 100%;">
+          <label style="font-size: 13px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">Càmera en ús:</label>
+          <select id="select-camera-device" class="form-control" style="background: #FFFFFF; color: #111827; border: 1.5px solid #D1D5DB; border-radius: 0; font-size: 14px; width: 100%; padding: 8px 12px; font-weight: 600;">
             <option value="user">Frontal</option>
             <option value="environment">Darrere</option>
           </select>
         </div>
 
-        <button type="button" class="btn btn-outline btn-block" id="btn-switch-camera" style="border-color:#554F4B; color:#FFF;">
+        <button type="button" class="btn btn-outline btn-block" id="btn-switch-camera" style="border: 1.5px solid #D6C7BC; background: #FAF7F5; color: #1F2937; font-weight: 600; padding: 10px 14px; border-radius: 0; font-size: 13.5px;">
           Canviar càmera
         </button>
 
-        <button type="button" class="btn btn-outline btn-block" id="btn-toggle-camera-feed" style="border-color:#554F4B; color:#FFF;">
+        <button type="button" class="btn btn-outline btn-block" id="btn-toggle-camera-feed" style="border: 1.5px solid #D6C7BC; background: #FAF7F5; color: #1F2937; font-weight: 600; padding: 10px 14px; border-radius: 0; font-size: 13.5px;">
           Mostrar previsualització de càmera
         </button>
 
-        <button type="button" class="btn btn-primary btn-block" id="btn-manual-entry">
+        <button type="button" class="btn btn-primary btn-block" id="btn-manual-entry" style="background: #831D1D; color: #FFFFFF; border: none; font-weight: 700; padding: 11px 14px; border-radius: 0; font-size: 14px;">
           Introduir Codi Manual
         </button>
 
-        <a href="admin.html" class="btn btn-outline btn-block" style="text-align: center; text-decoration: none; border-color:#554F4B; color:#FFF;">
+        <a href="admin.html" class="btn btn-outline btn-block" style="text-align: center; text-decoration: none; border: 1.5px solid #D6C7BC; background: #FAF7F5; color: #1F2937; font-weight: 600; padding: 10px 14px; border-radius: 0; font-size: 13.5px; display: block;">
           Panell d'administració
         </a>
 
-        <button type="button" class="btn btn-outline btn-block" id="btn-install-pwa" style="border-color:#554F4B; color:#FFF; display: none;">
+        <button type="button" class="btn btn-outline btn-block" id="btn-install-pwa" style="border: 1.5px solid #D6C7BC; background: #FAF7F5; color: #1F2937; font-weight: 600; padding: 10px 14px; border-radius: 0; font-size: 13.5px; display: none;">
           Instal·lar App
         </button>
       </div>
@@ -145,49 +145,49 @@
 
   <!-- MODAL D'ENTRADA / SORTIDA MANUAL -->
   <div class="modal-backdrop" id="modal-manual-entry-backdrop">
-    <div class="modal-dialog" style="max-width: 420px;">
-      <div class="modal-header">
-        <h3>Entrada / Sortida Manual</h3>
-        <button class="modal-close" id="btn-close-manual-modal">&times;</button>
+    <div class="modal-dialog" style="max-width: 420px; border-radius: 0; background: #FFFFFF; border: 1.5px solid #E5DDD5; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25); padding: 0; overflow: hidden;">
+      <div class="modal-header" style="background: #831D1D; color: #FFFFFF; padding: 14px 20px; margin-bottom: 0; border-bottom: none; border-radius: 0; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Entrada / Sortida Manual</h3>
+        <button class="modal-close" id="btn-close-manual-modal" style="color: #FFFFFF; opacity: 0.85; font-size: 24px; cursor: pointer; background: none; border: none; line-height: 1;">&times;</button>
       </div>
-      <form id="form-manual-code">
-        <div class="form-group">
-          <label>1. Selecciona o cerca l'alumne:</label>
-          <select id="select-student-quick" class="form-control" style="font-size: 15px; margin-bottom: 8px;">
+      <form id="form-manual-code" style="margin: 0; padding: 20px; display: flex; flex-direction: column; gap: 14px; background: #FFFFFF;">
+        <div class="form-group" style="margin: 0;">
+          <label style="font-size: 13px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">1. Selecciona o cerca l'alumne:</label>
+          <select id="select-student-quick" class="form-control" style="font-size: 14px; margin-bottom: 8px; border-radius: 0; border: 1.5px solid #D1D5DB; padding: 8px 10px; background: #FFFFFF; color: #111827; width: 100%;">
             <option value="">-- Tria un alumne de la llista --</option>
           </select>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 12px; color: var(--color-muted);">O escriu el codi/PIN:</span>
-            <input type="text" id="manual-code-input" class="form-control" placeholder="ex: TC-101" style="font-size: 14px; text-transform: uppercase;">
+            <span style="font-size: 12px; color: var(--color-muted); white-space: nowrap;">O escriu el codi/PIN:</span>
+            <input type="text" id="manual-code-input" class="form-control" placeholder="ex: TC-101" style="font-size: 14px; text-transform: uppercase; border-radius: 0; border: 1.5px solid #D1D5DB; padding: 7px 10px; background: #FFFFFF; color: #111827; width: 100%;">
           </div>
         </div>
 
-        <div class="form-group">
-          <label>2. Hora del registre:</label>
-          <div style="display: flex; gap: 10px; margin-bottom: 8px;">
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <div class="form-group" style="margin: 0;">
+          <label style="font-size: 13px; font-weight: 700; color: #374151; display: block; margin-bottom: 6px;">2. Hora del registre:</label>
+          <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #1F2937;">
               <input type="radio" name="manual_time_option" value="now" checked>
               <span>Ara mateix</span>
             </label>
-            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: #1F2937;">
               <input type="radio" name="manual_time_option" value="custom">
               <span>Indicar una altra hora</span>
             </label>
           </div>
-          <input type="datetime-local" id="manual-custom-time-input" class="form-control" style="display: none;">
+          <input type="datetime-local" id="manual-custom-time-input" class="form-control" style="display: none; border-radius: 0; border: 1.5px solid #D1D5DB; padding: 7px 10px; background: #FFFFFF; color: #111827; width: 100%;">
         </div>
 
-        <div style="margin-top: 20px;">
-          <label style="margin-bottom: 8px; display: block;">3. Què vols registrar?</label>
+        <div style="margin-top: 4px;">
+          <label style="margin-bottom: 8px; display: block; font-size: 13px; font-weight: 700; color: #374151;">3. Què vols registrar?</label>
           <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn btn-success btn-block btn-manual-action" data-action="entrada" style="padding: 12px 8px;">
+            <button type="button" class="btn btn-success btn-block btn-manual-action" data-action="entrada" style="padding: 10px 8px; border-radius: 0; font-weight: 700; flex: 1; background: #5E7E6F; color: #FFFFFF; border: none;">
               Marcar Entrada
             </button>
-            <button type="button" class="btn btn-primary btn-block btn-manual-action" data-action="sortida" style="background:var(--color-primary, #831D1D); border-color:var(--color-primary, #831D1D); padding: 12px 8px;">
+            <button type="button" class="btn btn-primary btn-block btn-manual-action" data-action="sortida" style="background: #831D1D; border: none; padding: 10px 8px; border-radius: 0; font-weight: 700; flex: 1; color: #FFFFFF;">
               Marcar Sortida
             </button>
           </div>
-          <button type="button" class="btn btn-outline btn-block btn-manual-action" data-action="auto" style="margin-top: 8px; font-size: 12px;">
+          <button type="button" class="btn btn-outline btn-block btn-manual-action" data-action="auto" style="margin-top: 8px; font-size: 12.5px; border-radius: 0; border: 1.5px solid #D6C7BC; background: #FAF7F5; color: #1F2937; padding: 8px 12px; width: 100%;">
             Detecció Automàtica
           </button>
         </div>

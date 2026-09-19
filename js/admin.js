@@ -3704,7 +3704,40 @@ function openAdminEditarReservaModal(resData) {
 
   const scopeContainer = document.getElementById('edit-res-scope-container');
   const serieBlock = document.getElementById('edit-res-serie-config-block');
+  const singleDateBlock = document.getElementById('edit-res-single-date-block');
+  const singleDataInput = document.getElementById('edit-res-data');
+  const weekdayEl = document.getElementById('edit-res-data-weekday');
+  const tancatWarningEl = document.getElementById('edit-res-data-tancat-warning');
   const titleEl = document.getElementById('modal-edit-res-title');
+
+  function updateSingleDateWeekday() {
+    if (!singleDataInput || !weekdayEl) return;
+    const val = singleDataInput.value;
+    if (!val) {
+      weekdayEl.textContent = '';
+      if (tancatWarningEl) tancatWarningEl.style.display = 'none';
+      return;
+    }
+    try {
+      const parts = val.split('-').map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      const dias = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+      const dayIdx = dt.getDay();
+      weekdayEl.textContent = dias[dayIdx] || '';
+      if (tancatWarningEl) {
+        tancatWarningEl.style.display = (dayIdx === 1 || dayIdx === 2) ? 'block' : 'none';
+      }
+    } catch (e) {
+      weekdayEl.textContent = '';
+    }
+  }
+
+  if (singleDataInput) {
+    singleDataInput.value = resData.date || '';
+    updateSingleDateWeekday();
+    singleDataInput.oninput = updateSingleDateWeekday;
+    singleDataInput.onchange = updateSingleDateWeekday;
+  }
 
   // Inicialitzar dates i sessions per a la sèrie
   const dataIniciInput = document.getElementById('edit-res-data-inici');
@@ -3730,13 +3763,15 @@ function openAdminEditarReservaModal(resData) {
   if (resData.isRecurrent) {
     if (scopeContainer) scopeContainer.style.display = 'block';
     if (serieBlock) serieBlock.style.display = 'flex';
+    if (singleDateBlock) singleDateBlock.style.display = 'none';
     if (titleEl) titleEl.textContent = 'Modificar Sèrie Recurrent o Monogràfic';
     const radioSerie = document.querySelector('input[name="edit_res_scope"][value="serie"]');
     if (radioSerie) radioSerie.checked = true;
   } else {
     if (scopeContainer) scopeContainer.style.display = 'none';
     if (serieBlock) serieBlock.style.display = 'none';
-    if (titleEl) titleEl.textContent = 'Modificar Horari de la Reserva';
+    if (singleDateBlock) singleDateBlock.style.display = 'block';
+    if (titleEl) titleEl.textContent = 'Modificar Horari i Data de la Reserva';
     const radioSingle = document.querySelector('input[name="edit_res_scope"][value="single"]');
     if (radioSingle) radioSingle.checked = true;
   }
@@ -3925,8 +3960,12 @@ function initAdminEditarReservaModal() {
   document.querySelectorAll('input[name="edit_res_scope"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const serieBlock = document.getElementById('edit-res-serie-config-block');
+      const singleDateBlock = document.getElementById('edit-res-single-date-block');
       if (serieBlock) {
         serieBlock.style.display = radio.value === 'serie' ? 'flex' : 'none';
+      }
+      if (singleDateBlock) {
+        singleDateBlock.style.display = radio.value === 'single' ? 'block' : 'none';
       }
       if (radio.value === 'serie') {
         triggerEditSerieDatesPreview();
@@ -3996,10 +4035,12 @@ function initAdminEditarReservaModal() {
             saltar_tancats: saltarTancats
           });
         } else {
+          const novaData = document.getElementById('edit-res-data')?.value || '';
           res = await Store.updateReservaHorari({
             id: resId,
             recurrent_id: recId,
             scope: scope,
+            data: novaData,
             hora_inici: hInici,
             hora_fi: hFi,
             hores: durH,
@@ -4011,6 +4052,19 @@ function initAdminEditarReservaModal() {
           showToast(res.message || 'Reserva reprogramada correctament.', 'success');
           if (typeof SoundEngine !== 'undefined') SoundEngine.playSuccess();
           closeAnyModal('modal-admin-editar-reserva-backdrop');
+
+          const targetDate = (scope === 'serie')
+            ? (document.getElementById('edit-res-data-inici')?.value || (typeof adminSelectedDate !== 'undefined' ? adminSelectedDate : null))
+            : (document.getElementById('edit-res-data')?.value || (typeof adminSelectedDate !== 'undefined' ? adminSelectedDate : null));
+
+          if (targetDate && typeof adminSelectedDate !== 'undefined') {
+            adminSelectedDate = targetDate;
+            if (typeof adminReservesCalendar !== 'undefined' && adminReservesCalendar) {
+              adminReservesCalendar.selectedDate = targetDate;
+              await adminReservesCalendar.refresh();
+            }
+          }
+
           await refreshAppointmentsDashboard();
         } else {
           if (errEl) {
