@@ -190,13 +190,19 @@ async function checkUrlParamsOrSession() {
   if (targetId && targetPin) {
     const success = await loginStudent(targetId, targetPin, true);
     if (success) {
-      // Si retorna d'un pagament de Stripe amb èxit (sempre a partir de 4h com a Stripe)
-      const pendingHours = sessionStorage.getItem('pending_stripe_hours');
-      const hoursToAdd = packHours ? parseFloat(packHours) : (pendingHours ? parseFloat(pendingHours) : null);
-      if (paymentStatus === 'success' && hoursToAdd && hoursToAdd >= 4 && currentStudent) {
+      // Si retorna d'un pagament amb èxit
+      if (paymentStatus === 'success' && currentStudent) {
         sessionStorage.removeItem('pending_stripe_hours');
-        await processSuccessfulPayment(hoursToAdd, `Adquisició ${hoursToAdd} Hores (Stripe)`, 0, 'Stripe');
+        showToast('Pagament rebut correctament. El saldo s\'actualitzarà automàticament.', 'success');
         window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
+        // Refrescar dades de l'alumne des del servidor
+        try {
+          const updated = await Store.getAlumne(currentStudent.alumne.id);
+          if (updated) {
+            currentStudent = updated;
+            renderDashboard(updated);
+          }
+        } catch (e) {}
       }
       return;
     }
@@ -1470,17 +1476,7 @@ function setupEventListeners() {
         window.open(finalUrl, '_blank');
         showToast(`S'ha obert la passarel·la de Stripe per a ${catNom}.`, 'info');
       } else {
-        const confirmSim = confirm(
-          `L'enllaç de Stripe per a la categoria "${catNom}" no està configurat a l'Administració.\n\n` +
-          `Vols simular el pagament d'hores de prova per a ${currentStudent.alumne.nom}?`
-        );
-        if (confirmSim) {
-          const hStr = prompt('Quantes hores vols carregar de prova? (Mínim 4h)', '4');
-          const h = parseFloat(hStr);
-          if (!isNaN(h) && h >= 4) {
-            await processSuccessfulPayment(h, `Adquisició ${h} Hores (${catNom})`, 0, 'Stripe (Simulació)');
-          }
-        }
+        showToast(`La passarel·la de pagament per a ${catNom} no està configurada. Posa't en contacte amb el taller.`, 'warning');
       }
     });
   }
@@ -1501,16 +1497,7 @@ function setupEventListeners() {
   if (btnPortalConfirmBizum) {
     btnPortalConfirmBizum.addEventListener('click', async () => {
       if (!currentStudent) return;
-      const hStr = prompt(`Quantes hores has pagat per Bizum? (Mínim 4 hores)`, '4');
-      if (hStr === null) return;
-      const h = parseFloat(hStr);
-      if (isNaN(h) || h < 4) {
-        alert('La quantitat mínima permesa és de 4 hores (com a Stripe).');
-        return;
-      }
-      const selectCat = document.getElementById('portal-select-categoria');
-      const cat = selectCat ? selectCat.value : 'adults';
-      await processSuccessfulPayment(h, `Pagament Bizum ${h} Hores (${cat})`, 0, 'Bizum');
+      alert("Un cop realitzat el Bizum al número del taller, l'equip revisarà el pagament i afegirà les hores al teu saldo.");
       const box = document.getElementById('portal-bizum-box');
       if (box) box.style.display = 'none';
     });

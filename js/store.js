@@ -686,11 +686,12 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/paquets`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(packData)
         });
         const json = await res.json();
-        if (json.ok) return json;
+        if (res.status === 401 || res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         this.mode = 'local';
       }
@@ -729,9 +730,13 @@ const Store = {
   async deletePackage(id) {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/paquets/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const res = await fetch(`${this.apiBase}/api/paquets/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: this.getAdminAuthHeaders()
+        });
         const json = await res.json();
-        if (json.ok) return json;
+        if (res.status === 401 || res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         this.mode = 'local';
       }

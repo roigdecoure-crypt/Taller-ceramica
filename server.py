@@ -12,6 +12,8 @@ import socket
 import sqlite3
 import hashlib
 import secrets
+import hmac
+import base64
 import io
 import zipfile
 import sys
@@ -235,6 +237,17 @@ def verify_admin_credentials(input_val):
     except Exception as e:
         print(f"[Auth] Error llegint hashes d'admin: {e}")
 
+    # Si s'ha actualitzat el PIN clàssic (legacy_pin) a la base de dades i no coincideix amb owner_hash, actualitzar-lo
+    if legacy_pin and owner_hash and not verify_password(legacy_pin, owner_hash):
+        owner_hash = hash_password(legacy_pin)
+        try:
+            with get_db() as conn:
+                cursor = conn.cursor()
+                cursor.execute("INSERT OR REPLACE INTO configuracio (clau, valor) VALUES ('owner_password_hash', ?)", (owner_hash,))
+                conn.commit()
+        except Exception:
+            pass
+
     # 1. Comprovar si coincideix amb Propietari (Owner)
     if owner_hash and verify_password(clean_val, owner_hash):
         token = create_auth_token('owner', hours=72)
@@ -290,6 +303,22 @@ def get_request_role(handler, data=None):
         if valid:
             return role
     return None
+
+def require_auth(handler, data=None, allowed_roles=('owner', 'staff')):
+    """Valida que la petició tingui una sessió vàlida amb un dels rols permesos (fail-closed)."""
+    role = get_request_role(handler, data)
+    if not role or role not in allowed_roles:
+        handler.send_json({'ok': False, 'error': 'Accés no autoritzat. Cal iniciar sessió.'}, 401)
+        return None
+    return role
+
+def require_owner(handler, data=None):
+    """Valida que la petició tingui exclusivament el rol de Propietari ('owner') (fail-closed)."""
+    role = get_request_role(handler, data)
+    if role != 'owner':
+        handler.send_json({'ok': False, 'error': 'Accés restringit exclusivament al Propietari.'}, 403)
+        return None
+    return role
 
 def calculate_age_from_birthdate(birthdate_str):
     """Calcula l'edat exacta en anys a partir de la data de naixement."""
@@ -2454,6 +2483,10 @@ def authenticate_student(cursor, identifier, pin):
         return student, None
         
     is_valid = False
+    # Si stored_pin existeix i el hash no coincideix amb stored_pin, vol dir que s'ha actualitzat la columna pin directament
+    if stored_hash and stored_pin and not verify_password(stored_pin, stored_hash):
+        stored_hash = None
+
     if stored_hash:
         is_valid = verify_password(input_pin, stored_hash)
     elif stored_pin:
@@ -2465,7 +2498,7 @@ def authenticate_student(cursor, identifier, pin):
             student['password_hash'] = new_hash
             
     if not is_valid:
-        return None, "Contrasenya o PIN incorrecte. Pots fer servir 'He oblidat la contrasenya' per restablir-la per WhatsApp."
+        return None, "Contrasenya (PIN) incorrecta. Pots fer servir 'He oblidat la contrasenya' per restablir-la per WhatsApp."
         
     return student, None
 
@@ -3014,6 +3047,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
         params = urllib.parse.parse_qs(url.query)
 
         if not path.startswith('/api/'):
+            # Seguretat C1: Bloqueig estricte d'accés a fitxers interns, base de dades i codi font
+            forbidden_exts = ('.db', '.db-wal', '.db-shm', '.py', '.env', '.sqlite', '.sqlite3', '.yml', '.yaml', '.key', '.pem', '.crt', '.bak')
+            norm_path = os.path.normpath(urllib.parse.unquote(path)).replace('\\', '/')
+            if (norm_path.startswith('/data') or 
+                norm_path.startswith('/.') or 
+                '/.' in norm_path or
+                any(norm_path.lower().endswith(ext) for ext in forbidden_exts)):
+                self.send_response(403)
+                self.send_header('Content-Type', 'text/plain; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(b"403 Forbidden: Acces denegat a recursos interns protegits.")
+                return
+
             # Aliases per a rutes netes i compatibilitat (singular/plural, sense .html)
             clean_path = path.rstrip('/')
             query_str = ('?' + url.query) if url.query else ''
@@ -3189,6 +3235,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/admin/backups/download':
+                if not require_owner(self):
+                    return
                 fname = params.get('file', ['ceramica.db'])[0].strip()
                 # Seguretat: evitar path traversal
                 safe_name = os.path.basename(fname)
@@ -3213,12 +3261,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/alumnes':
+                if not require_auth(self):
+                    return
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('SELECT * FROM alumnes WHERE actiu = 1 ORDER BY nom ASC, cognoms ASC')
                     rows = [row_to_dict(r) for r in cursor.fetchall()]
-                    # Afegir estat actual i saldo a cada alumne
+                    # Afegir estat actual i saldo a cada alumne i netejar credencials sensibles
                     for a in rows:
+                        a.pop('pin', None)
+                        a.pop('password_hash', None)
                         cursor.execute('SELECT * FROM sessions WHERE student_id = ? AND estat = "oberta" ORDER BY entrada DESC LIMIT 1', (a['id'],))
                         open_sess = cursor.fetchone()
                         a['sessioActiva'] = row_to_dict(open_sess)
@@ -3312,9 +3364,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if '1899' in fh or 'GMT' in fh or len(fh) > 10:
                             s['format_hms'] = format_hms(dur_sec)
 
+                    clean_student = dict(student) if student else {}
+                    clean_student.pop('pin', None)
+                    clean_student.pop('password_hash', None)
+
                 self.send_json({
                     'ok': True,
-                    'alumne': student,
+                    'alumne': clean_student,
                     'paquets': packs,
                     'sessions': sessions,
                     'reserves': reserves,
@@ -3474,11 +3530,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/config':
+                role = get_request_role(self)
+                sensitive_keys = ('admin_pin', 'owner_password_hash', 'staff_password_hash', 'whatsapp_meta_token', 'square_access_token', 'square_webhook_signature_key', 'square_application_id', 'square_location_id', 'google_apps_script_url')
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('SELECT clau, valor FROM configuracio')
                     rows = cursor.fetchall()
-                    cfg = {r['clau']: r['valor'] for r in rows if r['clau'] not in ('admin_pin', 'owner_password_hash', 'staff_password_hash')}
+                    if role == 'owner':
+                        cfg = {r['clau']: r['valor'] for r in rows if r['clau'] not in ('admin_pin', 'owner_password_hash', 'staff_password_hash')}
+                    else:
+                        cfg = {r['clau']: r['valor'] for r in rows if r['clau'] not in sensitive_keys}
                 self.send_json({'ok': True, 'config': cfg})
                 return
 
@@ -3560,6 +3621,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         content_length = int(self.headers.get('Content-Length', 0))
         post_data = self.rfile.read(content_length).decode('utf-8')
+        self._post_data_raw = post_data
         data = {}
         if post_data:
             try:
@@ -4105,6 +4167,32 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return
 
             elif path == '/api/webhooks/square':
+                # Validació criptogràfica de la signatura de Square (C3)
+                sq_sig = self.headers.get('x-square-hmacsha256-signature') or self.headers.get('X-Square-HMACSHA256-Signature')
+                with get_db() as conn_sig:
+                    c_sig = conn_sig.cursor()
+                    c_sig.execute("SELECT valor FROM configuracio WHERE clau = 'square_webhook_signature_key'")
+                    row_sig = c_sig.fetchone()
+                    sig_key = (row_sig['valor'] if row_sig else '') or ''
+
+                if not sig_key:
+                    self.send_json({'ok': False, 'error': 'Square webhook signature key no està configurada al servidor'}, 401)
+                    return
+
+                if not sq_sig:
+                    self.send_json({'ok': False, 'error': 'Manca signatura x-square-hmacsha256-signature'}, 401)
+                    return
+
+                host = self.headers.get('Host', '')
+                proto = self.headers.get('X-Forwarded-Proto', 'https')
+                webhook_url = f"{proto}://{host}{self.path}"
+                body_to_sign = webhook_url + getattr(self, '_post_data_raw', '')
+                mac = hmac.new(sig_key.encode('utf-8'), body_to_sign.encode('utf-8'), hashlib.sha256)
+                expected_sig = base64.b64encode(mac.digest()).decode('utf-8')
+                if not secrets.compare_digest(expected_sig, sq_sig):
+                    self.send_json({'ok': False, 'error': 'Signatura de webhook invàlida'}, 401)
+                    return
+
                 # Webhook per rebre confirmacions de cobrament de Square
                 event_type = data.get('type')
                 if event_type in ('payment.updated', 'order.updated'):
@@ -4164,9 +4252,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/admin/change-pin':
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot canviar les claus d\'accés.'}, 403)
+                if not require_owner(self, data):
                     return
                 old_pin = str(data.get('oldPin', '')).strip()
                 new_pin = str(data.get('newPin', '')).strip()
@@ -4186,9 +4272,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/admin/backups':
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot gestionar còpies de seguretat.'}, 403)
+                if not require_owner(self, data):
                     return
                 try:
                     filename = create_manual_snapshot()
@@ -4198,9 +4282,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/admin/backups/restore':
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': 'Accés restringit: Només el Propietari pot restaurar còpies de seguretat.'}, 403)
+                if not require_owner(self, data):
                     return
                 fname = data.get('filename', '').strip()
                 if not fname:
@@ -4363,6 +4445,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     except Exception as e:
                         print(f"Avís sync GS alumne nou hash: {e}")
 
+                if student:
+                    student = dict(student)
+                    student.pop('pin', None)
+                    student.pop('password_hash', None)
+
                 self.send_json({
                     'ok': True,
                     'student': student,
@@ -4371,24 +4458,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/alumnes/recuperar-pin':
-                identifier = str(data.get('identifier', '')).strip()
-                contact = str(data.get('contact', '')).strip()
-                if not identifier or not contact:
-                    self.send_json({'ok': False, 'error': "Cal indicar el nom o codi d'alumne i el telèfon o correu de contacte"}, 400)
-                    return
-                with get_db() as conn:
-                    cursor = conn.cursor()
-                    res, err = recover_student_pin(cursor, identifier, contact)
-                    if err:
-                        self.send_json({'ok': False, 'error': err}, 400)
-                        return
+                # Per seguretat estricta, mai es retorna el PIN/contrasenya en text pla
                 self.send_json({
-                    'ok': True,
-                    'nom': res['nom'],
-                    'id': res['id'],
-                    'pin': res['pin'],
-                    'message': f"Identitat verificada correctament per a {res['nom']}."
-                })
+                    'ok': False,
+                    'error': "Per motius de seguretat, les contrasenyes no es mostren en pantalla. Utilitza l'opció 'Recuperar per WhatsApp' per rebre un codi de verificació segur al teu mòbil.",
+                    'code': 'USE_OTP_RECOVERY'
+                }, 403)
                 return
 
             elif path == '/api/alumnes/canviar-pin':
@@ -4407,7 +4482,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if not student:
                         self.send_json({'ok': False, 'error': "Alumne no trobat"}, 404)
                         return
-                    if current_pin is not None:
+
+                    role = get_request_role(self, data)
+                    is_admin = (role in ('owner', 'staff'))
+                    if not is_admin:
+                        if not current_pin:
+                            self.send_json({'ok': False, 'error': "Cal indicar la contrasenya actual per canviar-la"}, 400)
+                            return
                         is_current_valid = False
                         if student.get('password_hash'):
                             is_current_valid = verify_password(current_pin, student['password_hash'])
@@ -4468,15 +4549,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if existing_student:
                         ex_dict = row_to_dict(existing_student)
                         ex_email = (ex_dict.get('email') or '').strip().lower()
-                        # Si l'alumne existent prové d'importació d'Excel (sense correu electrònic)
-                        # o si el correu coincideix exactament, vinculem i activem el compte directament!
-                        if not ex_email or ex_email == email.lower():
+                        # Només permetem activar si l'alumne és de la importació inicial i no tenia correu electrònic
+                        if not ex_email:
                             student_id = ex_dict['id']
+                            new_hash = hash_password(pin)
                             cursor.execute('''
                                 UPDATE alumnes 
-                                SET email = ?, pin = ?, nom = COALESCE(NULLIF(?, ''), nom), cognoms = COALESCE(NULLIF(?, ''), cognoms), telefon = COALESCE(NULLIF(?, ''), telefon)
+                                SET email = ?, pin = ?, password_hash = ?, nom = COALESCE(NULLIF(?, ''), nom), cognoms = COALESCE(NULLIF(?, ''), cognoms), telefon = COALESCE(NULLIF(?, ''), telefon)
                                 WHERE id = ?
-                            ''', (email, pin, nom, cognoms, telefon, student_id))
+                            ''', (email, pin, new_hash, nom, cognoms, telefon, student_id))
                             conn.commit()
 
                             # Sincronitzar actualització a Google Sheets
@@ -4512,7 +4593,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             self.send_json({
                                 'ok': False, 
                                 'duplicate': True,
-                                'error': f"Ja existeix un compte amb aquest telèfon o correu associat a {ex_dict.get('nom')} ({ex_dict.get('id')}). Pots iniciar sessió amb el teu correu o recuperar la contrasenya."
+                                'error': f"Ja existeix un compte registrat amb aquest correu o telèfon ({ex_dict.get('id')}). Si has oblidat la contrasenya, utilitza l'opció de recuperació per WhatsApp.",
+                                'code': 'ALREADY_REGISTERED'
                             }, 409)
                             return
 
@@ -4526,11 +4608,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             max_num = max(max_num, int(m.group(1)))
                     student_id = f"TC-{max_num + 1}"
                     data_alta = get_now().strftime('%Y-%m-%dT%H:%M:%S')
+                    new_hash = hash_password(pin)
 
                     cursor.execute('''
-                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, data_alta, notes, actiu)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
-                    ''', (student_id, nom, cognoms, telefon, email, pin, data_alta, notes))
+                        INSERT INTO alumnes (id, nom, cognoms, telefon, email, pin, password_hash, data_alta, notes, actiu)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    ''', (student_id, nom, cognoms, telefon, email, pin, new_hash, data_alta, notes))
                     conn.commit()
 
                 # Sincronitzar amb Google Sheets si esta actiu
@@ -4856,6 +4939,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/paquets':
+                if not require_auth(self, data):
+                    return
                 # Afegir compra de paquet d'hores
                 student_id = data.get('studentId')
                 hores = float(data.get('hores', 0))
@@ -5032,7 +5117,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         return
                     student_id = f"CLI-{int(get_now().timestamp())}"
 
-                forcar_aforament = bool(data.get('forcar_aforament') or data.get('ignorar_aforament') or data.get('force'))
+                role_req = get_request_role(self, data)
+                is_admin_req = (role_req in ('owner', 'staff'))
+                forcar_aforament = bool(data.get('forcar_aforament') or data.get('ignorar_aforament') or data.get('force')) and is_admin_req
 
                 # Validar dia tancat (dilluns/dimarts descans, festiu o vacances)
                 estat_dia = is_dia_tancat(data_res)
@@ -5451,7 +5538,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             if not student_nom:
                                 student_nom = student_id
 
-                    forcar_aforament = bool(data.get('forcar_aforament') or data.get('ignorar_aforament') or data.get('force'))
+                    role_rec = get_request_role(self, data)
+                    is_admin_rec = (role_rec in ('owner', 'staff'))
+                    forcar_aforament = bool(data.get('forcar_aforament') or data.get('ignorar_aforament') or data.get('force')) and is_admin_rec
                     if forcar_aforament and '[SOBREAFORAMENT AUTORITZAT]' not in notes.upper():
                         notes = f"[SOBREAFORAMENT AUTORITZAT] {notes}".strip()
 
@@ -5669,7 +5758,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 nova_hora_inici = (data.get('hora_inici') or '').strip()
                 nova_hora_fi = (data.get('hora_fi') or '').strip()
-                forcar_aforament = bool(data.get('forcar_aforament', False))
+                role_serie = get_request_role(self, data)
+                is_admin_serie = (role_serie in ('owner', 'staff'))
+                forcar_aforament = bool(data.get('forcar_aforament', False)) and is_admin_serie
                 saltar_tancats = bool(data.get('saltar_tancats', True))
 
                 if not data_inici:
@@ -5872,8 +5963,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 scope = (data.get('scope') or 'single').strip().lower()
                 nova_data = (data.get('data') or data.get('nova_data') or '').strip()
                 nova_hora_inici = (data.get('hora_inici') or '').strip()
-                nova_hora_fi = (data.get('hora_fi') or '').strip()
-                forcar_aforament = bool(data.get('forcar_aforament', False))
+                role_upd = get_request_role(self, data)
+                is_admin_upd = (role_upd in ('owner', 'staff'))
+                forcar_aforament = bool(data.get('forcar_aforament', False)) and is_admin_upd
 
                 if not res_id:
                     self.send_json({'ok': False, 'error': "Cal indicar l'ID de la reserva"}, 400)
@@ -6305,9 +6397,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/activitats-info', '/api/info-activitats'):
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': "Accés restringit: La informació de tallers web només pot ser editada pel Propietari."}, 403)
+                if not require_owner(self, data):
                     return
                 info_data = data.get('info') or data
                 val_str = json.dumps(info_data, ensure_ascii=False)
@@ -6319,9 +6409,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/config':
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': "Accés restringit: La configuració del taller només pot ser modificada pel Propietari."}, 403)
+                if not require_owner(self, data):
                     return
                 # Desar paràmetres de configuració
                 cfg_items = [(k, v) for k, v in data.items() if k not in ('owner_password_hash', 'staff_password_hash', 'admin_token', 'token')]
@@ -6338,9 +6426,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/festius':
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': "Accés restringit: Els dies festius només poden ser definits pel Propietari."}, 403)
+                if not require_owner(self, data):
                     return
                 data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
                 data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
@@ -6363,9 +6449,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/festius/delete', '/api/festius/eliminar'):
-                role = get_request_role(self, data)
-                if role == 'staff':
-                    self.send_json({'ok': False, 'error': "Accés restringit: Els dies festius només poden ser definits pel Propietari."}, 403)
+                if not require_owner(self, data):
                     return
                 festiu_id = data.get('id')
                 if not festiu_id:
@@ -6379,6 +6463,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/restriccions-activitats':
+                if not require_owner(self, data):
+                    return
                 data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
                 data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
                 tipus_abast = (data.get('tipus_abast') or data.get('tipusAbast') or 'dia').strip()
@@ -6417,6 +6503,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/restriccions-activitats/delete', '/api/restriccions-activitats/eliminar'):
+                if not require_owner(self, data):
+                    return
                 restr_id = data.get('id')
                 if not restr_id:
                     self.send_json({'ok': False, 'error': "Cal indicar l'ID de la restricció"}, 400)
@@ -6429,6 +6517,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/import':
+                if not require_owner(self, data):
+                    return
                 # Restauració de backup
                 alumnes = data.get('alumnes', [])
                 paquets = data.get('paquets', [])
@@ -6462,8 +6552,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ''', (r['id'], r['student_id'], r.get('student_nom', ''), r['data'], r.get('hora_inici', '10:00'), r.get('hora_fi', '12:00'), r.get('franja', 'mati_1'), r.get('estat', 'confirmada'), float(r.get('hores', 2.0)), r.get('notes', ''), r.get('created_at', datetime.now().isoformat())))
 
+                    forbidden_import_keys = ('owner_password_hash', 'staff_password_hash', 'admin_pin')
                     for k, v in config.items():
-                        cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
+                        if k not in forbidden_import_keys:
+                            cursor.execute('INSERT OR REPLACE INTO configuracio (clau, valor) VALUES (?, ?)', (k, str(v)))
 
                     for df in data.get('dies_festius', []):
                         cursor.execute('''

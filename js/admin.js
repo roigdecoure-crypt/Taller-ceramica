@@ -295,29 +295,29 @@ function renderStudentsTable(students) {
       edatLabel = `<div style="font-size:11px; color:var(--color-muted);">${age} anys (${age >= 12 ? 'Adult' : 'Infantil'})</div>`;
     }
     tr.innerHTML = `
-      <td><strong>${s.id}</strong></td>
+      <td><strong>${escapeHtml(s.id)}</strong></td>
       <td>
-        <div style="font-weight:600;">${s.nom} ${s.cognoms || ''}</div>
+        <div style="font-weight:600;">${escapeHtml(s.nom)} ${escapeHtml(s.cognoms || '')}</div>
         ${edatLabel}
       </td>
-      <td>${s.telefon || '-'}</td>
-      <td>${s.email || '-'}</td>
+      <td>${escapeHtml(s.telefon || '-')}</td>
+      <td>${escapeHtml(s.email || '-')}</td>
       <td>
         ${isActiu ? '<span class="badge badge-success">Al Taller</span>' : '<span class="badge badge-neutral">Fora</span>'}
       </td>
       <td>
         <span class="badge ${saldoBadgeClass}" style="font-family:monospace; font-size:13px;">
-          ${bal.formatBalance}
+          ${escapeHtml(bal.formatBalance)}
         </span>
       </td>
       <td style="text-align: right; white-space: nowrap;">
-        <button class="btn btn-outline btn-sm btn-action-view" data-id="${s.id}" title="Veure fitxa completa de l'alumne">
+        <button class="btn btn-outline btn-sm btn-action-view" data-id="${escapeHtml(s.id)}" title="Veure fitxa completa de l'alumne">
           Fitxa
         </button>
-        <button class="btn btn-outline btn-sm btn-action-carnet" data-id="${s.id}" title="Veure carnet amb QR">
+        <button class="btn btn-outline btn-sm btn-action-carnet" data-id="${escapeHtml(s.id)}" title="Veure carnet amb QR">
           Carnet
         </button>
-        <button class="btn ${isActiu ? 'btn-danger' : 'btn-success'} btn-sm btn-action-toggle-sessio" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="${isActiu ? 'Registrar sortida ara mateix' : 'Registrar entrada ara mateix'}">
+        <button class="btn ${isActiu ? 'btn-danger' : 'btn-success'} btn-sm btn-action-toggle-sessio" data-id="${escapeHtml(s.id)}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="${isActiu ? 'Registrar sortida ara mateix' : 'Registrar entrada ara mateix'}">
           ${isActiu ? 'Sortida' : 'Entrada'}
         </button>
         <button class="btn btn-outline btn-sm btn-action-open-manual-time" data-id="${s.id}" data-action="${isActiu ? 'sortida' : 'entrada'}" title="Ajustar hora d'entrada o sortida">
@@ -4744,23 +4744,6 @@ function initAdminAuth() {
         }
       }
     } catch (err) {
-      // Fallback per a mode local/offline si el backend no respon immediatament
-      if (pin === '1234') {
-        console.warn('Mode local/offline actiu (servidor no disponible). Desbloquejant amb PIN per defecte 1234.');
-        try { 
-          localStorage.setItem('roig_admin_auth', '1'); 
-          localStorage.setItem('roig_admin_role', 'owner');
-        } catch(e){}; 
-        try { 
-          sessionStorage.setItem('roig_admin_auth', '1'); 
-          sessionStorage.setItem('roig_admin_role', 'owner');
-        } catch(e){};
-        applyAdminRoleUI('owner');
-        if (lockScreen) lockScreen.style.display = 'none';
-        showToast('Sessió iniciada en mode local/offline', 'info');
-        try { await loadAdminDashboardData(); } catch (dashErr) {}
-        return;
-      }
       if (pinError) {
         pinError.textContent = `Error de connexió [${apiBase || 'local'}]: ${err.message}`;
         pinError.style.display = 'block';
@@ -6662,39 +6645,40 @@ function renderitzarTaulaValsRegal() {
     }
 
     const compradorTxt = v.nom_comprador ? v.nom_comprador : '<span style="color:var(--color-muted);">-</span>';
-    const caducitatTxt = v.data_caducitat || '-';
+    const caducitatTxt = escapeHtml(v.data_caducitat || '-');
     const preuTxt = (v.preu_pagat !== undefined && v.preu_pagat !== null) ? `${Number(v.preu_pagat).toFixed(2)} €` : '-';
+    const safeCodi = escapeHtml(v.codi);
 
     return `
       <tr>
         <td>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <strong style="font-family: monospace; font-size: 13px; color: #831D1D; letter-spacing: 0.5px;">${v.codi}</strong>
-            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 6px; font-size: 11px;" title="Copiar codi" onclick="navigator.clipboard.writeText('${v.codi}'); showToast('Codi copiat!', 'info');">Copiar</button>
+            <strong style="font-family: monospace; font-size: 13px; color: #831D1D; letter-spacing: 0.5px;">${safeCodi}</strong>
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 6px; font-size: 11px;" title="Copiar codi" onclick="navigator.clipboard.writeText('${safeCodi}'); showToast('Codi copiat!', 'info');">Copiar</button>
           </div>
         </td>
         <td>
-          <strong>${v.titol_experiencia || 'Taller'}</strong>
+          <strong>${escapeHtml(v.titol_experiencia || 'Taller')}</strong>
           <div style="font-size: 11.5px; color: var(--color-muted);">${v.hores || 2} hores • ${preuTxt}</div>
         </td>
         <td>
-          <strong style="color: var(--color-dark);">${v.nom_destinatari}</strong>
-          ${v.missatge ? `<div style="font-size: 11px; color: #4B5563; font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${v.missatge}">«${v.missatge}»</div>` : ''}
+          <strong style="color: var(--color-dark);">${escapeHtml(v.nom_destinatari)}</strong>
+          ${v.missatge ? `<div style="font-size: 11px; color: #4B5563; font-style: italic; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(v.missatge)}">«${escapeHtml(v.missatge)}»</div>` : ''}
         </td>
-        <td>${compradorTxt}</td>
+        <td>${escapeHtml(compradorTxt)}</td>
         <td style="font-size: 12px; color: var(--color-muted);">${(v.data_creacio || '').slice(0, 10)}</td>
         <td style="font-size: 12px; font-weight: 600;">${caducitatTxt}</td>
         <td><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td style="text-align: right;">
           <div style="display: inline-flex; gap: 6px;">
-            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarValRegal('${v.codi}');" title="Editar dades d'aquest val regal">
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarValRegal('${safeCodi}');" title="Editar dades d'aquest val regal">
               Editar
             </button>
-            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="imprimirValRegal('${v.codi}');" title="Obre la targeta regal per imprimir o desar en PDF">
+            <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="imprimirValRegal('${safeCodi}');" title="Obre la targeta regal per imprimir o desar en PDF">
               PDF / Targeta
             </button>
             ${v.estat === 'actiu' ? `
-              <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="anullarValRegal('${v.codi}');" title="Anul·lar val">
+              <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="anullarValRegal('${safeCodi}');" title="Anul·lar val">
                 Anul·lar
               </button>
             ` : ''}
@@ -6716,7 +6700,9 @@ function renderitzarTaulaArticlesDirecte(articles) {
     return;
   }
 
-  tbody.innerHTML = articles.map(a => `
+  tbody.innerHTML = articles.map(a => {
+    const safeId = escapeHtml(a.id);
+    return `
     <tr>
       <td>
         <span class="badge ${a.edat === 'infant' ? 'badge-info' : 'badge-neutral'}" style="font-weight: 700;">
@@ -6724,33 +6710,34 @@ function renderitzarTaulaArticlesDirecte(articles) {
         </span>
       </td>
       <td>
-        <strong style="color: var(--color-dark); font-size: 13.5px;">${a.nom}</strong>
-        <div style="font-size: 11.5px; color: var(--color-muted);">${a.descripcio || ''}</div>
+        <strong style="color: var(--color-dark); font-size: 13.5px;">${escapeHtml(a.nom)}</strong>
+        <div style="font-size: 11.5px; color: var(--color-muted);">${escapeHtml(a.descripcio || '')}</div>
       </td>
       <td><strong style="color: #4F46E5;">${a.hores} hores</strong></td>
       <td><strong style="font-size: 14px; color: #831D1D;">${Number(a.preu).toFixed(2)} €</strong></td>
-      <td><span class="badge badge-neutral" style="text-transform: capitalize;">${a.activitat_id}</span></td>
+      <td><span class="badge badge-neutral" style="text-transform: capitalize;">${escapeHtml(a.activitat_id)}</span></td>
       <td>${a.es_val_regal ? '<span style="color:#059669; font-weight:700;">Sí</span>' : '<span style="color:#6B7280;">No</span>'}</td>
       <td>
-        <span class="badge ${a.actiu ? 'badge-success' : 'badge-neutral'}" style="cursor: pointer;" onclick="toggleActiuArticle('${a.id}');" title="Fes clic per canviar visibilitat">
+        <span class="badge ${a.actiu ? 'badge-success' : 'badge-neutral'}" style="cursor: pointer;" onclick="toggleActiuArticle('${safeId}');" title="Fes clic per canviar visibilitat">
           ${a.actiu ? 'Actiu' : 'Ocult'}
         </span>
       </td>
       <td style="text-align: right;">
         <div style="display: inline-flex; gap: 6px;">
-          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarArticle('${a.id}');" title="Editar article">
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px;" onclick="editarArticle('${safeId}');" title="Editar article">
             Editar
           </button>
-          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: ${a.actiu ? '#B45309' : '#059669'};" onclick="toggleActiuArticle('${a.id}');" title="${a.actiu ? 'Amagar de la web' : 'Publicar a la web'}">
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: ${a.actiu ? '#B45309' : '#059669'};" onclick="toggleActiuArticle('${safeId}');" title="${a.actiu ? 'Amagar de la web' : 'Publicar a la web'}">
             ${a.actiu ? 'Amagar' : 'Mostrar'}
           </button>
-          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="eliminarArticle('${a.id}');" title="Eliminar article">
+          <button type="button" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 12px; color: #DC2626; border-color: #FECACA;" onclick="eliminarArticle('${safeId}');" title="Eliminar article">
             Eliminar
           </button>
         </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function carregarCatalegArticles() {
