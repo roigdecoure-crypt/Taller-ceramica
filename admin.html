@@ -17,9 +17,37 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=12.7.8">
+  <link rel="stylesheet" href="css/admin.css?v=12.8.3">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
+  <style>
+    /* FORÇAR LLETRA BLANCA A LA PESTANYA ACTIVA DE LA BARRA LATERAL */
+    .sidebar-item.active,
+    .sidebar-item.active *,
+    .sidebar-item.active .nav-text,
+    .sidebar-item.active a,
+    .sidebar-item.active span,
+    #nav-tab-reserves.active,
+    #nav-tab-reserves.active *,
+    #nav-tab-reserves.active .nav-text {
+      color: #FFFFFF !important;
+      -webkit-text-fill-color: #FFFFFF !important;
+    }
+    .sidebar-item.active .nav-icon svg {
+      stroke: #FFFFFF !important;
+      color: #FFFFFF !important;
+    }
+  </style>
   <script>
+    // Carrega immediata del tema per evitar parpelleig
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('admin_theme_mode');
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('admin-dark-mode');
+        }
+      } catch (e) {}
+    })();
+
     // Assegurar que el panell d'administracio mai queda bloquejat per la memoria cau ni pel Service Worker
     try {
       if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -38,14 +66,41 @@
       }
     } catch (swErr) {}
 
+    var _lastAdminTab = null;
+    var _lastAdminTabTime = 0;
     function switchAdminTab(tab) {
+      var now = Date.now();
+      if (_lastAdminTab === tab && (now - _lastAdminTabTime) < 350) {
+        return;
+      }
+      _lastAdminTab = tab;
+      _lastAdminTabTime = now;
       var activeRole = (typeof localStorage !== 'undefined' ? localStorage.getItem('roig_admin_role') : null) || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('roig_admin_role') : null) || 'owner';
       if (activeRole === 'staff' && tab === 'carnet-designer') {
         tab = 'reserves';
       }
       document.querySelectorAll('.sidebar-item[data-tab]').forEach(function(i) {
-        if (i.dataset.tab === tab) i.classList.add('active');
-        else i.classList.remove('active');
+        var text = i.querySelector('.nav-text');
+        var svg = i.querySelector('.nav-icon svg');
+        if (i.dataset.tab === tab) {
+          i.classList.add('active');
+          if (text) {
+            text.style.setProperty('color', '#FFFFFF', 'important');
+            text.style.setProperty('-webkit-text-fill-color', '#FFFFFF', 'important');
+          }
+          if (svg) {
+            svg.style.setProperty('stroke', '#FFFFFF', 'important');
+          }
+        } else {
+          i.classList.remove('active');
+          if (text) {
+            text.style.removeProperty('color');
+            text.style.removeProperty('-webkit-text-fill-color');
+          }
+          if (svg) {
+            svg.style.removeProperty('stroke');
+          }
+        }
       });
       document.querySelectorAll('.top-nav-link[data-top-tab]').forEach(function(btn) {
         if (btn.dataset.topTab === tab) btn.classList.add('active');
@@ -64,6 +119,7 @@
         else if (tab === 'directe') heading.textContent = 'Al taller ara mateix';
         else if (tab === 'carnet-designer') heading.textContent = 'Dissenyador de Carnets';
         else if (tab === 'vals-regal') heading.textContent = 'Vals Regal & Catàleg';
+        else if (tab === 'fornades') heading.textContent = 'Fornades & Cicle de Peces';
       }
 
       if (typeof refreshAppointmentsDashboard === 'function' && tab === 'reserves') {
@@ -82,6 +138,9 @@
       } else if (tab === 'vals-regal') {
         if (typeof carregarLlistaValsRegal === 'function') carregarLlistaValsRegal();
         if (typeof carregarCatalegArticles === 'function') carregarCatalegArticles();
+      } else if (tab === 'fornades') {
+        if (typeof carregarFornadesAdmin === 'function') carregarFornadesAdmin();
+        if (typeof carregarPecesAdmin === 'function') carregarPecesAdmin();
       }
 
       if (window.innerWidth <= 768) {
@@ -106,7 +165,41 @@
         }
       }
     }
-    window.toggleSidebarGroup = toggleSidebarGroup;
+    function toggleAdminThemeMode() {
+      var esFosc = document.documentElement.classList.toggle('admin-dark-mode');
+      if (document.body) {
+        document.body.classList.toggle('admin-dark-mode', esFosc);
+      }
+      var layout = document.querySelector('.admin-app-layout');
+      if (layout) {
+        layout.classList.toggle('dark-mode', esFosc);
+      }
+      try {
+        localStorage.setItem('admin_theme_mode', esFosc ? 'dark' : 'warm');
+      } catch(e) {}
+      actualitzarEtiquetaTema(esFosc);
+    }
+    window.toggleAdminThemeMode = toggleAdminThemeMode;
+
+    function actualitzarEtiquetaTema(esFosc) {
+      var lbl = document.getElementById('theme-toggle-label');
+      var iconMoon = document.getElementById('theme-icon-moon');
+      var iconSun = document.getElementById('theme-icon-sun');
+      if (lbl) {
+        lbl.textContent = esFosc ? 'Mode Càlid' : 'Mode Nit';
+      }
+      if (iconMoon) iconMoon.style.display = esFosc ? 'none' : 'inline-block';
+      if (iconSun) iconSun.style.display = esFosc ? 'inline-block' : 'none';
+    }
+    window.actualitzarEtiquetaTema = actualitzarEtiquetaTema;
+
+    window.addEventListener('DOMContentLoaded', function() {
+      var esFosc = document.documentElement.classList.contains('admin-dark-mode');
+      if (document.body) document.body.classList.toggle('admin-dark-mode', esFosc);
+      var layout = document.querySelector('.admin-app-layout');
+      if (layout) layout.classList.toggle('dark-mode', esFosc);
+      actualitzarEtiquetaTema(esFosc);
+    });
 
     function toggleResumMensualCard() {
       var card = document.getElementById('card-resum-mensual');
@@ -279,7 +372,7 @@
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
         </span>
-        <span class="nav-text">Reserves & Calendari</span>
+        <span class="nav-text" style="color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;">Reserves & Calendari</span>
       </li>
       <li class="sidebar-item" data-tab="alumnes" id="nav-tab-alumnes" title="Alumnes & Clients" onclick="switchAdminTab('alumnes');" style="cursor: pointer;">
         <span class="nav-icon">
@@ -312,6 +405,14 @@
           </svg>
         </span>
         <span class="nav-text">Vals Regal & Catàleg</span>
+      </li>
+      <li class="sidebar-item" data-tab="fornades" id="nav-tab-fornades" title="Fornades & Peces" onclick="switchAdminTab('fornades');" style="cursor: pointer;">
+        <span class="nav-icon" style="color: #D97706;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2c-4 4-6 7.5-6 11a6 6 0 0 0 12 0c0-3.5-2-7-6-11z"></path>
+          </svg>
+        </span>
+        <span class="nav-text">Fornades & Peces</span>
       </li>
 
       <div class="sidebar-divider"></div>
@@ -558,17 +659,27 @@
       <div class="top-bar-left" style="display: flex; align-items: center; gap: 14px;">
         <h1 class="top-bar-title" id="admin-view-heading">Gestió de Reserves</h1>
         <span id="badge-admin-role" style="font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #FAF7F5; color: #831D1D; border: 1px solid #EAD8CE; letter-spacing: 0.5px; text-transform: uppercase;">Propietari</span>
+        <span id="badge-wake-lock-status" title="La pantalla es mantindrà sempre encesa mentre tinguis l'aplicació oberta" style="display: none; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;">
+          <span style="width: 7px; height: 7px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+          Pantalla sempre encesa
+        </span>
       </div>
       <div class="top-bar-actions notranslate" translate="no">
-        <button type="button" class="btn-top-nova-reserva" id="btn-top-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" title="Nova Reserva" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; background: #5E7E6F; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(94,126,111,0.25); transition: all 0.15s ease;">
+        <!-- Botó de descans visual (Càlid Antirreflex / Mode Nit) -->
+        <button type="button" class="btn-theme-mode" id="btn-theme-toggle" onclick="toggleAdminThemeMode()" title="Canviar estil visual (Càlid Antirreflex / Mode Nit)" style="margin-right: 6px; border-radius: 0 !important;">
+          <svg id="theme-icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <svg id="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <span id="theme-toggle-label">Mode Nit</span>
+        </button>
+        <button type="button" class="btn-top-nova-reserva" id="btn-top-nova-reserva" onclick="triggerOpenModal('modal-admin-nova-reserva-backdrop', 'openAdminNovaReservaModal');" title="Nova Reserva" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 0 !important; font-size: 13.5px; background: #5E7E6F; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(94,126,111,0.25); transition: all 0.15s ease;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nova Reserva
         </button>
-        <button type="button" class="btn btn-whatsapp-directe" id="btn-top-link-bestreta" onclick="openAdminLinkBestretaDirecteModal();" title="Enviar enllaç de pagament de bestreta per WhatsApp Web" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; background: #25D366; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(37,211,102,0.3); transition: all 0.15s ease;">
+        <button type="button" class="btn btn-whatsapp-directe" id="btn-top-link-bestreta" onclick="openAdminLinkBestretaDirecteModal();" title="Enviar enllaç de pagament de bestreta per WhatsApp Web" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 8px 16px; border-radius: 0 !important; font-size: 13.5px; background: #25D366; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(37,211,102,0.3); transition: all 0.15s ease;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
           Enviar Link WhatsApp
         </button>
-        <button type="button" class="btn-roig-coure" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');" title="Nou Alumne" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; box-shadow: 0 2px 4px rgba(131,29,29,0.2);">
+        <button type="button" class="btn-roig-coure" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');" title="Nou Alumne" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 0 !important; font-size: 13.5px; box-shadow: 0 2px 4px rgba(131,29,29,0.2);">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nou Alumne
         </button>
@@ -1334,6 +1445,144 @@
             <tbody id="tbody-articles">
               <tr>
                 <td colspan="8" style="text-align: center; padding: 20px; color: var(--color-muted);">Carregant catàleg...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA: FORNADES & CICLE DE LES PECES -->
+    <section class="admin-tab-view" id="view-fornades">
+      <div class="header-content" style="margin-bottom: 24px;">
+        <div>
+          <h2>Fornades & Cicle de les Peces</h2>
+          <p class="text-muted">Publica vídeos d'obertura del forn (Instagram Reels/Stories), gestiona avisos de recollida d'alumnes i actualitza l'estat de les peces.</p>
+        </div>
+        <div class="header-actions" style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-primary" onclick="obrirModalNovaFornada();" style="background: linear-gradient(135deg, #831D1D 0%, #B45309 100%); border: none;">
+            <span>🔥 + Publicar Nova Fornada</span>
+          </button>
+          <button type="button" class="btn btn-outline" onclick="carregarFornadesAdmin(); carregarPecesAdmin();">
+            <span>Actualitzar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mètriques Ràpides Fornades -->
+      <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card" style="border-left: 4px solid #059669;">
+          <div class="stat-label">Avisades per Recollir</div>
+          <div class="stat-value" id="stats-peces-recollida" style="color: #059669;">0</div>
+          <div class="stat-desc">Alumnes que han avisat que vénen a recollir la peça</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #D97706;">
+          <div class="stat-label">En Procés (Taller / Forn)</div>
+          <div class="stat-value" id="stats-peces-proces" style="color: #D97706;">0</div>
+          <div class="stat-desc">En assecat, 1a cuita (bescuit) o esmaltat</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #831D1D;">
+          <div class="stat-label">Fornades Publicades</div>
+          <div class="stat-value" id="stats-fornades-totals" style="color: #831D1D;">0</div>
+          <div class="stat-desc">Obertures de forn compartides amb alumnes</div>
+        </div>
+        <div class="stat-card" style="border-left: 4px solid #4B5563;">
+          <div class="stat-label">Peces Lliurades</div>
+          <div class="stat-value" id="stats-peces-lliurades" style="color: #4B5563;">0</div>
+          <div class="stat-desc">Creacions ja entregades i a casa de l'alumne</div>
+        </div>
+      </div>
+
+      <!-- SECCIÓ 1: PECES PENDENTS DE RECOLLIR (AVISADES PELS ALUMNES) -->
+      <div class="card" style="margin-bottom: 24px; border-left: 4px solid #059669;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #065F46;">
+              📦 Peces Avisades per Recollir (<span id="count-peces-avisades">0</span>)
+            </h3>
+            <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-muted);">
+              Aquests alumnes han vist la seva peça al vídeo o l'han vista marcada com a llesta i passaran pel taller a buscar-la. Prepara-les al taulell!
+            </p>
+          </div>
+        </div>
+        <div id="llista-peces-recollida-container">
+          <p style="font-size: 13px; color: var(--color-muted);">Carregant peces pendents...</p>
+        </div>
+      </div>
+
+      <!-- SECCIÓ 2: HISTÒRIC DE FORNADES DEL TALLER -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--color-dark);">
+              🔥 Fornades del Taller & Vídeos d'Obertura
+            </h3>
+            <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-muted);">
+              Vídeos d'Instagram Reels/Stories enllaçats per a cada tongada de forn.
+            </p>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="taula-fornades">
+            <thead>
+              <tr>
+                <th>Data Obertura</th>
+                <th>Títol Fornada</th>
+                <th>Vídeo Instagram</th>
+                <th>Descripció / Notes</th>
+                <th>Estat</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-fornades">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: var(--color-muted);">Carregant fornades...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECCIÓ 3: TOTES LES PECES DELS ALUMNES -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #831D1D;">
+              🏺 Catàleg de Peces dels Alumnes
+            </h3>
+            <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-muted);">
+              Modifica l'estat del cicle de vida de cada peça o puja la foto un cop cuita.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="text" id="filtre-peces-cercador" class="form-control form-control-sm" placeholder="Cercar alumne o peça..." oninput="filtrarPecesAdminTaula();" style="width: 200px;">
+            <select id="filtre-peces-estat" class="form-control form-control-sm" onchange="filtrarPecesAdminTaula();" style="width: 170px;">
+              <option value="">Tots els estats</option>
+              <option value="assecat">⏳ En assecat</option>
+              <option value="bescuit">🏺 1a Cuita (Bescuit)</option>
+              <option value="esmaltar">🎨 Llest per esmaltar</option>
+              <option value="alta_temp">🔥 2a Cuita (Alta temp)</option>
+              <option value="llest_recollir">📦 Llest per recollir</option>
+              <option value="lliurada">✨ Lliurada (Finalitzada)</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="taula-peces-admin">
+            <thead>
+              <tr>
+                <th style="width: 70px;">Foto</th>
+                <th>Nom de la Peça</th>
+                <th>Alumne</th>
+                <th>Tècnica</th>
+                <th>Estat Actual</th>
+                <th>Data</th>
+                <th style="text-align: right;">Accions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-peces-admin">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 20px; color: var(--color-muted);">Carregant peces...</td>
               </tr>
             </tbody>
           </table>
@@ -3447,6 +3696,50 @@
       <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #E5E7EB; padding-top: 14px;" id="scan-val-result-actions">
         <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-detall-val-escanejat-backdrop');" style="border-radius: 0;">Tancar</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN: NOVA / EDITAR FORNADA -->
+  <div class="modal-backdrop" id="modal-admin-fornada-backdrop" style="display: none; position: fixed; inset: 0; z-index: 99999;" onclick="if(event.target===this) closeAnyModal('modal-admin-fornada-backdrop');">
+    <div class="modal-card" style="max-width: 520px; width: 92%; margin: 30px auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.25);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid var(--color-border); padding-bottom: 12px;">
+        <div>
+          <h3 id="modal-fornada-titol-text" style="margin: 0; font-size: 18px; font-weight: 800; color: #831D1D;">🔥 Publicar Nova Fornada</h3>
+          <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-muted);">Enllaça el vídeo d'Instagram per notificar als alumnes l'obertura del forn.</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeAnyModal('modal-admin-fornada-backdrop');" style="border: none; background: transparent; font-size: 24px; cursor: pointer; color: #6B7280; line-height: 1;">&times;</button>
+      </div>
+
+      <form id="form-admin-fornada" onsubmit="guardarFornadaAdmin(event); return false;">
+        <input type="hidden" id="fornada-input-id" value="">
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Data de la Fornada *</label>
+          <input type="date" id="fornada-input-data" class="form-control" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Títol de la Fornada *</label>
+          <input type="text" id="fornada-input-titol" class="form-control" placeholder="Ex: Fornada Alta Temperatura #14 - Tardor" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Enllaç al Vídeo d'Instagram (Reel / Story / Post)</label>
+          <input type="url" id="fornada-input-video" class="form-control" placeholder="https://www.instagram.com/reel/...">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Descripció o Detalls de la Fornada</label>
+          <textarea id="fornada-input-desc" class="form-control" rows="3" placeholder="Peces de torn i modelatge esmaltades a 1260ºC. Mireu el vídeo per veure com han quedat!"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" onclick="closeAnyModal('modal-admin-fornada-backdrop');">Cancel·lar</button>
+          <button type="submit" id="btn-save-fornada-admin" class="btn btn-primary" style="font-weight: 700;">
+            Guardar Fornada
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

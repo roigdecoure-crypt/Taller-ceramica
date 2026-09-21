@@ -920,14 +920,7 @@ function setupEventListeners() {
   try { initReservesAdmin(); } catch (e) { console.warn('Avís initReservesAdmin:', e); }
   try { initCardDesigner(); } catch (e) { console.warn('Avís initCardDesigner:', e); }
 
-  // Navegació de la barra lateral i menú superior
-  document.querySelectorAll('.sidebar-item[data-tab]').forEach(item => {
-    item.addEventListener('click', () => {
-      if (typeof window.switchAdminTab === 'function') {
-        window.switchAdminTab(item.dataset.tab);
-      }
-    });
-  });
+  // Navegació de la barra lateral i menú superior (els elements de la barra lateral ja tenen onclick="switchAdminTab(...)")
 
   document.querySelectorAll('.top-nav-link[data-top-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -8423,6 +8416,390 @@ async function carregarResumMensualAdmin(mesParam) {
   }
 }
 window.carregarResumMensualAdmin = carregarResumMensualAdmin;
+
+/* ==========================================================================
+   ADMINISTRACIÓ DE FORNADES I CICLE DE LES PECES
+   ========================================================================== */
+
+let adminAllFornades = [];
+let adminAllPeces = [];
+
+function escapeHtmlAdmin(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function carregarFornadesAdmin() {
+  const tbody = document.getElementById('tbody-fornades');
+  const statTotals = document.getElementById('stats-fornades-totals');
+
+  try {
+    const res = await fetch('/api/fornades');
+    const data = await res.json();
+    adminAllFornades = (data.ok && Array.isArray(data.fornades)) ? data.fornades : [];
+
+    if (statTotals) statTotals.textContent = adminAllFornades.length;
+
+    if (!tbody) return;
+    if (adminAllFornades.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 24px; color: var(--color-muted);">
+            No s'ha publicat cap fornada encara. Fes clic a <strong>+ Publicar Nova Fornada</strong> per començar.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = adminAllFornades.map(f => {
+      const videoLink = f.video_url ? `
+        <a href="${f.video_url}" target="_blank" rel="noopener noreferrer" style="color: #831D1D; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/></svg>
+          Obrir Vídeo ↗
+        </a>
+      ` : '<span style="color: var(--color-muted); font-size: 12px;">Sense vídeo</span>';
+
+      return `
+        <tr>
+          <td style="font-weight: 600;">${TimeUtils.formatDate(f.data)}</td>
+          <td style="font-weight: 700; color: var(--color-dark);">${escapeHtmlAdmin(f.titol)}</td>
+          <td>${videoLink}</td>
+          <td style="font-size: 12px; color: var(--color-muted); max-width: 250px;">${escapeHtmlAdmin(f.descripcio || '-')}</td>
+          <td>
+            <span class="badge ${f.estat === 'oberta' ? 'badge-success' : 'badge-neutral'}">
+              ${f.estat === 'oberta' ? 'Oberta' : 'Tancada'}
+            </span>
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button type="button" class="btn btn-sm btn-outline" onclick="obrirModalNovaFornada('${f.id}')" style="margin-right: 4px;">Editar</button>
+            <button type="button" class="btn btn-sm btn-outline" onclick="eliminarFornadaAdmin('${f.id}')" style="color: var(--color-danger); border-color: #FECACA;">Eliminar</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('Error carregant fornades admin:', err);
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="color: var(--color-danger); text-align: center;">Error: ${err.message}</td></tr>`;
+  }
+}
+window.carregarFornadesAdmin = carregarFornadesAdmin;
+
+async function carregarPecesAdmin() {
+  const statRecollida = document.getElementById('stats-peces-recollida');
+  const statProces = document.getElementById('stats-peces-proces');
+  const statLliurades = document.getElementById('stats-peces-lliurades');
+  const countAvisades = document.getElementById('count-peces-avisades');
+  const llistaRecollidaContainer = document.getElementById('llista-peces-recollida-container');
+
+  try {
+    const res = await fetch('/api/peces');
+    const data = await res.json();
+    adminAllPeces = (data.ok && Array.isArray(data.peces)) ? data.peces : [];
+
+    const pendentsRecollir = adminAllPeces.filter(p => p.avis_recollida === 1 && p.estat !== 'lliurada');
+    const enProces = adminAllPeces.filter(p => ['assecat', 'bescuit', 'esmaltar', 'alta_temp'].includes(p.estat));
+    const lliurades = adminAllPeces.filter(p => p.estat === 'lliurada');
+
+    if (statRecollida) statRecollida.textContent = pendentsRecollir.length;
+    if (countAvisades) countAvisades.textContent = pendentsRecollir.length;
+    if (statProces) statProces.textContent = enProces.length;
+    if (statLliurades) statLliurades.textContent = lliurades.length;
+
+    if (llistaRecollidaContainer) {
+      if (pendentsRecollir.length === 0) {
+        llistaRecollidaContainer.innerHTML = `
+          <div style="background: #F9FAFB; border-radius: 8px; padding: 18px; text-align: center; color: var(--color-muted); font-size: 13px;">
+            🎉 No hi ha cap alumne pendent de recollida en aquests moments. Totes les peces estan lliurades o en procés de cuita!
+          </div>
+        `;
+      } else {
+        llistaRecollidaContainer.innerHTML = `
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
+            ${pendentsRecollir.map(p => {
+              const photo = p.foto_cuit || p.foto_cru || '';
+              const photoHtml = photo
+                ? `<img src="${photo}" alt="" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB; flex-shrink: 0;">`
+                : `<div style="width: 54px; height: 54px; border-radius: 8px; background: #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">🏺</div>`;
+
+              const telClean = (p.student_telefon || '').replace(/[^0-9]/g, '');
+              const waLink = telClean ? `<a href="https://wa.me/${telClean.startsWith('34') ? telClean : '34' + telClean}" target="_blank" style="font-size: 11px; font-weight: 700; color: #059669; text-decoration: none;">WhatsApp ↗</a>` : '';
+
+              return `
+                <div style="background: #FFF; border: 1px solid #A7F3D0; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.06);">
+                  ${photoHtml}
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 800; font-size: 14px; color: var(--color-dark); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                      ${escapeHtmlAdmin(p.student_nom)} ${escapeHtmlAdmin(p.student_cognoms || '')}
+                    </div>
+                    <div style="font-size: 12px; font-weight: 600; color: #831D1D;">
+                      ${escapeHtmlAdmin(p.nom)} (${p.tecnica || 'torn'})
+                    </div>
+                    <div style="font-size: 11px; color: var(--color-muted); display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                      <span>Avisat: ${p.data_recollida ? TimeUtils.formatDate(p.data_recollida) : 'Avui'}</span>
+                      ${waLink}
+                    </div>
+                  </div>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="marcarPecaLliuradaAdmin('${p.id}')" style="background: #059669; border-color: #059669; font-weight: 700; font-size: 11px; white-space: nowrap;">
+                      ✓ Lliurar
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+    }
+
+    filtrarPecesAdminTaula();
+  } catch (err) {
+    console.warn('Error carregant peces admin:', err);
+  }
+}
+window.carregarPecesAdmin = carregarPecesAdmin;
+
+function filtrarPecesAdminTaula() {
+  const tbody = document.getElementById('tbody-peces-admin');
+  if (!tbody) return;
+
+  const query = (document.getElementById('filtre-peces-cercador')?.value || '').toLowerCase().trim();
+  const estatFiltre = document.getElementById('filtre-peces-estat')?.value || '';
+
+  const filtrades = adminAllPeces.filter(p => {
+    if (estatFiltre && p.estat !== estatFiltre) return false;
+    if (query) {
+      const txt = `${p.nom} ${p.student_nom} ${p.student_cognoms} ${p.notes || ''}`.toLowerCase();
+      if (!txt.includes(query)) return false;
+    }
+    return true;
+  });
+
+  if (filtrades.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 24px; color: var(--color-muted);">
+          No s'ha trobat cap peça amb aquests filtres.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtrades.map(p => {
+    const photo = p.foto_cuit || p.foto_cru || '';
+    const photoHtml = photo
+      ? `<a href="${photo}" target="_blank"><img src="${photo}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #E5E7EB;"></a>`
+      : `<div style="width: 44px; height: 44px; border-radius: 6px; background: #F3F4F6; display: flex; align-items: center; justify-content: center; font-size: 16px;">🏺</div>`;
+
+    return `
+      <tr>
+        <td>${photoHtml}</td>
+        <td>
+          <div style="font-weight: 700; color: var(--color-dark);">${escapeHtmlAdmin(p.nom)}</div>
+          ${p.notes ? `<div style="font-size: 11px; color: var(--color-muted);">${escapeHtmlAdmin(p.notes)}</div>` : ''}
+          ${p.avis_recollida ? `<span class="badge" style="background:#ECFDF5; color:#065F46; font-size:10px; padding:2px 6px; margin-top:2px;">Avisat per recollir</span>` : ''}
+        </td>
+        <td>
+          <div style="font-weight: 600;">${escapeHtmlAdmin(p.student_nom)} ${escapeHtmlAdmin(p.student_cognoms || '')}</div>
+          <div style="font-size: 11px; color: var(--color-muted);">${p.student_telefon || '-'}</div>
+        </td>
+        <td>
+          <span style="font-size: 12px; font-weight: 600; text-transform: capitalize;">${escapeHtmlAdmin(p.tecnica || 'torn')}</span>
+        </td>
+        <td>
+          <select class="form-control form-control-sm" onchange="canviarEstatPecaAdmin('${p.id}', this.value)" style="font-size: 12px; font-weight: 700; width: 155px; border-color: #D1D5DB;">
+            <option value="assecat" ${p.estat === 'assecat' ? 'selected' : ''}>⏳ En assecat</option>
+            <option value="bescuit" ${p.estat === 'bescuit' ? 'selected' : ''}>🏺 1a Cuita (Bescuit)</option>
+            <option value="esmaltar" ${p.estat === 'esmaltar' ? 'selected' : ''}>🎨 Llest per esmaltar</option>
+            <option value="alta_temp" ${p.estat === 'alta_temp' ? 'selected' : ''}>🔥 2a Cuita (Alta)</option>
+            <option value="llest_recollir" ${p.estat === 'llest_recollir' ? 'selected' : ''}>📦 Llest per recollir</option>
+            <option value="lliurada" ${p.estat === 'lliurada' ? 'selected' : ''}>✨ Lliurada</option>
+          </select>
+        </td>
+        <td style="font-size: 12px; color: var(--color-muted);">${TimeUtils.formatDate(p.created_at)}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          ${p.estat !== 'lliurada' ? `
+            <button type="button" class="btn btn-sm btn-outline" onclick="marcarPecaLliuradaAdmin('${p.id}')" style="color: #059669; border-color: #A7F3D0; margin-right: 4px;" title="Marcar com a entregada">✓ Lliurada</button>
+          ` : ''}
+          <button type="button" class="btn btn-sm btn-outline" onclick="eliminarPecaAdmin('${p.id}')" style="color: var(--color-danger); border-color: #FECACA;" title="Eliminar peça">&times;</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+window.filtrarPecesAdminTaula = filtrarPecesAdminTaula;
+
+function obrirModalNovaFornada(fornadaId) {
+  const idInput = document.getElementById('fornada-input-id');
+  const dataInput = document.getElementById('fornada-input-data');
+  const titolInput = document.getElementById('fornada-input-titol');
+  const videoInput = document.getElementById('fornada-input-video');
+  const descInput = document.getElementById('fornada-input-desc');
+  const modalTitol = document.getElementById('modal-fornada-titol-text');
+
+  if (fornadaId) {
+    const existing = adminAllFornades.find(f => f.id === fornadaId);
+    if (existing) {
+      if (idInput) idInput.value = existing.id;
+      if (dataInput) dataInput.value = existing.data;
+      if (titolInput) titolInput.value = existing.titol;
+      if (videoInput) videoInput.value = existing.video_url || '';
+      if (descInput) descInput.value = existing.descripcio || '';
+      if (modalTitol) modalTitol.textContent = 'Editar Fornada';
+    }
+  } else {
+    if (idInput) idInput.value = '';
+    if (dataInput) dataInput.value = new Date().toISOString().split('T')[0];
+    if (titolInput) titolInput.value = `Fornada #${adminAllFornades.length + 1}`;
+    if (videoInput) videoInput.value = '';
+    if (descInput) descInput.value = '';
+    if (modalTitol) modalTitol.textContent = '🔥 Publicar Nova Fornada';
+  }
+
+  const modal = document.getElementById('modal-admin-fornada-backdrop');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+  }
+}
+window.obrirModalNovaFornada = obrirModalNovaFornada;
+
+function tancarModalAdminFornada() {
+  const modal = document.getElementById('modal-admin-fornada-backdrop');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('active');
+  }
+}
+window.tancarModalAdminFornada = tancarModalAdminFornada;
+
+async function guardarFornadaAdmin(event) {
+  if (event) event.preventDefault();
+
+  const id = document.getElementById('fornada-input-id')?.value || '';
+  const data = document.getElementById('fornada-input-data')?.value || '';
+  const titol = (document.getElementById('fornada-input-titol')?.value || '').trim();
+  const video_url = (document.getElementById('fornada-input-video')?.value || '').trim();
+  const descripcio = (document.getElementById('fornada-input-desc')?.value || '').trim();
+
+  if (!titol || !data) {
+    showToast('Cal omplir la data i el títol de la fornada', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-fornada-admin');
+  const origText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Guardant...';
+  }
+
+  try {
+    const res = await fetch('/api/fornades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, data, titol, video_url, descripcio })
+    });
+    const result = await res.json();
+    if (result.ok) {
+      showToast('Fornada guardada i publicada correctament!', 'success');
+      tancarModalAdminFornada();
+      await carregarFornadesAdmin();
+    } else {
+      showToast(result.error || 'Error guardant la fornada', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+}
+window.guardarFornadaAdmin = guardarFornadaAdmin;
+
+async function eliminarFornadaAdmin(fornadaId) {
+  if (!confirm('Segur que vols eliminar aquesta fornada? Les peces associades no s\'eliminaran.')) return;
+
+  try {
+    const res = await fetch(`/api/fornades/${encodeURIComponent(fornadaId)}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (result.ok) {
+      showToast('Fornada eliminada correctament', 'success');
+      await carregarFornadesAdmin();
+    } else {
+      showToast(result.error || 'Error eliminant fornada', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió', 'error');
+  }
+}
+window.eliminarFornadaAdmin = eliminarFornadaAdmin;
+
+async function canviarEstatPecaAdmin(pecaId, nouEstat) {
+  try {
+    const res = await fetch(`/api/peces/${encodeURIComponent(pecaId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estat: nouEstat })
+    });
+    const result = await res.json();
+    if (result.ok) {
+      showToast(`Estat actualitzat a: ${nouEstat}`, 'success');
+      await carregarPecesAdmin();
+    } else {
+      showToast(result.error || 'Error canviant l\'estat', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió', 'error');
+  }
+}
+window.canviarEstatPecaAdmin = canviarEstatPecaAdmin;
+
+async function marcarPecaLliuradaAdmin(pecaId) {
+  try {
+    const res = await fetch(`/api/peces/${encodeURIComponent(pecaId)}/lliurada`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const result = await res.json();
+    if (result.ok) {
+      showToast('Peça marcada com a lliurada a l\'alumne!', 'success');
+      await carregarPecesAdmin();
+    } else {
+      showToast(result.error || 'Error actualitzant peça', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió', 'error');
+  }
+}
+window.marcarPecaLliuradaAdmin = marcarPecaLliuradaAdmin;
+
+async function eliminarPecaAdmin(pecaId) {
+  if (!confirm('Segur que vols eliminar aquesta peça del registre?')) return;
+  try {
+    const res = await fetch(`/api/peces/${encodeURIComponent(pecaId)}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (result.ok) {
+      showToast('Peça eliminada', 'success');
+      await carregarPecesAdmin();
+    } else {
+      showToast(result.error || 'Error eliminant peça', 'error');
+    }
+  } catch (err) {
+    showToast('Error de connexió', 'error');
+  }
+}
+window.eliminarPecaAdmin = eliminarPecaAdmin;
 
 
 

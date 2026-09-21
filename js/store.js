@@ -1464,15 +1464,22 @@ const Store = {
               });
             }
             if (json.updated_reserves && json.updated_reserves.length > 0) {
+              const genuinelyUpdated = [];
               json.updated_reserves.forEach(u => {
                 const r = local.reserves.find(item => item.id === u.id);
                 if (r) {
-                  r.data = u.data;
-                  r.hora_inici = u.hora_inici;
-                  if (u.hora_fi) r.hora_fi = u.hora_fi;
-                  modifiedLocal = true;
+                  const hasChanged = (r.data !== u.data) || (r.hora_inici !== u.hora_inici) || (u.hora_fi && r.hora_fi && r.hora_fi !== u.hora_fi);
+                  if (hasChanged) {
+                    r.data = u.data;
+                    r.hora_inici = u.hora_inici;
+                    if (u.hora_fi) r.hora_fi = u.hora_fi;
+                    modifiedLocal = true;
+                    genuinelyUpdated.push(u);
+                  }
                 }
               });
+              json.updated_reserves = genuinelyUpdated;
+              json.rescheduled_count = genuinelyUpdated.length;
             }
             if (modifiedLocal) this._saveLocalData(local);
           }
@@ -1493,9 +1500,10 @@ const Store = {
       const json = await res.json();
       if (json.status === 'success') {
         const cancelled = json.cancelled_ids || [];
-        const updated = json.updated_reserves || [];
+        const rawUpdated = json.updated_reserves || [];
         const local = this._getLocalData();
         let modifiedLocal = false;
+        const genuinelyUpdated = [];
         if (local.reserves) {
           if (cancelled.length > 0) {
             local.reserves.forEach(r => {
@@ -1505,14 +1513,18 @@ const Store = {
               }
             });
           }
-          if (updated.length > 0) {
-            updated.forEach(u => {
+          if (rawUpdated.length > 0) {
+            rawUpdated.forEach(u => {
               const r = local.reserves.find(item => item.id === u.id);
               if (r) {
-                r.data = u.data;
-                r.hora_inici = u.hora_inici;
-                if (u.hora_fi) r.hora_fi = u.hora_fi;
-                modifiedLocal = true;
+                const hasChanged = (r.data !== u.data) || (r.hora_inici !== u.hora_inici) || (u.hora_fi && r.hora_fi && r.hora_fi !== u.hora_fi);
+                if (hasChanged) {
+                  r.data = u.data;
+                  r.hora_inici = u.hora_inici;
+                  if (u.hora_fi) r.hora_fi = u.hora_fi;
+                  modifiedLocal = true;
+                  genuinelyUpdated.push(u);
+                }
               }
             });
           }
@@ -1521,9 +1533,9 @@ const Store = {
         return { 
           ok: true, 
           cancelled_ids: cancelled, 
-          updated_reserves: updated,
+          updated_reserves: genuinelyUpdated, 
           count: cancelled.length, 
-          rescheduled_count: updated.length,
+          rescheduled_count: genuinelyUpdated.length,
           message: json.message 
         };
       }

@@ -172,6 +172,34 @@ def verify_password(password, stored_hash):
         print(f"[Auth] Error verificant hash: {e}")
         return False
 
+def save_uploaded_piece_image(base64_data_uri, prefix="peca"):
+    """
+    Desa una imatge rebuda en format data URI base64 a la carpeta img/peces/
+    Retorna la ruta relativa tipus 'img/peces/peca_20260920_abc123.jpg'
+    """
+    if not base64_data_uri or not isinstance(base64_data_uri, str):
+        return ""
+    if not base64_data_uri.startswith('data:image/'):
+        return base64_data_uri
+    try:
+        header, encoded = base64_data_uri.split(',', 1)
+        ext = "jpg"
+        if "image/png" in header:
+            ext = "png"
+        elif "image/webp" in header:
+            ext = "webp"
+        data = base64.b64decode(encoded)
+        folder = os.path.join(BASE_DIR, 'img', 'peces')
+        os.makedirs(folder, exist_ok=True)
+        filename = f"{prefix}_{get_now().strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(4)}.{ext}"
+        filepath = os.path.join(folder, filename)
+        with open(filepath, 'wb') as f:
+            f.write(data)
+        return f"img/peces/{filename}"
+    except Exception as e:
+        print(f"[Upload] Error desant imatge de peça: {e}")
+        return ""
+
 def create_auth_token(role='owner', hours=72):
     """Crea un token de sessió segur i el desa a la taula auth_tokens."""
     token = secrets.token_urlsafe(32)
@@ -872,6 +900,44 @@ def init_db():
         except Exception:
             pass
 
+        # Taula de fornades del taller (cicle de vida i vídeos d'obertura)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS fornades (
+                id TEXT PRIMARY KEY,
+                data TEXT NOT NULL,
+                titol TEXT NOT NULL,
+                descripcio TEXT,
+                video_url TEXT,
+                estat TEXT DEFAULT 'oberta',
+                created_at TEXT NOT NULL
+            )
+        ''')
+
+        # Taula de peces creades pels alumnes
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS peces_alumne (
+                id TEXT PRIMARY KEY,
+                student_id TEXT NOT NULL,
+                fornada_id TEXT,
+                nom TEXT NOT NULL,
+                tecnica TEXT DEFAULT 'torn',
+                foto_cru TEXT,
+                foto_cuit TEXT,
+                estat TEXT DEFAULT 'assecat',
+                avis_recollida INTEGER DEFAULT 0,
+                data_recollida TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (student_id) REFERENCES alumnes (id),
+                FOREIGN KEY (fornada_id) REFERENCES fornades (id)
+            )
+        ''')
+        try:
+            cursor.execute("ALTER TABLE peces_alumne ADD COLUMN notes TEXT")
+        except Exception:
+            pass
+
         # Inicialitzar hashes de Propietari i Treballador si no existeixen
         try:
             cursor.execute("SELECT clau, valor FROM configuracio WHERE clau IN ('owner_password_hash', 'staff_password_hash', 'admin_pin')")
@@ -1332,20 +1398,30 @@ def sync_calendar_from_google(target_url=None):
                         """, cancelled_ids)
                         updated_count = cursor.rowcount
 
+                    actual_updated = []
                     if updated_reserves:
                         for u in updated_reserves:
-                            u_id = u.get('id')
-                            u_data = u.get('data')
-                            u_hi = u.get('hora_inici')
-                            u_hf = u.get('hora_fi')
+                            u_id = (u.get('id') or '').strip()
+                            u_data = (u.get('data') or '').strip()
+                            u_hi = (u.get('hora_inici') or '').strip()
+                            u_hf = (u.get('hora_fi') or '').strip()
                             if u_id and u_data and u_hi:
-                                cursor.execute("""
-                                    UPDATE reserves 
-                                    SET data = ?, hora_inici = ?, hora_fi = ?
-                                    WHERE id = ?
-                                """, (u_data, u_hi, u_hf or '', u_id))
-                                if cursor.rowcount > 0:
-                                    rescheduled_count += cursor.rowcount
+                                cursor.execute("SELECT data, hora_inici, hora_fi FROM reserves WHERE id = ?", (u_id,))
+                                cur_res = cursor.fetchone()
+                                if cur_res:
+                                    cd = str(cur_res['data'] or '').strip()
+                                    ch_i = str(cur_res['hora_inici'] or '').strip()
+                                    ch_f = str(cur_res['hora_fi'] or '').strip()
+                                    # Només actualitzar si realment ha canviat de dia o hora!
+                                    if cd != u_data or ch_i != u_hi or (u_hf and ch_f and ch_f != u_hf):
+                                        cursor.execute("""
+                                            UPDATE reserves 
+                                            SET data = ?, hora_inici = ?, hora_fi = ?
+                                            WHERE id = ?
+                                        """, (u_data, u_hi, u_hf or '', u_id))
+                                        if cursor.rowcount > 0:
+                                            rescheduled_count += cursor.rowcount
+                                            actual_updated.append(u)
                     conn.commit()
 
                 msg_parts = []
@@ -1360,7 +1436,7 @@ def sync_calendar_from_google(target_url=None):
                     'updated_in_db': updated_count,
                     'cancelled_ids': cancelled_ids,
                     'rescheduled_count': rescheduled_count,
-                    'updated_reserves': updated_reserves,
+                    'updated_reserves': actual_updated,
                     'message': msg
                 }
             else:
@@ -1393,7 +1469,7 @@ def sync_to_google_sheets_async(action, payload):
                 req_dict['session'] = payload
             elif action == 'add_paquet':
                 req_dict['paquet'] = payload
-            elif action in ('add_reserva', 'nova_reserva', 'update_reserva', 'cancel_reserva'):
+            elif action in ('add_reserva', 'nova_reserva', 'update_reserva', 'cancel_reserva', 'update_reserva_estat'):
                 req_dict['reserva'] = payload
             elif action == 'save_config' and isinstance(payload, dict):
                 req_dict['config'] = payload
@@ -1409,7 +1485,7 @@ def sync_to_google_sheets_async(action, payload):
                 raw_resp = resp.read()
                 try:
                     res_data = json.loads(raw_resp.decode('utf-8'))
-                    if action in ('add_reserva', 'nova_reserva') and res_data.get('status') == 'success':
+                    if action in ('add_reserva', 'nova_reserva', 'update_reserva', 'update_reserva_estat') and res_data.get('status') == 'success':
                         created_cal_id = res_data.get('calendar_event_id')
                         if created_cal_id and payload.get('id'):
                             with get_db() as c_conn:
@@ -3085,6 +3161,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.path = '/scanner.html' + query_str
             elif clean_path == '/landing':
                 self.path = '/landing.html' + query_str
+            elif clean_path in ('/3d', '/taller-3d', '/visita-3d'):
+                self.path = '/taller-3d.html' + query_str
             elif clean_path in ('/web', '/activitats', '/torn', '/modelatge', '/pintar', '/grups', '/monografics', '/casals', '/val-regal', '/contacte', '/faq'):
                 self.path = '/index.html' + query_str
             return super().do_GET()
@@ -3432,6 +3510,24 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_json({'ok': False, 'error': f'Error generant el passi de wallet: {str(e)}'}, 500)
                     return
 
+            elif path.startswith('/api/alumnes/') and path.endswith('/peces'):
+                parts = path.strip('/').split('/')
+                student_id = urllib.parse.unquote(parts[2]) if len(parts) > 2 else ''
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, student_id, actiu_only=False)
+                    real_id = student['id'] if student else student_id
+                    cursor.execute('''
+                        SELECT p.*, f.titol as fornada_titol, f.video_url as fornada_video_url, f.data as fornada_data
+                        FROM peces_alumne p
+                        LEFT JOIN fornades f ON p.fornada_id = f.id
+                        WHERE p.student_id = ?
+                        ORDER BY p.created_at DESC
+                    ''', (real_id,))
+                    peces = [row_to_dict(r) for r in cursor.fetchall()]
+                self.send_json({'ok': True, 'peces': peces})
+                return
+
             elif path.startswith('/api/alumnes/'):
                 student_code = urllib.parse.unquote(path.replace('/api/alumnes/', '').strip())
                 with get_db() as conn:
@@ -3466,6 +3562,16 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     clean_student.pop('pin', None)
                     clean_student.pop('password_hash', None)
 
+                    # Carregar peces de l'alumne
+                    cursor.execute('''
+                        SELECT p.*, f.titol as fornada_titol, f.video_url as fornada_video_url, f.data as fornada_data
+                        FROM peces_alumne p
+                        LEFT JOIN fornades f ON p.fornada_id = f.id
+                        WHERE p.student_id = ?
+                        ORDER BY p.created_at DESC
+                    ''', (real_id,))
+                    peces = [row_to_dict(r) for r in cursor.fetchall()]
+
                 self.send_json({
                     'ok': True,
                     'alumne': clean_student,
@@ -3473,7 +3579,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'sessions': sessions,
                     'reserves': reserves,
                     'sessioActiva': active_session,
-                    'balanc': balance
+                    'balanc': balance,
+                    'peces': peces
                 })
                 return
 
@@ -3707,6 +3814,71 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'urlPreview': (url[:35] + '...') if url else ''
                 })
                 return
+
+            elif path == '/api/fornades':
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT f.*, 
+                               COUNT(p.id) as total_peces,
+                               SUM(CASE WHEN p.avis_recollida = 1 THEN 1 ELSE 0 END) as peces_pendents_recollir
+                        FROM fornades f
+                        LEFT JOIN peces_alumne p ON f.id = p.fornada_id
+                        GROUP BY f.id
+                        ORDER BY f.data DESC, f.created_at DESC
+                    ''')
+                    fornades = [row_to_dict(r) for r in cursor.fetchall()]
+                self.send_json({'ok': True, 'fornades': fornades})
+                return
+
+            elif path.startswith('/api/fornades/'):
+                fornada_id = path.replace('/api/fornades/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM fornades WHERE id = ?', (fornada_id,))
+                    f_row = cursor.fetchone()
+                    if not f_row:
+                        self.send_json({'ok': False, 'error': 'Fornada no trobada'}, 404)
+                        return
+                    fornada = row_to_dict(f_row)
+                    cursor.execute('''
+                        SELECT p.*, a.nom as student_nom, a.cognoms as student_cognoms
+                        FROM peces_alumne p
+                        JOIN alumnes a ON p.student_id = a.id
+                        WHERE p.fornada_id = ?
+                        ORDER BY p.updated_at DESC
+                    ''', (fornada_id,))
+                    peces = [row_to_dict(r) for r in cursor.fetchall()]
+                    fornada['peces'] = peces
+                self.send_json({'ok': True, 'fornada': fornada})
+                return
+
+            elif path == '/api/peces':
+                estat_filtre = params.get('estat', [None])[0]
+                recollida_filtre = params.get('avis_recollida', [None])[0]
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    sql = '''
+                        SELECT p.*, a.nom as student_nom, a.cognoms as student_cognoms, a.telefon as student_telefon,
+                               f.titol as fornada_titol, f.video_url as fornada_video_url, f.data as fornada_data
+                        FROM peces_alumne p
+                        JOIN alumnes a ON p.student_id = a.id
+                        LEFT JOIN fornades f ON p.fornada_id = f.id
+                        WHERE 1=1
+                    '''
+                    q_params = []
+                    if estat_filtre:
+                        sql += ' AND p.estat = ?'
+                        q_params.append(estat_filtre)
+                    if recollida_filtre is not None:
+                        sql += ' AND p.avis_recollida = ?'
+                        q_params.append(int(recollida_filtre))
+                    sql += ' ORDER BY p.avis_recollida DESC, p.updated_at DESC'
+                    cursor.execute(sql, tuple(q_params))
+                    peces = [row_to_dict(r) for r in cursor.fetchall()]
+                self.send_json({'ok': True, 'peces': peces})
+                return
+
 
             else:
                 self.send_json({'ok': False, 'error': 'Ruta API no trobada'}, 404)
@@ -5769,9 +5941,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             'calendar_name': cal_name
                         }
                         created_reserves.append(r_dict)
-                        sync_to_google_sheets_async('add_reserva', r_dict)
 
                     conn.commit()
+
+                    def _sync_recurrent_batch(res_list):
+                        for r_item in res_list:
+                            sync_to_google_sheets_async('add_reserva', r_item)
+                            time.sleep(0.4)
+                    threading.Thread(target=_sync_recurrent_batch, args=(list(created_reserves),), daemon=True).start()
 
                 self.send_json({
                     'ok': True,
@@ -6771,6 +6948,141 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'message': 'Sincronització completa enviada a Google Sheets en segon pla.'})
                 return
 
+            elif path == '/api/fornades':
+                fornada_id = str(data.get('id', '')).strip() or f"forn_{get_now().strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(3)}"
+                data_forn = str(data.get('data', '')).strip() or get_now().strftime('%Y-%m-%d')
+                titol = str(data.get('titol', '')).strip() or 'Nova Fornada'
+                descripcio = str(data.get('descripcio', '')).strip()
+                video_url = str(data.get('video_url', '')).strip()
+                estat = str(data.get('estat', 'oberta')).strip()
+                now_iso = get_now().isoformat()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        INSERT INTO fornades (id, data, titol, descripcio, video_url, estat, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO UPDATE SET
+                            data = excluded.data,
+                            titol = excluded.titol,
+                            descripcio = excluded.descripcio,
+                            video_url = excluded.video_url,
+                            estat = excluded.estat
+                    ''', (fornada_id, data_forn, titol, descripcio, video_url, estat, now_iso))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': 'Fornada desada correctament', 'id': fornada_id})
+                return
+
+            elif path.startswith('/api/alumnes/') and path.endswith('/peces'):
+                parts = path.strip('/').split('/')
+                student_id = urllib.parse.unquote(parts[2]) if len(parts) > 2 else ''
+                nom_peca = str(data.get('nom', '')).strip()
+                if not nom_peca:
+                    self.send_json({'ok': False, 'error': 'Cal indicar un nom o descripció per a la peça'}, 400)
+                    return
+
+                tecnica = str(data.get('tecnica', 'torn')).strip()
+                raw_foto = data.get('foto_cru', '')
+                foto_cru_path = save_uploaded_piece_image(raw_foto, prefix="peca_cru") if raw_foto else ""
+                notes = str(data.get('notes', '')).strip()
+                now_iso = get_now().isoformat()
+                peca_id = f"peca_{get_now().strftime('%Y%m%d_%H%M%S')}_{secrets.token_hex(4)}"
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    student = find_student_by_code(cursor, student_id, actiu_only=False)
+                    real_id = student['id'] if student else student_id
+
+                    cursor.execute('''
+                        INSERT INTO peces_alumne (id, student_id, fornada_id, nom, tecnica, foto_cru, foto_cuit, estat, avis_recollida, notes, created_at, updated_at)
+                        VALUES (?, ?, NULL, ?, ?, ?, '', 'assecat', 0, ?, ?, ?)
+                    ''', (peca_id, real_id, nom_peca, tecnica, foto_cru_path, notes, now_iso, now_iso))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': 'Peça registrada correctament', 'id': peca_id, 'foto_cru': foto_cru_path})
+                return
+
+            elif path.startswith('/api/peces/') and path.endswith('/foto_cuit'):
+                parts = path.strip('/').split('/')
+                peca_id = urllib.parse.unquote(parts[2])
+                raw_foto = data.get('foto_cuit', '')
+                foto_cuit_path = save_uploaded_piece_image(raw_foto, prefix="peca_cuit") if raw_foto else ""
+                now_iso = get_now().isoformat()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE peces_alumne
+                        SET foto_cuit = ?, updated_at = ?
+                        WHERE id = ?
+                    ''', (foto_cuit_path, now_iso, peca_id))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': 'Foto cuita desada correctament', 'foto_cuit': foto_cuit_path})
+                return
+
+            elif path.startswith('/api/peces/') and path.endswith('/recollida'):
+                parts = path.strip('/').split('/')
+                peca_id = urllib.parse.unquote(parts[2])
+                now_iso = get_now().isoformat()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE peces_alumne
+                        SET avis_recollida = 1, data_recollida = ?, estat = CASE WHEN estat IN ('assecat', 'bescuit') THEN 'llest_recollir' ELSE estat END, updated_at = ?
+                        WHERE id = ?
+                    ''', (now_iso, now_iso, peca_id))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': "Notificació de recollida enviada al taller!"})
+                return
+
+            elif path.startswith('/api/peces/') and path.endswith('/lliurada'):
+                parts = path.strip('/').split('/')
+                peca_id = urllib.parse.unquote(parts[2])
+                now_iso = get_now().isoformat()
+
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE peces_alumne
+                        SET estat = 'lliurada', avis_recollida = 0, updated_at = ?
+                        WHERE id = ?
+                    ''', (now_iso, peca_id))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': "Peça marcada com a lliurada a l'alumne."})
+                return
+
+            elif path.startswith('/api/peces/'):
+                peca_id = path.replace('/api/peces/', '').strip()
+                now_iso = get_now().isoformat()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT * FROM peces_alumne WHERE id = ?', (peca_id,))
+                    existing = cursor.fetchone()
+                    if not existing:
+                        self.send_json({'ok': False, 'error': 'Peça no trobada'}, 404)
+                        return
+
+                    nom = str(data.get('nom', existing['nom'])).strip()
+                    tecnica = str(data.get('tecnica', existing['tecnica'])).strip()
+                    estat = str(data.get('estat', existing['estat'])).strip()
+                    fornada_id = data.get('fornada_id', existing['fornada_id'])
+                    notes = str(data.get('notes', existing['notes'] or '')).strip()
+
+                    cursor.execute('''
+                        UPDATE peces_alumne
+                        SET nom = ?, tecnica = ?, estat = ?, fornada_id = ?, notes = ?, updated_at = ?
+                        WHERE id = ?
+                    ''', (nom, tecnica, estat, fornada_id, notes, now_iso, peca_id))
+                    conn.commit()
+
+                self.send_json({'ok': True, 'message': 'Peça actualitzada correctament'})
+                return
+
             else:
                 self.send_json({'ok': False, 'error': 'Ruta API no trobada'}, 404)
 
@@ -6910,6 +7222,25 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('DELETE FROM articles WHERE id = ?', (art_id,))
                     conn.commit()
                 self.send_json({'ok': True, 'message': 'Article eliminat correctament del catàleg'})
+                return
+
+            elif path.startswith('/api/peces/'):
+                peca_id = path.replace('/api/peces/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM peces_alumne WHERE id = ?', (peca_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Peça eliminada correctament'})
+                return
+
+            elif path.startswith('/api/fornades/'):
+                fornada_id = path.replace('/api/fornades/', '').strip()
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM fornades WHERE id = ?', (fornada_id,))
+                    cursor.execute('UPDATE peces_alumne SET fornada_id = NULL WHERE fornada_id = ?', (fornada_id,))
+                    conn.commit()
+                self.send_json({'ok': True, 'message': 'Fornada eliminada correctament'})
                 return
 
             else:

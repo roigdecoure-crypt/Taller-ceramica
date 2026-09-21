@@ -75,9 +75,17 @@ function doPost(e) {
     } else if (action === "delete_paquet") {
       deletePaquetRow(ss, (data.payload && data.payload.id) ? data.payload.id : data.id);
       return jsonResponse({ status: "success", message: "Paquet eliminat de Google Sheets" });
-    } else if (action === "add_reserva" || action === "nova_reserva" || action === "update_reserva") {
+    } else if (action === "add_reserva" || action === "nova_reserva" || action === "update_reserva" || action === "update_reserva_estat") {
       var resCalId = upsertReservaRow(ss, data.payload || data.reserva);
       return jsonResponse({ status: "success", message: "Reserva desada a Google Sheets", calendar_event_id: resCalId });
+    } else if (action === "add_reserves_batch" || action === "batch_reserves") {
+      var batchList = data.payload || data.reserves || [];
+      var results = [];
+      for (var b = 0; b < batchList.length; b++) {
+        var bCalId = upsertReservaRow(ss, batchList[b]);
+        results.push({ id: batchList[b].id, calendar_event_id: bCalId });
+      }
+      return jsonResponse({ status: "success", message: "Reserves en bloc desades", results: results });
     } else if (action === "cancel_reserva") {
       cancelReservaRow(ss, data.payload || data.reserva);
       return jsonResponse({ status: "success", message: "Reserva cancel·lada a Google Sheets" });
@@ -526,6 +534,40 @@ function syncReserves(ss, reserves) {
   }
 }
 
+function formatCellDate(val, tz) {
+  if (!val) return "";
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, tz || "Europe/Madrid", "yyyy-MM-dd");
+  }
+  var str = String(val).trim();
+  if (str.indexOf("GMT") !== -1 || str.indexOf("CET") !== -1 || str.indexOf("CEST") !== -1) {
+    var d = new Date(str);
+    if (!isNaN(d.getTime())) return Utilities.formatDate(d, tz || "Europe/Madrid", "yyyy-MM-dd");
+  }
+  var m = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (m) {
+    return m[1] + "-" + (m[2].length === 1 ? "0" + m[2] : m[2]) + "-" + (m[3].length === 1 ? "0" + m[3] : m[3]);
+  }
+  return str;
+}
+
+function formatCellTime(val, tz) {
+  if (!val) return "";
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, tz || "Europe/Madrid", "HH:mm");
+  }
+  var str = String(val).trim();
+  if (str.indexOf("1899") !== -1 || str.indexOf("GMT") !== -1) {
+    var d = new Date(str);
+    if (!isNaN(d.getTime())) return Utilities.formatDate(d, tz || "Europe/Madrid", "HH:mm");
+  }
+  var m = str.match(/^(\d{1,2}):(\d{2})/);
+  if (m) {
+    return (m[1].length === 1 ? "0" + m[1] : m[1]) + ":" + m[2];
+  }
+  return str;
+}
+
 function readReserves(ss) {
   var sheet = ss.getSheetByName("Reserves");
   if (!sheet) return [];
@@ -541,9 +583,9 @@ function readReserves(ss) {
       student_id: String(row[1] || "").trim(),
       student_nom: String(row[2] || "").trim(),
       telefon: String(row[3] || "").trim(),
-      data: String(row[4] || "").trim(),
-      hora_inici: String(row[5] || "10:00").trim(),
-      hora_fi: String(row[6] || "11:30").trim(),
+      data: formatCellDate(row[4]),
+      hora_inici: formatCellTime(row[5]) || "10:00",
+      hora_fi: formatCellTime(row[6]) || "11:30",
       franja: String(row[7] || "F1").trim(),
       activitat: String(row[8] || "Torn").trim(),
       activitat_id: String(row[8] || "torn").toLowerCase().replace(/[^a-z]/g, ''),
@@ -1026,9 +1068,9 @@ function checkCalendarSync(ss) {
           var evHoraInici = Utilities.formatDate(evStart, tz, "HH:mm");
           var evHoraFi = Utilities.formatDate(evEnd, tz, "HH:mm");
 
-          var curDate = String(values[i][4] || "").trim();
-          var curHoraInici = String(values[i][5] || "").trim();
-          var curHoraFi = String(values[i][6] || "").trim();
+          var curDate = formatCellDate(values[i][4], tz);
+          var curHoraInici = formatCellTime(values[i][5], tz);
+          var curHoraFi = formatCellTime(values[i][6], tz);
 
           // Si la data o l'hora han canviat al calendari, actualitzar-ho automàticament!
           if ((curDate && evDate && curDate !== evDate) || 
