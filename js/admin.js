@@ -55,9 +55,21 @@ async function initAdminApp() {
   } catch (e) {}
 
   const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
-  if (isAuth) {
+  const hasToken = (typeof localStorage !== 'undefined' && (localStorage.getItem('roig_admin_token') || localStorage.getItem('roig_admin_pin'))) || 
+                   (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('roig_admin_token') || sessionStorage.getItem('roig_admin_pin')));
+
+  if (isAuth && hasToken) {
     if (typeof applyAdminRoleUI === 'function') applyAdminRoleUI();
     await loadAdminDashboardData();
+  } else {
+    try {
+      localStorage.removeItem('roig_admin_auth');
+      sessionStorage.removeItem('roig_admin_auth');
+    } catch(e) {}
+    const lockScreen = document.getElementById('admin-lock-screen');
+    if (lockScreen) {
+      lockScreen.style.setProperty('display', 'flex', 'important');
+    }
   }
 }
 
@@ -5292,11 +5304,13 @@ function initAdminAuth() {
           localStorage.setItem('roig_admin_auth', '1'); 
           localStorage.setItem('roig_admin_role', userRole);
           if (data.token) localStorage.setItem('roig_admin_token', data.token);
+          localStorage.setItem('roig_admin_pin', pin);
         } catch(e){}; 
         try { 
           sessionStorage.setItem('roig_admin_auth', '1'); 
           sessionStorage.setItem('roig_admin_role', userRole);
           if (data.token) sessionStorage.setItem('roig_admin_token', data.token);
+          sessionStorage.setItem('roig_admin_pin', pin);
         } catch(e){};
         applyAdminRoleUI(userRole);
         if (lockScreen) lockScreen.style.display = 'none';
@@ -5341,16 +5355,56 @@ function initAdminAuth() {
           localStorage.removeItem('roig_admin_auth'); 
           localStorage.removeItem('roig_admin_role'); 
           localStorage.removeItem('roig_admin_token'); 
+          localStorage.removeItem('roig_admin_pin'); 
         } catch(e){}; 
         try { 
           sessionStorage.removeItem('roig_admin_auth'); 
           sessionStorage.removeItem('roig_admin_role'); 
           sessionStorage.removeItem('roig_admin_token'); 
+          sessionStorage.removeItem('roig_admin_pin'); 
         } catch(e){};
         window.location.reload();
       }
     });
   }
+
+  window.handleUnauthorizedSession = async function(retryCallback) {
+    const pin = prompt("La teva sessió d'administrador ha caducat o requereix confirmació.\nIntrodueix la teva clau o PIN per continuar:");
+    if (!pin) return false;
+    try {
+      const apiBase = (typeof getAdminApiBase === 'function') ? getAdminApiBase() : (window.ROIG_API_BASE || '');
+      const res = await fetch(`${apiBase}/api/admin/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin.trim() })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        const userRole = data.role || 'owner';
+        try {
+          localStorage.setItem('roig_admin_auth', '1');
+          localStorage.setItem('roig_admin_role', userRole);
+          if (data.token) localStorage.setItem('roig_admin_token', data.token);
+          localStorage.setItem('roig_admin_pin', pin.trim());
+          sessionStorage.setItem('roig_admin_auth', '1');
+          sessionStorage.setItem('roig_admin_role', userRole);
+          if (data.token) sessionStorage.setItem('roig_admin_token', data.token);
+          sessionStorage.setItem('roig_admin_pin', pin.trim());
+        } catch(e) {}
+        showToast('Sessió confirmada correctament!', 'success');
+        if (typeof retryCallback === 'function') {
+          return await retryCallback();
+        }
+        return true;
+      } else {
+        alert(data.error || 'PIN incorrecte.');
+        return false;
+      }
+    } catch(e) {
+      alert('Error connectant amb el servidor: ' + e.message);
+      return false;
+    }
+  };
 }
 
 // --- GESTIÓ DE SNAPSHOTS I RESTAURACIÓ ---
@@ -6732,6 +6786,11 @@ async function handleCreateRestriccio(e) {
         await loadAdminRestriccionsList();
         await refreshAppointmentsDashboard();
       } else {
+        if (res && (res.error?.includes('autoritzat') || res.status === 401 || res.code === 401)) {
+          if (typeof window.handleUnauthorizedSession === 'function') {
+            return await window.handleUnauthorizedSession(() => handleCreateRestriccio(e));
+          }
+        }
         showToast(res?.error || 'Error desant les restriccions a la base de dades.', 'error');
       }
     } else {
@@ -6753,6 +6812,11 @@ async function handleCreateRestriccio(e) {
         await loadAdminRestriccionsList();
         await refreshAppointmentsDashboard();
       } else {
+        if (res && (res.error?.includes('autoritzat') || res.status === 401 || res.code === 401)) {
+          if (typeof window.handleUnauthorizedSession === 'function') {
+            return await window.handleUnauthorizedSession(() => handleCreateRestriccio(e));
+          }
+        }
         showToast(res?.error || 'Error desant la restricció a la base de dades.', 'error');
       }
     }
@@ -6774,6 +6838,11 @@ async function handleDeleteRestriccio(id) {
       await loadAdminRestriccionsList();
       await refreshAppointmentsDashboard();
     } else {
+      if (res && (res.error?.includes('autoritzat') || res.status === 401 || res.code === 401)) {
+        if (typeof window.handleUnauthorizedSession === 'function') {
+          return await window.handleUnauthorizedSession(() => handleDeleteRestriccio(id));
+        }
+      }
       showToast(res?.error || 'No s\'ha pogut eliminar la restricció.', 'error');
     }
   } catch (err) {

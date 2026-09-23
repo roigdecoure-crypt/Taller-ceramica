@@ -200,9 +200,40 @@ def save_uploaded_piece_image(base64_data_uri, prefix="peca"):
         print(f"[Upload] Error desant imatge de peça: {e}")
         return ""
 
-def create_auth_token(role='owner', hours=72):
-    """Crea un token de sessió segur i el desa a la taula auth_tokens."""
-    token = secrets.token_urlsafe(32)
+AUTH_SECRET = os.environ.get('AUTH_SECRET') or os.environ.get('SECRET_KEY') or 'roigdecoure-ceramica-secret-token-key-2026'
+
+def generate_hmac_token(role='owner', hours=720):
+    """Genera un token signat criptogràficament que no es perd mai encara que el servidor es reiniciï."""
+    now = get_now()
+    expires = now + timedelta(hours=hours)
+    exp_str = expires.strftime('%Y%m%d%H%M%S')
+    payload = f"{role}:{exp_str}"
+    sig = hmac.new(AUTH_SECRET.encode('utf-8'), payload.encode('utf-8'), hashlib.sha256).hexdigest()
+    return f"roig_{role}_{exp_str}_{sig}"
+
+def verify_hmac_token(token):
+    """Valida un token signat per HMAC."""
+    if not token or not str(token).startswith("roig_"):
+        return None
+    parts = str(token).strip().split("_")
+    if len(parts) != 4:
+        return None
+    _, role, exp_str, sig = parts
+    payload = f"{role}:{exp_str}"
+    expected_sig = hmac.new(AUTH_SECRET.encode('utf-8'), payload.encode('utf-8'), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    try:
+        exp_dt = datetime.strptime(exp_str, '%Y%m%d%H%M%S')
+        if get_now() > exp_dt:
+            return None
+    except Exception:
+        return None
+    return role
+
+def create_auth_token(role='owner', hours=720):
+    """Crea un token de sessió segur (amb signatura HMAC de llarga durada) i el desa a la taula auth_tokens."""
+    token = generate_hmac_token(role, hours=hours)
     now = get_now()
     expires = now + timedelta(hours=hours)
     try:
@@ -226,6 +257,13 @@ def get_token_role(token):
     token_clean = str(token).strip()
     if token_clean.lower().startswith("bearer "):
         token_clean = token_clean[7:].strip()
+    
+    # 1. Comprovar signatura HMAC (immediat, segur i resilient a reinicis)
+    hmac_role = verify_hmac_token(token_clean)
+    if hmac_role:
+        return hmac_role
+
+    # 2. Comprovar base de dades auth_tokens
     now_iso = get_now().isoformat()
     try:
         with get_db() as conn:
@@ -323,6 +361,17 @@ def get_request_role(handler, data=None):
     if token:
         role = get_token_role(token)
         if role:
+            return role
+        # Si el token no és reconegut, provar si és directament el PIN d'administrador
+        valid, pin_role, _ = verify_admin_credentials(token)
+        if valid:
+            return pin_role
+
+    # Fallback si s'envia el PIN a les capçaleres HTTP (ex: X-Admin-PIN)
+    pin_hdr = handler.headers.get('X-Admin-PIN') or handler.headers.get('X-Admin-Pin') or handler.headers.get('X-Admin-Password')
+    if pin_hdr:
+        valid, role, _ = verify_admin_credentials(pin_hdr)
+        if valid:
             return role
 
     # Fallback si s'envia el PIN directament al payload

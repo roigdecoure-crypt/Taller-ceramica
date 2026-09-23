@@ -851,9 +851,14 @@ const Store = {
   getAdminAuthHeaders() {
     const token = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_token')) || 
                   (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_token')) || '';
+    const pin = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_pin')) || 
+                (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_pin')) || '';
     const headers = { 'Content-Type': 'application/json' };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (pin) {
+      headers['X-Admin-PIN'] = pin;
     }
     return headers;
   },
