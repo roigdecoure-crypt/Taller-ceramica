@@ -831,9 +831,15 @@ function syncCalendarEvent(r) {
       event.setTime(startTime, endTime);
       event.setDescription(desc);
       event.setLocation(location);
-      // El color de la reserva es manté 100% el seu (no es modifica mai)
-      if (r.color_id) {
-        try { event.setColor(String(r.color_id)); } catch (eColor) {}
+      // Treure qualsevol color sobreescrit (com el verd) i tornar al color original net del calendari
+      try {
+        if (r.color_id) {
+          event.setColor(String(r.color_id));
+        } else {
+          event.setColor(null);
+        }
+      } catch (eColor) {
+        try { event.setColor(""); } catch (e2) {}
       }
       return event.getId();
     } else {
