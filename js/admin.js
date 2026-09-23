@@ -1217,7 +1217,8 @@ function setupEventListeners() {
     document.getElementById('paquet-form-student-id').value = a.id;
     document.getElementById('paquet-form-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
     document.getElementById('paquet-form-hores').value = 4;
-    document.getElementById('paquet-form-concepte').value = '4 Hores';
+    if (document.getElementById('paquet-form-minuts')) document.getElementById('paquet-form-minuts').value = 0;
+    if (typeof updatePaquetTempsPreview === 'function') updatePaquetTempsPreview();
     document.getElementById('paquet-form-preu').value = 50;
     document.getElementById('paquet-form-data').value = TimeUtils.toLocalDatetimeInput();
     document.getElementById('modal-paquet-backdrop').classList.add('active');
@@ -1332,7 +1333,8 @@ function setupEventListeners() {
     document.getElementById('paquet-form-student-id').value = a.id;
     document.getElementById('paquet-form-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
     document.getElementById('paquet-form-hores').value = 4;
-    document.getElementById('paquet-form-concepte').value = '4 Hores';
+    if (document.getElementById('paquet-form-minuts')) document.getElementById('paquet-form-minuts').value = 0;
+    if (typeof updatePaquetTempsPreview === 'function') updatePaquetTempsPreview();
     document.getElementById('paquet-form-preu').value = 50;
     document.getElementById('paquet-form-data').value = TimeUtils.toLocalDatetimeInput();
     document.getElementById('modal-paquet-backdrop').classList.add('active');
@@ -1506,18 +1508,82 @@ function setupEventListeners() {
     }
   });
 
+  function updatePaquetTempsPreview() {
+    const horesEl = document.getElementById('paquet-form-hores');
+    const minutsEl = document.getElementById('paquet-form-minuts');
+    const previewEl = document.getElementById('paquet-form-temps-preview');
+    const concepteEl = document.getElementById('paquet-form-concepte');
+    if (!horesEl || !minutsEl || !previewEl) return;
+
+    let h = parseFloat(horesEl.value) || 0;
+    let m = parseInt(minutsEl.value, 10) || 0;
+
+    if (h % 1 !== 0) {
+      const decimals = h - Math.floor(h);
+      h = Math.floor(h);
+      m = Math.round(m + (decimals * 60));
+    }
+    if (m >= 60) {
+      h += Math.floor(m / 60);
+      m = m % 60;
+      horesEl.value = h;
+      minutsEl.value = m;
+    }
+
+    const mStr = String(m).padStart(2, '0');
+    const textHores = h === 1 ? '1 hora' : `${h} hores`;
+    const textMinuts = m === 1 ? '1 minut' : `${m} minuts`;
+    let desc = '';
+    if (h > 0 && m > 0) {
+      desc = `${textHores} i ${textMinuts}`;
+    } else if (h > 0) {
+      desc = textHores;
+    } else {
+      desc = textMinuts;
+    }
+
+    previewEl.innerHTML = `Total a sumar: <strong>${desc}</strong> <span style="color:#6B7280; font-weight:normal;">(${h}:${mStr}h)</span>`;
+
+    if (concepteEl && (!concepteEl.value || concepteEl.value.startsWith('Pack ') || concepteEl.value.includes('Hores'))) {
+      concepteEl.value = m > 0 ? `Pack ${h}h ${m}m` : `Pack ${h} Hores`;
+    }
+  }
+
+  window.setPaquetMinuts = function(min) {
+    const minutsEl = document.getElementById('paquet-form-minuts');
+    if (minutsEl) {
+      minutsEl.value = min;
+      updatePaquetTempsPreview();
+    }
+  };
+
+  document.getElementById('paquet-form-hores')?.addEventListener('input', updatePaquetTempsPreview);
+  document.getElementById('paquet-form-minuts')?.addEventListener('input', updatePaquetTempsPreview);
+
   // Formulari Paquet Submit
   document.getElementById('form-paquet').addEventListener('submit', async (e) => {
     e.preventDefault();
     const studentId = document.getElementById('paquet-form-student-id').value;
-    const hores = parseFloat(document.getElementById('paquet-form-hores').value);
-    const concepte = document.getElementById('paquet-form-concepte').value;
+    const horesInput = parseFloat(document.getElementById('paquet-form-hores').value) || 0;
+    const minutsInput = parseInt(document.getElementById('paquet-form-minuts')?.value || '0', 10) || 0;
+
+    let h = Math.floor(horesInput);
+    let m = minutsInput + Math.round((horesInput - h) * 60);
+    const totalMinuts = (h * 60) + m;
+    const totalHores = totalMinuts / 60;
+
+    if (totalMinuts <= 0) {
+      showToast('Cal indicar un temps superior a 0 minuts.', 'warning');
+      return;
+    }
+
+    const concepte = document.getElementById('paquet-form-concepte').value || (m > 0 ? `Pack ${h}h ${m}m` : `Pack ${h} Hores`);
     const preu = parseFloat(document.getElementById('paquet-form-preu').value) || 0;
     const metode = document.getElementById('paquet-form-metode').value;
     const data = document.getElementById('paquet-form-data').value ? new Date(document.getElementById('paquet-form-data').value).toISOString() : new Date().toISOString();
 
     try {
-      const res = await Store.addPackage({ studentId, hores, concepte, preu, metodePagament: metode, data });
+      const res = await Store.addPackage({ studentId, hores: totalHores, concepte, preu, metodePagament: metode, data });
       showToast(res.message, 'success');
       document.getElementById('modal-paquet-backdrop').classList.remove('active');
       await refreshStudentsList();

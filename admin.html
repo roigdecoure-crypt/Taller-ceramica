@@ -1764,8 +1764,34 @@
           <input type="text" id="paquet-form-student-name" class="form-control" readonly style="background:#F5F2ED;">
         </div>
         <div class="form-group">
-          <label>Quantitat d'Hores a Sumar * (mínim 4h)</label>
-          <input type="number" step="0.5" min="4" value="4" id="paquet-form-hores" class="form-control" required placeholder="ex: 4">
+          <label style="font-weight: 700; color: #374151; margin-bottom: 6px; display: block;">Temps d'Hores i Minuts a Sumar *</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label for="paquet-form-hores" style="font-size: 11.5px; font-weight: 600; color: #4B5563; display: block; margin-bottom: 3px;">Hores:</label>
+              <div style="position: relative;">
+                <input type="number" min="0" max="200" step="1" value="4" id="paquet-form-hores" class="form-control" required style="padding-right: 30px; font-size: 14px; font-weight: 600;">
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #9CA3AF; pointer-events: none;">h</span>
+              </div>
+            </div>
+            <div>
+              <label for="paquet-form-minuts" style="font-size: 11.5px; font-weight: 600; color: #4B5563; display: block; margin-bottom: 3px;">Minuts concrets:</label>
+              <div style="position: relative;">
+                <input type="number" min="0" max="59" step="1" value="0" id="paquet-form-minuts" class="form-control" required style="padding-right: 35px; font-size: 14px; font-weight: 600;">
+                <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #9CA3AF; pointer-events: none;">min</span>
+              </div>
+            </div>
+          </div>
+          <!-- Botons ràpids per minuts habituals -->
+          <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: #6B7280;">Minuts ràpids:</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setPaquetMinuts(0);" style="padding: 2px 7px; font-size: 11px; border-radius: 4px;">0m</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setPaquetMinuts(15);" style="padding: 2px 7px; font-size: 11px; border-radius: 4px;">15m</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setPaquetMinuts(30);" style="padding: 2px 7px; font-size: 11px; border-radius: 4px;">30m</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="setPaquetMinuts(45);" style="padding: 2px 7px; font-size: 11px; border-radius: 4px;">45m</button>
+          </div>
+          <div id="paquet-form-temps-preview" style="margin-top: 8px; font-size: 12.5px; font-weight: 600; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 6px 10px; border-radius: 6px;">
+            Total a sumar: 4 hores i 0 minuts (4:00h)
+          </div>
         </div>
         <div class="form-group">
           <label>Concepte</label>
@@ -3778,14 +3804,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=12.7.10"></script>
-  <script src="lib/html5-qrcode.min.js?v=12.7.10"></script>
-  <script src="js/time-utils.js?v=12.7.10"></script>
-  <script src="js/sound.js?v=12.7.10"></script>
-  <script src="js/qr-engine.js?v=12.7.10"></script>
-  <script src="js/api-config.js?v=12.7.10"></script>
-  <script src="js/store.js?v=12.7.10"></script>
-  <script src="js/reserves-calendar.js?v=12.7.10"></script>
-  <script src="js/admin.js?v=12.7.10"></script>
+  <script src="lib/qrcode.min.js?v=12.7.11"></script>
+  <script src="lib/html5-qrcode.min.js?v=12.7.11"></script>
+  <script src="js/time-utils.js?v=12.7.11"></script>
+  <script src="js/sound.js?v=12.7.11"></script>
+  <script src="js/qr-engine.js?v=12.7.11"></script>
+  <script src="js/api-config.js?v=12.7.11"></script>
+  <script src="js/store.js?v=12.7.11"></script>
+  <script src="js/reserves-calendar.js?v=12.7.11"></script>
+  <script src="js/admin.js?v=12.7.11"></script>
 </body>
 </html>
