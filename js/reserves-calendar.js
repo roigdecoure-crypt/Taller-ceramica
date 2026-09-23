@@ -788,7 +788,7 @@ class ReservesCalendar {
           <select id="modal-booking-student-select" class="form-control" style="font-size:13px;" required>
             <option value="">-- Selecciona de la llista o introdueix-ne un de nou --</option>
             ${this.allStudents.map(s => `
-              <option value="${s.id}" data-nom="${s.nom} ${s.cognoms || ''}" data-tel="${s.telefon || ''}">
+              <option value="${s.id}" data-nom="${s.nom} ${s.cognoms || ''}" data-tel="${s.telefon || ''}" data-email="${s.email || ''}">
                 ${s.id} - ${s.nom} ${s.cognoms || ''} ${s.telefon ? `(${s.telefon})` : ''}
               </option>
             `).join('')}
@@ -797,15 +797,19 @@ class ReservesCalendar {
         </div>
 
         <div id="modal-booking-manual-inputs" style="display:none; background:#F8F9FA; border:1px dashed var(--color-border); border-radius:var(--radius-sm); padding:10px; margin-bottom:12px;">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
             <div>
-              <label style="font-size:11px; font-weight:700;">Nom complet</label>
+              <label style="font-size:11px; font-weight:700;">Nom complet *</label>
               <input type="text" id="modal-booking-manual-name" class="form-control" placeholder="ex. Anna Serra" style="font-size:12px; padding:6px 10px;">
             </div>
             <div>
               <label style="font-size:11px; font-weight:700;">Telèfon / WhatsApp</label>
               <input type="tel" id="modal-booking-manual-phone" class="form-control" placeholder="600 000 000" style="font-size:12px; padding:6px 10px;">
             </div>
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700;">Correu electrònic (per a confirmació i recordatoris)</label>
+            <input type="email" id="modal-booking-manual-email" class="form-control" placeholder="client@correu.com" style="font-size:12px; padding:6px 10px;">
           </div>
         </div>
       `;
@@ -979,9 +983,11 @@ class ReservesCalendar {
           submitBtn.textContent = 'Confirmar Reserva';
           return;
         }
+        let studentEmail = '';
         if (val === 'NOU_CLIENT') {
           const mName = modalBackdrop.querySelector('#modal-booking-manual-name')?.value?.trim();
           const mPhone = modalBackdrop.querySelector('#modal-booking-manual-phone')?.value?.trim();
+          const mEmail = modalBackdrop.querySelector('#modal-booking-manual-email')?.value?.trim();
           if (!mName) {
             alert('Cal introduir el nom complet del client.');
             submitBtn.disabled = false;
@@ -991,11 +997,13 @@ class ReservesCalendar {
           studentId = `CLI-${Date.now().toString().slice(-4)}`;
           studentNom = mName;
           studentTel = mPhone || '';
+          studentEmail = mEmail || '';
         } else {
           studentId = val;
           const opt = studentSelect.options[studentSelect.selectedIndex];
           studentNom = opt.dataset.nom || val;
           studentTel = opt.dataset.tel || '';
+          studentEmail = opt.dataset.email || '';
         }
       } else {
         // Mode alumne
@@ -1003,6 +1011,7 @@ class ReservesCalendar {
           studentId = this.currentStudent.alumne.id;
           studentNom = `${this.currentStudent.alumne.nom} ${this.currentStudent.alumne.cognoms || ''}`.trim();
           studentTel = this.currentStudent.alumne.telefon || '';
+          studentEmail = this.currentStudent.alumne.email || '';
         } else {
           studentId = 'ALUMNE';
           studentNom = 'Alumne Roig de Coure';
@@ -1027,6 +1036,7 @@ class ReservesCalendar {
           student_id: studentId,
           student_nom: studentNom,
           telefon: studentTel,
+          email: studentEmail,
           data: this.selectedDate,
           franja_id: franja.id,
           franja: franja.id,
@@ -1067,6 +1077,7 @@ class ReservesCalendar {
                 student_id: studentId,
                 student_nom: studentNom,
                 telefon: studentTel,
+                email: studentEmail,
                 data: this.selectedDate,
                 franja_id: franja.id,
                 franja: franja.id,

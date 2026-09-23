@@ -848,6 +848,9 @@ async function openConfigModal() {
     if (document.getElementById('cfg-whatsapp-phone-id')) {
       document.getElementById('cfg-whatsapp-phone-id').value = cfg.whatsapp_meta_phone_id || '';
     }
+    if (document.getElementById('cfg-whapi-token')) {
+      document.getElementById('cfg-whapi-token').value = cfg.whapi_token || 'uc82FwVjn27AqjqD6Mby2vFBzrbp7P7w';
+    }
     if (document.getElementById('cfg-whatsapp-token')) {
       document.getElementById('cfg-whatsapp-token').value = cfg.whatsapp_meta_token || '';
     }
@@ -860,10 +863,69 @@ async function openConfigModal() {
     if (document.getElementById('cfg-whatsapp-tpl-dia')) {
       document.getElementById('cfg-whatsapp-tpl-dia').value = cfg.whatsapp_meta_template_dia || 'recordatori_dia';
     }
+
+    // Plantilles personalitzades de Notificacions (Email i WhatsApp)
+    const setVal = (id, val, fallback) => {
+      const el = document.getElementById(id);
+      if (el) el.value = (val != null && String(val).trim() !== '') ? val : fallback;
+    };
+    setVal('cfg-tpl-confirm-email-subj', cfg.notif_confirm_email_subj, 'Confirmació de Reserva: {data} a les {hora}h - {taller_nom}');
+    setVal('cfg-tpl-confirm-email-body', cfg.notif_confirm_email_body, `<p>Hola <strong>{nom}</strong>,</p>
+<p>La teva reserva al taller ha estat confirmada correctament:</p>
+<ul>
+  <li>📅 <strong>Data:</strong> {data}</li>
+  <li>⏰ <strong>Horari:</strong> {hora}h - {hora_fi}h</li>
+  <li>🎨 <strong>Activitat:</strong> {activitat}</li>
+  <li>👥 <strong>Places:</strong> {places}</li>
+  <li>⏳ <strong>Balanç pack:</strong> {saldo_hores} hores restants</li>
+</ul>
+<p>Recorda portar roba còmoda per treballar el fang.</p>
+<p>Si necessites modificar o cancel·lar la teva cita, pots fer-ho directament aquí:</p>
+<div style="margin: 18px 0;">
+  <a href="{enllac_canviar}" style="background: #831D1D; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🔄 Canviar dia o hora</a>
+  <a href="{enllac_cancel}" style="background: #fff; color: #b91c1c; border: 1.5px solid #b91c1c; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-left: 10px;">❌ Cancel·lar reserva</a>
+</div>`);
+    setVal('cfg-tpl-confirm-wa', cfg.notif_confirm_wa, 'Hola {nom}! T\'hem confirmat la teva reserva a {taller_nom} pel dia {data} a les {hora}h ({activitat}). Per canviar o cancel·lar: {enllac_cancel}');
+
+    setVal('cfg-tpl-48h-email-subj', cfg.notif_48h_email_subj, 'Recordatori de Reserva (48h): Ens veiem el {data} a les {hora}h!');
+    setVal('cfg-tpl-48h-email-body', cfg.notif_48h_email_body, `<p>Hola <strong>{nom}</strong>,</p>
+<p>Et recordem que d'aquí a <strong>48 hores</strong> tens classe de ceràmica al taller:</p>
+<ul>
+  <li>📅 <strong>Data:</strong> {data} a les {hora}h ({activitat})</li>
+</ul>
+<p>Si no pots assistir, agraïm que alliberis la plaça com abans millor:</p>
+<div style="margin: 18px 0;">
+  <a href="{enllac_canviar}" style="background: #831D1D; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🔄 Canviar dia</a>
+  <a href="{enllac_cancel}" style="background: #fff; color: #b91c1c; border: 1.5px solid #b91c1c; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-left: 10px;">❌ Cancel·lar reserva</a>
+</div>`);
+    setVal('cfg-tpl-48h-wa', cfg.notif_48h_wa, 'Hola {nom}! Recordatori: d\'aquí a 48h tens classe a {taller_nom} el dia {data} a les {hora}h ({activitat}). Per canviar o cancel·lar: {enllac_cancel}');
+
+    setVal('cfg-tpl-dia-email-subj', cfg.notif_dia_email_subj, 'Avui tens classe de ceràmica a les {hora}h! - {taller_nom}');
+    setVal('cfg-tpl-dia-email-body', cfg.notif_dia_email_body, `<p>Hola <strong>{nom}</strong>,</p>
+<p>T'esperem <strong>avui mateix a les {hora}h</strong> per a la teva sessió de ceràmica ({activitat})!</p>
+<p>Si tens qualsevol imprevist d'última hora, contacta'ns o pots cancel·lar aquí:</p>
+<div style="margin: 15px 0;">
+  <a href="{enllac_cancel}" style="background: #b91c1c; color: #ffffff; padding: 9px 16px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Gestionar o cancel·lar cita</a>
+</div>`);
+    setVal('cfg-tpl-dia-wa', cfg.notif_dia_wa, 'Hola {nom}! T\'esperem avui a les {hora}h al taller ({activitat}). Si tens cap imprevist: {enllac_cancel}');
   } catch (e) {
     console.warn('Avís carregant dades de configuració:', e);
   }
 }
+
+window.switchTplTab = function(tab) {
+  ['confirm', '48h', 'dia'].forEach(t => {
+    const p = document.getElementById('tpl-panel-' + t);
+    const b = document.getElementById('btn-tpl-tab-' + t);
+    if (p) p.style.display = (t === tab) ? 'block' : 'none';
+    if (b) {
+      b.style.background = (t === tab) ? '#831D1D' : '#F3ECE6';
+      b.style.color = (t === tab) ? '#FFF' : '#555';
+      b.style.fontWeight = (t === tab) ? '700' : '600';
+    }
+  });
+};
+
 
 function closeConfigModal() {
   if (typeof closeAnyModal === 'function') {
@@ -1682,12 +1744,23 @@ function setupEventListeners() {
       google_sheets_url: document.getElementById('cfg-sheets-url').value,
       google_calendar_name: document.getElementById('cfg-calendar-name') ? document.getElementById('cfg-calendar-name').value.trim() : 'reserves',
       whatsapp_enabled: document.getElementById('cfg-whatsapp-enabled')?.checked ? '1' : '0',
+      whapi_token: document.getElementById('cfg-whapi-token')?.value.trim() || 'uc82FwVjn27AqjqD6Mby2vFBzrbp7P7w',
       whatsapp_meta_phone_id: document.getElementById('cfg-whatsapp-phone-id')?.value.trim() || '',
       whatsapp_meta_token: document.getElementById('cfg-whatsapp-token')?.value.trim() || '',
       whatsapp_meta_template_confirmacio: document.getElementById('cfg-whatsapp-tpl-confirm')?.value.trim() || 'reserva_confirmada',
       whatsapp_meta_template_48h: document.getElementById('cfg-whatsapp-tpl-48h')?.value.trim() || 'recordatori_48h',
-      whatsapp_meta_template_dia: document.getElementById('cfg-whatsapp-tpl-dia')?.value.trim() || 'recordatori_dia'
+      whatsapp_meta_template_dia: document.getElementById('cfg-whatsapp-tpl-dia')?.value.trim() || 'recordatori_dia',
+      notif_confirm_email_subj: document.getElementById('cfg-tpl-confirm-email-subj')?.value.trim() || '',
+      notif_confirm_email_body: document.getElementById('cfg-tpl-confirm-email-body')?.value.trim() || '',
+      notif_confirm_wa: document.getElementById('cfg-tpl-confirm-wa')?.value.trim() || '',
+      notif_48h_email_subj: document.getElementById('cfg-tpl-48h-email-subj')?.value.trim() || '',
+      notif_48h_email_body: document.getElementById('cfg-tpl-48h-email-body')?.value.trim() || '',
+      notif_48h_wa: document.getElementById('cfg-tpl-48h-wa')?.value.trim() || '',
+      notif_dia_email_subj: document.getElementById('cfg-tpl-dia-email-subj')?.value.trim() || '',
+      notif_dia_email_body: document.getElementById('cfg-tpl-dia-email-body')?.value.trim() || '',
+      notif_dia_wa: document.getElementById('cfg-tpl-dia-wa')?.value.trim() || ''
     };
+
     try {
       await Store.saveConfig(newCfg);
       showToast('Configuració desada correctament', 'success');
@@ -3085,6 +3158,15 @@ async function renderAdminCalendarMonth() {
         `;
       }
 
+      const hasConfirmedRes = dayRes.some(r => r.whatsapp_client_status === 'confirmat' || r.client_confirmat === 1 || r.estat === 'confirmada_client');
+      if (hasConfirmedRes) {
+        badgesHtml += `
+          <div style="margin-top: 2px; text-align: left;">
+            <span class="badge" style="background: #10B981; color: #FFFFFF; font-weight: 800; font-size: 9px; padding: 1px 4px; border-radius: 3px; display: inline-flex; align-items: center; gap: 2px;" title="Té reserves confirmades pel client via WhatsApp">🟢 Confirmada</span>
+          </div>
+        `;
+      }
+
       badgesHtml += `</div>`;
     }
     if (isClosed && count === 0) {
@@ -3230,11 +3312,17 @@ async function renderAdminCalendarWeek() {
         const timeLabel = r.hora_inici ? (r.hora_fi ? `${r.hora_inici}-${r.hora_fi}` : r.hora_inici) : '';
         const placesText = (r.places && parseInt(r.places, 10) > 1) ? ` (${r.places} pl.)` : '';
 
+        const isWConf = r.whatsapp_client_status === 'confirmat' || r.client_confirmat === 1 || r.estat === 'confirmada_client';
+        const isWCanc = r.whatsapp_client_status === 'cancelat' || (r.estat && r.estat.toLowerCase().startsWith('cancel'));
+
         eventsHtml += `
           <div class="cal-week-event-card" style="border-left-color: ${borderCol};" title="${escapeHtml(r.student_nom || 'Reserva')} - ${escapeHtml(act)}${placesText}">
             <div style="display: flex; justify-content: space-between; align-items: baseline;">
               <span class="ev-time">${escapeHtml(timeLabel)}</span>
-              <span style="font-size: 9px; color: ${borderCol}; font-weight: 700;">${escapeHtml(act.substring(0, 4))}</span>
+              <div style="display: flex; gap: 3px; align-items: center;">
+                ${isWConf ? `<span style="font-size: 8.5px; background: #10B981; color: #FFFFFF; padding: 1px 4px; border-radius: 3px; font-weight: 800;">🟢</span>` : (isWCanc ? `<span style="font-size: 8.5px; background: #EF4444; color: #FFFFFF; padding: 1px 4px; border-radius: 3px; font-weight: 800;">🔴</span>` : '')}
+                <span style="font-size: 9px; color: ${borderCol}; font-weight: 700;">${escapeHtml(act.substring(0, 4))}</span>
+              </div>
             </div>
             <div class="ev-name">${escapeHtml(r.student_nom || 'Alumne')}${placesText}</div>
           </div>
@@ -3359,15 +3447,29 @@ async function renderAdminCalendarDay() {
 
         const plText = (r.places && parseInt(r.places, 10) > 1) ? `${r.places} places` : `1 plaça`;
 
+        const isClientConf = r.whatsapp_client_status === 'confirmat' || r.client_confirmat === 1 || r.estat === 'confirmada_client';
+        const isClientCanc = r.whatsapp_client_status === 'cancelat' || (r.estat && r.estat.toLowerCase().startsWith('cancel'));
+        let clientStatusPill = '';
+        if (isClientConf) {
+          clientStatusPill = `<span class="badge" style="background: #10B981; color: #FFFFFF; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border-radius: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.3);">🟢 Confirmada</span>`;
+        } else if (isClientCanc) {
+          clientStatusPill = `<span class="badge" style="background: #EF4444; color: #FFFFFF; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border-radius: 4px; box-shadow: 0 1px 2px rgba(239,68,68,0.3);">🔴 Cancel·lada</span>`;
+        } else {
+          clientStatusPill = `<span class="badge" style="background: #F59E0B; color: #FFFFFF; font-weight: 700; font-size: 10.5px; padding: 2px 7px; border-radius: 4px; box-shadow: 0 1px 2px rgba(245,158,11,0.3);">🟡 Pendent</span>`;
+        }
+
         itemsHtml += `
           <div class="cal-day-slot-event-item" style="border-left-color: ${borderCol};">
             <div class="cal-day-slot-event-info">
               <span class="cal-day-slot-event-name">${escapeHtml(r.student_nom || 'Alumne')}</span>
-              <span class="cal-day-slot-event-sub">${escapeHtml(act)} \u2022 ${plText} \u2022 Tel: ${escapeHtml(r.telefon || 'Sense telèfon')}</span>
+              <span class="cal-day-slot-event-sub">${escapeHtml(act)} &bull; ${plText} &bull; Tel: ${escapeHtml(r.telefon || 'Sense telèfon')}</span>
             </div>
-            <span style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${borderCol}18; color: ${borderCol};">
-              ${escapeHtml(act)}
-            </span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${clientStatusPill}
+              <span style="font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${borderCol}18; color: ${borderCol};">
+                ${escapeHtml(act)}
+              </span>
+            </div>
           </div>
         `;
       });
@@ -3620,13 +3722,24 @@ async function renderAdminDayAppointments(dateStr) {
       }
     }
 
+    const isClientConf = r.whatsapp_client_status === 'confirmat' || r.client_confirmat === 1 || r.estat === 'confirmada_client';
+    const isClientCanc = r.whatsapp_client_status === 'cancelat' || (r.estat && r.estat.toLowerCase().startsWith('cancel'));
+    let clientStatusBadge = '';
+    if (isClientConf) {
+      clientStatusBadge = `<span class="badge" style="background: #10B981; color: #FFFFFF; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(16,185,129,0.3); display: inline-flex; align-items: center; gap: 4px;" title="El client ha premut [✅ Confirmar] per WhatsApp">🟢 Confirmada</span>`;
+    } else if (isClientCanc) {
+      clientStatusBadge = `<span class="badge" style="background: #EF4444; color: #FFFFFF; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(239,68,68,0.3); display: inline-flex; align-items: center; gap: 4px;" title="El client ha premut [❌ Cancel·lar] per WhatsApp">🔴 Cancel·lada</span>`;
+    } else {
+      clientStatusBadge = `<span class="badge" style="background: #F59E0B; color: #FFFFFF; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(245,158,11,0.3); display: inline-flex; align-items: center; gap: 4px;" title="Pendent que el client respongui al WhatsApp">🟡 Pendent</span>`;
+    }
+
     return `
       <tr style="${isCancelled ? 'opacity: 0.55; text-decoration: line-through;' : ''}">
         <td style="font-weight: 700; color: #6B7280; font-size: 12px; width: 32px;">${idx + 1}</td>
         <td>
           <div class="app-client-name">${clientNom}</div>
           <div class="app-slot-desc">
-            ${slotDesc} &bull; ${actBadge} ${placesBadge} ${valRegalBadge} ${recurrentBadge} ${bestretaBadge}
+            ${slotDesc} &bull; ${actBadge} ${placesBadge} ${clientStatusBadge} ${valRegalBadge} ${recurrentBadge} ${bestretaBadge}
             ${r.notes ? `&bull; <span style="font-style: italic; color: #6B7280;">"${r.notes}"</span>` : ''}
           </div>
         </td>
@@ -3635,7 +3748,7 @@ async function renderAdminDayAppointments(dateStr) {
             <input type="checkbox" class="app-visited-checkbox" data-res-id="${r.id}" ${isVisited ? 'checked' : ''} ${isCancelled ? 'disabled' : ''}>
             <span>Visited</span>
           </label>
-          <div style="margin-top: 3px;">
+          <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 3px; align-items: center;">
             <span class="badge ${isVisited ? 'badge-success' : (isCancelled ? 'badge-danger' : 'badge-neutral')}" style="font-size: 10px; padding: 2px 6px;">
               ${isVisited ? 'Assistit' : (isCancelled ? 'Cancel·lada' : 'Pendent')}
             </span>

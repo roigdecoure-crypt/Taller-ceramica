@@ -1866,6 +1866,215 @@ def send_whatsapp_direct(to_phone, message_text):
         print(f"[WhatsApp Direct] Error: {e}")
         return {'ok': False, 'error': str(e)}
 
+def send_whatsapp_whapi(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
+    """
+    Envia missatge de WhatsApp mitjançant la passarel·la Whapi.cloud (QR vinculat a WhatsApp).
+    Suporta botons interactius ([✅ Confirmar], [❌ Cancel·lar]) i capçalera amb logo oficial de Roig de Coure.
+    Sense dependència de Facebook ni Meta Developers.
+    """
+    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    if not phone_clean:
+        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
+
+    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
+        phone_clean = '34' + phone_clean
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT valor FROM configuracio WHERE clau = 'whapi_token'")
+        r_tok = cursor.fetchone()
+        token = (r_tok['valor'] or '').strip() if r_tok else ''
+
+    if not token:
+        token = 'uc82FwVjn27AqjqD6Mby2vFBzrbp7P7w'
+
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'User-Agent': 'TallerCeramicaBackend/1.0'
+    }
+
+    logo_url = 'https://roigdecoure.cat/img/logo-bowl.png'
+
+    # Si tenim ID de reserva i volem botons interactius de WhatsApp
+    if res_id and include_buttons:
+        clean_res_id = str(res_id).strip()
+        url_interactive = 'https://gate.whapi.cloud/messages/interactive'
+        payload_interactive = {
+            'to': phone_clean,
+            'type': 'button',
+            'body': {
+                'text': message_text
+            },
+            'action': {
+                'buttons': [
+                    {'type': 'quick_reply', 'id': f'confirm_{clean_res_id}', 'title': '✅ Confirmar'},
+                    {'type': 'quick_reply', 'id': f'cancel_{clean_res_id}', 'title': '❌ Cancel·lar'}
+                ]
+            }
+        }
+        if send_logo:
+            payload_interactive['header'] = {
+                'type': 'image',
+                'image': {
+                    'link': logo_url
+                }
+            }
+
+        try:
+            data_bytes = json.dumps(payload_interactive, ensure_ascii=False).encode('utf-8')
+            req = urllib.request.Request(url_interactive, data=data_bytes, headers=headers, method='POST')
+            with execute_safe_request(req, timeout=15) as resp:
+                res_json = json.loads(resp.read().decode('utf-8'))
+                print(f"[Whapi WhatsApp] Missatge interactiu enviat amb èxit a {phone_clean} (Reserva: {clean_res_id})")
+                return {'ok': True, 'response': res_json, 'destinatari': phone_clean, 'type': 'interactive'}
+        except Exception as e_inter:
+            print(f"[Whapi WhatsApp] Advertència en enviar interactiu: {e_inter}. Fent fallback a text normal...")
+
+    # Enviament de text estàndard si no s'utilitzen botons o si ha fallat l'interactiu
+    url_text = 'https://gate.whapi.cloud/messages/text'
+    payload_text = {
+        'to': phone_clean,
+        'body': message_text
+    }
+
+    try:
+        data_bytes = json.dumps(payload_text, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(url_text, data=data_bytes, headers=headers, method='POST')
+        with execute_safe_request(req, timeout=15) as resp:
+            res_json = json.loads(resp.read().decode('utf-8'))
+            print(f"[Whapi WhatsApp] Missatge enviat amb èxit a {phone_clean}")
+            return {'ok': True, 'response': res_json, 'destinatari': phone_clean, 'type': 'text'}
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='ignore')
+        print(f"[Whapi WhatsApp] HTTP Error {e.code}: {err_body}")
+        return {'ok': False, 'error': f"HTTP {e.code}: {err_body}"}
+    except Exception as e:
+        print(f"[Whapi WhatsApp] Error: {e}")
+        return {'ok': False, 'error': str(e)}
+
+def send_whatsapp_whapi_async(to_phone, message_text, on_success_cb=None, res_id=None, include_buttons=True, send_logo=True):
+    def _worker():
+        res = send_whatsapp_whapi(to_phone, message_text, res_id=res_id, include_buttons=include_buttons, send_logo=send_logo)
+        if res.get('ok') and callable(on_success_cb):
+            try:
+                on_success_cb(res)
+            except Exception as ex:
+                print(f"[Whapi Callback Error]: {ex}")
+    threading.Thread(target=_worker, daemon=True).start()
+
+_processed_whapi_msg_ids = set()
+
+def sync_whapi_inbound_messages():
+    """
+    Sincronitza els missatges i respostes entrants de WhatsApp des de Whapi.cloud.
+    Processa els clics als botons [✅ Confirmar] i [❌ Cancel·lar] fets pels clients.
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT valor FROM configuracio WHERE clau = 'whapi_token'")
+        r_tok = cursor.fetchone()
+        token = (r_tok['valor'] or '').strip() if r_tok else ''
+
+    if not token:
+        token = 'uc82FwVjn27AqjqD6Mby2vFBzrbp7P7w'
+
+    url = 'https://gate.whapi.cloud/messages/list?count=25'
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'User-Agent': 'TallerCeramicaBackend/1.0'
+    }
+
+    try:
+        req = urllib.request.Request(url, headers=headers, method='GET')
+        with execute_safe_request(req, timeout=12) as resp:
+            res_data = json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+    messages = res_data.get('messages', [])
+    processed_count = 0
+
+    for m in messages:
+        msg_id = m.get('id')
+        if not msg_id or msg_id in _processed_whapi_msg_ids:
+            continue
+        if m.get('from_me'):
+            _processed_whapi_msg_ids.add(msg_id)
+            continue
+
+        reply = m.get('reply') or {}
+        btn_reply = reply.get('buttons_reply') or {}
+        btn_id = (btn_reply.get('id') or '').replace('ButtonsV3:', '').strip()
+        btn_title = (btn_reply.get('title') or '').lower().strip()
+        sender_phone = re.sub(r'[^0-9]', '', str(m.get('from') or ''))
+
+        text_body = ((m.get('text') or {}).get('body') or '').lower().strip()
+
+        is_confirm = btn_id.startswith('confirm_') or ('confirm' in btn_title) or (text_body in ('confirmar', 'confirmo', 'si, confirmo', 'sí, confirmo', 'confirmat', 'ok'))
+        is_cancel = btn_id.startswith('cancel_') or ('cancel' in btn_title) or (text_body in ('cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré'))
+
+        target_res_id = None
+        if btn_id.startswith('confirm_'):
+            target_res_id = btn_id.replace('confirm_', '').strip()
+        elif btn_id.startswith('cancel_'):
+            target_res_id = btn_id.replace('cancel_', '').strip()
+
+        # Si no tenim res_id al botó però tenim el telèfon del client, busquem la seva reserva més propera
+        if not target_res_id and (is_confirm or is_cancel) and sender_phone:
+            with get_db() as conn:
+                cur = conn.cursor()
+                tel_short = sender_phone[-9:] if len(sender_phone) >= 9 else sender_phone
+                cur.execute("""
+                    SELECT id FROM reserves 
+                    WHERE (telefon LIKE ? OR telefon LIKE ?)
+                      AND estat NOT IN ('cancel·lada', 'assistit')
+                    ORDER BY data ASC, hora_inici ASC LIMIT 1
+                """, (f"%{tel_short}%", f"%{sender_phone}%"))
+                cand = cur.fetchone()
+                if cand:
+                    target_res_id = cand['id']
+
+        if target_res_id and (is_confirm or is_cancel):
+            with get_db() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT * FROM reserves WHERE id = ?", (target_res_id,))
+                res_row = cur.fetchone()
+
+                if res_row:
+                    res_dict = row_to_dict(res_row)
+                    if is_confirm:
+                        cur.execute("""
+                            UPDATE reserves 
+                            SET whatsapp_client_status = 'confirmat', 
+                                client_confirmat = 1, 
+                                whatsapp_client_at = CURRENT_TIMESTAMP 
+                            WHERE id = ?
+                        """, (target_res_id,))
+                        conn.commit()
+                        print(f"[Whapi WhatsApp] Reserva {target_res_id} CONFIRMADA pel client ({sender_phone})")
+                        send_whatsapp_whapi_async(sender_phone, "✅ *Gràcies per confirmar la teva assistència!*\nT'esperem al taller Roig de Coure. Si necessites cap modificació, respon a aquest xat.", None, None, False, False)
+                    elif is_cancel:
+                        cur.execute("""
+                            UPDATE reserves 
+                            SET estat = 'cancel·lada', 
+                                whatsapp_client_status = 'cancelat', 
+                                whatsapp_client_at = CURRENT_TIMESTAMP 
+                            WHERE id = ?
+                        """, (target_res_id,))
+                        conn.commit()
+                        res_dict['estat'] = 'cancel·lada'
+                        print(f"[Whapi WhatsApp] Reserva {target_res_id} CANCEL·LADA pel client ({sender_phone})")
+                        sync_to_google_sheets_async('cancel_reserva', res_dict)
+                        trigger_n8n_event_async('reserva_cancelada', res_dict)
+                        send_whatsapp_whapi_async(sender_phone, "❌ *Reserva cancel·lada correctament.*\nHem alliberat la teva plaça. Esperem veure't en una altra ocasió!", None, None, False, False)
+
+            processed_count += 1
+
+        _processed_whapi_msg_ids.add(msg_id)
+
+    return {'ok': True, 'processed': processed_count}
+
 def send_whatsapp_meta_async(to_phone, template_name, parameters=None, language_code='ca', on_success_cb=None):
     def _worker():
         res = send_whatsapp_meta(to_phone, template_name, parameters, language_code)
@@ -1877,7 +2086,188 @@ def send_whatsapp_meta_async(to_phone, template_name, parameters=None, language_
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
 
+DEFAULT_NOTIFICATION_TEMPLATES = {
+    'confirm_subj': 'Confirmació de Reserva: {data} a les {hora}h - {taller_nom}',
+    'confirm_email': '''<p>Hola <strong>{nom}</strong>,</p>
+<p>La teva reserva al taller ha estat confirmada correctament:</p>
+<div style="background: #faf7f2; border: 1px solid #e0d5c1; border-radius: 8px; padding: 14px 18px; margin: 15px 0;">
+  <p style="margin: 4px 0;">📅 <strong>Data:</strong> {data}</p>
+  <p style="margin: 4px 0;">⏰ <strong>Horari:</strong> {hora}h - {hora_fi}h</p>
+  <p style="margin: 4px 0;">🎨 <strong>Activitat:</strong> {activitat}</p>
+  <p style="margin: 4px 0;">👥 <strong>Places:</strong> {places}</p>
+  <p style="margin: 4px 0;">⏳ <strong>Balanç pack:</strong> {saldo_hores} hores restants</p>
+</div>
+<p>Recorda portar roba còmoda que es pugui embrutar una mica de fang.</p>
+<p style="margin-top: 18px;">Si necessites modificar o cancel·lar la teva cita, pots fer-ho directament amb aquests botons:</p>
+<div style="margin: 20px 0;">
+  <a href="{enllac_canviar}" style="background: #831D1D; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🔄 Canviar de dia o hora</a>
+  <a href="{enllac_cancel}" style="background: #ffffff; color: #b91c1c; border: 1.5px solid #b91c1c; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-left: 10px;">❌ Cancel·lar reserva</a>
+</div>
+<p style="color: #7d6b5c; font-size: 13px; margin-top: 25px;">Taller de Ceràmica {taller_nom} &bull; Tel: {taller_telefon}</p>''',
+    'confirm_wa': 'Hola {nom}! T\'hem confirmat la teva reserva a {taller_nom} pel dia {data} a les {hora}h ({activitat}). Per canviar o cancel·lar la teva cita: {enllac_cancel}',
+
+    '48h_subj': 'Recordatori de Reserva (48h): Ens veiem el {data} a les {hora}h!',
+    '48h_email': '''<p>Hola <strong>{nom}</strong>,</p>
+<p>Et recordem que d'aquí a <strong>48 hores</strong> tens classe de ceràmica al taller:</p>
+<div style="background: #faf7f2; border: 1px solid #e0d5c1; border-radius: 8px; padding: 14px 18px; margin: 15px 0;">
+  <p style="margin: 4px 0;">📅 <strong>Data:</strong> {data}</p>
+  <p style="margin: 4px 0;">⏰ <strong>Horari:</strong> {hora}h</p>
+  <p style="margin: 4px 0;">🎨 <strong>Activitat:</strong> {activitat}</p>
+</div>
+<p>Si no pots assistir, si us plau allibera la plaça perquè un altre company la pugui aprofitar:</p>
+<div style="margin: 20px 0;">
+  <a href="{enllac_canviar}" style="background: #831D1D; color: #ffffff; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🔄 Canviar dia</a>
+  <a href="{enllac_cancel}" style="background: #ffffff; color: #b91c1c; border: 1.5px solid #b91c1c; padding: 10px 18px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-left: 10px;">❌ Cancel·lar reserva</a>
+</div>
+<p style="color: #7d6b5c; font-size: 13px; margin-top: 25px;">Taller de Ceràmica {taller_nom}</p>''',
+    '48h_wa': 'Hola {nom}! Recordatori: d\'aquí a 48h tens classe a {taller_nom} el dia {data} a les {hora}h ({activitat}). Per canviar o cancel·lar: {enllac_cancel}',
+
+    'dia_subj': 'Avui tens classe de ceràmica a les {hora}h! - {taller_nom}',
+    'dia_email': '''<p>Hola <strong>{nom}</strong>,</p>
+<p>T'esperem <strong>avui mateix a les {hora}h</strong> per a la teva sessió de ceràmica ({activitat})!</p>
+<p>Si tens qualsevol imprevist d'última hora, contacta'ns o pots cancel·lar aquí:</p>
+<div style="margin: 15px 0;">
+  <a href="{enllac_cancel}" style="background: #b91c1c; color: #ffffff; padding: 9px 16px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Gestionar o cancel·lar cita</a>
+</div>
+<p style="color: #7d6b5c; font-size: 13px; margin-top: 20px;">Fins d'aquí a una estona a {taller_nom}!</p>''',
+    'dia_wa': 'Hola {nom}! T\'esperem avui a les {hora}h al taller ({activitat}). Si tens cap imprevist: {enllac_cancel}'
+}
+
+def render_notification(event_name, r):
+    """
+    Renders custom notification templates from configuracio table with dynamic placeholders.
+    Returns { event, student_nom, email, telefon, email_assumpte, email_html, wa_missatge, wa_link, enllac_cancel, enllac_canviar }
+    """
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT clau, valor FROM configuracio WHERE clau LIKE 'notif_%' OR clau IN ('taller_nom', 'taller_telefon', 'site_url')")
+        cfg = {row['clau']: row['valor'] for row in cursor.fetchall()}
+
+    prefix = 'confirm'
+    if '48h' in event_name:
+        prefix = '48h'
+    elif 'dia' in event_name:
+        prefix = 'dia'
+
+    subj_tpl = cfg.get(f'notif_{prefix}_email_subj') or DEFAULT_NOTIFICATION_TEMPLATES[f'{prefix}_subj']
+    body_tpl = cfg.get(f'notif_{prefix}_email_body') or DEFAULT_NOTIFICATION_TEMPLATES[f'{prefix}_email']
+    wa_tpl = cfg.get(f'notif_{prefix}_wa') or DEFAULT_NOTIFICATION_TEMPLATES[f'{prefix}_wa']
+
+    taller_nom = cfg.get('taller_nom') or 'Roig de Coure'
+    taller_telefon = cfg.get('taller_telefon') or '+34 600 000 000'
+    base_url = (cfg.get('site_url') or '').strip().rstrip('/')
+    if not base_url:
+        base_url = 'https://roigdecoure.cat'
+
+    res_id = str(r.get('id') or '')
+    nom = r.get('student_nom') or 'Client'
+    data_res = r.get('data') or ''
+    hora_inici = r.get('hora_inici') or '10:00'
+    hora_fi = r.get('hora_fi') or '12:00'
+    act = r.get('activitat') or 'Torn Lliure'
+    places = str(r.get('places') or 1)
+    saldo = str(r.get('saldo_restant') if r.get('saldo_restant') is not None else '')
+    if not saldo or saldo == '--':
+        sid = r.get('student_id')
+        if sid and not str(sid).startswith('CLI-'):
+            try:
+                b_info = get_student_balance(sid)
+                if b_info and b_info.get('humanBalance'):
+                    saldo = b_info.get('humanBalance')
+            except Exception:
+                pass
+    if not saldo:
+        saldo = '--'
+
+    enllac_cancel = f"{base_url}/reserva.html?accio=cancel&id={urllib.parse.quote(res_id)}"
+    enllac_canviar = f"{base_url}/reserva.html"
+
+    replacements = {
+        '{nom}': nom,
+        '{data}': data_res,
+        '{hora}': hora_inici,
+        '{hora_fi}': hora_fi,
+        '{activitat}': act,
+        '{places}': places,
+        '{saldo_hores}': saldo,
+        '{enllac_cancel}': enllac_cancel,
+        '{enllac_canviar}': enllac_canviar,
+        '{taller_nom}': taller_nom,
+        '{taller_telefon}': taller_telefon
+    }
+
+    subj_rendered = subj_tpl
+    body_rendered = body_tpl
+    wa_rendered = wa_tpl
+    for k, v in replacements.items():
+        subj_rendered = subj_rendered.replace(k, str(v))
+        body_rendered = body_rendered.replace(k, str(v))
+        wa_rendered = wa_rendered.replace(k, str(v))
+
+    # Construir HTML corporatiu per a email
+    email_html = f'''<div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #e0d5c1; border-radius: 10px; background-color: #faf7f2; color: #2d251e; line-height: 1.6;">
+  <div style="border-bottom: 2px solid #831D1D; padding-bottom: 12px; margin-bottom: 20px;">
+    <h2 style="color: #831D1D; margin: 0; font-size: 24px;">{taller_nom}</h2>
+    <span style="font-size: 13px; color: #7d6b5c;">Taller de Ceràmica &bull; Notificació Oficial</span>
+  </div>
+  {body_rendered}
+</div>'''
+
+    tel_raw = re.sub(r'[^0-9]', '', str(r.get('telefon') or ''))
+    if len(tel_raw) == 9:
+        tel_raw = '34' + tel_raw
+    wa_url = f"https://wa.me/{tel_raw}?text={urllib.parse.quote(wa_rendered)}" if tel_raw else ''
+
+    return {
+        'event': event_name,
+        'id': res_id,
+        'student_id': r.get('student_id') or '',
+        'student_nom': nom,
+        'email': r.get('email') or '',
+        'telefon': r.get('telefon') or '',
+        'email_assumpte': subj_rendered,
+        'email_html': email_html,
+        'wa_missatge': wa_rendered,
+        'wa_link': wa_url,
+        'enllac_cancel': enllac_cancel,
+        'enllac_canviar': enllac_canviar,
+        'data': data_res,
+        'hora_inici': hora_inici,
+        'hora_fi': hora_fi,
+        'activitat': act,
+        'places': places,
+        'saldo_restant': saldo
+    }
+
+def trigger_n8n_event_async(event_name, payload):
+    """
+    Renderitza la plantilla personalitzada i envia l'esdeveniment a n8n Cloud.
+    Non-blocking / asíncron.
+    """
+    def _worker():
+        try:
+            rendered = render_notification(event_name, payload)
+            url = 'https://roigdecoure.app.n8n.cloud/webhook/taller-reserva-notificacio'
+            data_bytes = json.dumps(rendered, ensure_ascii=False).encode('utf-8')
+            req = urllib.request.Request(
+                url,
+                data=data_bytes,
+                headers={'Content-Type': 'application/json', 'User-Agent': 'TallerCeramicaBackend/1.0'},
+                method='POST'
+            )
+            with execute_safe_request(req, timeout=10) as resp:
+                if resp.status == 200:
+                    res_body = json.loads(resp.read().decode('utf-8'))
+                    print(f"[n8n Cloud] Notificació ({event_name}) enviada correctament a {rendered.get('student_nom')}")
+        except Exception as e:
+            print(f"[n8n Cloud] Avís en segon pla (no bloquejant): {e}")
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
+
 def start_whatsapp_scheduler():
+
     """Fil en segon pla per enviar avisos de WhatsApp (recordatori 48h i recordatori dia 8:00h)"""
     def _scheduler_loop():
         while True:
@@ -1897,7 +2287,7 @@ def start_whatsapp_scheduler():
                             SELECT * FROM reserves 
                             WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') 
                               AND (whatsapp_notif_dia IS NULL OR whatsapp_notif_dia = 0)
-                              AND telefon != ''
+                              AND (COALESCE(telefon, '') != '' OR COALESCE(email, '') != '')
                         """, (today_str,))
                         res_today = [row_to_dict(x) for x in cursor.fetchall()]
 
@@ -1905,11 +2295,31 @@ def start_whatsapp_scheduler():
                         nom = r.get('student_nom') or 'Client'
                         hora = r.get('hora_inici') or '10:00'
                         act = r.get('activitat') or 'Torn'
-                        def _mark_done(res, res_id=r['id']):
-                            with get_db() as c_conn:
-                                c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_dia = 1 WHERE id = ?", (res_id,))
-                                c_conn.commit()
-                        send_whatsapp_meta_async(r['telefon'], tpl_dia, [nom, hora, act], on_success_cb=_mark_done)
+                        def _mark_done(res_id=r['id']):
+                            try:
+                                with get_db() as c_conn:
+                                    c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_dia = 1 WHERE id = ?", (res_id,))
+                                    c_conn.commit()
+                            except Exception:
+                                pass
+
+                        with get_db() as c_wh:
+                            cur_wh = c_wh.cursor()
+                            cur_wh.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
+                            r_wh = cur_wh.fetchone()
+                            whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
+
+                        if r.get('telefon'):
+                            if whapi_tok:
+                                notif_dia = render_notification('recordatori_dia', r)
+                                send_whatsapp_whapi_async(r['telefon'], notif_dia.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done(rid), res_id=r['id'], include_buttons=True, send_logo=True)
+                            else:
+                                send_whatsapp_meta_async(r['telefon'], tpl_dia, [nom, hora, act], on_success_cb=lambda res, rid=r['id']: _mark_done(rid))
+                        else:
+                            _mark_done(r['id'])
+
+                        # Disparar workflow automàtic n8n (Email + WhatsApp)
+                        trigger_n8n_event_async('recordatori_dia', r)
 
                 # 2. Recordatoris a 48 hores vista (data = avui + 2 dies)
                 date_48h = (now + timedelta(days=2)).strftime('%Y-%m-%d')
@@ -1923,7 +2333,7 @@ def start_whatsapp_scheduler():
                         SELECT * FROM reserves 
                         WHERE data = ? AND estat IN ('confirmada', 'pendent_paga_senyal') 
                           AND (whatsapp_notif_48h IS NULL OR whatsapp_notif_48h = 0)
-                          AND telefon != ''
+                          AND (COALESCE(telefon, '') != '' OR COALESCE(email, '') != '')
                     """, (date_48h,))
                     res_48 = [row_to_dict(x) for x in cursor.fetchall()]
 
@@ -1932,11 +2342,32 @@ def start_whatsapp_scheduler():
                     data_res = r.get('data')
                     hora = r.get('hora_inici') or '10:00'
                     act = r.get('activitat') or 'Torn'
-                    def _mark_done_48(res, res_id=r['id']):
-                        with get_db() as c_conn:
-                            c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_48h = 1 WHERE id = ?", (res_id,))
-                            c_conn.commit()
-                    send_whatsapp_meta_async(r['telefon'], tpl_48, [nom, data_res, hora, act], on_success_cb=_mark_done_48)
+                    def _mark_done_48(res_id=r['id']):
+                        try:
+                            with get_db() as c_conn:
+                                c_conn.cursor().execute("UPDATE reserves SET whatsapp_notif_48h = 1 WHERE id = ?", (res_id,))
+                                c_conn.commit()
+                        except Exception:
+                            pass
+
+                    with get_db() as c_wh:
+                        cur_wh = c_wh.cursor()
+                        cur_wh.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
+                        r_wh = cur_wh.fetchone()
+                        whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
+
+                    if r.get('telefon'):
+                        if whapi_tok:
+                            notif_48 = render_notification('recordatori_48h', r)
+                            send_whatsapp_whapi_async(r['telefon'], notif_48.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done_48(rid), res_id=r['id'], include_buttons=True, send_logo=True)
+                        else:
+                            send_whatsapp_meta_async(r['telefon'], tpl_48, [nom, data_res, hora, act], on_success_cb=lambda res, rid=r['id']: _mark_done_48(rid))
+                    else:
+                        _mark_done_48(r['id'])
+
+                    # Disparar workflow automàtic n8n (Email + WhatsApp)
+                    trigger_n8n_event_async('recordatori_48h', r)
+
 
             except Exception as e:
                 print(f"[WhatsApp Scheduler] Avís: {e}")
@@ -1947,9 +2378,27 @@ def start_whatsapp_scheduler():
     t = threading.Thread(target=_scheduler_loop, daemon=True)
     t.start()
 
-# Iniciar scheduler
+def start_whapi_listener():
+    """
+    Escoltador en segon pla que sincronitza cada 6 segons les respostes
+    dels clients a WhatsApp ([✅ Confirmar] i [❌ Cancel·lar]).
+    """
+    def _listener_loop():
+        time.sleep(5)
+        while True:
+            try:
+                sync_whapi_inbound_messages()
+            except Exception:
+                pass
+            time.sleep(6)
+
+    t_whapi = threading.Thread(target=_listener_loop, daemon=True)
+    t_whapi.start()
+
+# Iniciar scheduler i listener Whapi
 try:
     start_whatsapp_scheduler()
+    start_whapi_listener()
 except Exception as e:
     print(f"[WhatsApp Scheduler Error]: {e}")
 
@@ -3679,7 +4128,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'data': rows})
                 return
 
+            elif path == '/api/whatsapp/sync':
+                res = sync_whapi_inbound_messages()
+                self.send_json(res, 200 if res.get('ok') else 500)
+                return
+
             elif path == '/api/reserves':
+                # Sincronitzar ràpidament missatges de WhatsApp en segon pla per tenir l'estat al dia
+                threading.Thread(target=sync_whapi_inbound_messages, daemon=True).start()
                 data_filter = params.get('data', [None])[0]
                 student_id = params.get('student_id', [None])[0]
                 estat = params.get('estat', [None])[0]
@@ -3947,7 +4403,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 data = {}
 
         try:
-            if path == '/api/admin/auth':
+            if path == '/api/n8n/trigger':
+                event_name = data.get('event', 'manual_notification')
+                payload = data.get('payload') or data
+                trigger_n8n_event_async(event_name, payload)
+                self.send_json({'ok': True, 'message': f'Esdeveniment {event_name} enviat a n8n Cloud!'})
+                return
+
+            elif path == '/api/admin/auth':
+
                 pin = str(data.get('pin', '') or data.get('password', '')).strip()
                 valid, role, token = verify_admin_credentials(pin)
                 if valid:
@@ -5675,14 +6139,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Sincronitzar reserva a Google Sheets i Google Calendar
                 sync_to_google_sheets_async('add_reserva', reserva_dict)
 
-                # Disparar confirmació per WhatsApp Meta Cloud API si està activat
+                # Disparar confirmació per WhatsApp (Whapi.cloud QR o Meta Cloud API)
                 if telefon:
-                    with get_db() as conn_wa:
-                        cur_wa = conn_wa.cursor()
-                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_confirmacio"')
-                        r_tpl_c = cur_wa.fetchone()
-                        tpl_conf = r_tpl_c['valor'].strip() if (r_tpl_c and r_tpl_c['valor']) else 'reserva_confirmada'
-
                     def _mark_conf_done(wa_res, rid=res_id):
                         try:
                             with get_db() as conn_up:
@@ -5691,12 +6149,29 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         except Exception:
                             pass
 
-                    send_whatsapp_meta_async(
-                        telefon,
-                        tpl_conf,
-                        [student_nom, activitat_nom, data_res, hora_inici_req, str(places_demanades)],
-                        on_success_cb=_mark_conf_done
-                    )
+                    with get_db() as conn_wa:
+                        cur_wa = conn_wa.cursor()
+                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
+                        r_wh = cur_wa.fetchone()
+                        whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
+
+                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_confirmacio"')
+                        r_tpl_c = cur_wa.fetchone()
+                        tpl_conf = r_tpl_c['valor'].strip() if (r_tpl_c and r_tpl_c['valor']) else 'reserva_confirmada'
+
+                    if whapi_tok:
+                        notif_rendered = render_notification('reserva_creada', reserva_dict)
+                        send_whatsapp_whapi_async(telefon, notif_rendered.get('wa_missatge') or '', on_success_cb=_mark_conf_done, res_id=res_id, include_buttons=True, send_logo=True)
+                    else:
+                        send_whatsapp_meta_async(
+                            telefon,
+                            tpl_conf,
+                            [student_nom, activitat_nom, data_res, hora_inici_req, str(places_demanades)],
+                            on_success_cb=_mark_conf_done
+                        )
+
+                # Disparar workflow automàtic a n8n Cloud (notificacions WhatsApp + Email)
+                trigger_n8n_event_async('reserva_creada', reserva_dict)
 
                 self.send_json({
                     'ok': True,
@@ -5704,6 +6179,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'reserva': reserva_dict
                 })
                 return
+
 
             elif path == '/api/reserves/recurrent-preview':
                 data_inici = (data.get('data_inici') or data.get('data') or '').strip()
@@ -5997,6 +6473,10 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             time.sleep(0.4)
                     threading.Thread(target=_sync_recurrent_batch, args=(list(created_reserves),), daemon=True).start()
 
+                # Disparar notificació n8n per a la confirmació de la primera cita de la sèrie
+                if created_reserves:
+                    trigger_n8n_event_async('reserva_creada', created_reserves[0])
+
                 self.send_json({
                     'ok': True,
                     'message': f"S'han creat correctament {len(created_reserves)} reserves recurrents per a {student_nom}.",
@@ -6086,11 +6566,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Sincronitzar cancel·lació a Google Sheets
                 sync_to_google_sheets_async('cancel_reserva', reserva_dict)
 
+                # Disparar workflow n8n per avís de cancel·lació
+                trigger_n8n_event_async('reserva_cancelada', reserva_dict)
+
                 self.send_json({
                     'ok': True,
                     'message': 'Reserva cancel·lada correctament i plaça alliberada.',
                     'reserva': reserva_dict
                 })
+
                 return
 
             elif path == '/api/reserves/sync-calendar':
@@ -6732,13 +7216,32 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
+            elif path in ('/api/whatsapp/webhook', '/api/whapi/webhook'):
+                # Processa immediatament les notificacions i clics de WhatsApp (Whapi)
+                sync_res = sync_whapi_inbound_messages()
+                self.send_json({'ok': True, 'processed': sync_res.get('processed', 0)})
+                return
+
+            elif path == '/api/whatsapp/sync':
+                sync_res = sync_whapi_inbound_messages()
+                self.send_json(sync_res, 200 if sync_res.get('ok') else 500)
+                return
+
             elif path == '/api/whatsapp/test':
                 tel = (data.get('telefon') or data.get('phone') or '').strip()
-                tpl = (data.get('template') or data.get('template_name') or 'reserva_confirmada').strip()
-                params_list = data.get('parameters') or ["Alumne Prova", "Torn", "2026-09-09", "10:00", "1"]
-                lang = (data.get('language') or 'ca').strip()
-
-                res = send_whatsapp_meta(tel, tpl, params_list, lang)
+                test_msg = data.get('missatge') or data.get('message') or f"Hola! Aquest és un missatge de prova de WhatsApp enviat automàticament des del Taller de Ceràmica Roig de Coure."
+                test_res_id = data.get('res_id') or data.get('id') or 'TEST-1'
+                with get_db() as conn_w:
+                    c_w = conn_w.cursor()
+                    c_w.execute("SELECT valor FROM configuracio WHERE clau = 'whapi_token'")
+                    r_whapi = c_w.fetchone()
+                if r_whapi and r_whapi['valor']:
+                    res = send_whatsapp_whapi(tel, test_msg, res_id=test_res_id, include_buttons=True, send_logo=True)
+                else:
+                    tpl = (data.get('template') or data.get('template_name') or 'reserva_confirmada').strip()
+                    params_list = data.get('parameters') or ["Alumne Prova", "Torn", "2026-09-09", "10:00", "1"]
+                    lang = (data.get('language') or 'ca').strip()
+                    res = send_whatsapp_meta(tel, tpl, params_list, lang)
                 status_code = 200 if res.get('ok') else 400
                 self.send_json(res, status_code)
                 return
