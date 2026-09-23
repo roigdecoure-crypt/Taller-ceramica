@@ -25,6 +25,31 @@ function doGet(e) {
     return jsonResponse(checkCalendarSync(SpreadsheetApp.getActiveSpreadsheet()));
   }
 
+  if (action === "inspect_day") {
+    var dStr = (e && e.parameter && e.parameter.data) ? e.parameter.data : "2026-09-25";
+    var start = parseDateTimeRobust(dStr, "00:00");
+    var end = parseDateTimeRobust(dStr, "23:59");
+    var allCals = CalendarApp.getAllCalendars();
+    var foundEvents = [];
+    for (var i = 0; i < allCals.length; i++) {
+      try {
+        var evs = allCals[i].getEvents(start, end);
+        for (var j = 0; j < evs.length; j++) {
+          foundEvents.push({
+            calendarName: allCals[i].getName(),
+            calendarId: allCals[i].getId(),
+            id: evs[j].getId(),
+            title: evs[j].getTitle(),
+            color: evs[j].getColor(),
+            start: Utilities.formatDate(evs[j].getStartTime(), "Europe/Madrid", "HH:mm"),
+            end: Utilities.formatDate(evs[j].getEndTime(), "Europe/Madrid", "HH:mm")
+          });
+        }
+      } catch (eCal) {}
+    }
+    return jsonResponse({ status: "success", date: dStr, count: foundEvents.length, events: foundEvents });
+  }
+
   if (action === "list_calendars") {
     return jsonResponse(listAllCalendars());
   }
