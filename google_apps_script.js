@@ -831,18 +831,19 @@ function syncCalendarEvent(r) {
       event.setTime(startTime, endTime);
       event.setDescription(desc);
       event.setLocation(location);
-      try {
-        event.resetColor();
-      } catch (eColor) {}
+      // El color de la reserva es manté 100% el seu (no es modifica mai)
+      if (r.color_id) {
+        try { event.setColor(String(r.color_id)); } catch (eColor) {}
+      }
       return event.getId();
     } else {
       var newEvent = cal.createEvent(title, startTime, endTime, {
         description: desc,
         location: location
       });
-      try {
-        newEvent.resetColor();
-      } catch (eColor) {}
+      if (r.color_id) {
+        try { newEvent.setColor(String(r.color_id)); } catch (eColor) {}
+      }
       return newEvent.getId();
     }
   } catch (err) {
