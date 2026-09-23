@@ -6736,7 +6736,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/festius':
-                if not require_owner(self, data):
+                if not require_auth(self, data):
                     return
                 data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
                 data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
@@ -6759,7 +6759,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/festius/delete', '/api/festius/eliminar'):
-                if not require_owner(self, data):
+                if not require_auth(self, data):
                     return
                 festiu_id = data.get('id')
                 if not festiu_id:
@@ -6773,7 +6773,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/restriccions-activitats':
-                if not require_owner(self, data):
+                if not require_auth(self, data):
                     return
                 data_inici = (data.get('data_inici') or data.get('dataInici') or '').strip()
                 data_fi = (data.get('data_fi') or data.get('dataFi') or data_inici).strip()
@@ -6836,7 +6836,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path in ('/api/restriccions-activitats/delete', '/api/restriccions-activitats/eliminar'):
-                if not require_owner(self, data):
+                if not require_auth(self, data):
                     return
                 restr_id = data.get('id')
                 if not restr_id:
@@ -7182,6 +7182,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path.startswith('/api/festius/'):
+                if not require_auth(self):
+                    return
                 festiu_id = path.replace('/api/festius/', '').strip()
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -7191,6 +7193,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path.startswith('/api/restriccions-activitats/'):
+                if not require_auth(self):
+                    return
                 restr_id = path.replace('/api/restriccions-activitats/', '').strip()
                 with get_db() as conn:
                     cursor = conn.cursor()

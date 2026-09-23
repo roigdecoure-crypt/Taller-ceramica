@@ -4302,6 +4302,10 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
     dateInput.min = todayISO;
     dateInput.value = targetDate;
   }
+  // Assegurar que tenim la llista de restriccions actualitzada
+  if (!adminRestriccionsList || adminRestriccionsList.length === 0) {
+    loadAdminRestriccionsList().then(() => handleAdminResDataChange()).catch(() => {});
+  }
   handleAdminResDataChange();
 
   // Activitat
@@ -4309,6 +4313,7 @@ async function openAdminNovaReservaModal(preselectedDate, preselectedStudentId, 
   const actSelect = document.getElementById('admin-res-activitat');
   if (actSelect) {
     actSelect.value = (preselectedActId || 'torn').toLowerCase();
+    actSelect.onchange = handleAdminResDataChange;
   }
 
   // Places & Bestreta
@@ -4531,9 +4536,46 @@ function handleAdminResDataChange() {
 
   if (dayOfWeek === 1 || dayOfWeek === 2) {
     warningDiv.textContent = 'Atenció: Els dilluns i dimarts el taller roman tancat per descans setmanal.';
+    warningDiv.style.color = '#B91C1C';
+    warningDiv.style.background = '#FEF2F2';
+    warningDiv.style.border = '1px solid #FECACA';
+    warningDiv.style.padding = '8px 12px';
+    warningDiv.style.borderRadius = '6px';
+    warningDiv.style.fontSize = '12.5px';
+    warningDiv.style.fontWeight = '600';
     warningDiv.style.display = 'block';
   } else {
-    warningDiv.style.display = 'none';
+    // Comprovar si hi ha restriccions d'activitats per a aquesta data
+    const restrs = Array.isArray(adminRestriccionsList) ? adminRestriccionsList : [];
+    const activeRestr = restrs.find(r => dateVal >= r.data_inici && dateVal <= (r.data_fi || r.data_inici));
+    const actSelect = document.getElementById('admin-res-activitat');
+    const selectedAct = (actSelect ? actSelect.value : '').toLowerCase();
+
+    if (activeRestr) {
+      const bloqList = (activeRestr.activitats_bloquejades || []).map(x => String(x).toLowerCase());
+      const permList = (activeRestr.activitats_permeses || []);
+      const isActBlocked = bloqList.includes(selectedAct);
+      const tornTxt = activeRestr.torn && activeRestr.torn !== 'tot_el_dia' ? ` (${activeRestr.torn === 'mati' ? 'Matí' : 'Tarda'})` : '';
+
+      if (isActBlocked) {
+        warningDiv.innerHTML = `⚠️ <strong>Taller restringit aquest dia${tornTxt}:</strong> L'activitat seleccionada està bloquejada per restricció de calendari. Només es permet: <em>${permList.join(', ') || 'Cap'}</em>. Si vols reservar-la igualment cal marcar l'opció 'Forçar aforament i regles'.`;
+        warningDiv.style.color = '#991B1B';
+        warningDiv.style.background = '#FEE2E2';
+        warningDiv.style.border = '1px solid #FCA5A5';
+      } else {
+        warningDiv.innerHTML = `ℹ️ <strong>Restricció de tallers activa${tornTxt}:</strong> En aquesta data només es permet: <em>${permList.join(', ') || 'Cap'}</em>.`;
+        warningDiv.style.color = '#92400E';
+        warningDiv.style.background = '#FEF3C7';
+        warningDiv.style.border = '1px solid #FCD34D';
+      }
+      warningDiv.style.padding = '8px 12px';
+      warningDiv.style.borderRadius = '6px';
+      warningDiv.style.fontSize = '12.5px';
+      warningDiv.style.fontWeight = '500';
+      warningDiv.style.display = 'block';
+    } else {
+      warningDiv.style.display = 'none';
+    }
   }
 
   // Actualitzar previsualització recurrent si s'escau
@@ -6673,24 +6715,25 @@ async function handleCreateRestriccio(e) {
 
   try {
     if (datesMultiples && datesMultiples.length > 0) {
-      let createdCount = 0;
-      for (const d of datesMultiples) {
-        const itemPayload = {
-          data_inici: d,
-          data_fi: d,
-          tipus_abast: abast,
-          activitats_permeses: permeses,
-          activitats_bloquejades: bloquejades,
-          motiu: motiu,
-          torn: torn
-        };
-        const r = await Store.crearRestriccioActivitats(itemPayload);
-        if (r && r.ok) createdCount++;
+      const payload = {
+        dates_multiples: datesMultiples,
+        data_inici: dataInici,
+        data_fi: dataFi,
+        tipus_abast: abast,
+        activitats_permeses: permeses,
+        activitats_bloquejades: bloquejades,
+        motiu: motiu,
+        torn: torn
+      };
+      const res = await Store.crearRestriccioActivitats(payload);
+      if (res && res.ok) {
+        showToast(res.message || `S'han desat correctament ${datesMultiples.length} restriccions de tallers.`, 'success');
+        if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
+        await loadAdminRestriccionsList();
+        await refreshAppointmentsDashboard();
+      } else {
+        showToast(res?.error || 'Error desant les restriccions a la base de dades.', 'error');
       }
-      showToast(`S'han desat correctament ${createdCount} restriccions de tallers.`, 'success');
-      if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
-      await loadAdminRestriccionsList();
-      await refreshAppointmentsDashboard();
     } else {
       const payload = {
         data_inici: dataInici,
@@ -6705,12 +6748,12 @@ async function handleCreateRestriccio(e) {
       const res = await Store.crearRestriccioActivitats(payload);
 
       if (res && res.ok) {
-        showToast('Restricció de tallers desada correctament.', 'success');
+        showToast(res.message || 'Restricció de tallers desada correctament.', 'success');
         if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
         await loadAdminRestriccionsList();
         await refreshAppointmentsDashboard();
       } else {
-        showToast(res?.error || 'Error desant la restricció.', 'error');
+        showToast(res?.error || 'Error desant la restricció a la base de dades.', 'error');
       }
     }
   } catch (err) {

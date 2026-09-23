@@ -1937,6 +1937,7 @@ const Store = {
         const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
         const timeoutId = controller ? setTimeout(() => controller.abort(), 3500) : null;
         const fetchOpts = controller ? { signal: controller.signal } : {};
+        fetchOpts.headers = this.getAdminAuthHeaders();
         const res = await fetch(`${this.apiBase}/api/restriccions-activitats?t=${Date.now()}`, fetchOpts);
         if (timeoutId) clearTimeout(timeoutId);
         const data = await res.json();
@@ -1957,16 +1958,39 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/restriccions-activitats`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(restriccioData)
         });
-        return await res.json();
+        const json = await res.json();
+        if (res.status === 401 || res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         console.warn('Error creant restricció a l\'API, intentant localment:', e);
       }
     }
     const local = this._getLocalData();
     if (!local.restriccions_activitats) local.restriccions_activitats = [];
+    const datesMultiples = restriccioData.dates_multiples || restriccioData.datesMultiples;
+    if (datesMultiples && Array.isArray(datesMultiples) && datesMultiples.length > 0) {
+      const newIds = [];
+      for (const d of datesMultiples) {
+        const item = {
+          id: Date.now() + Math.floor(Math.random() * 10000),
+          data_inici: d,
+          data_fi: d,
+          tipus_abast: restriccioData.tipus_abast || restriccioData.tipusAbast || 'dia',
+          activitats_permeses: restriccioData.activitats_permeses || restriccioData.activitatsPermeses || [],
+          activitats_bloquejades: restriccioData.activitats_bloquejades || restriccioData.activitatsBloquejades || [],
+          motiu: restriccioData.motiu || '',
+          torn: restriccioData.torn || 'tot_el_dia',
+          creat_el: new Date().toISOString()
+        };
+        local.restriccions_activitats.push(item);
+        newIds.push(item.id);
+      }
+      this._saveLocalData(local);
+      return { ok: true, ids: newIds, count: newIds.length, message: `${newIds.length} restriccions de tallers desades` };
+    }
     const newRestr = {
       id: Date.now(),
       data_inici: restriccioData.data_inici || restriccioData.dataInici,
@@ -1988,10 +2012,12 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/restriccions-activitats/delete`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify({ id })
         });
-        return await res.json();
+        const json = await res.json();
+        if (res.status === 401 || res.status === 403 || !json.ok) return json;
+        return json;
       } catch (e) {
         console.warn('Error eliminant restricció a l\'API, intentant localment:', e);
       }
@@ -2009,7 +2035,7 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/activitats`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(tallerData)
         });
         const json = await res.json();
@@ -2046,7 +2072,7 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/activitats/update`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify(payload)
         });
         const json = await res.json();
@@ -2076,7 +2102,7 @@ const Store = {
       try {
         const res = await fetch(`${this.apiBase}/api/activitats/delete`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: this.getAdminAuthHeaders(),
           body: JSON.stringify({ id })
         });
         const json = await res.json();
