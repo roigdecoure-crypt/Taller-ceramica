@@ -120,7 +120,10 @@ const Store = {
   async getAlumnes() {
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/alumnes?t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`${this.apiBase}/api/alumnes?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: this.getAdminAuthHeaders()
+        });
         const json = await res.json();
         if (json.ok && Array.isArray(json.data)) {
           return json.data;
@@ -152,7 +155,9 @@ const Store = {
     const cleanId = String(id).trim();
     if (this.mode === 'api') {
       try {
-        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(cleanId)}`);
+        const res = await fetch(`${this.apiBase}/api/alumnes/${encodeURIComponent(cleanId)}`, {
+          headers: this.getAdminAuthHeaders()
+        });
         const json = await res.json();
         if (json.ok) return json;
       } catch (e) {

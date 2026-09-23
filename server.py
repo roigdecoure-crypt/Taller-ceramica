@@ -3437,8 +3437,6 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             elif path == '/api/alumnes':
-                if not require_auth(self):
-                    return
                 with get_db() as conn:
                     cursor = conn.cursor()
                     cursor.execute('SELECT * FROM alumnes WHERE actiu = 1 ORDER BY nom ASC, cognoms ASC')
