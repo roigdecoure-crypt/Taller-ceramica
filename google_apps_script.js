@@ -764,7 +764,22 @@ function syncCalendarEvent(r) {
     var act = r.activitat || "Torn";
     var tel = r.telefon || "";
     var places = parseInt(r.places, 10) || 1;
-    var title = act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
+
+    // Estat visual d'assistència (cercle de color com Confirmafy)
+    var isConfirmed = r.client_confirmat === 1 || r.whatsapp_client_status === 'confirmat' || r.estat === 'confirmada_client';
+    var isCancelled = r.whatsapp_client_status === 'cancelat' || (r.estat && String(r.estat).toLowerCase().indexOf('cancel') !== -1);
+
+    var prefix = "⏳ [PENDENT] ";
+    var targetColor = "5"; // Groc / Banana
+    if (isConfirmed) {
+      prefix = "✅ [CONFIRMADA] ";
+      targetColor = "10"; // Verd / Basil -> Cercle Verd a Google Calendar
+    } else if (isCancelled) {
+      prefix = "🔴 [CANCEL·LADA] ";
+      targetColor = "11"; // Vermell / Tomato -> Cercle Vermell a Google Calendar
+    }
+
+    var title = prefix + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
     var startTime = parseDateTimeRobust(r.data, r.hora_inici);
     var endTime = parseDateTimeRobust(r.data, r.hora_fi);
@@ -773,6 +788,7 @@ function syncCalendarEvent(r) {
                "Alumne: " + nom + "\n" +
                "Activitat: " + act + "\n" +
                "Places: " + places + "\n" +
+               "Estat WhatsApp: " + (isConfirmed ? "CONFIRMADA PEL CLIENT ✅" : (isCancelled ? "CANCEL·LADA 🔴" : "PENDENT DE RESPOSTA ⏳")) + "\n" +
                (tel ? "Telèfon: " + tel + "\n" : "") +
                (r.notes ? "Notes: " + r.notes + "\n" : "") +
                "ID Reserva: " + r.id;
@@ -818,12 +834,30 @@ function syncCalendarEvent(r) {
       event.setTime(startTime, endTime);
       event.setDescription(desc);
       event.setLocation(location);
+      try {
+        event.setColor(targetColor);
+      } catch (eColor) {
+        try {
+          if (isConfirmed) event.setColor(CalendarApp.EventColor.GREEN);
+          else if (isCancelled) event.setColor(CalendarApp.EventColor.RED);
+          else event.setColor(CalendarApp.EventColor.YELLOW);
+        } catch (eEnum) {}
+      }
       return event.getId();
     } else {
       var newEvent = cal.createEvent(title, startTime, endTime, {
         description: desc,
         location: location
       });
+      try {
+        newEvent.setColor(targetColor);
+      } catch (eColor) {
+        try {
+          if (isConfirmed) newEvent.setColor(CalendarApp.EventColor.GREEN);
+          else if (isCancelled) newEvent.setColor(CalendarApp.EventColor.RED);
+          else newEvent.setColor(CalendarApp.EventColor.YELLOW);
+        } catch (eEnum) {}
+      }
       return newEvent.getId();
     }
   } catch (err) {

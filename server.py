@@ -2052,7 +2052,10 @@ def sync_whapi_inbound_messages():
                             WHERE id = ?
                         """, (target_res_id,))
                         conn.commit()
+                        res_dict['whatsapp_client_status'] = 'confirmat'
+                        res_dict['client_confirmat'] = 1
                         print(f"[Whapi WhatsApp] Reserva {target_res_id} CONFIRMADA pel client ({sender_phone})")
+                        sync_to_google_sheets_async('add_reserva', res_dict)
                         send_whatsapp_whapi_async(sender_phone, "✅ *Gràcies per confirmar la teva assistència!*\nT'esperem al taller Roig de Coure. Si necessites cap modificació, respon a aquest xat.", None, None, False, False)
                     elif is_cancel:
                         cur.execute("""
@@ -2064,6 +2067,7 @@ def sync_whapi_inbound_messages():
                         """, (target_res_id,))
                         conn.commit()
                         res_dict['estat'] = 'cancel·lada'
+                        res_dict['whatsapp_client_status'] = 'cancelat'
                         print(f"[Whapi WhatsApp] Reserva {target_res_id} CANCEL·LADA pel client ({sender_phone})")
                         sync_to_google_sheets_async('cancel_reserva', res_dict)
                         trigger_n8n_event_async('reserva_cancelada', res_dict)
