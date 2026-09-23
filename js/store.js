@@ -44,6 +44,10 @@ const Store = {
     if (!this.apiBase && typeof getRoigApiBase === 'function') {
       this.apiBase = getRoigApiBase();
     }
+    if (!this.apiBase) {
+      this.apiBase = 'https://taller-ceramica-nb96.onrender.com';
+    }
+    this.mode = 'api';
     try {
       const res = await fetch(`${this.apiBase}/api/status`, { cache: 'no-cache' });
       const ct = res.headers.get('content-type') || '';
@@ -52,11 +56,9 @@ const Store = {
         return 'api';
       }
     } catch (e) {
-      console.warn('Servidor Python no detectat o no disponible. Activant mode local (localStorage).');
+      console.warn('Avís de connexió inicial /api/status:', e);
     }
-    this.mode = 'local';
-    this._initLocalStorage();
-    return 'local';
+    return this.mode;
   },
 
   _initLocalStorage() {
@@ -1183,14 +1185,25 @@ const Store = {
   /* ====================== RESERVES & AFORAMENT ====================== */
 
   async getReserves(filters = {}) {
-    let list = [];
-    if (this.mode === 'api') {
+    let list = null;
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    if (base) {
       try {
         const q = new URLSearchParams(filters);
-        const res = await fetch(`${this.apiBase}/api/reserves?${q.toString()}&t=${Date.now()}`);
-        const json = await res.json();
-        if (json.ok && Array.isArray(json.data)) {
-          list = json.data;
+        const res = await fetch(`${base}/api/reserves?${q.toString()}&t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok && Array.isArray(json.data)) {
+            list = json.data;
+            this.mode = 'api';
+            try {
+              if (!filters.data && !filters.student_id && !filters.estat) {
+                const d = this._getLocalData();
+                d.reserves = list;
+                this._saveLocalData(d);
+              }
+            } catch (e) {}
+          }
         }
       } catch (e) {
         console.warn('Error obtenint reserves de l\'API:', e);
@@ -1236,11 +1249,17 @@ const Store = {
       const now = new Date();
       dataStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
     }
-    if (this.mode === 'api') {
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    if (base) {
       try {
-        const res = await fetch(`${this.apiBase}/api/reserves/disponibilitat?data=${encodeURIComponent(dataStr)}&t=${Date.now()}`);
-        const json = await res.json();
-        if (json.ok) return json;
+        const res = await fetch(`${base}/api/reserves/disponibilitat?data=${encodeURIComponent(dataStr)}&t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok) {
+            this.mode = 'api';
+            return json;
+          }
+        }
       } catch (e) {
         console.warn('Error obtenint disponibilitat de l\'API:', e);
       }
@@ -1349,11 +1368,17 @@ const Store = {
   },
 
   async getDisponibilitatMes(any, mes) {
-    if (this.mode === 'api') {
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    if (base) {
       try {
-        const res = await fetch(`${this.apiBase}/api/reserves/mes?any=${any}&mes=${mes}&t=${Date.now()}`);
-        const json = await res.json();
-        if (json.ok) return json;
+        const res = await fetch(`${base}/api/reserves/mes?any=${any}&mes=${mes}&t=${Date.now()}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.ok) {
+            this.mode = 'api';
+            return json;
+          }
+        }
       } catch (e) {
         console.warn('Error obtenint disponibilitat de mes de l\'API:', e);
       }
