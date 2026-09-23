@@ -6386,7 +6386,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                                 lliures_act = max(0, limit_act - act_ocup)
                                 self.send_json({
                                     'ok': False,
-                                    'error': f"Places de {r_item.get('activitat', 'l\'activitat')} completes per a {torn_desc} el {d_item} ({act_ocup}/{limit_act} ocupades). Pots marcar la casella 'Permetre sobrepassar places d'activitat' si vols afegir-la igualment (mentre quedi aforament global)."
+                                    'error': f"Places de {r_item.get('activitat', 'activitat')} completes per a {torn_desc} el {d_item} ({act_ocup}/{limit_act} ocupades). Pots marcar la casella 'Permetre sobrepassar places d'activitat' si vols afegir-la igualment (mentre quedi aforament global)."
                                 }, 400)
                                 return
 
@@ -6796,6 +6796,29 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     act_bloq_json = json.dumps(act_bloq)
                 else:
                     act_bloq_json = str(act_bloq)
+
+                # Support for recurring restrictions (setmanal_dia / quinzenal_dia):
+                # dates_multiples is a list of individual date strings
+                dates_multiples = data.get('dates_multiples') or data.get('datesMultiples')
+
+                if dates_multiples and isinstance(dates_multiples, list) and len(dates_multiples) > 0:
+                    # Create individual rows for each date
+                    new_ids = []
+                    now_str = get_now().isoformat()
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        for d_str in dates_multiples:
+                            d_str = str(d_str).strip()
+                            if not d_str:
+                                continue
+                            cursor.execute('''
+                                INSERT INTO restriccions_activitats (data_inici, data_fi, tipus_abast, activitats_permeses, activitats_bloquejades, motiu, torn, creat_el)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (d_str, d_str, tipus_abast, act_perm_json, act_bloq_json, motiu, torn, now_str))
+                            new_ids.append(cursor.lastrowid)
+                        conn.commit()
+                    self.send_json({'ok': True, 'ids': new_ids, 'count': len(new_ids), 'message': f'{len(new_ids)} restriccions de tallers desades'})
+                    return
 
                 if not data_inici:
                     self.send_json({'ok': False, 'error': "Cal indicar la data d'inici"}, 400)

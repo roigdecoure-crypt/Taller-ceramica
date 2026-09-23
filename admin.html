@@ -3172,6 +3172,12 @@
                 <label style="font-size: 13px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
                   <input type="radio" name="restr-abast" value="rang"> Interval lliure
                 </label>
+                <label style="font-size: 13px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                  <input type="radio" name="restr-abast" value="setmanal_dia"> Setmanal (dia concret)
+                </label>
+                <label style="font-size: 13px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                  <input type="radio" name="restr-abast" value="quinzenal_dia"> Quinzenal (dia concret)
+                </label>
               </div>
             </div>
 
@@ -3207,6 +3213,32 @@
                     <input type="date" id="restr-input-rang-fi" class="form-control" style="width: 100%; font-size: 13px; padding: 6px 10px;">
                   </div>
                 </div>
+              </div>
+              <!-- Setmanal / Quinzenal per dia concret -->
+              <div id="restr-row-setmanal-dia" style="display: none;">
+                <div style="margin-bottom: 10px;">
+                  <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Dia de la setmana:</label>
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="restr-dia-setmana-buttons">
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="1" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Dilluns</button>
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="2" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Dimarts</button>
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="3" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Dimecres</button>
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="4" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Dijous</button>
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="5" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Divendres</button>
+                    <button type="button" class="btn btn-sm restr-dia-btn" data-dia="6" style="padding: 5px 12px; font-size: 12.5px; border: 2px solid #D1D5DB; border-radius: 6px; background: #F9FAFB; color: #374151; cursor: pointer; font-weight: 600;">Dissabte</button>
+                  </div>
+                  <input type="hidden" id="restr-input-dia-setmana" value="">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
+                  <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Des de la data:</label>
+                    <input type="date" id="restr-input-recurrent-inici" class="form-control" style="width: 100%; font-size: 13px; padding: 6px 10px;">
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Fins a la data:</label>
+                    <input type="date" id="restr-input-recurrent-fi" class="form-control" style="width: 100%; font-size: 13px; padding: 6px 10px;">
+                  </div>
+                </div>
+                <div id="restr-preview-setmanal-dia" style="font-size: 12px; font-weight: 600; color: #4338CA; min-height: 18px;"></div>
               </div>
             </div>
 
@@ -3746,14 +3778,14 @@
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="lib/qrcode.min.js?v=12.7.9"></script>
-  <script src="lib/html5-qrcode.min.js?v=12.7.9"></script>
-  <script src="js/time-utils.js?v=12.7.9"></script>
-  <script src="js/sound.js?v=12.7.9"></script>
-  <script src="js/qr-engine.js?v=12.7.9"></script>
-  <script src="js/api-config.js?v=12.7.9"></script>
-  <script src="js/store.js?v=12.7.9"></script>
-  <script src="js/reserves-calendar.js?v=12.7.9"></script>
-  <script src="js/admin.js?v=12.7.9"></script>
+  <script src="lib/qrcode.min.js?v=12.7.10"></script>
+  <script src="lib/html5-qrcode.min.js?v=12.7.10"></script>
+  <script src="js/time-utils.js?v=12.7.10"></script>
+  <script src="js/sound.js?v=12.7.10"></script>
+  <script src="js/qr-engine.js?v=12.7.10"></script>
+  <script src="js/api-config.js?v=12.7.10"></script>
+  <script src="js/store.js?v=12.7.10"></script>
+  <script src="js/reserves-calendar.js?v=12.7.10"></script>
+  <script src="js/admin.js?v=12.7.10"></script>
 </body>
 </html>

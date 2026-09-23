@@ -2672,6 +2672,26 @@ async function initAppointmentsDashboard() {
     document.getElementById(`restr-act-${act}`)?.addEventListener('change', updateRestriccionsSummary);
   });
 
+  // Listeners per a Setmanal/Quinzenal per dia concret
+  document.querySelectorAll('.restr-dia-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const dia = btn.dataset.dia;
+      document.getElementById('restr-input-dia-setmana').value = dia;
+      // Update visual selection
+      document.querySelectorAll('.restr-dia-btn').forEach(b => {
+        b.style.borderColor = '#D1D5DB';
+        b.style.background = '#F9FAFB';
+        b.style.color = '#374151';
+      });
+      btn.style.borderColor = '#4F46E5';
+      btn.style.background = '#EEF2FF';
+      btn.style.color = '#4338CA';
+      updateSetmanalDiaPreview();
+    });
+  });
+  document.getElementById('restr-input-recurrent-inici')?.addEventListener('input', updateSetmanalDiaPreview);
+  document.getElementById('restr-input-recurrent-fi')?.addEventListener('input', updateSetmanalDiaPreview);
+
   // Botons de Gestió de Tallers
   document.getElementById('btn-admin-tallers')?.addEventListener('click', () => {
     openAdminTallersModal();
@@ -6110,6 +6130,9 @@ async function openAdminRestriccionsModal(preselectedDate) {
   const inputRangInici = document.getElementById('restr-input-rang-inici');
   const inputRangFi = document.getElementById('restr-input-rang-fi');
   const inputMotiu = document.getElementById('restr-input-motiu');
+  const inputRecurrentInici = document.getElementById('restr-input-recurrent-inici');
+  const inputRecurrentFi = document.getElementById('restr-input-recurrent-fi');
+  const inputDiaSetmana = document.getElementById('restr-input-dia-setmana');
 
   if (inputDia) inputDia.value = defaultDate;
   if (inputSetmana) inputSetmana.value = defaultDate;
@@ -6119,7 +6142,22 @@ async function openAdminRestriccionsModal(preselectedDate) {
   }
   if (inputRangInici) inputRangInici.value = defaultDate;
   if (inputRangFi) inputRangFi.value = defaultDate;
+  if (inputRecurrentInici) inputRecurrentInici.value = defaultDate;
+  if (inputRecurrentFi) {
+    // Default end date: 3 months from start
+    const parts = defaultDate.split('-').map(Number);
+    const endDefault = new Date(parts[0], parts[1] - 1 + 3, parts[2]);
+    inputRecurrentFi.value = `${endDefault.getFullYear()}-${String(endDefault.getMonth() + 1).padStart(2, '0')}-${String(endDefault.getDate()).padStart(2, '0')}`;
+  }
+  if (inputDiaSetmana) inputDiaSetmana.value = '';
   if (inputMotiu) inputMotiu.value = '';
+  
+  // Reset day-of-week button selection
+  document.querySelectorAll('.restr-dia-btn').forEach(btn => {
+    btn.style.borderColor = '#D1D5DB';
+    btn.style.background = '#F9FAFB';
+    btn.style.color = '#374151';
+  });
 
   // Generar dinàmicament els checkboxes de tallers actius (renderització immediata)
   const chkContainer = document.getElementById('restr-tallers-checkboxes-container');
@@ -6164,14 +6202,17 @@ function updateRestriccionsAbastView(abast) {
   const rowSetmana = document.getElementById('restr-row-setmana');
   const rowMes = document.getElementById('restr-row-mes');
   const rowRang = document.getElementById('restr-row-rang');
+  const rowSetmanalDia = document.getElementById('restr-row-setmanal-dia');
 
   if (rowDia) rowDia.style.display = abast === 'dia' ? 'block' : 'none';
   if (rowSetmana) rowSetmana.style.display = abast === 'setmana' ? 'block' : 'none';
   if (rowMes) rowMes.style.display = abast === 'mes' ? 'block' : 'none';
   if (rowRang) rowRang.style.display = abast === 'rang' ? 'block' : 'none';
+  if (rowSetmanalDia) rowSetmanalDia.style.display = (abast === 'setmanal_dia' || abast === 'quinzenal_dia') ? 'block' : 'none';
 
   if (abast === 'setmana') updateSetmanaPreview();
   if (abast === 'mes') updateMesPreview();
+  if (abast === 'setmanal_dia' || abast === 'quinzenal_dia') updateSetmanalDiaPreview();
 }
 
 function updateSetmanaPreview() {
@@ -6216,6 +6257,68 @@ function updateMesPreview() {
     preview.textContent = `Mes complet: de l'1 al ${lastDay} de ${mName} de ${y}`;
   } catch (e) {
     preview.textContent = '';
+  }
+}
+
+const CATALAN_DAY_NAMES = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
+
+function getRecurringDates(diaSetmana, dataIniciStr, dataFiStr, interval) {
+  // diaSetmana: 1=Dl, 2=Dt, 3=Dc, 4=Dj, 5=Dv, 6=Ds (JS Sunday=0, so we map 1->1, 2->2, ...6->6)
+  const jsDow = diaSetmana % 7; // 1->1(Mon), 2->2(Tue), ..., 6->6(Sat), but our buttons use 1=Mon...6=Sat directly as JS getDay() values
+  const dates = [];
+  const parts_i = dataIniciStr.split('-').map(Number);
+  const parts_f = dataFiStr.split('-').map(Number);
+  const startDate = new Date(parts_i[0], parts_i[1] - 1, parts_i[2]);
+  const endDate = new Date(parts_f[0], parts_f[1] - 1, parts_f[2]);
+  
+  // Find first occurrence of the target day on or after startDate
+  let current = new Date(startDate);
+  const targetJsDow = diaSetmana === 7 ? 0 : diaSetmana; // 7 would be Sunday, but we don't use it
+  while (current.getDay() !== targetJsDow && current <= endDate) {
+    current.setDate(current.getDate() + 1);
+  }
+  
+  const stepDays = interval === 'quinzenal' ? 14 : 7;
+  while (current <= endDate) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    dates.push(`${y}-${m}-${d}`);
+    current.setDate(current.getDate() + stepDays);
+  }
+  return dates;
+}
+
+function updateSetmanalDiaPreview() {
+  const preview = document.getElementById('restr-preview-setmanal-dia');
+  if (!preview) return;
+  
+  const diaSetmana = parseInt(document.getElementById('restr-input-dia-setmana')?.value || '0', 10);
+  const dataInici = document.getElementById('restr-input-recurrent-inici')?.value;
+  const dataFi = document.getElementById('restr-input-recurrent-fi')?.value;
+  const abastRadio = document.querySelector('input[name="restr-abast"]:checked');
+  const abast = abastRadio ? abastRadio.value : '';
+  
+  if (!diaSetmana || !dataInici || !dataFi) {
+    preview.textContent = '';
+    return;
+  }
+  if (dataFi < dataInici) {
+    preview.innerHTML = '<span style="color: #DC2626;">La data final no pot ser anterior a la d\'inici.</span>';
+    return;
+  }
+  
+  const interval = abast === 'quinzenal_dia' ? 'quinzenal' : 'setmanal';
+  const dates = getRecurringDates(diaSetmana, dataInici, dataFi, interval);
+  const nomDia = CATALAN_DAY_NAMES[diaSetmana === 7 ? 0 : diaSetmana] || '';
+  const freqText = interval === 'quinzenal' ? 'cada 2 setmanes' : 'cada setmana';
+  
+  if (dates.length === 0) {
+    preview.innerHTML = `<span style="color: #DC2626;">No hi ha cap ${nomDia} dins d'aquest rang de dates.</span>`;
+  } else {
+    const datesList = dates.slice(0, 8).map(d => formatCatalanShortDate(d)).join(', ');
+    const moreText = dates.length > 8 ? ` i ${dates.length - 8} més...` : '';
+    preview.innerHTML = `<span style="color: #047857;">Es crearan <strong>${dates.length} restriccions</strong> (${nomDia} ${freqText}):</span><br><span style="color: #4338CA; font-size: 11.5px;">${datesList}${moreText}</span>`;
   }
 }
 
@@ -6324,6 +6427,8 @@ function renderRestriccionsTableHtml(container, list) {
     if (r.tipus_abast === 'setmana') abastLabel = 'Setmana';
     else if (r.tipus_abast === 'mes') abastLabel = 'Mes';
     else if (r.tipus_abast === 'rang') abastLabel = 'Interval';
+    else if (r.tipus_abast === 'setmanal_dia') abastLabel = 'Setmanal';
+    else if (r.tipus_abast === 'quinzenal_dia') abastLabel = 'Quinzenal';
 
     let tornBadge = '<span class="badge badge-neutral" style="font-size: 10.5px;">Tot el dia</span>';
     if (r.torn === 'mati') {
@@ -6391,6 +6496,7 @@ async function handleCreateRestriccio(e) {
 
   let dataInici = '';
   let dataFi = '';
+  let datesMultiples = null; // per a setmanal_dia / quinzenal_dia
 
   if (abast === 'dia') {
     dataInici = document.getElementById('restr-input-dia')?.value;
@@ -6422,13 +6528,43 @@ async function handleCreateRestriccio(e) {
   } else if (abast === 'rang') {
     dataInici = document.getElementById('restr-input-rang-inici')?.value;
     dataFi = document.getElementById('restr-input-rang-fi')?.value;
+  } else if (abast === 'setmanal_dia' || abast === 'quinzenal_dia') {
+    const diaSetmana = parseInt(document.getElementById('restr-input-dia-setmana')?.value || '0', 10);
+    const recInici = document.getElementById('restr-input-recurrent-inici')?.value;
+    const recFi = document.getElementById('restr-input-recurrent-fi')?.value;
+    
+    if (!diaSetmana) {
+      showToast('Si us plau, selecciona un dia de la setmana.', 'warning');
+      return;
+    }
+    if (!recInici || !recFi) {
+      showToast('Si us plau, especifica les dates d\'inici i fi del rang.', 'warning');
+      return;
+    }
+    if (recFi < recInici) {
+      showToast('La data final no pot ser anterior a la d\'inici.', 'warning');
+      return;
+    }
+    
+    const interval = abast === 'quinzenal_dia' ? 'quinzenal' : 'setmanal';
+    datesMultiples = getRecurringDates(diaSetmana, recInici, recFi, interval);
+    
+    if (datesMultiples.length === 0) {
+      const nomDia = CATALAN_DAY_NAMES[diaSetmana === 7 ? 0 : diaSetmana] || '';
+      showToast(`No hi ha cap ${nomDia} dins d'aquest rang de dates.`, 'warning');
+      return;
+    }
+    
+    // For validation purposes, use the range
+    dataInici = datesMultiples[0];
+    dataFi = datesMultiples[datesMultiples.length - 1];
   }
 
-  if (!dataInici || !dataFi) {
+  if (!datesMultiples && (!dataInici || !dataFi)) {
     showToast('Si us plau, especifica les dates de la restricció.', 'warning');
     return;
   }
-  if (dataFi < dataInici) {
+  if (!datesMultiples && dataFi < dataInici) {
     showToast('La data final no pot ser anterior a la d\'inici.', 'warning');
     return;
   }
@@ -6470,23 +6606,46 @@ async function handleCreateRestriccio(e) {
   if (btnSubmit) btnSubmit.disabled = true;
 
   try {
-    const res = await Store.crearRestriccioActivitats({
-      data_inici: dataInici,
-      data_fi: dataFi,
-      tipus_abast: abast,
-      activitats_permeses: permeses,
-      activitats_bloquejades: bloquejades,
-      motiu: motiu,
-      torn: torn
-    });
-
-    if (res && res.ok) {
-      showToast('Restricció de tallers desada correctament.', 'success');
+    if (datesMultiples && datesMultiples.length > 0) {
+      let createdCount = 0;
+      for (const d of datesMultiples) {
+        const itemPayload = {
+          data_inici: d,
+          data_fi: d,
+          tipus_abast: abast,
+          activitats_permeses: permeses,
+          activitats_bloquejades: bloquejades,
+          motiu: motiu,
+          torn: torn
+        };
+        const r = await Store.crearRestriccioActivitats(itemPayload);
+        if (r && r.ok) createdCount++;
+      }
+      showToast(`S'han desat correctament ${createdCount} restriccions de tallers.`, 'success');
       if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
       await loadAdminRestriccionsList();
       await refreshAppointmentsDashboard();
     } else {
-      showToast(res?.error || 'Error desant la restricció.', 'error');
+      const payload = {
+        data_inici: dataInici,
+        data_fi: dataFi,
+        tipus_abast: abast,
+        activitats_permeses: permeses,
+        activitats_bloquejades: bloquejades,
+        motiu: motiu,
+        torn: torn
+      };
+      
+      const res = await Store.crearRestriccioActivitats(payload);
+
+      if (res && res.ok) {
+        showToast('Restricció de tallers desada correctament.', 'success');
+        if (document.getElementById('restr-input-motiu')) document.getElementById('restr-input-motiu').value = '';
+        await loadAdminRestriccionsList();
+        await refreshAppointmentsDashboard();
+      } else {
+        showToast(res?.error || 'Error desant la restricció.', 'error');
+      }
     }
   } catch (err) {
     showToast('Error desant restricció: ' + err.message, 'error');
