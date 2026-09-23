@@ -54,18 +54,13 @@ async function initAdminApp() {
     }
   } catch (e) {}
 
-  const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
-  const hasToken = (typeof localStorage !== 'undefined' && (localStorage.getItem('roig_admin_token') || localStorage.getItem('roig_admin_pin'))) || 
-                   (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('roig_admin_token') || sessionStorage.getItem('roig_admin_pin')));
+  const isAuth = (typeof localStorage !== 'undefined' && localStorage.getItem('roig_admin_auth') === '1') || 
+                 (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('roig_admin_auth') === '1');
 
-  if (isAuth && hasToken) {
+  if (isAuth) {
     if (typeof applyAdminRoleUI === 'function') applyAdminRoleUI();
     await loadAdminDashboardData();
   } else {
-    try {
-      localStorage.removeItem('roig_admin_auth');
-      sessionStorage.removeItem('roig_admin_auth');
-    } catch(e) {}
     const lockScreen = document.getElementById('admin-lock-screen');
     if (lockScreen) {
       lockScreen.style.setProperty('display', 'flex', 'important');
@@ -1769,6 +1764,12 @@ function setupEventListeners() {
       const res = await Store.hydrateFromGoogleSheets();
       showToast(res.message || 'Hidratació completada amb èxit!', 'success');
       await refreshStudentsList();
+      if (typeof refreshAppointmentsDashboard === 'function') {
+        await refreshAppointmentsDashboard();
+      }
+      if (typeof carregarResumMensualAdmin === 'function') {
+        carregarResumMensualAdmin();
+      }
     } catch (err) {
       showToast('Error en la hidratació: ' + err.message, 'error');
       if (err.message.includes('URL') || err.message.includes('configurat')) {
@@ -2939,9 +2940,13 @@ async function renderAdminCalendarMonth() {
     adminMonthReservesMap = {};
     if (Array.isArray(allRes)) {
       allRes.forEach(r => {
-        if (!r.estat || !r.estat.toLowerCase().startsWith('cancel')) {
-          if (!adminMonthReservesMap[r.data]) adminMonthReservesMap[r.data] = [];
-          adminMonthReservesMap[r.data].push(r);
+        const est = (r.estat || '').toLowerCase();
+        if (!est.startsWith('cancel') && !est.startsWith('anul')) {
+          const cleanDate = (typeof Store !== 'undefined' && Store.sanitizeDate) ? Store.sanitizeDate(r.data) : (r.data || '').slice(0, 10);
+          if (cleanDate) {
+            if (!adminMonthReservesMap[cleanDate]) adminMonthReservesMap[cleanDate] = [];
+            adminMonthReservesMap[cleanDate].push(r);
+          }
         }
       });
     }
@@ -3173,8 +3178,10 @@ async function renderAdminCalendarWeek() {
   weekDates.forEach(dt => { weekResMap[dt] = []; });
   if (Array.isArray(allRes)) {
     allRes.forEach(r => {
-      if (weekResMap[r.data] && (!r.estat || !r.estat.toLowerCase().startsWith('cancel'))) {
-        weekResMap[r.data].push(r);
+      const cleanDate = (typeof Store !== 'undefined' && Store.sanitizeDate) ? Store.sanitizeDate(r.data) : (r.data || '').slice(0, 10);
+      const est = (r.estat || '').toLowerCase();
+      if (weekResMap[cleanDate] && !est.startsWith('cancel') && !est.startsWith('anul')) {
+        weekResMap[cleanDate].push(r);
       }
     });
   }
@@ -3500,7 +3507,10 @@ async function renderAdminDayAppointments(dateStr) {
     reserves = [];
   }
 
-  const activeReserves = reserves.filter(r => !r.estat || !r.estat.toLowerCase().startsWith('cancel'));
+  const activeReserves = reserves.filter(r => {
+    const est = (r.estat || '').toLowerCase();
+    return !est.startsWith('cancel') && !est.startsWith('anul');
+  });
   if (countDisplay) {
     if (activeReserves.length > 0) {
       const actBreakdown = {};

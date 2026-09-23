@@ -1068,6 +1068,25 @@ const Store = {
     return { ok: true, configured: Boolean(cfg.google_sheets_url), urlPreview: cfg.google_sheets_url ? (cfg.google_sheets_url.slice(0, 30) + '...') : '' };
   },
 
+  sanitizeDate(val) {
+    if (!val) return '';
+    const s = String(val).trim();
+    const m = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    if (m) return `${m[1]}-${String(m[2]).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+    const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+    const m2 = s.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+    if (m2 && months[m2[1]]) return `${m2[3]}-${months[m2[1]]}-${String(m2[2]).padStart(2, '0')}`;
+    return s.slice(0, 10);
+  },
+
+  sanitizeTime(val, defaultTime = '10:00') {
+    if (!val) return defaultTime;
+    const s = String(val).trim();
+    const m = s.match(/(\d{1,2}):(\d{2})/);
+    if (m) return `${String(m[1]).padStart(2, '0')}:${m[2]}`;
+    return defaultTime;
+  },
+
   async hydrateFromGoogleSheets(customUrl = null) {
     if (this.mode === 'api') {
       const res = await fetch(`${this.apiBase}/api/sync/hydrate`, {
@@ -1077,6 +1096,12 @@ const Store = {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Error en la hidratació');
+      try {
+        const freshRes = await this.getReserves();
+        const d = this._getLocalData();
+        d.reserves = freshRes;
+        this._saveLocalData(d);
+      } catch(e) {}
       return json;
     }
 
@@ -1093,6 +1118,14 @@ const Store = {
     if (json.data.alumnes) d.alumnes = json.data.alumnes;
     if (json.data.paquets) d.paquets = json.data.paquets;
     if (json.data.sessions) d.sessions = json.data.sessions;
+    if (json.data.reserves && Array.isArray(json.data.reserves)) {
+      d.reserves = json.data.reserves.map(r => ({
+        ...r,
+        data: this.sanitizeDate(r.data),
+        hora_inici: this.sanitizeTime(r.hora_inici, '10:00'),
+        hora_fi: this.sanitizeTime(r.hora_fi, '11:30')
+      }));
+    }
     if (json.data.config) d.config = { ...d.config, ...json.data.config };
     this._saveLocalData(d);
     return { ok: true, message: 'Dades hidratades correctament al navegador.' };
@@ -1124,6 +1157,7 @@ const Store = {
     const data = this._getLocalData();
     const paquets = data.paquets || [];
     const sessions = data.sessions || [];
+    const reserves = (typeof this.getReserves === 'function') ? await this.getReserves() : (data.reserves || []);
 
     const payload = {
       action: 'sync_all',
@@ -1131,6 +1165,7 @@ const Store = {
       alumnes: alumnes,
       paquets: paquets,
       sessions: sessions,
+      reserves: reserves,
       config: config
     };
 
@@ -1148,24 +1183,35 @@ const Store = {
   /* ====================== RESERVES & AFORAMENT ====================== */
 
   async getReserves(filters = {}) {
+    let list = [];
     if (this.mode === 'api') {
       try {
         const q = new URLSearchParams(filters);
         const res = await fetch(`${this.apiBase}/api/reserves?${q.toString()}&t=${Date.now()}`);
         const json = await res.json();
         if (json.ok && Array.isArray(json.data)) {
-          return json.data;
+          list = json.data;
         }
       } catch (e) {
         console.warn('Error obtenint reserves de l\'API:', e);
       }
     }
-    const data = this._getLocalData();
-    let resList = data.reserves || [];
-    if (filters.data) resList = resList.filter(r => r.data === filters.data);
-    if (filters.student_id) resList = resList.filter(r => r.student_id === filters.student_id);
-    if (filters.estat) resList = resList.filter(r => r.estat === filters.estat);
-    return resList;
+    
+    if (!list || list.length === 0) {
+      const data = this._getLocalData();
+      let resList = data.reserves || [];
+      if (filters.data) resList = resList.filter(r => this.sanitizeDate(r.data) === filters.data);
+      if (filters.student_id) resList = resList.filter(r => r.student_id === filters.student_id);
+      if (filters.estat) resList = resList.filter(r => r.estat === filters.estat);
+      list = resList;
+    }
+
+    return (list || []).map(r => ({
+      ...r,
+      data: this.sanitizeDate(r.data),
+      hora_inici: this.sanitizeTime(r.hora_inici, '10:00'),
+      hora_fi: this.sanitizeTime(r.hora_fi, '11:30')
+    }));
   },
 
   getActivitats() {
