@@ -1232,15 +1232,15 @@ const Store = {
     if (data.activitats && Array.isArray(data.activitats) && data.activitats.length > 0) {
       return data.activitats.filter(a => a.actiu !== false);
     }
-    const capTorn = parseInt(data.config?.capacitat_max_torn || 4, 10);
+    const capTorn = parseInt(data.config?.capacitat_max_torn || 2, 10);
     const capModelatge = parseInt(data.config?.capacitat_max_modelatge || 8, 10);
     const capPintar = parseInt(data.config?.capacitat_max_pintar || 12, 10);
     return [
       { id: "torn", nom: "Torn", descripcio: "classe de torn o acabar treballs de torn", capacitatMax: capTorn, icon: "", color: "#B91C1C", actiu: true },
       { id: "modelatge", nom: "Modelatge", descripcio: "modelatge o acabar treballs sense torn", capacitatMax: capModelatge, icon: "", color: "#047857", actiu: true },
       { id: "pintar", nom: "Pintar ceràmica", descripcio: "Pintar peces de biscuit ceràmica", capacitatMax: capPintar, icon: "", color: "#1D4ED8", actiu: true },
-      { id: "experiencia_torn_adult", nom: "Experiència al torn adults", descripcio: "Iniciació pràctica al torn de terrissaire (2h)", capacitatMax: 4, icon: "", color: "#831D1D", actiu: true },
-      { id: "experiencia_torn_infant", nom: "Experiència al torn menors 12 anys", descripcio: "Iniciació al torn per a infants (2h)", capacitatMax: 4, icon: "", color: "#B45309", actiu: true }
+      { id: "experiencia_torn", nom: "Experiència al torn", descripcio: "Iniciació pràctica al torn de terrissaire (2h)", capacitatMax: 2, icon: "", color: "#831D1D", actiu: true },
+      { id: "experiencia_modelatge", nom: "Experiència modelatge", descripcio: "Iniciació al modelatge ceràmic manual (2h)", capacitatMax: 8, icon: "", color: "#047857", actiu: true }
     ];
   },
 
@@ -1799,15 +1799,28 @@ const Store = {
         if (timeoutId) clearTimeout(timeoutId);
         const json = await res.json();
         if (json.ok && json.activitats) {
+          json.activitats = json.activitats.filter(a => a.id !== 'experiencia_torn_adult' && a.id !== 'experiencia_torn_infant' && a.id !== 'experienciatornadult' && a.id !== 'experienciatorninfant');
           json.activitats.forEach(a => {
-            if (a.id === 'experienciatornadult') a.id = 'experiencia_torn_adult';
-            if (a.id === 'experienciatorninfant') a.id = 'experiencia_torn_infant';
+            if (a.id === 'torn') a.capacitatMax = 2;
+            if (a.id === 'modelatge') a.capacitatMax = 8;
+            if (a.id === 'pintar') a.capacitatMax = 12;
+            if (a.id === 'experiencia_torn') { a.nom = 'Experiència al torn'; a.capacitatMax = 2; }
+            if (a.id === 'experiencia_modelatge') { a.nom = 'Experiència modelatge'; a.capacitatMax = 8; }
           });
-          if (!json.activitats.some(a => a.id === 'experiencia_torn_adult')) {
-            json.activitats.push({ id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4, actiu: true });
+          if (!json.activitats.some(a => a.id === 'torn')) {
+            json.activitats.unshift({ id: 'torn', nom: 'Torn', capacitatMax: 2, actiu: true });
           }
-          if (!json.activitats.some(a => a.id === 'experiencia_torn_infant')) {
-            json.activitats.push({ id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4, actiu: true });
+          if (!json.activitats.some(a => a.id === 'modelatge')) {
+            json.activitats.push({ id: 'modelatge', nom: 'Modelatge', capacitatMax: 8, actiu: true });
+          }
+          if (!json.activitats.some(a => a.id === 'pintar')) {
+            json.activitats.push({ id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12, actiu: true });
+          }
+          if (!json.activitats.some(a => a.id === 'experiencia_torn')) {
+            json.activitats.push({ id: 'experiencia_torn', nom: 'Experiència al torn', capacitatMax: 2, actiu: true });
+          }
+          if (!json.activitats.some(a => a.id === 'experiencia_modelatge')) {
+            json.activitats.push({ id: 'experiencia_modelatge', nom: 'Experiència modelatge', capacitatMax: 8, actiu: true });
           }
           const local = this._getLocalData();
           local.activitats = json.activitats;
@@ -1820,15 +1833,28 @@ const Store = {
     }
     const local = this._getLocalData();
     if (local.activitats && Array.isArray(local.activitats) && local.activitats.length > 0) {
+      local.activitats = local.activitats.filter(a => a.id !== 'experiencia_torn_adult' && a.id !== 'experiencia_torn_infant' && a.id !== 'experienciatornadult' && a.id !== 'experienciatorninfant');
       local.activitats.forEach(a => {
-        if (a.id === 'experienciatornadult') a.id = 'experiencia_torn_adult';
-        if (a.id === 'experienciatorninfant') a.id = 'experiencia_torn_infant';
+        if (a.id === 'torn') a.capacitatMax = 2;
+        if (a.id === 'modelatge') a.capacitatMax = 8;
+        if (a.id === 'pintar') a.capacitatMax = 12;
+        if (a.id === 'experiencia_torn') { a.nom = 'Experiència al torn'; a.capacitatMax = 2; }
+        if (a.id === 'experiencia_modelatge') { a.nom = 'Experiència modelatge'; a.capacitatMax = 8; }
       });
-      if (!local.activitats.some(a => a.id === 'experiencia_torn_adult')) {
-        local.activitats.push({ id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4, actiu: true });
+      if (!local.activitats.some(a => a.id === 'torn')) {
+        local.activitats.unshift({ id: 'torn', nom: 'Torn', capacitatMax: 2, actiu: true });
       }
-      if (!local.activitats.some(a => a.id === 'experiencia_torn_infant')) {
-        local.activitats.push({ id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4, actiu: true });
+      if (!local.activitats.some(a => a.id === 'modelatge')) {
+        local.activitats.push({ id: 'modelatge', nom: 'Modelatge', capacitatMax: 8, actiu: true });
+      }
+      if (!local.activitats.some(a => a.id === 'pintar')) {
+        local.activitats.push({ id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12, actiu: true });
+      }
+      if (!local.activitats.some(a => a.id === 'experiencia_torn')) {
+        local.activitats.push({ id: 'experiencia_torn', nom: 'Experiència al torn', capacitatMax: 2, actiu: true });
+      }
+      if (!local.activitats.some(a => a.id === 'experiencia_modelatge')) {
+        local.activitats.push({ id: 'experiencia_modelatge', nom: 'Experiència modelatge', capacitatMax: 8, actiu: true });
       }
       return includeInactive ? local.activitats : local.activitats.filter(a => a.actiu !== false);
     }

@@ -7137,28 +7137,32 @@ async function populateNovaReservaActivitats() {
       : [];
   }
 
-  if (!acts || acts.length === 0) {
-    acts = [
-      { id: 'torn', nom: 'Torn', capacitatMax: 4 },
-      { id: 'modelatge', nom: 'Modelatge', capacitatMax: 8 },
-      { id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12 },
-      { id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4 },
-      { id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4 }
-    ];
-  }
+  // Filtrar activitats antigues desglossades
+  acts = (acts || []).filter(a => a.id !== 'experiencia_torn_adult' && a.id !== 'experiencia_torn_infant' && a.id !== 'experienciatornadult' && a.id !== 'experienciatorninfant');
 
-  // Normalitzar identificadors
+  // Assegurar capacitats i noms oficials
   acts.forEach(a => {
-    if (a.id === 'experienciatornadult') a.id = 'experiencia_torn_adult';
-    if (a.id === 'experienciatorninfant') a.id = 'experiencia_torn_infant';
+    if (a.id === 'torn') a.capacitatMax = 2;
+    if (a.id === 'modelatge') a.capacitatMax = 8;
+    if (a.id === 'pintar') a.capacitatMax = 12;
+    if (a.id === 'experiencia_torn') { a.nom = 'Experiència al torn'; a.capacitatMax = 2; }
+    if (a.id === 'experiencia_modelatge') { a.nom = 'Experiència modelatge'; a.capacitatMax = 8; }
   });
 
-  // Garantir que les dues noves experiències sempre hi siguin
-  if (!acts.some(a => a.id === 'experiencia_torn_adult')) {
-    acts.push({ id: 'experiencia_torn_adult', nom: 'Experiència al torn adults', capacitatMax: 4 });
+  if (!acts.some(a => a.id === 'torn')) {
+    acts.unshift({ id: 'torn', nom: 'Torn', capacitatMax: 2 });
   }
-  if (!acts.some(a => a.id === 'experiencia_torn_infant')) {
-    acts.push({ id: 'experiencia_torn_infant', nom: 'Experiència al torn menors 12 anys', capacitatMax: 4 });
+  if (!acts.some(a => a.id === 'modelatge')) {
+    acts.push({ id: 'modelatge', nom: 'Modelatge', capacitatMax: 8 });
+  }
+  if (!acts.some(a => a.id === 'pintar')) {
+    acts.push({ id: 'pintar', nom: 'Pintar ceràmica', capacitatMax: 12 });
+  }
+  if (!acts.some(a => a.id === 'experiencia_torn')) {
+    acts.push({ id: 'experiencia_torn', nom: 'Experiència al torn', capacitatMax: 2 });
+  }
+  if (!acts.some(a => a.id === 'experiencia_modelatge')) {
+    acts.push({ id: 'experiencia_modelatge', nom: 'Experiència modelatge', capacitatMax: 8 });
   }
 
   // Deduplicar per id

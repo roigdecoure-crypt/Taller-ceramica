@@ -856,6 +856,19 @@ def init_db():
             except Exception:
                 pass
 
+        # Migració automàtica d'activitats i aforaments oficials (Torn: 2 places, Modelatge: 8 places)
+        try:
+            cursor.execute("UPDATE configuracio SET valor = '2' WHERE clau = 'capacitat_max_torn' AND valor = '4'")
+            cursor.execute("UPDATE activitats SET capacitat_max = 2 WHERE id = 'torn' AND capacitat_max = 4")
+            cursor.execute("UPDATE activitats SET capacitat_max = 8 WHERE id = 'modelatge' AND capacitat_max != 8")
+            cursor.execute("UPDATE activitats SET actiu = 0 WHERE id IN ('experiencia_torn_adult', 'experiencia_torn_infant')")
+            cursor.execute("INSERT OR REPLACE INTO activitats (id, nom, descripcio, capacitat_max, color, actiu, ordre) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           ('experiencia_torn', 'Experiència al torn', 'Iniciació pràctica al torn de terrissaire (2h)', 2, '#831D1D', 1, 4))
+            cursor.execute("INSERT OR REPLACE INTO activitats (id, nom, descripcio, capacitat_max, color, actiu, ordre) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           ('experiencia_modelatge', 'Experiència modelatge', 'Sessió guiada de modelatge creatiu a mà (2h)', 8, '#047857', 1, 5))
+        except Exception as e:
+            logger.warning(f"Error aplicant migració activitats: {e}")
+
         # Franges horàries oficials: Matí (10:00 - 13:00) i Tarda (17:00 - 20:00) de 2 hores (Roig de Coure)
         default_franges_json = json.dumps([
             {"id": "M1", "nom": "Matí (10:00 - 13:00)", "inici": "10:00", "fi": "13:00", "hores": 2.0},
@@ -883,7 +896,7 @@ def init_db():
             'google_sheets_url': "https://script.google.com/macros/s/AKfycbzMoUg5Ulqpgepq4D01yolxmGjZsI8yjnNt64gwLnst_QnhkF6GgwaGJcXcv4VFZBQO/exec",
             'google_calendar_name': "reserves",
             'aforament_maxim_per_franja': "12",
-            'capacitat_max_torn': "4",
+            'capacitat_max_torn': "2",
             'capacitat_max_modelatge': "8",
             'capacitat_max_pintar': "12",
             'whatsapp_enabled': "0",
@@ -1627,11 +1640,11 @@ def get_student_balance(student_id):
         }
 
 DEFAULT_ACTIVITATS = [
-    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 4, "icon": "", "color": "#B91C1C"},
+    {"id": "torn", "nom": "Torn", "descripcio": "Sessió al torn de terrissaire", "capacitatMax": 2, "icon": "", "color": "#B91C1C"},
     {"id": "modelatge", "nom": "Modelatge", "descripcio": "Modelat de fang a mà i escultura", "capacitatMax": 8, "icon": "", "color": "#047857"},
     {"id": "pintar", "nom": "Pintar ceràmica", "descripcio": "Pintura i esmaltat sobre ceràmica", "capacitatMax": 12, "icon": "", "color": "#1D4ED8"},
-    {"id": "experiencia_torn_adult", "nom": "Experiència al torn adults", "descripcio": "Iniciació pràctica al torn de terrissaire (2h)", "capacitatMax": 4, "icon": "", "color": "#831D1D"},
-    {"id": "experiencia_torn_infant", "nom": "Experiència al torn menors 12 anys", "descripcio": "Iniciació al torn per a infants (2h)", "capacitatMax": 4, "icon": "", "color": "#B45309"}
+    {"id": "experiencia_torn", "nom": "Experiència al torn", "descripcio": "Iniciació pràctica al torn de terrissaire (2h)", "capacitatMax": 2, "icon": "", "color": "#831D1D"},
+    {"id": "experiencia_modelatge", "nom": "Experiència modelatge", "descripcio": "Sessió guiada de modelatge creatiu a mà (2h)", "capacitatMax": 8, "icon": "", "color": "#047857"}
 ]
 
 def slugify_activity_id(name):
@@ -3041,8 +3054,10 @@ def get_disponibilitat(data_str):
             act_id = act['id']
             act_nom = act['nom'].lower()
             is_blocked = restr_franja['te_restriccio'] and act_id.lower() in restr_franja['bloquejades']
-            if act_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in act_id:
-                ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in (r.get('activitat_id') or '').lower() or 'torn' in (r.get('activitat') or '').lower())
+            if act_id in ('torn', 'experiencia_torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in act_id:
+                ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() in ('torn', 'experiencia_torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in (r.get('activitat_id') or '').lower() or 'torn' in (r.get('activitat') or '').lower())
+            elif act_id in ('modelatge', 'experiencia_modelatge') or 'modelat' in act_id:
+                ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() in ('modelatge', 'experiencia_modelatge') or 'modelat' in (r.get('activitat_id') or '').lower() or 'modelat' in (r.get('activitat') or '').lower())
             else:
                 ocupat_act = sum(int(r.get('places') or 1) for r in res_franja if (r.get('activitat_id') or '').lower() == act_id or (r.get('activitat') or '').lower() == act_nom)
             ocupacio_per_act[act_id] = ocupat_act
@@ -6455,11 +6470,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     # 2. Comprovar aforament particular de l'activitat (només si no s'ha marcat forçar places d'activitat)
                     if not forcar_aforament:
-                        is_torn_family = activitat_id in ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in activitat_id
+                        is_torn_family = activitat_id in ('torn', 'experiencia_torn', 'experiencia_torn_adult', 'experiencia_torn_infant') or 'torn' in activitat_id
+                        is_modelatge_family = activitat_id in ('modelatge', 'experiencia_modelatge') or 'modelat' in activitat_id
                         if is_torn_family:
                             cursor.execute('''
                                 SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
-                                WHERE data = ? AND (LOWER(activitat_id) IN ('torn', 'experiencia_torn_adult', 'experiencia_torn_infant') OR LOWER(activitat) LIKE '%torn%') AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                WHERE data = ? AND (LOWER(activitat_id) IN ('torn', 'experiencia_torn', 'experiencia_torn_adult', 'experiencia_torn_infant') OR LOWER(activitat) LIKE '%torn%') AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
+                                    (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
+                                    (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
+                                )
+                            ''', (data_res, 1 if is_tarda else 0, 1 if is_tarda else 0))
+                        elif is_modelatge_family:
+                            cursor.execute('''
+                                SELECT SUM(COALESCE(places, 1)) as act_ocupades FROM reserves
+                                WHERE data = ? AND (LOWER(activitat_id) IN ('modelatge', 'experiencia_modelatge') OR LOWER(activitat) LIKE '%modelat%') AND estat IN ('confirmada', 'pendent_paga_senyal') AND (
                                     (? = 1 AND (franja = 'T1' OR hora_inici >= '14:00')) OR
                                     (? = 0 AND (franja = 'M1' OR hora_inici < '14:00' OR franja IS NULL))
                                 )

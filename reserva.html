@@ -724,10 +724,10 @@
             <span class="step-badge">1</span> Tria l'activitat
           </div>
           <div class="activities-grid" id="activities-container">
-            <div class="act-card active" data-id="torn" data-cap="4">
+            <div class="act-card active" data-id="torn" data-cap="2">
               <div class="act-top">
                 <button type="button" class="btn-act-info" data-act="torn" title="Més informació">ℹ️ Info</button>
-                <span class="act-cap-badge" id="badge-cap-torn">Màx. 4 torns</span>
+                <span class="act-cap-badge" id="badge-cap-torn">Màx. 2 torns</span>
               </div>
               <div class="act-title">Torn</div>
               <div class="act-desc">classe de torn o acabar treballs de torn</div>
@@ -751,22 +751,22 @@
               <div class="act-desc">Pintar peces de biscuit ceràmica</div>
             </div>
 
-            <div class="act-card" data-id="experiencia_torn_adult" data-cap="4">
+            <div class="act-card" data-id="experiencia_torn" data-cap="2">
               <div class="act-top">
-                <button type="button" class="btn-act-info" data-act="experiencia_torn_adult" title="Més informació">ℹ️ Info</button>
-                <span class="act-cap-badge" id="badge-cap-exp-adult">Màx. 4 torns</span>
+                <button type="button" class="btn-act-info" data-act="experiencia_torn" title="Més informació">ℹ️ Info</button>
+                <span class="act-cap-badge" id="badge-cap-exp-torn">Màx. 2 torns</span>
               </div>
-              <div class="act-title">Experiència al torn adults</div>
+              <div class="act-title">Experiència al torn</div>
               <div class="act-desc">Iniciació pràctica al torn de terrissaire (2h)</div>
             </div>
 
-            <div class="act-card" data-id="experiencia_torn_infant" data-cap="4">
+            <div class="act-card" data-id="experiencia_modelatge" data-cap="8">
               <div class="act-top">
-                <button type="button" class="btn-act-info" data-act="experiencia_torn_infant" title="Més informació">ℹ️ Info</button>
-                <span class="act-cap-badge" id="badge-cap-exp-infant">Màx. 4 torns</span>
+                <button type="button" class="btn-act-info" data-act="experiencia_modelatge" title="Més informació">ℹ️ Info</button>
+                <span class="act-cap-badge" id="badge-cap-exp-modelatge">Fins a 8 places</span>
               </div>
-              <div class="act-title">Experiència al torn menors 12 anys</div>
-              <div class="act-desc">Iniciació creativa al torn per a infants (2h)</div>
+              <div class="act-title">Experiència modelatge</div>
+              <div class="act-desc">Iniciació creativa al modelatge ceràmic sense torn (2h)</div>
             </div>
           </div>
 
@@ -1219,8 +1219,6 @@
           const data = await resAct.json();
           if (data.ok && data.activitats) {
             data.activitats.forEach(act => {
-              if (act.id === 'experienciatornadult') act.id = 'experiencia_torn_adult';
-              if (act.id === 'experienciatorninfant') act.id = 'experiencia_torn_infant';
               if (act.id === 'torn') {
                 state.activitatCapMax = act.capacitatMax;
                 const b = document.getElementById('badge-cap-torn');
@@ -1233,12 +1231,12 @@
                 state.activitatCapMax = act.capacitatMax;
                 const b = document.getElementById('badge-cap-pintar');
                 if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
-              } else if (act.id === 'experiencia_torn_adult') {
-                const b = document.getElementById('badge-cap-exp-adult');
+              } else if (act.id === 'experiencia_torn' || act.id === 'experiencia_torn_adult' || act.id === 'experiencia_torn_infant') {
+                const b = document.getElementById('badge-cap-exp-torn');
                 if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
-              } else if (act.id === 'experiencia_torn_infant') {
-                const b = document.getElementById('badge-cap-exp-infant');
-                if (b) b.textContent = `Màx. ${act.capacitatMax} torns`;
+              } else if (act.id === 'experiencia_modelatge') {
+                const b = document.getElementById('badge-cap-exp-modelatge');
+                if (b) b.textContent = `Fins a ${act.capacitatMax} places`;
               }
 
               // Actualitzar descripció i títol dinàmicament des de la base de dades
@@ -1774,19 +1772,33 @@
           includes: '• Peça ceràmica en biscuit a triar al taller.<br>• Pintures, esmalts especials, pinzells, esponges i materials.<br>• Enfornat i cocció final al forn ceràmic.',
           price: 'Segons la peça triada (a partir de 15 €)'
         },
-        'experiencia_torn_adult': {
+        'experiencia_torn': {
           badge: 'Experiència de 2 hores',
-          title: 'Experiència al torn adults',
-          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn per primer cop sense necessitat de cap coneixement previ. Aprendràs a preparar el fang, pastar, centrar la pella sobre el plat giratori, obrir i aixecar les parets per crear les teves primeres peces ceràmiques (com bols o tasses).',
+          title: 'Experiència al torn',
+          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ. Aprendràs a preparar el fang, pastar, centrar la pella sobre el plat giratori, obrir i aixecar les parets per crear les teves primeres peces ceràmiques (com bols o tasses).',
           includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Retoc, assecat i primera cocció (biscuit) de la teva peça al forn ceràmic perquè te la puguis endur a casa un cop cuita.',
           price: '50,00 € (Tot inclòs)'
         },
+        'experiencia_modelatge': {
+          badge: 'Experiència de 2 hores',
+          title: 'Experiència modelatge ceràmic',
+          desc: 'Una sessió creativa de 2 hores dedicada a la construcció manual de peces amb fang: pessic, xurros, planxes i relleus. Ideal per gaudir en solitari, parella o grup descobrint la plasticitat del fang al teu propi ritme.',
+          includes: '• Espai ampli de treball i eines manuals de modelatge.<br>• Fang ceràmic de qualitat i assessorament continu.<br>• Cocció al forn ceràmic de les peces elaborades.',
+          price: '40,00 € (Tot inclòs)'
+        },
+        'experiencia_torn_adult': {
+          badge: 'Experiència de 2 hores',
+          title: 'Experiència al torn',
+          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ.',
+          includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Cocció al forn ceràmic.',
+          price: '50,00 € (Tot inclòs)'
+        },
         'experiencia_torn_infant': {
-          badge: 'Experiència de 2 hores (Infants)',
-          title: 'Experiència al torn menors 12 anys',
-          desc: 'Una experiència sensorial, creativa i molt divertida adreçada especialment a infants menors de 12 anys. Acompanyats en tot moment pel ceramista, aprendran la màgia de transformar una bola de fang en una peça real amb les seves pròpies mans al torn, d’una manera propera, engrescadora i adaptada al seu ritme.',
-          includes: '• Torn elèctric adaptat durant 2 hores.<br>• Fang especial suau, davantal i eines segures per a infants.<br>• Guia constant i atenció personalitzada.<br>• Cocció de la peça al forn perquè la puguin conservar per sempre.',
-          price: '45,00 € (Tot inclòs)'
+          badge: 'Experiència de 2 hores',
+          title: 'Experiència al torn',
+          desc: 'Una experiència sensorial i creativa de 2 hores al torn de terrissaire.',
+          includes: '• Torn elèctric durant 2 hores.<br>• Fang especial suau, davantal i eines.<br>• Guia constant i atenció personalitzada.<br>• Cocció de la peça al forn.',
+          price: '50,00 € (Tot inclòs)'
         }
       };
 

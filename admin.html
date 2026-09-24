@@ -676,10 +676,6 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nova Reserva
         </button>
-        <button type="button" class="btn btn-whatsapp-directe" id="btn-top-link-bestreta" onclick="openAdminLinkBestretaDirecteModal();" title="Enviar enllaç de pagament de bestreta per WhatsApp Web" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 700; padding: 8px 16px; border-radius: 0 !important; font-size: 13.5px; background: #25D366; color: #FFFFFF; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(37,211,102,0.3); transition: all 0.15s ease;">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-          Enviar Link WhatsApp
-        </button>
         <button type="button" class="btn-roig-coure" id="btn-nou-alumne" onclick="triggerOpenModal('modal-alumne-backdrop', 'openNewStudentModal');" title="Nou Alumne" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 8px 16px; border-radius: 0 !important; font-size: 13.5px; box-shadow: 0 2px 4px rgba(131,29,29,0.2);">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Nou Alumne
@@ -871,9 +867,6 @@
                 </button>
                 <button type="button" class="btn btn-outline btn-sm" id="btn-admin-dia-restr-quick" onclick="if(typeof openAdminRestriccionsModal==='function'){openAdminRestriccionsModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{triggerOpenModal('modal-admin-restriccions-backdrop', 'openAdminRestriccionsModal');}" style="border-color: #6366F1; color: #3730A3; background: #EEF2FF; white-space: nowrap; flex-shrink: 0; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;">
                   Restringir tallers
-                </button>
-                <button type="button" class="btn btn-outline btn-sm" id="btn-quick-link-bestreta" onclick="openAdminLinkBestretaDirecteModal();" style="border-color: #10B981; color: #047857; background: #ECFDF5; font-weight: 700; white-space: nowrap; flex-shrink: 0; padding: 5px 10px; display: inline-flex; align-items: center; gap: 4px;" title="Enviar enllaç de pagament de bestreta per WhatsApp Web">
-                  📲 Enviar Bestreta
                 </button>
                 <button type="button" class="btn btn-outline btn-sm" id="btn-nova-reserva-dia" onclick="if(typeof openAdminNovaReservaModal==='function'){openAdminNovaReservaModal(typeof adminSelectedDate!=='undefined'?adminSelectedDate:null);}else{document.getElementById('modal-admin-nova-reserva-backdrop').classList.add('active');}" style="border-color: #831D1D; color: #831D1D; white-space: nowrap; flex-shrink: 0; padding: 5px 10px;">
                   + Nova reserva
@@ -2640,11 +2633,11 @@
             <div>
               <label for="admin-res-activitat" style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Activitat:</label>
               <select id="admin-res-activitat" required class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 6px;">
-                <option value="torn">Torn (màx 4)</option>
+                <option value="torn">Torn (màx 2)</option>
                 <option value="modelatge">Modelatge (màx 8)</option>
                 <option value="pintar">Pintar ceràmica (màx 12)</option>
-                <option value="experiencia_torn_adult">Experiència al torn adults (màx 4)</option>
-                <option value="experiencia_torn_infant">Experiència al torn menors 12 anys (màx 4)</option>
+                <option value="experiencia_torn">Experiència al torn (màx 2)</option>
+                <option value="experiencia_modelatge">Experiència modelatge (màx 8)</option>
               </select>
             </div>
             <div>
@@ -2722,10 +2715,6 @@
 
         <div class="modal-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; border-top: 1px solid #E5E7EB; background: #FAF9F8; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
           <button type="button" class="btn btn-secondary btn-sm" onclick="closeAnyModal('modal-admin-nova-reserva-backdrop');">Cancel·lar</button>
-          <button type="button" class="btn btn-success" id="btn-admin-submit-whatsapp-directe" onclick="handleAdminSubmitNovaReserva(null, false, true);" style="padding: 8px 16px; font-size: 13.5px; font-weight: 700; background: #25D366; border: none; color: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; border-radius: 6px; box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-            <span>Confirmar i Enviar per WhatsApp</span>
-          </button>
           <button type="submit" class="btn-roig-coure" id="btn-admin-submit-nova-reserva" style="padding: 8px 18px; font-size: 14px; font-weight: 700; cursor: pointer;">
             Confirmar Reserva
           </button>
@@ -2810,76 +2799,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ENVIAR LINK BESTRETA DIRECTE (ACCÉS RÀPID WHATSAPP) -->
-  <div class="modal-backdrop" id="modal-admin-link-bestreta-directe" style="display: none; z-index: 10000;" onclick="if(event.target===this) closeAnyModal(this.id);">
-    <div class="modal-dialog" style="max-width: 520px; border-radius: 0; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25);">
-      <div class="modal-header" style="background: linear-gradient(135deg, #10B981, #059669); color: #FFFFFF; padding: 16px 20px; border-radius: 0; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-          <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Enviar Enllaç de Pagament per WhatsApp</h3>
-        </div>
-        <button type="button" class="modal-close" style="color: #FFFFFF; opacity: 0.85; background: none; border: none; font-size: 24px; cursor: pointer; line-height: 1;" onclick="closeAnyModal('modal-admin-link-bestreta-directe');">&times;</button>
-      </div>
 
-      <div class="modal-body" style="padding: 20px; background: #FFFFFF; display: flex; flex-direction: column; gap: 14px;">
-        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 10px 14px; font-size: 12.5px; color: #166534; border-radius: 4px;">
-          Introdueix el número de mòbil del client i s'obrirà WhatsApp Web amb l'enllaç de Square ja redactat.
-        </div>
-
-        <div>
-          <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Telèfon mòbil del client (amb WhatsApp):</label>
-          <input type="tel" id="direct-bestreta-tel" placeholder="Ex: 612345678" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 4px;">
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Nom del client:</label>
-            <input type="text" id="direct-bestreta-nom" placeholder="Ex: Maria" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; border: 1px solid #D1D5DB; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Import bestreta (€):</label>
-            <input type="number" id="direct-bestreta-import" value="40" min="5" step="5" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 700; color: #047857; text-align: center; border: 1px solid #10B981; border-radius: 4px;">
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Data del taller:</label>
-            <input type="date" id="direct-bestreta-data" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid #D1D5DB; border-radius: 4px;">
-          </div>
-          <div>
-            <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 4px;">Places / Persones:</label>
-            <input type="number" id="direct-bestreta-places" value="4" min="1" max="15" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 14px; text-align: center; border: 1px solid #D1D5DB; border-radius: 4px;">
-          </div>
-        </div>
-
-        <!-- Estat de càrrega o Enllaç Generat -->
-        <div id="direct-bestreta-loading" style="display: none; text-align: center; padding: 14px 10px;">
-          <div style="display: inline-block; width: 24px; height: 24px; border: 3px solid #E5E7EB; border-top-color: #10B981; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px;"></div>
-          <div style="font-size: 12.5px; color: #047857; font-weight: 600;">Generant enllaç de pagament segur a Square...</div>
-        </div>
-
-        <div id="direct-bestreta-result" style="display: none; flex-direction: column; gap: 8px;">
-          <label style="font-size: 12px; font-weight: 700; color: #374151; display: block; margin-bottom: 2px;">Enllaç Square generat:</label>
-          <div style="display: flex; gap: 6px;">
-            <input type="text" id="direct-bestreta-url" readonly style="flex: 1; padding: 8px 10px; font-size: 12px; border: 1px solid #D1D5DB; background: #F3F4F6; font-family: monospace;">
-            <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('direct-bestreta-url').value); showToast('Enllaç copiat!', 'success');">Copiar</button>
-          </div>
-        </div>
-
-        <!-- Botons d'acció: WhatsApp Business i Navegador -->
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
-          <button type="button" id="btn-executar-enviament-directe-app" onclick="executarEnviamentDirecteBestretaWhatsApp('business');" style="display: flex; align-items: center; justify-content: center; gap: 10px; background: #25D366; color: #FFFFFF; border: none; padding: 13px 18px; font-weight: 800; font-size: 14.5px; border-radius: 6px; box-shadow: 0 4px 6px rgba(37, 211, 102, 0.3); cursor: pointer;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-            <span id="btn-executar-enviament-directe-app-label">📲 Obrir a WhatsApp Business</span>
-          </button>
-          <button type="button" id="btn-executar-enviament-directe-wa" onclick="executarEnviamentDirecteBestretaWhatsApp('web');" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: #F0FDF4; color: #166534; border: 1.5px solid #86EFAC; padding: 10px 16px; font-weight: 700; font-size: 13px; border-radius: 6px; cursor: pointer;">
-            <span id="btn-executar-enviament-directe-wa-label">🌐 Obrir a WhatsApp Web / Navegador</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL: EDITAR HORARI, DATA, DURADA I INTERVAL DE RESERVA (PUNTUAL O SÈRIE) -->
   <div class="modal-backdrop" id="modal-admin-editar-reserva-backdrop" style="display: none;" onclick="if(event.target===this) closeAnyModal(this.id);">
