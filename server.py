@@ -6582,8 +6582,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     f"✨ *Nova reserva rebuda al Taller!*\n"
                     f"👤 *Alumne:* {student_nom}\n"
                     f"📞 *Tel:* +{telefon}\n"
-                    f"📅 *Dia:* {data_res} a les {hora_inici}h\n"
-                    f"🎨 *Activitat:* {activitat} ({places} places)\n"
+                    f"📅 *Dia:* {data_res} a les {hora_inici_req}h\n"
+                    f"🎨 *Activitat:* {activitat_nom or activitat_id} ({places_demanades} places)\n"
                     f"🆔 *Codi:* {res_id}"
                 )
 
