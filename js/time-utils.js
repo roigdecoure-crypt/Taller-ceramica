@@ -277,8 +277,32 @@ const TimeUtils = {
       age--;
     }
     return age >= 0 ? age : null;
+  },
+
+  /**
+   * Sanititza un número de telèfon per a WhatsApp evitant duplicar el prefix internacional (ex: 34346... -> 346...)
+   * @param {string} tel
+   * @returns {string} Format internacional net (ex: "34612345678")
+   */
+  cleanWhatsAppPhone(tel) {
+    if (!tel) return '';
+    let clean = String(tel).replace(/\D/g, '');
+    if (clean.startsWith('0034')) {
+      clean = clean.slice(2);
+    }
+    while (clean.startsWith('3434')) {
+      clean = clean.slice(2);
+    }
+    if (clean.length === 9 && ['6', '7', '8', '9'].includes(clean[0])) {
+      clean = '34' + clean;
+    }
+    return clean;
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.formatWhatsAppCleanPhone = TimeUtils.cleanWhatsAppPhone.bind(TimeUtils);
+}
 
 // Exportar per a mòduls o entorns globals de navegador
 if (typeof module !== 'undefined' && module.exports) {

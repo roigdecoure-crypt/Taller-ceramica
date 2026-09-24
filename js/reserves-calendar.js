@@ -558,7 +558,7 @@ class ReservesCalendar {
               </div>
               <div class="res-student-actions">
                 ${r.telefon ? `
-                  <a href="https://wa.me/34${String(r.telefon).replace(/[^0-9]/g, '')}" target="_blank" class="btn-student-whatsapp" title="Obrir WhatsApp" style="font-size:11px; font-weight:700; text-decoration:none;">WA</a>
+                  <a href="https://wa.me/${(typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(r.telefon) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(r.telefon) : (String(r.telefon).replace(/\D/g, '').startsWith('34') ? String(r.telefon).replace(/\D/g, '') : '34' + String(r.telefon).replace(/\D/g, '')))}" target="_blank" class="btn-student-whatsapp" title="Obrir WhatsApp" style="font-size:11px; font-weight:700; text-decoration:none;">WA</a>
                 ` : ''}
                 <button type="button" class="btn-admin-cancel-res" data-res-id="${r.id}" title="Cancel·lar i alliberar plaça" style="font-size:11px; font-weight:700;">
                   Cancel·lar

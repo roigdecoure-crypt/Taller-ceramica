@@ -416,6 +416,8 @@ const server = http.createServer(async (req, res) => {
         } else {
           const rawPhone = targetStr.replace(/[^0-9]/g, '');
           let cleanPhone = rawPhone;
+          if (cleanPhone.startsWith('0034')) cleanPhone = cleanPhone.slice(2);
+          while (cleanPhone.startsWith('3434')) cleanPhone = cleanPhone.slice(2);
           if (cleanPhone.length === 9 && (cleanPhone.startsWith('6') || cleanPhone.startsWith('7') || cleanPhone.startsWith('8') || cleanPhone.startsWith('9'))) {
             cleanPhone = '34' + cleanPhone;
           }

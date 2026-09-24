@@ -1756,18 +1756,27 @@ def get_activitats_info_config():
         print(f"[get_activitats_info_config] Error: {e}")
     return DEFAULT_INFO_ACTIVITATS
 
+def clean_phone_for_whatsapp(to_phone):
+    """Sanititza un número de telèfon per a WhatsApp evitant duplicar el prefix internacional (ex: 34346... -> 346...)"""
+    if not to_phone:
+        return ''
+    clean = re.sub(r'[^0-9]', '', str(to_phone))
+    if clean.startswith('0034'):
+        clean = clean[2:]
+    while clean.startswith('3434'):
+        clean = clean[2:]
+    if len(clean) == 9 and clean.startswith(('6', '7', '8', '9')):
+        clean = '34' + clean
+    return clean
+
 def send_whatsapp_meta(to_phone, template_name, parameters=None, language_code='ca'):
     """
     Envia un missatge mitjançant l'API oficial Meta WhatsApp Cloud API (directament, sense intermediaris).
     Documentació oficial: https://developers.facebook.com/docs/whatsapp/cloud-api
     """
-    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    phone_clean = clean_phone_for_whatsapp(to_phone)
     if not phone_clean:
         return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
-
-    # Assegurar prefix internacional (Espanya 34 per defecte si en té 9)
-    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
-        phone_clean = '34' + phone_clean
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -1831,12 +1840,9 @@ def send_whatsapp_direct(to_phone, message_text):
     """
     Envia un missatge de text directe (com codis de recuperació OTP) per Meta WhatsApp Cloud API.
     """
-    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    phone_clean = clean_phone_for_whatsapp(to_phone)
     if not phone_clean:
         return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
-
-    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
-        phone_clean = '34' + phone_clean
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -2468,9 +2474,7 @@ def render_notification(event_name, r):
   {body_rendered}
 </div>'''
 
-    tel_raw = re.sub(r'[^0-9]', '', str(r.get('telefon') or ''))
-    if len(tel_raw) == 9:
-        tel_raw = '34' + tel_raw
+    tel_raw = clean_phone_for_whatsapp(r.get('telefon'))
     wa_url = f"https://wa.me/{tel_raw}?text={urllib.parse.quote(wa_rendered)}" if tel_raw else ''
 
     return {

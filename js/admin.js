@@ -443,8 +443,8 @@ async function openStudentInlineDetail(studentId) {
     const waBtn = document.getElementById('inline-btn-whatsapp');
     if (waBtn) {
       if (a.telefon) {
-        const cleanPhone = a.telefon.replace(/\D/g, '');
-        waBtn.href = `https://wa.me/34${cleanPhone}`;
+        const cleanPhone = (typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(a.telefon) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(a.telefon) : a.telefon.replace(/\D/g, ''));
+        waBtn.href = `https://wa.me/${cleanPhone}`;
         waBtn.style.display = 'inline-flex';
       } else {
         waBtn.style.display = 'none';
@@ -3854,7 +3854,7 @@ async function renderAdminDayAppointments(dateStr) {
               </button>
             ` : ''}
             ${r.telefon ? `
-              <a href="https://api.whatsapp.com/send?phone=${r.telefon.replace(/[^0-9]/g, '').length === 9 ? '34' + r.telefon.replace(/[^0-9]/g, '') : r.telefon.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
+              <a href="https://api.whatsapp.com/send?phone=${(typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(r.telefon) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(r.telefon) : r.telefon.replace(/\D/g, ''))}&text=${encodeURIComponent(`Hola ${clientNom}, et contactem de Roig de Coure respecte a la teva reserva de ceràmica el dia ${(dateStr || '').split('-').length === 3 && dateStr.split('-')[0].length === 4 ? dateStr.split('-').reverse().join('/') : dateStr} a les ${r.hora_inici || ''}...`)}" target="_blank" class="btn btn-outline btn-sm" style="padding: 3px 6px; font-size: 11.5px; color: #128C7E; border-color: #A7F3D0;" title="Contactar per WhatsApp">
                 WhatsApp
               </a>
             ` : ''}
@@ -5097,8 +5097,7 @@ window.obrirEnllacWhatsApp = obrirEnllacWhatsApp;
 
 // --- GESTIÓ I ENVIAMENT D'ENLLAÇ DE BESTRETA / PAGA I SENYAL (SQUARE / WHATSAPP) ---
 function formatWhatsAppBestretaUrl(tel, nom, dataStr, horaStr, places, importVal, checkoutUrl, mode = 'business') {
-  let cleanTel = (tel || '').replace(/\D/g, '');
-  if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
+  let cleanTel = (typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(tel) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(tel) : String(tel || '').replace(/\D/g, ''));
 
   let dataFmt = dataStr || '';
   if (dataStr && dataStr.includes('-')) {
@@ -8173,8 +8172,7 @@ async function guardarNouValRegalManual() {
 }
 
 function formatWhatsAppValRegalUrl(tel, val, mode = 'business') {
-  let cleanTel = (tel || '').replace(/\D/g, '');
-  if (cleanTel.length === 9) cleanTel = '34' + cleanTel;
+  let cleanTel = (typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(tel) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(tel) : String(tel || '').replace(/\D/g, ''));
 
   const codi = val.codi || '';
   const titol = val.titol_experiencia || 'Taller de Ceràmica';
@@ -9076,8 +9074,8 @@ async function carregarPecesAdmin() {
                 ? `<img src="${photo}" alt="" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB; flex-shrink: 0;">`
                 : `<div style="width: 54px; height: 54px; border-radius: 8px; background: #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">🏺</div>`;
 
-              const telClean = (p.student_telefon || '').replace(/[^0-9]/g, '');
-              const waLink = telClean ? `<a href="https://wa.me/${telClean.startsWith('34') ? telClean : '34' + telClean}" target="_blank" style="font-size: 11px; font-weight: 700; color: #059669; text-decoration: none;">WhatsApp ↗</a>` : '';
+              const telClean = (typeof TimeUtils !== 'undefined' && TimeUtils.cleanWhatsAppPhone) ? TimeUtils.cleanWhatsAppPhone(p.student_telefon) : (typeof formatWhatsAppCleanPhone === 'function' ? formatWhatsAppCleanPhone(p.student_telefon) : (p.student_telefon || '').replace(/\D/g, ''));
+              const waLink = telClean ? `<a href="https://wa.me/${telClean}" target="_blank" style="font-size: 11px; font-weight: 700; color: #059669; text-decoration: none;">WhatsApp ↗</a>` : '';
 
               return `
                 <div style="background: #FFF; border: 1px solid #A7F3D0; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.06);">
