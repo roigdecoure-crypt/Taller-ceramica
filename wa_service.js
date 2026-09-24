@@ -4,7 +4,7 @@
  * sense necessitat de cap intermediari comercial (Whapi/Twilio), a cost 0,00 €/mes.
  */
 
-const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
 const http = require('http');
@@ -22,22 +22,34 @@ let sock = null;
 let currentQR = null;
 let connectionState = 'starting';
 let connectedPhone = null;
+let lastError = null;
+let lastDisconnectCode = null;
 
 const logger = pino({ level: 'error' });
 
 async function startWhatsAppSocket() {
   try {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`[WA Gateway] Iniciant Baileys v${version.join('.')} (Última: ${isLatest})...`);
+    let version = [2, 3000, 1015901307];
+    try {
+      const v = await fetchLatestBaileysVersion();
+      if (v && v.version) version = v.version;
+    } catch (vErr) {
+      console.warn('[WA Gateway] Advertència obtenint versió Baileys:', vErr.message);
+    }
+
+    console.log(`[WA Gateway] Iniciant Baileys v${version.join('.')}...`);
 
     sock = makeWASocket({
       version,
       logger,
       printQRInTerminal: true,
       auth: state,
-      browser: ['Taller Roig de Coure', 'Desktop', '1.0.0'],
-      syncFullHistory: false
+      browser: Browsers.macOS('Chrome'),
+      syncFullHistory: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 10000
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -60,6 +72,8 @@ async function startWhatsAppSocket() {
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         connectionState = 'disconnected';
         connectedPhone = null;
+        lastDisconnectCode = statusCode;
+        lastError = lastDisconnect?.error?.message || `Codi tancament: ${statusCode}`;
         console.warn(`[WA Gateway] Connexió tancada (Codi: ${statusCode}). Reconnectant: ${shouldReconnect}`);
 
         if (shouldReconnect) {
@@ -75,6 +89,7 @@ async function startWhatsAppSocket() {
       } else if (connection === 'open') {
         connectionState = 'open';
         currentQR = null;
+        lastError = null;
         const rawId = sock?.user?.id || '';
         connectedPhone = rawId.split(':')[0].replace(/[^0-9]/g, '');
         console.log(`[WA Gateway] 🎉 Connexió establerta amb èxit com a +${connectedPhone}`);
@@ -103,6 +118,7 @@ async function startWhatsAppSocket() {
     });
 
   } catch (err) {
+    lastError = err.message || String(err);
     console.error('[WA Gateway] Error crític en arrencar el socket:', err);
     setTimeout(startWhatsAppSocket, 5000);
   }
@@ -151,7 +167,9 @@ const server = http.createServer(async (req, res) => {
       connected: connectionState === 'open',
       state: connectionState,
       phone: connectedPhone,
-      qr: currentQR
+      qr: currentQR,
+      last_error: lastError,
+      last_code: lastDisconnectCode
     }));
   }
 
