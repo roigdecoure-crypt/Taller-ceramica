@@ -1951,12 +1951,16 @@ def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=T
     2. Si el microservei no està vinculat o falla, fa fallback automàtic a Whapi.cloud.
     3. Si Whapi falla, fa fallback a Meta Cloud API.
     """
-    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
-    if not phone_clean:
-        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
+    raw_str = str(to_phone or '').strip()
+    if raw_str.endswith('@g.us'):
+        phone_clean = raw_str
+    else:
+        phone_clean = re.sub(r'[^0-9]', '', raw_str)
+        if not phone_clean:
+            return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
 
-    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
-        phone_clean = '34' + phone_clean
+        if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
+            phone_clean = '34' + phone_clean
 
     # 1. Provar microservei Baileys
     try:
