@@ -4452,13 +4452,6 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
                     row = cursor.fetchone()
-                    if not row or not row['valor']:
-                        try:
-                            hydrate_from_google_sheets()
-                            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
-                            row = cursor.fetchone()
-                        except Exception:
-                            pass
 
                     if row and row['valor']:
                         try:

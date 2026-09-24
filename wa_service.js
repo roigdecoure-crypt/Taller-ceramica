@@ -154,6 +154,9 @@ async function tryRestoreAuth() {
           res.on('data', chunk => data += chunk);
           res.on('end', () => {
             try {
+              if (res.statusCode === 404) {
+                return resolve('no_backup');
+              }
               const parsed = JSON.parse(data || '{}');
               if (parsed.ok && parsed.files && typeof parsed.files === 'object') {
                 for (let [fname, b64] of Object.entries(parsed.files)) {
@@ -184,7 +187,11 @@ async function tryRestoreAuth() {
       }
     });
 
-    if (restored) return true;
+    if (restored === true) return true;
+    if (restored === 'no_backup') {
+      console.log('[WA Gateway] No hi ha cap còpia de sessió prèvia. Generant nou codi QR immediatament...');
+      return false;
+    }
 
     console.log(`[WA Gateway] Esperant backend Python per restaurar credencials (${attempt}/15)...`);
     await new Promise(r => setTimeout(r, 2000));
