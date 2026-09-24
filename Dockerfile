@@ -1,24 +1,21 @@
-FROM python:3.9-slim
-
-# Instal·lar Node.js per al microservei autònom de WhatsApp Web
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    gnupg \
-    && mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends nodejs \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:18-slim AS node-build
 
 WORKDIR /app
-
-# Instal·lar mòduls de Node primer (aprofita memòria cau de capes Docker)
 COPY package*.json ./
 RUN npm install --omit=dev
 
+FROM python:3.9-slim
+
+# Copiar Node.js i npm directament des de la imatge oficial de Node
+COPY --from=node-build /usr/local /usr/local
+
+WORKDIR /app
+
+# Copiar dependències de node ja instal·lades
+COPY --from=node-build /app/node_modules ./node_modules
+COPY package*.json ./
+
+# Copiar tot el codi font
 COPY . /app
 
 ENV PORT=8080
