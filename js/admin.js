@@ -3386,7 +3386,11 @@ async function renderAdminCalendarDay() {
   } catch (e) {
     dayReserves = [];
   }
-  const activeRes = dayReserves.filter(r => !r.estat || !r.estat.toLowerCase().startsWith('cancel'));
+  const activeRes = dayReserves.filter(r => {
+    const est = (r.estat || '').toLowerCase();
+    const isClientCanc = r.whatsapp_client_status === 'cancelat' || est.startsWith('cancel') || est.startsWith('anul') || est === 'eliminada';
+    return !isClientCanc;
+  });
   activeRes.sort((a, b) => (a.hora_inici || '00:00').localeCompare(b.hora_inici || '00:00'));
 
   // Desglossament per activitats
@@ -3611,7 +3615,8 @@ async function renderAdminDayAppointments(dateStr) {
 
   const activeReserves = reserves.filter(r => {
     const est = (r.estat || '').toLowerCase();
-    return !est.startsWith('cancel') && !est.startsWith('anul');
+    const isClientCanc = r.whatsapp_client_status === 'cancelat' || est.startsWith('cancel') || est.startsWith('anul') || est === 'eliminada';
+    return !isClientCanc;
   });
   if (countDisplay) {
     if (activeReserves.length > 0) {

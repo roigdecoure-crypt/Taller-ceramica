@@ -769,13 +769,14 @@ function syncCalendarEvent(r) {
     var isConfirmed = r.client_confirmat === 1 || r.whatsapp_client_status === 'confirmat' || r.estat === 'confirmada_client';
     var isCancelled = r.whatsapp_client_status === 'cancelat' || (r.estat && String(r.estat).toLowerCase().indexOf('cancel') !== -1);
 
-    var prefix = "🟡 ";
-    if (isConfirmed) {
-      prefix = "🟢 ";
-    } else if (isCancelled) {
-      prefix = "🔴 ";
+    // Si la reserva està cancel·lada, eliminar-la completament de Google Calendar
+    if (isCancelled) {
+      deleteCalendarEvent(r);
+      Logger.log("🗑️ Reserva cancel·lada eliminada de Google Calendar (Reserva: " + (r.id || nom) + ")");
+      return null;
     }
 
+    var prefix = isConfirmed ? "🟢 " : "🟡 ";
     var title = prefix + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
 
     var startTime = parseDateTimeRobust(r.data, r.hora_inici);
