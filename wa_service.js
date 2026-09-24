@@ -4,6 +4,15 @@
  * sense necessitat de cap intermediari comercial (Whapi/Twilio), a cost 0,00 €/mes.
  */
 
+// Polyfill de crypto per a compatibilitat amb Baileys
+const nodeCrypto = require('crypto');
+if (typeof globalThis.crypto === 'undefined') {
+  globalThis.crypto = nodeCrypto;
+}
+if (typeof global.crypto === 'undefined') {
+  global.crypto = nodeCrypto;
+}
+
 const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');

@@ -1,4 +1,4 @@
-FROM node:18-bookworm AS node-build
+FROM node:20-bookworm AS node-build
 
 WORKDIR /app
 COPY package.json ./
