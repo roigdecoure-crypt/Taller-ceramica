@@ -29,6 +29,15 @@ Aquest document resumeix l'estat exacte del projecte **Taller de Ceràmica - Roi
    - Suport de la capçalera de reserva `X-Admin-PIN` perquè qualsevol acció administrativa tingui autorització garantida.
    - Gestor d'autorecuperació de sessió: si en algun moment el token caduca, apareix un avís senzill per reintroduir el PIN i reintentar l'acció automàticament.
 
+5. **WhatsApp Web Oficial Autònom (Baileys) actiu al 100% amb WhatsApp Business (+34 683 633 880):**
+   - Substitució definitiva de Whapi.cloud (ens estalviem els 35 €/mes, ara a **cost 0,00 €/mes per sempre**).
+   - Microservei propi en Node.js 20 integrat dins del contenidor de Render.
+   - Vinculació per codi QR des del panell d'Administració > *Configuració*.
+   - Estat de connexió en viu: 🟢 **Connectat (+34 683 633 880 - Taller Roig de Coure)**.
+   - Prova real d'enviament completada amb èxit cap a `+34 669 33 46 62`.
+   - Enviarà les confirmacions automàtiques de reserva, recordatoris a 48h i avisos del mateix dia.
+   - Els clients poden confirmar (1) o cancel·lar (2); les reserves cancel·lades s'eliminen automàticament de Google Calendar i s'amaguen de les taules del taller.
+
 ---
 
 ## 🌐 2. ARQUITECTURA I DESPLEGAMENT EN DIRECTE
