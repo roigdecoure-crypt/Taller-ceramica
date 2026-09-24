@@ -185,15 +185,42 @@ async function checkUrlParamsOrSession() {
 
   const targetId = idParam || savedId;
   const targetPin = pinParam || savedPin;
+  const orderId = params.get('orderId') || params.get('order_id') || params.get('transactionId') || params.get('checkoutId');
+  const recargaOk = params.get('recarga_ok');
+  const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : (window.Store && (Store.API_BASE || Store.apiBase) ? (Store.API_BASE || Store.apiBase) : '');
+
+  // Si retornem de Square amb un orderId i targetId, assegurem verificació immediata
+  if (orderId && targetId) {
+    try {
+      await fetch(`${apiBase}/api/checkout/verify-session?order_id=${encodeURIComponent(orderId)}&id=${encodeURIComponent(targetId)}`);
+    } catch(e) {
+      console.warn('Error verificant sessió Square prèvia a login:', e);
+    }
+  }
 
   // Si disposem d'identificador i PIN, intentem iniciar sessió automàticament
   if (targetId && targetPin) {
     const success = await loginStudent(targetId, targetPin, true);
     if (success) {
       // Si retorna d'un pagament amb èxit
-      if (paymentStatus === 'success' && currentStudent) {
+      if ((paymentStatus === 'success' || recargaOk || orderId) && currentStudent) {
         sessionStorage.removeItem('pending_stripe_hours');
-        showToast('Pagament rebut correctament. El saldo s\'actualitzarà automàticament.', 'success');
+        if (orderId) {
+          try {
+            const vRes = await fetch(`${apiBase}/api/checkout/verify-session?order_id=${encodeURIComponent(orderId)}&id=${encodeURIComponent(currentStudent.alumne.id)}`);
+            const vData = await vRes.json();
+            if (vData.ok && vData.credited) {
+              if (window.SoundEngine) SoundEngine.playCheckin();
+              showToast(`Pagament Square verificat! S'han sumat ${vData.hores} hores al teu saldo.`, 'success');
+            } else {
+              showToast('Pagament rebut correctament. El saldo s\'ha actualitzat.', 'success');
+            }
+          } catch(e) {
+            showToast('Pagament rebut correctament. El saldo s\'actualitzarà automàticament.', 'success');
+          }
+        } else {
+          showToast('Pagament rebut correctament. El saldo s\'actualitzarà automàticament.', 'success');
+        }
         window.history.replaceState({}, document.title, window.location.pathname + `?id=${currentStudent.alumne.id}`);
         // Refrescar dades de l'alumne des del servidor
         try {

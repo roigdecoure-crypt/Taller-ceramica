@@ -895,14 +895,16 @@ def init_db():
             'carnet_design': json.dumps(DEFAULT_CARNET_CONFIG, ensure_ascii=False),
             'franges_horaries': default_franges_json,
             'admin_pin': os.environ.get('ADMIN_PIN', '1234'),
-            'square_app_id': "",
-            'square_access_token': "",
-            'square_location_id': "",
-            'square_environment': "sandbox",
-            'square_webhook_signature_key': ""
+            'square_app_id': os.environ.get('SQUARE_APP_ID', 'sq0idp-yvpEIt-YS9VLOy6-Q19miQ'),
+            'square_access_token': os.environ.get('SQUARE_ACCESS_TOKEN', 'EAAAlxG28CdRxm0l6lJRvRqm0Mnh1C_5KKgW19P1LZ3SyT9PqfPpUCxEaX4KBf7h'),
+            'square_location_id': os.environ.get('SQUARE_LOCATION_ID', 'L5F149JPS6EYP'),
+            'square_environment': os.environ.get('SQUARE_ENVIRONMENT', 'production'),
+            'square_webhook_signature_key': os.environ.get('SQUARE_WEBHOOK_SIGNATURE_KEY', '')
         }
         for k, v in default_config.items():
             cursor.execute('INSERT OR IGNORE INTO configuracio (clau, valor) VALUES (?, ?)', (k, v))
+            if v and k in ('square_app_id', 'square_access_token', 'square_location_id', 'square_environment'):
+                cursor.execute('UPDATE configuracio SET valor = ? WHERE clau = ? AND (valor IS NULL OR valor = "" OR valor = "sandbox")', (v, k))
 
         # Assegurar columna edat a la taula articles si no existeix
         try:
@@ -1376,6 +1378,9 @@ def hydrate_from_google_sheets(target_url=None):
             # 5. Bolcar configuració
             for k, v in config.items():
                 if k:
+                    # Protegir claus crítiques per no esborrar-les si el full les té buides
+                    if k in ('square_access_token', 'square_location_id', 'square_app_id', 'square_environment', 'wa_auth_bundle') and (not v or not str(v).strip()):
+                        continue
                     if k == 'aforament_maxim_per_franja' and (str(v).strip() == '' or v is None):
                         v = '12'
                     if k == 'taller_nom' and str(v) in ('Taller de Ceràmica', 'Taller de Ceramica', ''):
@@ -3603,6 +3608,39 @@ def bescanviar_val_regal_db(codi, reserva_id, alumne_id=None):
     
     return {'ok': True, 'message': 'Val bescanviat correctament i hores sumades a l\'alumne'}
 
+def registrar_compra_hores_square(student_id, hores, preu, order_id_or_payment_id):
+    """Afegeix les hores comprades a través de Square al compte de l'alumne de forma idempotent."""
+    if not student_id:
+        return False
+    h_num = float(hores or 4.0)
+    p_num = float(preu or 0.0)
+    segons_num = int(h_num * 3600)
+    pk_id = f"PK-SQ-{order_id_or_payment_id}"
+    with get_db() as conn_pk:
+        c_pk = conn_pk.cursor()
+        c_pk.execute("SELECT id FROM paquets_hores WHERE id = ? OR stripe_session_id = ?", (pk_id, str(order_id_or_payment_id)))
+        if not c_pk.fetchone():
+            now_dt = get_now().strftime('%Y-%m-%d %H:%M:%S')
+            c_pk.execute("""
+                INSERT INTO paquets_hores (id, student_id, data, hores, segons, concepte, preu, metode_pagament, stripe_session_id, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Square', ?, ?)
+            """, (pk_id, student_id, now_dt, h_num, segons_num, f"Bossa {h_num}h (Square)", p_num, str(order_id_or_payment_id), "Cobrament completat via Square"))
+            conn_pk.commit()
+            sync_to_google_sheets_async('add_paquet', {
+                'id': pk_id,
+                'student_id': student_id,
+                'data': now_dt,
+                'hores': h_num,
+                'segons': segons_num,
+                'concepte': f"Bossa {h_num}h (Square)",
+                'preu': p_num,
+                'metode_pagament': 'Square'
+            })
+            notify_wa_reserves_group(f"💳 *Pagament Square confirmat!*\n👤 Alumne: {student_id}\n⏳ Pack: {h_num}h ({p_num} €)\n🆔 Comanda: {order_id_or_payment_id}")
+            print(f"[Square Success] S'han acreditat {h_num}h a l'alumne {student_id} (Comanda: {order_id_or_payment_id})")
+            return True
+    return False
+
 def generar_targeta_val_regal_html(val):
     """Genera una pàgina HTML imprimible en alta resolució (PDF) pel val regal."""
     codi = val.get('codi', '')
@@ -4434,6 +4472,91 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(res, 200 if res.get('ok') else 500)
                 return
 
+            elif path == '/api/checkout/verify-session':
+                # Verifica un pagament directament amb l'API oficial de Square
+                order_id = (params.get('order_id', [None])[0] or 
+                            params.get('orderId', [None])[0] or 
+                            params.get('transactionId', [None])[0] or 
+                            params.get('checkoutId', [None])[0])
+                student_id = params.get('student_id', [None])[0] or params.get('id', [None])[0]
+                if not order_id:
+                    self.send_json({'ok': False, 'error': 'Falta el paràmetre order_id / orderId'}, 400)
+                    return
+
+                with get_db() as conn:
+                    c = conn.cursor()
+                    c.execute('SELECT clau, valor FROM configuracio WHERE clau LIKE "square_%"')
+                    sq_cfg = {r['clau']: r['valor'] for r in c.fetchall()}
+
+                sq_token = (sq_cfg.get('square_access_token') or os.environ.get('SQUARE_ACCESS_TOKEN') or 'EAAAlxG28CdRxm0l6lJRvRqm0Mnh1C_5KKgW19P1LZ3SyT9PqfPpUCxEaX4KBf7h').strip()
+                sq_env = (sq_cfg.get('square_environment') or os.environ.get('SQUARE_ENVIRONMENT') or 'production').strip()
+                api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
+
+                req_sq = urllib.request.Request(
+                    f"{api_base}/v2/orders/{order_id}",
+                    headers={
+                        "Square-Version": "2024-01-18",
+                        "Authorization": f"Bearer {sq_token}",
+                        "Content-Type": "application/json"
+                    }
+                )
+                try:
+                    with urllib.request.urlopen(req_sq, timeout=12) as resp:
+                        sq_order_res = json.loads(resp.read().decode('utf-8'))
+                        order = sq_order_res.get('order', {})
+                        state = order.get('state')
+                        tenders = order.get('tenders', [])
+                        is_paid = (state == 'COMPLETED') or (len(tenders) > 0 and any(t.get('type') in ('CARD', 'SQUARE_ACCOUNT', 'OTHER') for t in tenders))
+                        meta = order.get('metadata') or {}
+                        tipus_compra = meta.get('tipus_compra', 'alumne' if (student_id or meta.get('student_id')) else 'val_regal')
+                        stu_id = student_id or meta.get('student_id')
+                        h_num = float(meta.get('hores') or 4.0)
+                        total_money = order.get('total_money', {})
+                        p_num = float(meta.get('preu') or (float(total_money.get('amount', 0)) / 100.0))
+
+                        credited = False
+                        val_regal_res = None
+                        if is_paid:
+                            if stu_id:
+                                credited = registrar_compra_hores_square(stu_id, h_num, p_num, order_id)
+                            elif tipus_compra == 'val_regal' or meta.get('article_id'):
+                                art_id = meta.get('article_id')
+                                with get_db() as conn_val:
+                                    c_val = conn_val.cursor()
+                                    c_val.execute('SELECT * FROM val_regal WHERE transaccio_id = ?', (order_id,))
+                                    existing_val = c_val.fetchone()
+                                    if existing_val:
+                                        val_regal_res = {'codi': existing_val['codi']}
+                                    else:
+                                        val_regal_res = crear_val_regal_db(
+                                            titol_experiencia=meta.get('titol', 'Val Regal'),
+                                            hores=h_num,
+                                            activitat_id=meta.get('activitat_id', 'act_torn'),
+                                            nom_destinatari=meta.get('nom_destinatari', 'Destinatari'),
+                                            nom_comprador=meta.get('nom_comprador', ''),
+                                            email_comprador=meta.get('email_comprador', ''),
+                                            email_destinatari=meta.get('email_destinatari', ''),
+                                            missatge=meta.get('missatge', ''),
+                                            preu_pagat=p_num,
+                                            metode_pagament='Square',
+                                            transaccio_id=order_id,
+                                            article_id=art_id
+                                        )
+
+                        self.send_json({
+                            'ok': True,
+                            'paid': is_paid,
+                            'state': state,
+                            'credited': credited,
+                            'student_id': stu_id,
+                            'hores': h_num,
+                            'val_regal': val_regal_res
+                        })
+                        return
+                except Exception as ex:
+                    self.send_json({'ok': False, 'error': f"Error consultant comanda a Square: {str(ex)}"}, 500)
+                    return
+
             elif path == '/api/reserves':
                 # Sincronitzar ràpidament missatges de WhatsApp en segon pla per tenir l'estat al dia
                 threading.Thread(target=sync_whapi_inbound_messages, daemon=True).start()
@@ -5143,9 +5266,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute('SELECT clau, valor FROM configuracio WHERE clau LIKE "square_%"')
                     sq_cfg = {r['clau']: r['valor'] for r in cursor.fetchall()}
 
-                sq_token = (sq_cfg.get('square_access_token') or '').strip()
-                sq_loc_id = (sq_cfg.get('square_location_id') or '').strip()
-                sq_env = (sq_cfg.get('square_environment') or 'sandbox').strip()
+                sq_token = (sq_cfg.get('square_access_token') or os.environ.get('SQUARE_ACCESS_TOKEN') or 'EAAAlxG28CdRxm0l6lJRvRqm0Mnh1C_5KKgW19P1LZ3SyT9PqfPpUCxEaX4KBf7h').strip()
+                sq_loc_id = (sq_cfg.get('square_location_id') or os.environ.get('SQUARE_LOCATION_ID') or 'L5F149JPS6EYP').strip()
+                sq_env = (sq_cfg.get('square_environment') or os.environ.get('SQUARE_ENVIRONMENT') or 'production').strip()
 
                 # Càlcul dinàmic d'hores si es compren hores (amb trams de preu)
                 req_hores = data.get('hores')
@@ -5207,7 +5330,9 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Crida a l'API oficial de Square Payments Links
                 api_base = "https://connect.squareupsandbox.com" if sq_env == 'sandbox' else "https://connect.squareup.com"
                 sq_url = f"{api_base}/v2/online-checkout/payment-links"
-                
+
+                target_redirect = f"{base_domain}/alumne.html?payment=success&id={student_id}&recarga_ok=1" if (tipus_compra == 'alumne' or student_id) else f"{base_domain}/reserva.html?pagament_square=completat"
+
                 order_payload = {
                     "idempotency_key": f"pay_{int(get_now().timestamp())}_{os.urandom(4).hex()}",
                     "order": {
@@ -5237,7 +5362,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         }.items() if v and str(v).strip()}
                     },
                     "checkout_options": {
-                        "redirect_url": f"{base_domain}/reserva.html?pagament_square=completat"
+                        "redirect_url": target_redirect
                     }
                 }
 
