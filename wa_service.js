@@ -329,6 +329,8 @@ const server = http.createServer(async (req, res) => {
       last_error: lastError,
       last_code: lastDisconnectCode
     }));
+  }
+
   if (req.method === 'GET' && url.pathname === '/recent-inbound') {
     res.writeHead(200);
     return res.end(JSON.stringify({
