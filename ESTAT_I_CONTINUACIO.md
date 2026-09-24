@@ -36,8 +36,9 @@ Aquest document resumeix l'estat exacte del projecte **Taller de Ceràmica - Roi
 - **Frontend (Web pública i panell admin):**
   - Allotjat a **OVH Cloud** (`roigdecoure.cat` / `cluster127`).
   - Desplegament via FTP: `ftp.cluster127.hosting.ovh.net`, usuari `ppxyjun`.
-  - Fitxers actualitzats a `www/` (`admin.html`, `js/admin.js`, `js/store.js`).
-  - Versió de cache busting actual: `v=12.7.13`.
+  - Fitxers actualitzats a `www/` (`admin.html`, `reserva.html`, `alumne.html`, `js/admin.js`, `js/reserves-calendar.js`, `js/store.js`, imatges oficials).
+  - Versió de cache busting actual: `v=12.7.16`.
+  - Integració de WhatsApp interactiu (Whapi) i estat visual amb cercle (🟢/🟡/🔴) desplegada i sincronitzada amb Google Calendar.
 
 - **Backend (API REST + Servidor SQLite):**
   - Allotjat a **Render**: `https://taller-ceramica-nb96.onrender.com`.
