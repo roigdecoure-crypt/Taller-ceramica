@@ -37,8 +37,10 @@ Aquest document resumeix l'estat exacte del projecte **Taller de Ceràmica - Roi
   - Allotjat a **OVH Cloud** (`roigdecoure.cat` / `cluster127`).
   - Desplegament via FTP: `ftp.cluster127.hosting.ovh.net`, usuari `ppxyjun`.
   - Fitxers actualitzats a `www/` (`admin.html`, `reserva.html`, `alumne.html`, `js/admin.js`, `js/reserves-calendar.js`, `js/store.js`, imatges oficials).
-  - Versió de cache busting actual: `v=12.7.16`.
-  - Integració de WhatsApp interactiu (Whapi) i estat visual amb cercle (🟢/🟡/🔴) desplegada i sincronitzada amb Google Calendar.
+  - Versió de cache busting actual: `v=12.7.18`.
+  - Integració de WhatsApp Web autònom (Baileys) a cost 0,00 €/mes vinculat al telèfon de Simyo del taller (`683 633 880`).
+  - Codi QR en viu al panell d'Administració > Configuració per vincular WhatsApp en 1 segon.
+  - Sincronització automàtica amb Google Calendar (reserves cancel·lades s'eliminen i les confirmades mostren 🟢).
 
 - **Backend (API REST + Servidor SQLite):**
   - Allotjat a **Render**: `https://taller-ceramica-nb96.onrender.com`.
