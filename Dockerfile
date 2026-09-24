@@ -1,8 +1,8 @@
-FROM node:18-slim AS node-build
+FROM node:18-bookworm AS node-build
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY package.json ./
+RUN npm install --omit=dev --no-audit --no-fund
 
 FROM python:3.9-slim
 
@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Copiar dependències de node ja instal·lades
 COPY --from=node-build /app/node_modules ./node_modules
-COPY package*.json ./
+COPY package.json ./
 
 # Copiar tot el codi font
 COPY . /app
