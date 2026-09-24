@@ -1893,6 +1893,15 @@ def reconnect_wa_gateway():
     except Exception as e:
         return {'ok': False, 'error': str(e)}
 
+def get_wa_gateway_recent_inbound():
+    """Obté els darrers missatges rebuts per la passarel·la Baileys"""
+    try:
+        req = urllib.request.Request('http://127.0.0.1:3001/recent-inbound', headers={'User-Agent': 'TallerCeramicaBackend/1.0'})
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': False, 'error': str(e), 'inbound': []}
+
 def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
     """
     Enviador unificat de WhatsApp per al Taller Roig de Coure:
@@ -2063,7 +2072,11 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             SELECT id FROM reserves 
             WHERE (telefon LIKE ? OR telefon LIKE ?)
               AND estat NOT IN ('cancel·lada', 'assistit')
-            ORDER BY data ASC, hora_inici ASC LIMIT 1
+            ORDER BY 
+              CASE WHEN whatsapp_client_status = 'pendent' THEN 0 ELSE 1 END,
+              CASE WHEN data >= date('now', 'localtime') THEN 0 ELSE 1 END,
+              data ASC, hora_inici ASC 
+            LIMIT 1
         """, (f"%{tel_short}%", f"%{sender_clean}%"))
         cand = cur.fetchone()
         if cand:
@@ -2080,6 +2093,10 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             return {'ok': False, 'error': 'Reserva no trobada'}
 
         res_dict = row_to_dict(res_row)
+        data_res = res_dict.get('data', '')
+        hora_res = res_dict.get('hora_inici', '')
+        act_res = res_dict.get('activitat', 'classe')
+
         if is_confirm:
             cur.execute("""
                 UPDATE reserves 
@@ -2093,7 +2110,8 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             res_dict['client_confirmat'] = 1
             print(f"[WA Inbound] Reserva {target_res_id} CONFIRMADA pel client ({sender_clean})")
             sync_to_google_sheets_async('add_reserva', res_dict)
-            send_whatsapp_whapi_async(sender_clean, "✅ *Gràcies per confirmar la teva assistència!*\nT'esperem al taller Roig de Coure. Si necessites cap modificació, respon a aquest xat.", None, None, False, False)
+            confirm_msg = f"✅ *Gràcies per confirmar la teva assistència!*\nHem confirmat la teva reserva de *{act_res}* pel dia *{data_res}* a les *{hora_res}h*.\n\nT'esperem al taller Roig de Coure! Si necessites cap modificació, respon a aquest xat."
+            send_whatsapp_whapi_async(sender_clean, confirm_msg, None, None, False, False)
         elif is_cancel:
             cur.execute("""
                 UPDATE reserves 
@@ -2108,7 +2126,8 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             print(f"[WA Inbound] Reserva {target_res_id} CANCEL·LADA pel client ({sender_clean})")
             sync_to_google_sheets_async('cancel_reserva', res_dict)
             trigger_n8n_event_async('reserva_cancelada', res_dict)
-            send_whatsapp_whapi_async(sender_clean, "❌ *Reserva cancel·lada correctament.*\nHem alliberat la teva plaça. Esperem veure't en una altra ocasió!", None, None, False, False)
+            cancel_msg = f"❌ *Reserva cancel·lada correctament.*\nHem alliberat la teva plaça pel dia *{data_res}* a les *{hora_res}h*. Esperem veure't en una altra ocasió!"
+            send_whatsapp_whapi_async(sender_clean, cancel_msg, None, None, False, False)
 
     return {'ok': True, 'res_id': target_res_id, 'action': 'confirmat' if is_confirm else 'cancelat'}
 
@@ -4302,6 +4321,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             elif path == '/api/whatsapp/status':
                 res = get_wa_gateway_status()
+                self.send_json(res)
+                return
+
+            elif path == '/api/whatsapp/recent-inbound':
+                res = get_wa_gateway_recent_inbound()
                 self.send_json(res)
                 return
 

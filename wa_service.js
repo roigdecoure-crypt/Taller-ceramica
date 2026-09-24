@@ -36,6 +36,12 @@ let lastDisconnectCode = null;
 
 const logger = pino({ level: 'error' });
 
+const recentInbound = [];
+function recordRecentInbound(phone, text, msgId) {
+  recentInbound.unshift({ phone, text, msgId, timestamp: new Date().toISOString() });
+  if (recentInbound.length > 30) recentInbound.pop();
+}
+
 let backupTimeout = null;
 function scheduleAuthBackup() {
   clearTimeout(backupTimeout);
@@ -236,22 +242,36 @@ async function startWhatsAppSocket() {
 
     // Escolta de missatges entrants (respostes de confirmació o cancel·lació)
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
-      if (type !== 'notify') return;
-      for (const msg of messages) {
-        if (!msg.message || msg.key.fromMe) continue;
+      for (const msg of (messages || [])) {
+        if (!msg.message || msg.key?.fromMe) continue;
 
-        const senderJid = msg.key.remoteJid || '';
-        const senderPhone = senderJid.replace(/[^0-9]/g, '');
-        const text = msg.message.conversation ||
-                     msg.message.extendedTextMessage?.text ||
-                     msg.message.buttonsResponseMessage?.selectedButtonId ||
-                     msg.message.templateButtonReplyMessage?.selectedId ||
-                     '';
+        const rawMsg = msg.message;
+        const unwrapped = rawMsg.ephemeralMessage?.message ||
+                          rawMsg.viewOnceMessage?.message ||
+                          rawMsg.viewOnceMessageV2?.message ||
+                          rawMsg.documentWithCaptionMessage?.message ||
+                          rawMsg;
 
-        console.log(`[WA Gateway] Missatge entrant de ${senderPhone}: "${text}"`);
+        const text = (unwrapped.conversation ||
+                      unwrapped.extendedTextMessage?.text ||
+                      unwrapped.buttonsResponseMessage?.selectedButtonId ||
+                      unwrapped.templateButtonReplyMessage?.selectedId ||
+                      unwrapped.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson ||
+                      '').trim();
 
-        // Reenviar a Python per actualitzar reserves a la base de dades i calendari
-        forwardInboundToPython(senderPhone, text, msg.key.id);
+        let senderJid = msg.key.remoteJid || '';
+        if (msg.key.participant && !senderJid.endsWith('@s.whatsapp.net')) {
+          senderJid = msg.key.participant;
+        }
+        const senderPhone = senderJid.split('@')[0].replace(/[^0-9]/g, '');
+
+        console.log(`[WA Gateway] [${type}] Missatge entrant de ${senderPhone}: "${text}" (msgId: ${msg.key.id})`);
+
+        recordRecentInbound(senderPhone, text, msg.key.id);
+
+        if (text) {
+          forwardInboundToPython(senderPhone, text, msg.key.id);
+        }
       }
     });
 
@@ -308,6 +328,12 @@ const server = http.createServer(async (req, res) => {
       qr: currentQR,
       last_error: lastError,
       last_code: lastDisconnectCode
+    }));
+  if (req.method === 'GET' && url.pathname === '/recent-inbound') {
+    res.writeHead(200);
+    return res.end(JSON.stringify({
+      ok: true,
+      inbound: recentInbound
     }));
   }
 
