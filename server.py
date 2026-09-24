@@ -1318,8 +1318,9 @@ def hydrate_from_google_sheets(target_url=None):
 
             # 4. Bolcar reserves (aforament, activitats i places reservades)
             for r in reserves:
-                if not r.get('id') or not r.get('student_id'):
+                if not r.get('id'):
                     continue
+                stud_id = str(r.get('student_id') or '').strip()
 
                 # Detectar columnes desplaçades del full antic
                 raw_tel = str(r.get('telefon') or '').strip()
@@ -1364,7 +1365,7 @@ def hydrate_from_google_sheets(target_url=None):
                     INSERT INTO reserves (id, student_id, student_nom, data, hora_inici, hora_fi, franja, activitat, activitat_id, places, telefon, estat, hores, notes, created_at, calendar_event_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(id) DO UPDATE SET
-                        student_id = excluded.student_id,
+                        student_id = CASE WHEN excluded.student_id != '' THEN excluded.student_id ELSE reserves.student_id END,
                         student_nom = excluded.student_nom,
                         data = excluded.data,
                         hora_inici = excluded.hora_inici,
@@ -1375,12 +1376,13 @@ def hydrate_from_google_sheets(target_url=None):
                         places = excluded.places,
                         telefon = excluded.telefon,
                         estat = excluded.estat,
+                        whatsapp_client_status = CASE WHEN LOWER(excluded.estat) LIKE 'cancel%' THEN 'cancelat' ELSE reserves.whatsapp_client_status END,
                         hores = excluded.hores,
                         notes = excluded.notes,
                         created_at = excluded.created_at,
                         calendar_event_id = COALESCE(excluded.calendar_event_id, reserves.calendar_event_id)
                 ''', (
-                    r['id'], r['student_id'], r.get('student_nom', ''),
+                    r['id'], stud_id, r.get('student_nom', ''),
                     clean_data, clean_inici, clean_fi,
                     clean_franja, clean_act, clean_act_id, clean_places,
                     clean_tel, clean_estat, clean_hores, clean_notes,
@@ -7005,10 +7007,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_json({'ok': False, 'error': 'Reserva no trobada'}, 404)
                         return
 
-                    cursor.execute("UPDATE reserves SET estat = 'cancel·lada' WHERE id = ?", (res_id,))
+                    cursor.execute("UPDATE reserves SET estat = 'cancel·lada', whatsapp_client_status = 'cancelat' WHERE id = ?", (res_id,))
                     conn.commit()
                     reserva_dict = row_to_dict(row)
                     reserva_dict['estat'] = 'cancel·lada'
+                    reserva_dict['whatsapp_client_status'] = 'cancelat'
 
                     cal_name = 'reserves'
                     cursor.execute("SELECT valor FROM configuracio WHERE clau = 'google_calendar_name'")
