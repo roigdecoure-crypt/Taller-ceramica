@@ -3,7 +3,7 @@ services:
     name: taller-ceramica-hores
     env: python
     plan: free
-    buildCommand: ""
+    buildCommand: "npm install --omit=dev || true"
     startCommand: python3 server.py
     autoDeploy: true
     envVars:
