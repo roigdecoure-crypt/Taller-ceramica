@@ -36,8 +36,80 @@ let lastDisconnectCode = null;
 
 const logger = pino({ level: 'error' });
 
+let backupTimeout = null;
+function scheduleAuthBackup() {
+  clearTimeout(backupTimeout);
+  backupTimeout = setTimeout(async () => {
+    try {
+      if (!fs.existsSync(AUTH_DIR)) return;
+      const files = fs.readdirSync(AUTH_DIR);
+      if (!files.includes('creds.json')) return;
+      const bundle = {};
+      for (const file of files) {
+        const filePath = path.join(AUTH_DIR, file);
+        if (fs.statSync(filePath).isFile()) {
+          bundle[file] = fs.readFileSync(filePath).toString('base64');
+        }
+      }
+      const payload = JSON.stringify({ files: bundle });
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port: process.env.PORT || 8080,
+        path: '/api/whatsapp/internal-auth-backup',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        }
+      });
+      req.on('error', () => {});
+      req.write(payload);
+      req.end();
+    } catch (e) {
+      console.warn('[WA Gateway] Advertència fent backup auth:', e.message);
+    }
+  }, 2500);
+}
+
+async function tryRestoreAuth() {
+  return new Promise((resolve) => {
+    try {
+      if (fs.existsSync(path.join(AUTH_DIR, 'creds.json'))) {
+        return resolve(true);
+      }
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port: process.env.PORT || 8080,
+        path: '/api/whatsapp/internal-auth-restore',
+        method: 'GET'
+      }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data || '{}');
+            if (parsed.ok && parsed.files && typeof parsed.files === 'object') {
+              for (const [fname, b64] of Object.entries(parsed.files)) {
+                fs.writeFileSync(path.join(AUTH_DIR, fname), Buffer.from(b64, 'base64'));
+              }
+              console.log(`[WA Gateway] S'han restaurat ${Object.keys(parsed.files).length} fitxers d'autenticació de WhatsApp amb èxit.`);
+              return resolve(true);
+            }
+          } catch (e) {}
+          resolve(false);
+        });
+      });
+      req.on('error', () => resolve(false));
+      req.end();
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
 async function startWhatsAppSocket() {
   try {
+    await tryRestoreAuth();
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     let version = [2, 3000, 1015901307];
     try {
@@ -61,7 +133,10 @@ async function startWhatsAppSocket() {
       keepAliveIntervalMs: 10000
     });
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', async () => {
+      await saveCreds();
+      scheduleAuthBackup();
+    });
 
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -102,6 +177,7 @@ async function startWhatsAppSocket() {
         const rawId = sock?.user?.id || '';
         connectedPhone = rawId.split(':')[0].replace(/[^0-9]/g, '');
         console.log(`[WA Gateway] 🎉 Connexió establerta amb èxit com a +${connectedPhone}`);
+        scheduleAuthBackup();
       }
     });
 

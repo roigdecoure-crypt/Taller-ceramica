@@ -2447,18 +2447,9 @@ def start_whatsapp_scheduler():
                             except Exception:
                                 pass
 
-                        with get_db() as c_wh:
-                            cur_wh = c_wh.cursor()
-                            cur_wh.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
-                            r_wh = cur_wh.fetchone()
-                            whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
-
                         if r.get('telefon'):
-                            if whapi_tok:
-                                notif_dia = render_notification('recordatori_dia', r)
-                                send_whatsapp_whapi_async(r['telefon'], notif_dia.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done(rid), res_id=r['id'], include_buttons=True, send_logo=True)
-                            else:
-                                send_whatsapp_meta_async(r['telefon'], tpl_dia, [nom, hora, act], on_success_cb=lambda res, rid=r['id']: _mark_done(rid))
+                            notif_dia = render_notification('recordatori_dia', r)
+                            send_whatsapp_whapi_async(r['telefon'], notif_dia.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done(rid), res_id=r['id'], include_buttons=True, send_logo=True)
                         else:
                             _mark_done(r['id'])
 
@@ -2494,18 +2485,9 @@ def start_whatsapp_scheduler():
                         except Exception:
                             pass
 
-                    with get_db() as c_wh:
-                        cur_wh = c_wh.cursor()
-                        cur_wh.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
-                        r_wh = cur_wh.fetchone()
-                        whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
-
                     if r.get('telefon'):
-                        if whapi_tok:
-                            notif_48 = render_notification('recordatori_48h', r)
-                            send_whatsapp_whapi_async(r['telefon'], notif_48.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done_48(rid), res_id=r['id'], include_buttons=True, send_logo=True)
-                        else:
-                            send_whatsapp_meta_async(r['telefon'], tpl_48, [nom, data_res, hora, act], on_success_cb=lambda res, rid=r['id']: _mark_done_48(rid))
+                        notif_48 = render_notification('recordatori_48h', r)
+                        send_whatsapp_whapi_async(r['telefon'], notif_48.get('wa_missatge') or '', on_success_cb=lambda res, rid=r['id']: _mark_done_48(rid), res_id=r['id'], include_buttons=True, send_logo=True)
                     else:
                         _mark_done_48(r['id'])
 
@@ -4307,6 +4289,22 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
             elif path == '/api/whatsapp/status':
                 res = get_wa_gateway_status()
                 self.send_json(res)
+                return
+
+            elif path == '/api/whatsapp/internal-auth-restore':
+                with get_db() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
+                    row = cursor.fetchone()
+                    if row and row['valor']:
+                        try:
+                            files_dict = json.loads(row['valor'])
+                            self.send_json({'ok': True, 'files': files_dict})
+                            return
+                        except Exception as e:
+                            self.send_json({'ok': False, 'error': str(e)}, 500)
+                            return
+                self.send_json({'ok': False, 'error': 'No backup found'}, 404)
                 return
 
             elif path == '/api/whatsapp/sync':
@@ -6330,26 +6328,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         except Exception:
                             pass
 
-                    with get_db() as conn_wa:
-                        cur_wa = conn_wa.cursor()
-                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whapi_token"')
-                        r_wh = cur_wa.fetchone()
-                        whapi_tok = (r_wh['valor'] or '').strip() if r_wh else ''
-
-                        cur_wa.execute('SELECT valor FROM configuracio WHERE clau = "whatsapp_meta_template_confirmacio"')
-                        r_tpl_c = cur_wa.fetchone()
-                        tpl_conf = r_tpl_c['valor'].strip() if (r_tpl_c and r_tpl_c['valor']) else 'reserva_confirmada'
-
-                    if whapi_tok:
-                        notif_rendered = render_notification('reserva_creada', reserva_dict)
-                        send_whatsapp_whapi_async(telefon, notif_rendered.get('wa_missatge') or '', on_success_cb=_mark_conf_done, res_id=res_id, include_buttons=True, send_logo=True)
-                    else:
-                        send_whatsapp_meta_async(
-                            telefon,
-                            tpl_conf,
-                            [student_nom, activitat_nom, data_res, hora_inici_req, str(places_demanades)],
-                            on_success_cb=_mark_conf_done
-                        )
+                    notif_rendered = render_notification('reserva_creada', reserva_dict)
+                    send_whatsapp_whapi_async(telefon, notif_rendered.get('wa_missatge') or '', on_success_cb=_mark_conf_done, res_id=res_id, include_buttons=True, send_logo=True)
 
                 # Disparar workflow automàtic a n8n Cloud (notificacions WhatsApp + Email)
                 trigger_n8n_event_async('reserva_creada', reserva_dict)
@@ -7414,6 +7394,20 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 msg_id = data.get('msg_id')
                 res = process_wa_inbound_message(sender, text, msg_id)
                 self.send_json(res)
+                return
+
+            elif path == '/api/whatsapp/internal-auth-backup':
+                files_bundle = data.get('files')
+                if files_bundle and isinstance(files_bundle, dict):
+                    bundle_str = json.dumps(files_bundle)
+                    with get_db() as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("INSERT INTO configuracio (clau, valor) VALUES ('wa_auth_bundle', ?) ON CONFLICT(clau) DO UPDATE SET valor = excluded.valor", (bundle_str,))
+                        conn.commit()
+                    sync_to_google_sheets_async('save_config', {'wa_auth_bundle': bundle_str})
+                    self.send_json({'ok': True, 'saved': len(files_bundle)})
+                else:
+                    self.send_json({'ok': False, 'error': 'No files provided'}, 400)
                 return
 
             elif path == '/api/whatsapp/sync':

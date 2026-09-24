@@ -744,7 +744,7 @@
         <div>
           <h3 style="margin: 0; font-size: 19px; font-weight: 800; color: var(--color-dark);">Adquirir Hores de Taller</h3>
           <p style="font-size: 12px; color: var(--color-muted); margin: 3px 0 0;">
-            Pagament segur directe amb targeta o Apple Pay mitjançant Stripe.
+            Pagament segur directe amb targeta, Apple Pay o Google Pay mitjançant <strong>Square</strong>.
           </p>
         </div>
         <button type="button" class="modal-close" id="btn-close-modal-comprar" aria-label="Tancar">&times;</button>
@@ -772,15 +772,36 @@
         </div>
       </div>
 
-      <!-- Botó de compra directa Stripe -->
+      <!-- Selector de quantitat d'hores -->
+      <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;">
+        <label style="font-size: 13px; font-weight: 700; color: var(--color-dark); display: block; margin-bottom: 6px;">
+          Quantitat d'hores a comprar (mínim 4h):
+        </label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <select id="portal-select-hores" class="form-control" style="font-size: 14px; font-weight: 700; padding: 8px 12px; max-width: 140px;">
+            <option value="4" selected>4 hores</option>
+            <option value="6">6 hores</option>
+            <option value="8">8 hores</option>
+            <option value="10">10 hores</option>
+            <option value="12">12 hores</option>
+            <option value="16">16 hores</option>
+            <option value="20">20 hores</option>
+          </select>
+          <div id="portal-preu-resum" style="font-size: 16px; font-weight: 800; color: #047857;">
+            Total: 60 € (15 €/h)
+          </div>
+        </div>
+      </div>
+
+      <!-- Botó de compra directa Square -->
       <div style="display: flex; flex-direction: column; gap: 12px;">
-        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-portal-buy-stripe" style="background: var(--color-primary); border-color: var(--color-primary); font-size: 16px; font-weight: 700; padding: 14px;">
-          Comprar Hores
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-portal-buy-stripe" style="background: #10B981; border-color: #059669; font-size: 16px; font-weight: 700; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>Pagar amb Square</span>
         </button>
         
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <span style="font-size: 12px; color: var(--color-muted);">
-            Connexió encriptada SSL. Triaràs les hores que vulguis (mínim 4h).
+            Connexió encriptada SSL oficial de Square. Targeta de crèdit, dèbit o Apple Pay.
           </span>
         </div>
       </div>
@@ -1153,7 +1174,7 @@
   <script src="js/api-config.js?v=11.5.4"></script>
   <script src="js/store.js?v=12.5.0"></script>
   <script src="js/reserves-calendar.js?v=11.5.4"></script>
-  <script src="js/alumne.js?v=12.5.2"></script>
+  <script src="js/alumne.js?v=12.8.0"></script>
 </body>
 </html>
 

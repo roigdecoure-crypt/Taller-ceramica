@@ -1450,33 +1450,81 @@ function setupEventListeners() {
     });
   }
 
-  // Botó Compra directa amb Stripe segons Edat (>= 12 Adults, < 12 Infantil)
+  // Actualitzar resum de preu en canviar hores o categoria
+  function actualitzarResumCompraHores() {
+    const selHores = document.getElementById('portal-select-hores');
+    const selCat = document.getElementById('portal-select-categoria');
+    const elResum = document.getElementById('portal-preu-resum');
+    if (!selHores || !elResum) return;
+
+    const h = parseInt(selHores.value, 10) || 4;
+    const esInfant = selCat ? selCat.value === 'infantil' : false;
+
+    let preuHora = 15;
+    if (!esInfant) {
+      if (h <= 9) preuHora = 15;
+      else if (h <= 19) preuHora = 14;
+      else preuHora = 13;
+    } else {
+      if (h <= 9) preuHora = 14;
+      else if (h <= 19) preuHora = 13;
+      else preuHora = 11;
+    }
+
+    const total = h * preuHora;
+    elResum.textContent = `Total: ${total} € (${preuHora} €/h)`;
+  }
+
+  const elSelHores = document.getElementById('portal-select-hores');
+  if (elSelHores) elSelHores.addEventListener('change', actualitzarResumCompraHores);
+  const elSelCat = document.getElementById('portal-select-categoria');
+  if (elSelCat) elSelCat.addEventListener('change', actualitzarResumCompraHores);
+
+  // Botó Compra directa amb Square segons Edat i Hores
   const btnPortalBuyStripe = document.getElementById('btn-portal-buy-stripe');
   if (btnPortalBuyStripe) {
     btnPortalBuyStripe.addEventListener('click', async () => {
-      if (!currentStudent) return;
-      const cfg = await Store.getConfig();
-      const edatTall = parseInt(cfg.edat_tall_infantil, 10) || 12;
-      const selectCat = document.getElementById('portal-select-categoria');
-      const categoria = selectCat ? selectCat.value : 'adults';
+      if (!currentStudent || !currentStudent.alumne) return;
 
-      let stripeUrl = '';
-      let catNom = '';
-      if (categoria === 'infantil') {
-        stripeUrl = (cfg.stripe_url_infantil || '').trim();
-        catNom = `Infantil (fins a ${edatTall} anys)`;
-      } else {
-        stripeUrl = (cfg.stripe_url_adults || '').trim();
-        catNom = `Adults (més de ${edatTall} anys)`;
-      }
+      const selCat = document.getElementById('portal-select-categoria');
+      const categoria = selCat ? selCat.value : 'adults';
+      const selHores = document.getElementById('portal-select-hores');
+      const horesNum = selHores ? (parseInt(selHores.value, 10) || 4) : 4;
 
-      if (stripeUrl && stripeUrl.startsWith('http')) {
-        const separator = stripeUrl.includes('?') ? '&' : '?';
-        const finalUrl = `${stripeUrl}${separator}client_reference_id=${encodeURIComponent(currentStudent.alumne.id)}`;
-        window.open(finalUrl, '_blank');
-        showToast(`S'ha obert la passarel·la de Stripe per a ${catNom}.`, 'info');
-      } else {
-        showToast(`La passarel·la de pagament per a ${catNom} no està configurada. Posa't en contacte amb el taller.`, 'warning');
+      const btnOriginalText = btnPortalBuyStripe.innerHTML;
+      btnPortalBuyStripe.disabled = true;
+      btnPortalBuyStripe.innerHTML = '<span>Connexió amb Square...</span>';
+
+      try {
+        const articleId = categoria === 'infantil' ? 'art_hores_infant' : 'art_hores_adult';
+        const apiBase = typeof getRoigApiBase === 'function' ? getRoigApiBase() : (Store.API_BASE || '');
+        const res = await fetch(`${apiBase}/api/checkout/create-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            article_id: articleId,
+            tipus_compra: 'alumne',
+            student_id: currentStudent.alumne.id,
+            nom_comprador: `${currentStudent.alumne.nom} ${currentStudent.alumne.cognoms || ''}`.trim(),
+            email_comprador: currentStudent.alumne.email || '',
+            hores: horesNum,
+            edat: categoria === 'infantil' ? 'infant' : 'adult'
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok && data.checkout_url) {
+          window.location.href = data.checkout_url;
+        } else {
+          showToast(data.error || "No s'ha pogut iniciar la sessió de pagament amb Square.", 'error');
+          btnPortalBuyStripe.disabled = false;
+          btnPortalBuyStripe.innerHTML = btnOriginalText;
+        }
+      } catch (err) {
+        console.error('Error creant pagament Square:', err);
+        showToast("Error de connexió amb la passarel·la de Square.", 'error');
+        btnPortalBuyStripe.disabled = false;
+        btnPortalBuyStripe.innerHTML = btnOriginalText;
       }
     });
   }
