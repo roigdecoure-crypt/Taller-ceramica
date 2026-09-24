@@ -6,4 +6,5 @@ data/backups/*.db
 data/*.db-shm
 data/*.db-wal
 data/backups/*
+data/*backup*
 .env

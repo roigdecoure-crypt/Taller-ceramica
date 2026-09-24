@@ -12,6 +12,13 @@ class TestValsRegalIArticles(unittest.TestCase):
     def setUpClass(cls):
         server.init_db()
 
+    @classmethod
+    def tearDownClass(cls):
+        with server.get_db() as conn:
+            conn.cursor().execute("DELETE FROM vals_regal WHERE codi LIKE 'REGAL-%' AND (nom_comprador IN ('Jordi Prat', 'Anna Vidal', 'Joan Vives') OR nom_destinatari IN ('Marta Garcia', 'Laura Soler', 'Pol Mas', 'Carla Puig Vives'))")
+            conn.cursor().execute("DELETE FROM paquets_hores WHERE student_id = 'CLI-101'")
+            conn.commit()
+
     def test_01_articles_catalog(self):
         articles = server.get_articles_catalog(include_inactive=True)
         self.assertGreaterEqual(len(articles), 3)
