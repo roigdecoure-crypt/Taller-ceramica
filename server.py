@@ -5209,7 +5209,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         }
                     },
                     "checkout_options": {
-                        "redirect_url": f"{base_domain}/reserva.html?reserva_confirmada={res_id}" if res_id else f"{base_domain}/reserva.html"
+                        "redirect_url": f"{base_domain}/reserva.html?reserva_confirmada={res_id}" if res_id else f"{base_domain}/reserva.html",
+                        "accepted_payment_methods": {
+                            "apple_pay": True,
+                            "google_pay": False,
+                            "cash_app_pay": False,
+                            "afterpay_clearpay": False
+                        }
                     }
                 }
 
@@ -5374,7 +5380,13 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         }.items() if v and str(v).strip()}
                     },
                     "checkout_options": {
-                        "redirect_url": target_redirect
+                        "redirect_url": target_redirect,
+                        "accepted_payment_methods": {
+                            "apple_pay": True,
+                            "google_pay": False,
+                            "cash_app_pay": False,
+                            "afterpay_clearpay": False
+                        }
                     }
                 }
 
