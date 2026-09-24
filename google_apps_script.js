@@ -16,38 +16,13 @@
 
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "get_all";
-  
+
   if (action === "ping") {
     return jsonResponse({ status: "ok", missatge: "Connexio activa amb Google Sheets del Taller de Ceramica!" });
   }
 
   if (action === "check_calendar_sync" || action === "sync_from_calendar") {
     return jsonResponse(checkCalendarSync(SpreadsheetApp.getActiveSpreadsheet()));
-  }
-
-  if (action === "inspect_day") {
-    var dStr = (e && e.parameter && e.parameter.data) ? e.parameter.data : "2026-09-25";
-    var start = parseDateTimeRobust(dStr, "00:00");
-    var end = parseDateTimeRobust(dStr, "23:59");
-    var allCals = CalendarApp.getAllCalendars();
-    var foundEvents = [];
-    for (var i = 0; i < allCals.length; i++) {
-      try {
-        var evs = allCals[i].getEvents(start, end);
-        for (var j = 0; j < evs.length; j++) {
-          foundEvents.push({
-            calendarName: allCals[i].getName(),
-            calendarId: allCals[i].getId(),
-            id: evs[j].getId(),
-            title: evs[j].getTitle(),
-            color: evs[j].getColor(),
-            start: Utilities.formatDate(evs[j].getStartTime(), "Europe/Madrid", "HH:mm"),
-            end: Utilities.formatDate(evs[j].getEndTime(), "Europe/Madrid", "HH:mm")
-          });
-        }
-      } catch (eCal) {}
-    }
-    return jsonResponse({ status: "success", date: dStr, count: foundEvents.length, events: foundEvents });
   }
 
   if (action === "list_calendars") {
@@ -205,7 +180,7 @@ function syncAlumnes(ss, alumnes) {
   sheet.setFrozenRows(1);
 
   if (alumnes.length > 0) {
-    var rows = alumnes.map(function(a) {
+    var rows = alumnes.map(function (a) {
       return [
         a.id || "",
         a.nom || "",
@@ -292,7 +267,7 @@ function syncPaquets(ss, paquets) {
   sheet.setFrozenRows(1);
 
   if (paquets.length > 0) {
-    var rows = paquets.map(function(p) {
+    var rows = paquets.map(function (p) {
       return [
         p.id || "",
         p.student_id || "",
@@ -376,7 +351,7 @@ function syncSessions(ss, sessions) {
   sheet.setFrozenRows(1);
 
   if (sessions.length > 0) {
-    var rows = sessions.map(function(s) {
+    var rows = sessions.map(function (s) {
       return [
         s.id || "",
         s.student_id || "",
@@ -492,7 +467,7 @@ function syncConfig(ss, cfg) {
   sheet.appendRow(HEADERS_CONFIG);
   var keys = Object.keys(cfg);
   if (keys.length > 0) {
-    var rows = keys.map(function(k) { return [k, cfg[k] || ""]; });
+    var rows = keys.map(function (k) { return [k, cfg[k] || ""]; });
     sheet.getRange(2, 1, rows.length, 2).setValues(rows);
   }
 }
@@ -536,7 +511,7 @@ function syncReserves(ss, reserves) {
   sheet.setFrozenRows(1);
 
   if (reserves && reserves.length > 0) {
-    var rows = reserves.map(function(r) {
+    var rows = reserves.map(function (r) {
       return [
         r.id || "",
         r.student_id || "",
@@ -640,7 +615,7 @@ function getRoigDeCoureCalendar(preferredName) {
           Logger.log("✅ Calendari trobat directament per ID: " + calById.getName() + " (" + rawPreferred + ")");
           return calById;
         }
-      } catch (eId) {}
+      } catch (eId) { }
     }
 
     // 2. Cerca per nom exacte (ignorant majúscules/minúscules i espais) a tots els calendaris de l'usuari
@@ -664,7 +639,7 @@ function getRoigDeCoureCalendar(preferredName) {
           Logger.log("✅ Calendari trobat per getCalendarsByName('" + directNames[k] + "'): " + named[0].getName());
           return named[0];
         }
-      } catch (eNamed) {}
+      } catch (eNamed) { }
     }
 
     // 4. Cerca per coincidència parcial (que contingui "reserv" al nom del calendari)
@@ -807,13 +782,13 @@ function syncCalendarEvent(r) {
     var endTime = parseDateTimeRobust(r.data, r.hora_fi);
 
     var desc = "Reserva Taller Roig de Coure\n" +
-               "Alumne: " + nom + "\n" +
-               "Activitat: " + act + "\n" +
-               "Places: " + places + "\n" +
-               "Estat WhatsApp: " + (isConfirmed ? "CONFIRMADA PEL CLIENT 🟢" : (isCancelled ? "CANCEL·LADA 🔴" : "PENDENT DE RESPOSTA 🟡")) + "\n" +
-               (tel ? "Telèfon: " + tel + "\n" : "") +
-               (r.notes ? "Notes: " + r.notes + "\n" : "") +
-               "ID Reserva: " + r.id;
+      "Alumne: " + nom + "\n" +
+      "Activitat: " + act + "\n" +
+      "Places: " + places + "\n" +
+      "Estat WhatsApp: " + (isConfirmed ? "CONFIRMADA PEL CLIENT 🟢" : (isCancelled ? "CANCEL·LADA 🔴" : "PENDENT DE RESPOSTA 🟡")) + "\n" +
+      (tel ? "Telèfon: " + tel + "\n" : "") +
+      (r.notes ? "Notes: " + r.notes + "\n" : "") +
+      "ID Reserva: " + r.id;
 
     var location = "Taller de Ceràmica Roig de Coure";
 
@@ -828,16 +803,16 @@ function syncCalendarEvent(r) {
               oldDefEv.deleteEvent();
               Logger.log("🧹 Esdeveniment anterior eliminat del calendari principal per moure'l a: " + cal.getName());
             }
-          } catch (eOld) {}
+          } catch (eOld) { }
         }
       }
-    } catch (eDefCheck) {}
+    } catch (eDefCheck) { }
 
     var event = null;
     if (r.calendar_event_id) {
       try {
         event = cal.getEventById(r.calendar_event_id);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!event) {
@@ -864,7 +839,7 @@ function syncCalendarEvent(r) {
           event.setColor(null);
         }
       } catch (eColor) {
-        try { event.setColor(""); } catch (e2) {}
+        try { event.setColor(""); } catch (e2) { }
       }
       return event.getId();
     } else {
@@ -873,7 +848,7 @@ function syncCalendarEvent(r) {
         location: location
       });
       if (r.color_id) {
-        try { newEvent.setColor(String(r.color_id)); } catch (eColor) {}
+        try { newEvent.setColor(String(r.color_id)); } catch (eColor) { }
       }
       return newEvent.getId();
     }
@@ -893,7 +868,7 @@ function deleteCalendarEvent(r, ss) {
       try {
         var activeSs = SpreadsheetApp.getActiveSpreadsheet();
         if (activeSs) sheet = activeSs.getSheetByName("Reserves");
-      } catch (eSheet) {}
+      } catch (eSheet) { }
     }
 
     if (sheet && (!r.calendar_event_id || !r.data)) {
@@ -913,7 +888,7 @@ function deleteCalendarEvent(r, ss) {
     var targetCalName = r.calendar_name || "reserves";
     var cal = getRoigDeCoureCalendar(targetCalName);
     var defCal = null;
-    try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) {}
+    try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) { }
 
     var event = null;
 
@@ -921,15 +896,15 @@ function deleteCalendarEvent(r, ss) {
     if (r.calendar_event_id) {
       // 2a. Al calendari seleccionat
       if (cal) {
-        try { event = cal.getEventById(r.calendar_event_id); } catch (e) {}
+        try { event = cal.getEventById(r.calendar_event_id); } catch (e) { }
       }
       // 2b. Al calendari per defecte de Google
       if (!event && defCal) {
-        try { event = defCal.getEventById(r.calendar_event_id); } catch (eDef) {}
+        try { event = defCal.getEventById(r.calendar_event_id); } catch (eDef) { }
       }
       // 2c. Global
       if (!event) {
-        try { event = CalendarApp.getEventById(r.calendar_event_id); } catch (eGlob) {}
+        try { event = CalendarApp.getEventById(r.calendar_event_id); } catch (eGlob) { }
       }
     }
 
@@ -963,7 +938,7 @@ function deleteCalendarEvent(r, ss) {
             }
           }
           if (event) break;
-        } catch (eDay) {}
+        } catch (eDay) { }
       }
     }
 
@@ -1042,7 +1017,7 @@ function checkCalendarSync(ss) {
 
   var targetCal = getRoigDeCoureCalendar("reserves");
   var defCal = null;
-  try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) {}
+  try { defCal = CalendarApp.getDefaultCalendar(); } catch (eDef) { }
 
   // Recollir TOTS els esdeveniments dels calendaris en NOMÉS 1 o 2 crides API totals (molt ràpid i evita timeouts!)
   var existingEventIds = {};
@@ -1124,12 +1099,12 @@ function checkCalendarSync(ss) {
           var curHoraFi = formatCellTime(values[i][6], tz);
 
           // Si la data o l'hora han canviat al calendari, actualitzar-ho automàticament!
-          if ((curDate && evDate && curDate !== evDate) || 
-              (curHoraInici && evHoraInici && curHoraInici !== evHoraInici)) {
+          if ((curDate && evDate && curDate !== evDate) ||
+            (curHoraInici && evHoraInici && curHoraInici !== evHoraInici)) {
             values[i][4] = evDate;
             values[i][5] = evHoraInici;
             if (evHoraFi) values[i][6] = evHoraFi;
-            
+
             updated_reserves.push({
               id: resId,
               data: evDate,
@@ -1329,7 +1304,7 @@ function onCalendarEventChange(e) {
   Logger.log("🔔 [onCalendarEventChange] Canvi detectat a Google Calendar! Sincronitzant...");
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var syncRes = checkCalendarSync(ss);
-  
+
   // Si hi ha hagut cancel·lacions, avisar immediatament el backend de Render
   try {
     UrlFetchApp.fetch("https://taller-ceramica-nb96.onrender.com/api/reserves/sync-calendar", {
