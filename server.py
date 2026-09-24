@@ -1884,6 +1884,15 @@ def disconnect_wa_gateway():
     except Exception as e:
         return {'ok': False, 'error': str(e)}
 
+def reconnect_wa_gateway():
+    """Reinicia o reconnecta la sessió de WhatsApp Web de Baileys"""
+    try:
+        req = urllib.request.Request('http://127.0.0.1:3001/reconnect', data=b'{}', headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
 def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
     """
     Enviador unificat de WhatsApp per al Taller Roig de Coure:
@@ -2539,6 +2548,7 @@ def start_wa_gateway():
         return
 
     def _run_gateway():
+        time.sleep(3)  # Esperar que Python arrenqui el port HTTP i iniciï la hidratació
         while True:
             try:
                 print(f"[WA Gateway] Llançant microservei Baileys: {node_bin} {wa_script}...")
@@ -7389,6 +7399,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             elif path == '/api/whatsapp/disconnect':
                 res = disconnect_wa_gateway()
+                self.send_json(res)
+                return
+
+            elif path == '/api/whatsapp/reconnect':
+                res = reconnect_wa_gateway()
                 self.send_json(res)
                 return
 
