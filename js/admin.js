@@ -908,6 +908,7 @@ async function openConfigModal() {
   <a href="{enllac_cancel}" style="background: #b91c1c; color: #ffffff; padding: 9px 16px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Gestionar o cancel·lar cita</a>
 </div>`);
     setVal('cfg-tpl-dia-wa', cfg.notif_dia_wa, 'Hola {nom}! T\'esperem avui a les {hora}h al taller ({activitat}). Si tens cap imprevist: {enllac_cancel}');
+    checkWhatsAppLiveStatus();
   } catch (e) {
     console.warn('Avís carregant dades de configuració:', e);
   }
@@ -926,8 +927,70 @@ window.switchTplTab = function(tab) {
   });
 };
 
+let waPollInterval = null;
+
+async function checkWhatsAppLiveStatus() {
+  const card = document.getElementById('wa-connection-card');
+  const emoji = document.getElementById('wa-status-emoji');
+  const title = document.getElementById('wa-status-title');
+  const desc = document.getElementById('wa-status-desc');
+  const disconnectBtn = document.getElementById('btn-wa-disconnect');
+  const qrBox = document.getElementById('wa-qr-box');
+  const qrImg = document.getElementById('wa-qr-image');
+
+  if (!card) return;
+
+  try {
+    const res = await Store.getWhatsAppStatus();
+    if (res.connected) {
+      card.style.background = '#ECFDF5';
+      card.style.borderColor = '#10B981';
+      if (emoji) emoji.textContent = '🟢';
+      const phoneDisplay = res.phone ? `+${res.phone}` : '+34 683 633 880';
+      if (title) {
+        title.textContent = `Connectat: ${phoneDisplay} (Taller Roig de Coure)`;
+        title.style.color = '#065F46';
+      }
+      if (desc) desc.textContent = 'Microservei autònom actiu a Render · Cost 0 €/mes · Notificacions automàtiques actives';
+      if (disconnectBtn) disconnectBtn.style.display = 'block';
+      if (qrBox) qrBox.style.display = 'none';
+
+      if (waPollInterval) {
+        clearInterval(waPollInterval);
+        waPollInterval = null;
+      }
+    } else {
+      card.style.background = '#FFFBEB';
+      card.style.borderColor = '#F59E0B';
+      if (emoji) emoji.textContent = '🟡';
+      if (title) {
+        title.textContent = 'WhatsApp del taller pendent de vincular (683 633 880)';
+        title.style.color = '#92400E';
+      }
+      if (desc) desc.textContent = 'Escaneja el codi QR amb el WhatsApp del telèfon del taller per activar els avisos';
+      if (disconnectBtn) disconnectBtn.style.display = 'none';
+
+      if (res.qr && qrImg) {
+        qrImg.src = res.qr;
+        if (qrBox) qrBox.style.display = 'block';
+      } else if (qrBox) {
+        qrBox.style.display = 'none';
+      }
+
+      if (!waPollInterval) {
+        waPollInterval = setInterval(checkWhatsAppLiveStatus, 4000);
+      }
+    }
+  } catch (err) {
+    if (title) title.textContent = 'Comprovant estat de WhatsApp...';
+  }
+}
 
 function closeConfigModal() {
+  if (waPollInterval) {
+    clearInterval(waPollInterval);
+    waPollInterval = null;
+  }
   if (typeof closeAnyModal === 'function') {
     closeAnyModal('modal-config-backdrop');
   } else {
@@ -1812,6 +1875,20 @@ function setupEventListeners() {
         statusDiv.textContent = 'Error: ' + e.message;
       }
       showToast(e.message, 'error');
+    }
+  });
+
+  // Botons de gestió de WhatsApp QR
+  document.getElementById('btn-wa-refresh-qr')?.addEventListener('click', async () => {
+    showToast('Actualitzant codi QR...', 'info');
+    await checkWhatsAppLiveStatus();
+  });
+
+  document.getElementById('btn-wa-disconnect')?.addEventListener('click', async () => {
+    if (confirm('Vols desconnectar la sessió de WhatsApp del taller? Caldrà tornar a escanejar el QR per enviar avisos.')) {
+      showToast('Desconnectant sessió...', 'info');
+      await Store.disconnectWhatsApp();
+      await checkWhatsAppLiveStatus();
     }
   });
 

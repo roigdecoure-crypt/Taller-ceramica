@@ -1,0 +1,14 @@
+{
+  "name": "taller-ceramica-wa-gateway",
+  "version": "1.0.0",
+  "description": "Microservei autònom i gratuït de WhatsApp Web QR per al Taller de Ceràmica Roig de Coure",
+  "main": "wa_service.js",
+  "scripts": {
+    "start": "node wa_service.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "pino": "^8.19.0",
+    "qrcode": "^1.5.3"
+  }
+}

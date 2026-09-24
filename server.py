@@ -1866,6 +1866,71 @@ def send_whatsapp_direct(to_phone, message_text):
         print(f"[WhatsApp Direct] Error: {e}")
         return {'ok': False, 'error': str(e)}
 
+def get_wa_gateway_status():
+    """Comprova l'estat del microservei Baileys a Node.js (127.0.0.1:3001)"""
+    try:
+        req = urllib.request.Request('http://127.0.0.1:3001/status', method='GET')
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': True, 'connected': False, 'state': 'offline', 'error': str(e)}
+
+def disconnect_wa_gateway():
+    """Desconnecta la sessió de WhatsApp Web de Baileys"""
+    try:
+        req = urllib.request.Request('http://127.0.0.1:3001/logout', data=b'{}', headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': False, 'error': str(e)}
+
+def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
+    """
+    Enviador unificat de WhatsApp per al Taller Roig de Coure:
+    1. Prioritza la passarel·la pròpia Baileys (Node.js a 127.0.0.1:3001) vinculada al mòbil del taller (683 633 880) - Cost 0,00 €.
+    2. Si el microservei no està vinculat o falla, fa fallback automàtic a Whapi.cloud.
+    3. Si Whapi falla, fa fallback a Meta Cloud API.
+    """
+    phone_clean = re.sub(r'[^0-9]', '', str(to_phone or ''))
+    if not phone_clean:
+        return {'ok': False, 'error': 'Telèfon buit o no vàlid'}
+
+    if len(phone_clean) == 9 and phone_clean.startswith(('6', '7', '8', '9')):
+        phone_clean = '34' + phone_clean
+
+    # 1. Provar microservei Baileys
+    try:
+        text_to_send = message_text
+        if res_id:
+            text_to_send += f"\n\nPer gestionar la teva cita respon a aquest missatge:\n1️⃣ Escriu *1* per *Confirmar*\n2️⃣ Escriu *2* per *Cancel·lar*\nO bé fes clic a:\n👉 https://roigdecoure.cat/reserva.html?id={res_id}"
+
+        payload = json.dumps({'to': phone_clean, 'text': text_to_send}, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request('http://127.0.0.1:3001/send', data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            res_data = json.loads(resp.read().decode('utf-8'))
+            if res_data.get('ok'):
+                print(f"[Baileys WA Gateway] Missatge enviat amb èxit a {phone_clean} (Reserva: {res_id})")
+                return {'ok': True, 'engine': 'baileys', 'response': res_data, 'destinatari': phone_clean}
+            else:
+                print(f"[Baileys WA Gateway] Resposta no OK: {res_data}. Intentant mètodes alternatius...")
+    except Exception as e_node:
+        print(f"[Baileys WA Gateway] Microservei local no disponible ({e_node}). Fallback a Whapi...")
+
+    # 2. Fallback a Whapi
+    whapi_res = send_whatsapp_whapi(to_phone, message_text, res_id=res_id, include_buttons=include_buttons, send_logo=send_logo)
+    if whapi_res.get('ok'):
+        return whapi_res
+
+    # 3. Fallback a Meta Cloud API
+    try:
+        meta_res = send_whatsapp_direct(to_phone, message_text)
+        if meta_res.get('ok'):
+            return meta_res
+    except Exception:
+        pass
+
+    return whapi_res
+
 def send_whatsapp_whapi(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
     """
     Envia missatge de WhatsApp mitjançant la passarel·la Whapi.cloud (QR vinculat a WhatsApp).
@@ -1955,13 +2020,88 @@ def send_whatsapp_whapi(to_phone, message_text, res_id=None, include_buttons=Tru
 
 def send_whatsapp_whapi_async(to_phone, message_text, on_success_cb=None, res_id=None, include_buttons=True, send_logo=True):
     def _worker():
-        res = send_whatsapp_whapi(to_phone, message_text, res_id=res_id, include_buttons=include_buttons, send_logo=send_logo)
+        res = send_whatsapp_gateway(to_phone, message_text, res_id=res_id, include_buttons=include_buttons, send_logo=send_logo)
         if res.get('ok') and callable(on_success_cb):
             try:
                 on_success_cb(res)
             except Exception as ex:
-                print(f"[Whapi Callback Error]: {ex}")
+                print(f"[WA Callback Error]: {ex}")
     threading.Thread(target=_worker, daemon=True).start()
+
+def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
+    """
+    Processa els missatges entrants rebuts pel microservei de WhatsApp (Baileys):
+    Si el client respon "1" / "confirmar" -> Confirma la reserva i actualitza Google Sheets / Calendar
+    Si el client respon "2" / "cancel·lar" -> Cancel·la la reserva i allibera la plaça
+    """
+    if not sender_phone:
+        return {'ok': False, 'error': 'Telèfon buit'}
+
+    sender_clean = re.sub(r'[^0-9]', '', str(sender_phone))
+    text_lower = (text_body or '').lower().strip()
+
+    is_confirm = text_lower in ('1', 'confirmar', 'confirmo', 'si', 'sí', 'ok', 'confirmat') or 'confirm' in text_lower
+    is_cancel = text_lower in ('2', 'cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré') or 'cancel' in text_lower
+
+    if not is_confirm and not is_cancel:
+        return {'ok': True, 'ignored': True, 'reason': 'No és una opció 1 o 2'}
+
+    target_res_id = None
+    with get_db() as conn:
+        cur = conn.cursor()
+        tel_short = sender_clean[-9:] if len(sender_clean) >= 9 else sender_clean
+        cur.execute("""
+            SELECT id FROM reserves 
+            WHERE (telefon LIKE ? OR telefon LIKE ?)
+              AND estat NOT IN ('cancel·lada', 'assistit')
+            ORDER BY data ASC, hora_inici ASC LIMIT 1
+        """, (f"%{tel_short}%", f"%{sender_clean}%"))
+        cand = cur.fetchone()
+        if cand:
+            target_res_id = cand['id']
+
+    if not target_res_id:
+        return {'ok': False, 'error': 'No s\'ha trobat cap reserva activa per a aquest telèfon'}
+
+    with get_db() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM reserves WHERE id = ?", (target_res_id,))
+        res_row = cur.fetchone()
+        if not res_row:
+            return {'ok': False, 'error': 'Reserva no trobada'}
+
+        res_dict = row_to_dict(res_row)
+        if is_confirm:
+            cur.execute("""
+                UPDATE reserves 
+                SET whatsapp_client_status = 'confirmat', 
+                    client_confirmat = 1, 
+                    whatsapp_client_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            """, (target_res_id,))
+            conn.commit()
+            res_dict['whatsapp_client_status'] = 'confirmat'
+            res_dict['client_confirmat'] = 1
+            print(f"[WA Inbound] Reserva {target_res_id} CONFIRMADA pel client ({sender_clean})")
+            sync_to_google_sheets_async('add_reserva', res_dict)
+            send_whatsapp_whapi_async(sender_clean, "✅ *Gràcies per confirmar la teva assistència!*\nT'esperem al taller Roig de Coure. Si necessites cap modificació, respon a aquest xat.", None, None, False, False)
+        elif is_cancel:
+            cur.execute("""
+                UPDATE reserves 
+                SET estat = 'cancel·lada', 
+                    whatsapp_client_status = 'cancelat', 
+                    whatsapp_client_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            """, (target_res_id,))
+            conn.commit()
+            res_dict['estat'] = 'cancel·lada'
+            res_dict['whatsapp_client_status'] = 'cancelat'
+            print(f"[WA Inbound] Reserva {target_res_id} CANCEL·LADA pel client ({sender_clean})")
+            sync_to_google_sheets_async('cancel_reserva', res_dict)
+            trigger_n8n_event_async('reserva_cancelada', res_dict)
+            send_whatsapp_whapi_async(sender_clean, "❌ *Reserva cancel·lada correctament.*\nHem alliberat la teva plaça. Esperem veure't en una altra ocasió!", None, None, False, False)
+
+    return {'ok': True, 'res_id': target_res_id, 'action': 'confirmat' if is_confirm else 'cancelat'}
 
 _processed_whapi_msg_ids = set()
 
@@ -2399,12 +2539,44 @@ def start_whapi_listener():
     t_whapi = threading.Thread(target=_listener_loop, daemon=True)
     t_whapi.start()
 
-# Iniciar scheduler i listener Whapi
+def start_wa_gateway():
+    """
+    Inicia el microservei Node.js de Baileys (wa_service.js) en segon pla
+    per connectar-se al WhatsApp Web del taller (683 633 880) sense cost.
+    """
+    import shutil
+    import subprocess
+    node_bin = shutil.which('node')
+    if not node_bin:
+        print("[WA Gateway] Node.js no disponible a l'entorn local. A Render s'executarà dins el contenidor Docker.")
+        return
+
+    wa_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wa_service.js')
+    if not os.path.exists(wa_script):
+        print(f"[WA Gateway] No s'ha trobat el fitxer {wa_script}")
+        return
+
+    def _run_gateway():
+        try:
+            print(f"[WA Gateway] Llançant microservei Baileys: {node_bin} {wa_script}...")
+            p = subprocess.Popen([node_bin, wa_script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+            for line in p.stdout:
+                line_str = line.strip()
+                if line_str:
+                    print(f"[Node WA] {line_str}")
+        except Exception as e:
+            print(f"[WA Gateway Error]: {e}")
+
+    t = threading.Thread(target=_run_gateway, daemon=True)
+    t.start()
+
+# Iniciar scheduler, listener Whapi i microservei Baileys WhatsApp
 try:
     start_whatsapp_scheduler()
     start_whapi_listener()
+    start_wa_gateway()
 except Exception as e:
-    print(f"[WhatsApp Scheduler Error]: {e}")
+    print(f"[WhatsApp Startup Error]: {e}")
 
 INTERVALS_INICI_2H = [
     "10:00", "10:15", "10:30", "10:45", "11:00",
@@ -4130,6 +4302,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute(query, q_args)
                     rows = [row_to_dict(r) for r in cursor.fetchall()]
                 self.send_json({'ok': True, 'data': rows})
+                return
+
+            elif path == '/api/whatsapp/status':
+                res = get_wa_gateway_status()
+                self.send_json(res)
                 return
 
             elif path == '/api/whatsapp/sync':
@@ -7226,6 +7403,19 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'processed': sync_res.get('processed', 0)})
                 return
 
+            elif path == '/api/whatsapp/disconnect':
+                res = disconnect_wa_gateway()
+                self.send_json(res)
+                return
+
+            elif path == '/api/whatsapp/internal-inbound':
+                sender = data.get('sender_phone')
+                text = data.get('text', '')
+                msg_id = data.get('msg_id')
+                res = process_wa_inbound_message(sender, text, msg_id)
+                self.send_json(res)
+                return
+
             elif path == '/api/whatsapp/sync':
                 sync_res = sync_whapi_inbound_messages()
                 self.send_json(sync_res, 200 if sync_res.get('ok') else 500)
@@ -7235,17 +7425,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 tel = (data.get('telefon') or data.get('phone') or '').strip()
                 test_msg = data.get('missatge') or data.get('message') or f"Hola! Aquest és un missatge de prova de WhatsApp enviat automàticament des del Taller de Ceràmica Roig de Coure."
                 test_res_id = data.get('res_id') or data.get('id') or 'TEST-1'
-                with get_db() as conn_w:
-                    c_w = conn_w.cursor()
-                    c_w.execute("SELECT valor FROM configuracio WHERE clau = 'whapi_token'")
-                    r_whapi = c_w.fetchone()
-                if r_whapi and r_whapi['valor']:
-                    res = send_whatsapp_whapi(tel, test_msg, res_id=test_res_id, include_buttons=True, send_logo=True)
-                else:
-                    tpl = (data.get('template') or data.get('template_name') or 'reserva_confirmada').strip()
-                    params_list = data.get('parameters') or ["Alumne Prova", "Torn", "2026-09-09", "10:00", "1"]
-                    lang = (data.get('language') or 'ca').strip()
-                    res = send_whatsapp_meta(tel, tpl, params_list, lang)
+                res = send_whatsapp_gateway(tel, test_msg, res_id=test_res_id, include_buttons=True, send_logo=True)
                 status_code = 200 if res.get('ok') else 400
                 self.send_json(res, status_code)
                 return

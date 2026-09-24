@@ -1870,16 +1870,38 @@ const Store = {
     return { ok: true, activitats: this.getActivitats() };
   },
 
+  async getWhatsAppStatus() {
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    try {
+      const res = await fetch(`${base}/api/whatsapp/status?t=${Date.now()}`);
+      return await res.json();
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  },
+
+  async disconnectWhatsApp() {
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    try {
+      const res = await fetch(`${base}/api/whatsapp/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      return await res.json();
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  },
+
   async testWhatsAppMeta(telefon, template = 'reserva_confirmada') {
-    if (this.mode === 'api') {
-      const res = await fetch(`${this.apiBase}/api/whatsapp/test`, {
+    const base = this.apiBase || (typeof getRoigApiBase === 'function' ? getRoigApiBase() : 'https://taller-ceramica-nb96.onrender.com');
+    try {
+      const res = await fetch(`${base}/api/whatsapp/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telefon, template })
       });
       return await res.json();
+    } catch (e) {
+      return { ok: false, error: e.message };
     }
-    return { ok: false, error: 'Només disponible en mode servidor/API' };
   },
 
   /* ====================== CÒPIA DE SEGURETAT JSON / CSV ====================== */
