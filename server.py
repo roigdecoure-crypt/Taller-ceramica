@@ -2567,7 +2567,17 @@ def start_wa_gateway():
         return
 
     def _run_gateway():
-        time.sleep(3)  # Esperar que Python arrenqui el port HTTP i iniciï la hidratació
+        for _ in range(15):
+            time.sleep(1)
+            try:
+                with get_db() as conn:
+                    cur = conn.cursor()
+                    cur.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
+                    r = cur.fetchone()
+                    if r and r['valor']:
+                        break
+            except Exception:
+                pass
         while True:
             try:
                 print(f"[WA Gateway] Llançant microservei Baileys: {node_bin} {wa_script}...")
@@ -4334,6 +4344,14 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
                     row = cursor.fetchone()
+                    if not row or not row['valor']:
+                        try:
+                            hydrate_from_google_sheets()
+                            cursor.execute("SELECT valor FROM configuracio WHERE clau = 'wa_auth_bundle'")
+                            row = cursor.fetchone()
+                        except Exception:
+                            pass
+
                     if row and row['valor']:
                         try:
                             files_dict = json.loads(row['valor'])
