@@ -2539,15 +2539,19 @@ def start_wa_gateway():
         return
 
     def _run_gateway():
-        try:
-            print(f"[WA Gateway] Llançant microservei Baileys: {node_bin} {wa_script}...")
-            p = subprocess.Popen([node_bin, wa_script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
-            for line in p.stdout:
-                line_str = line.strip()
-                if line_str:
-                    print(f"[Node WA] {line_str}")
-        except Exception as e:
-            print(f"[WA Gateway Error]: {e}")
+        while True:
+            try:
+                print(f"[WA Gateway] Llançant microservei Baileys: {node_bin} {wa_script}...")
+                p = subprocess.Popen([node_bin, wa_script], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+                for line in p.stdout:
+                    line_str = line.strip()
+                    if line_str:
+                        print(f"[Node WA] {line_str}")
+                p.wait()
+                print(f"[WA Gateway] Procés Node ha finalitzat amb codi {p.returncode}. Reiniciant en 2s...")
+            except Exception as e:
+                print(f"[WA Gateway Error]: {e}")
+            time.sleep(2)
 
     t = threading.Thread(target=_run_gateway, daemon=True)
     t.start()

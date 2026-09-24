@@ -71,7 +71,11 @@ function scheduleAuthBackup() {
   }, 2500);
 }
 
+process.on('uncaughtException', (err) => console.error('[WA Gateway Uncaught]', err));
+process.on('unhandledRejection', (err) => console.error('[WA Gateway Unhandled Rejection]', err));
+
 async function tryRestoreAuth() {
+  await new Promise(r => setTimeout(r, 2000));
   return new Promise((resolve) => {
     try {
       if (fs.existsSync(path.join(AUTH_DIR, 'creds.json'))) {
