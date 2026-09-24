@@ -1219,7 +1219,7 @@ def hydrate_from_google_sheets(target_url=None):
             headers={'User-Agent': 'TallerCeramicaBackend/1.0', 'Accept': 'application/json'}
         )
 
-        with execute_safe_request(req, timeout=25) as resp:
+        with execute_safe_request(req, timeout=60) as resp:
             raw = resp.read().decode('utf-8')
             res = json.loads(raw)
 
@@ -1443,7 +1443,7 @@ def sync_calendar_from_google(target_url=None):
             req_url,
             headers={'User-Agent': 'TallerCeramicaBackend/1.0', 'Accept': 'application/json'}
         )
-        with execute_safe_request(req, timeout=25) as resp:
+        with execute_safe_request(req, timeout=45) as resp:
             raw = resp.read().decode('utf-8')
             res = json.loads(raw)
             if res.get('status') == 'success':
