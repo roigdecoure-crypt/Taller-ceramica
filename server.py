@@ -1902,7 +1902,7 @@ def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=T
     try:
         text_to_send = message_text
         if res_id:
-            text_to_send += f"\n\nPer gestionar la teva cita respon a aquest missatge:\n1️⃣ Escriu *1* per *Confirmar*\n2️⃣ Escriu *2* per *Cancel·lar*\nO bé fes clic a:\n👉 https://roigdecoure.cat/reserva.html?id={res_id}"
+            text_to_send += f"\n\nPer gestionar la teva cita respon a aquest xat:\n✅ Escriu *CONFIRMAT* (o *1*) per confirmar\n❌ Escriu *CANCEL·LAR* (o *2*) per cancel·lar\nO bé fes clic a:\n👉 https://roigdecoure.cat/reserva.html?id={res_id}"
 
         payload = json.dumps({'to': phone_clean, 'text': text_to_send}, ensure_ascii=False).encode('utf-8')
         req = urllib.request.Request('http://127.0.0.1:3001/send', data=payload, headers={'Content-Type': 'application/json'}, method='POST')
