@@ -1972,6 +1972,46 @@
         <button type="button" class="modal-close" onclick="closeAnyModal('modal-config-backdrop');" data-close="modal-config-backdrop">&times;</button>
       </div>
       <form id="form-config">
+        <h4 style="margin: 6px 0 12px; color: #15803D; display: flex; align-items: center; gap: 8px; font-size: 15px;">
+          <span>📲</span> WhatsApp Notificacions del Taller (Connexió per QR — 0 €/mes)
+        </h4>
+
+        <!-- Targeta d'estat de WhatsApp en viu -->
+        <div id="wa-connection-card" style="border-radius: 8px; padding: 16px; margin-bottom: 20px; border: 1.5px solid #CBD5E1; background: #F8FAFC;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="wa-status-emoji" style="font-size: 24px;">🔄</span>
+              <div>
+                <div id="wa-status-title" style="font-size: 14.5px; font-weight: 800; color: #1E293B;">Comprovant connexió amb WhatsApp...</div>
+                <div id="wa-status-desc" style="font-size: 12px; color: #64748B;">Microservei autònom allotjat a Render &bull; 0 € de cost mensual</div>
+              </div>
+            </div>
+            <button type="button" id="btn-wa-disconnect" class="btn btn-outline btn-sm" style="display: none; border-color: #EF4444; color: #DC2626; font-size: 11px; padding: 3px 8px; font-weight: 700;">
+              Desvincular WhatsApp
+            </button>
+          </div>
+
+          <!-- Zona del Codi QR si està desconnectat -->
+          <div id="wa-qr-box" style="display: none; text-align: center; background: #FFFFFF; border: 1px dashed #94A3B8; border-radius: 8px; padding: 18px; margin-top: 10px;">
+            <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">
+              Vincula el WhatsApp Business del Taller (683 633 880)
+            </div>
+            <div style="font-size: 12px; color: #475569; max-width: 440px; margin: 0 auto 14px; line-height: 1.4;">
+              1. Obre l'aplicació <strong>WhatsApp Business</strong> al mòbil del taller.<br>
+              2. Ves a <strong>Ajustos / Menú (tres punts)</strong> &gt; <strong>Dispositius vinculats</strong> &gt; <strong>Vincular un dispositiu</strong>.<br>
+              3. Escaneja aquest codi QR amb la càmera:
+            </div>
+            <div style="display: inline-block; padding: 8px; background: #FFFFFF; border: 2px solid #25D366; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <img id="wa-qr-image" src="" alt="Codi QR WhatsApp" style="width: 210px; height: 210px; display: block;">
+            </div>
+            <div style="margin-top: 12px;">
+              <button type="button" id="btn-wa-refresh-qr" class="btn btn-sm btn-outline" style="font-size: 11.5px; padding: 4px 12px; font-weight: 700;">
+                🔄 Actualitzar Codi QR
+              </button>
+            </div>
+          </div>
+        </div>
+
         <h4 style="margin-bottom: 10px; color: var(--color-primary);">Dades del Taller</h4>
         <div class="form-group">
           <label>Nom del Taller</label>
@@ -2056,45 +2096,7 @@
           </button>
         </div>
 
-        <h4 style="margin: 22px 0 10px; color: var(--color-secondary); display: flex; align-items: center; gap: 8px;">
-          <span>📲</span> WhatsApp Notificacions del Taller (Connexió per QR — 0 €/mes)
-        </h4>
 
-        <!-- Targeta d'estat de WhatsApp en viu -->
-        <div id="wa-connection-card" style="border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1.5px solid #CBD5E1; background: #F8FAFC;">
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span id="wa-status-emoji" style="font-size: 24px;">🔄</span>
-              <div>
-                <div id="wa-status-title" style="font-size: 14.5px; font-weight: 800; color: #1E293B;">Comprovant connexió amb WhatsApp...</div>
-                <div id="wa-status-desc" style="font-size: 12px; color: #64748B;">Microservei autònom allotjat a Render &bull; 0 € de cost mensual</div>
-              </div>
-            </div>
-            <button type="button" id="btn-wa-disconnect" class="btn btn-outline btn-sm" style="display: none; border-color: #EF4444; color: #DC2626; font-size: 11px; padding: 3px 8px; font-weight: 700;">
-              Desvincular WhatsApp
-            </button>
-          </div>
-
-          <!-- Zona del Codi QR si està desconnectat -->
-          <div id="wa-qr-box" style="display: none; text-align: center; background: #FFFFFF; border: 1px dashed #94A3B8; border-radius: 8px; padding: 18px; margin-top: 10px;">
-            <div style="font-size: 13.5px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">
-              Vincula el WhatsApp oficial del Taller (Simyo 683 633 880)
-            </div>
-            <div style="font-size: 12px; color: #475569; max-width: 440px; margin: 0 auto 14px; line-height: 1.4;">
-              1. Obre WhatsApp al telèfon del taller.<br>
-              2. Ves a <strong>Ajustos / Menú (tres punts)</strong> &gt; <strong>Dispositius vinculats</strong> &gt; <strong>Vincular un dispositiu</strong>.<br>
-              3. Escaneja aquest codi QR amb la càmera:
-            </div>
-            <div style="display: inline-block; padding: 8px; background: #FFFFFF; border: 2px solid #25D366; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-              <img id="wa-qr-image" src="" alt="Codi QR WhatsApp" style="width: 210px; height: 210px; display: block;">
-            </div>
-            <div style="margin-top: 12px;">
-              <button type="button" id="btn-wa-refresh-qr" class="btn btn-sm btn-outline" style="font-size: 11.5px; padding: 4px 12px; font-weight: 700;">
-                🔄 Actualitzar Codi QR
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div style="background: #F9FAFB; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); margin-bottom: 14px;">
           <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: var(--color-dark);">Noms de les Plantilles a Meta (Templates):</div>
@@ -3897,6 +3899,6 @@
   <script src="js/api-config.js?v=12.7.18"></script>
   <script src="js/store.js?v=12.7.18"></script>
   <script src="js/reserves-calendar.js?v=12.7.18"></script>
-  <script src="js/admin.js?v=12.7.18"></script>
+  <script src="js/admin.js?v=12.7.19"></script>
 </body>
 </html>
