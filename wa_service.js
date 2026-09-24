@@ -339,36 +339,65 @@ const server = http.createServer(async (req, res) => {
     }));
   }
 
+  if (req.method === 'GET' && url.pathname === '/groups') {
+    try {
+      if (!sock || connectionState !== 'open') {
+        res.writeHead(503);
+        return res.end(JSON.stringify({ ok: false, error: 'Socket no connectat', groups: [] }));
+      }
+      const rawGroups = await sock.groupFetchAllParticipating();
+      const list = Object.values(rawGroups || {}).map(g => ({
+        id: g.id,
+        subject: g.subject,
+        participantsCount: g.participants?.length || 0
+      }));
+      res.writeHead(200);
+      return res.end(JSON.stringify({ ok: true, groups: list }));
+    } catch (e) {
+      res.writeHead(500);
+      return res.end(JSON.stringify({ ok: false, error: e.message, groups: [] }));
+    }
+  }
+
   if (req.method === 'POST' && url.pathname === '/send') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
       try {
         const data = JSON.parse(body || '{}');
-        const rawPhone = String(data.to || '').replace(/[^0-9]/g, '');
-        let cleanPhone = rawPhone;
-        if (cleanPhone.length === 9 && cleanPhone.startsWith('6') || cleanPhone.startsWith('7') || cleanPhone.startsWith('8') || cleanPhone.startsWith('9')) {
-          cleanPhone = '34' + cleanPhone;
+        const targetStr = String(data.to || '').trim();
+        let jid = '';
+
+        if (targetStr.endsWith('@g.us')) {
+          jid = targetStr;
+        } else {
+          const rawPhone = targetStr.replace(/[^0-9]/g, '');
+          let cleanPhone = rawPhone;
+          if (cleanPhone.length === 9 && (cleanPhone.startsWith('6') || cleanPhone.startsWith('7') || cleanPhone.startsWith('8') || cleanPhone.startsWith('9'))) {
+            cleanPhone = '34' + cleanPhone;
+          }
+          if (cleanPhone) {
+            jid = `${cleanPhone}@s.whatsapp.net`;
+          }
         }
 
-        if (!cleanPhone || !data.text) {
+        if (!jid || !data.text) {
           res.writeHead(400);
           return res.end(JSON.stringify({ ok: false, error: 'Falten camps: to o text' }));
         }
 
         if (connectionState !== 'open' || !sock) {
           res.writeHead(503);
-          return res.end(JSON.stringify({ ok: false, error: 'El WhatsApp del taller no està connectat. Cal escanejar el QR.' }));
+          return res.end(JSON.stringify({ ok: false, error: 'El WhatsApp del taller no està connectat.' }));
         }
 
-        const jid = `${cleanPhone}@s.whatsapp.net`;
         const sent = await sock.sendMessage(jid, { text: data.text });
 
         res.writeHead(200);
         return res.end(JSON.stringify({
           ok: true,
           messageId: sent?.key?.id,
-          to: cleanPhone
+          to: jid
         }));
       } catch (err) {
         console.error('[WA Gateway] Error enviant missatge:', err);

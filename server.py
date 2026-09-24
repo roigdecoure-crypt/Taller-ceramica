@@ -1902,6 +1902,48 @@ def get_wa_gateway_recent_inbound():
     except Exception as e:
         return {'ok': False, 'error': str(e), 'inbound': []}
 
+def get_wa_gateway_groups():
+    """Obté els grups de WhatsApp en què participa el compte del taller"""
+    try:
+        req = urllib.request.Request('http://127.0.0.1:3001/groups', headers={'User-Agent': 'TallerCeramicaBackend/1.0'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        return {'ok': False, 'error': str(e), 'groups': []}
+
+def notify_wa_reserves_group(message_text):
+    """
+    Envia una notificació al grup de WhatsApp intern del taller (ex: 'Reserves' o 'Reserves Taller').
+    """
+    def _worker():
+        try:
+            res = get_wa_gateway_groups()
+            target_gid = None
+            if res.get('ok') and res.get('groups'):
+                for g in res.get('groups', []):
+                    sub = (g.get('subject') or '').lower()
+                    if 'reserva' in sub or 'reservas' in sub:
+                        target_gid = g.get('id')
+                        break
+            
+            if not target_gid:
+                with get_db() as conn:
+                    cur = conn.cursor()
+                    cur.execute("SELECT valor FROM configuracio WHERE clau = 'wa_admin_group_jid'")
+                    r = cur.fetchone()
+                    if r and r['valor']:
+                        target_gid = r['valor'].strip()
+
+            if target_gid:
+                payload = json.dumps({'to': target_gid, 'text': message_text}, ensure_ascii=False).encode('utf-8')
+                req = urllib.request.Request('http://127.0.0.1:3001/send', data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    pass
+        except Exception as e:
+            print(f"[WA Group Notify]: {e}")
+
+    threading.Thread(target=_worker, daemon=True).start()
+
 def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=True, send_logo=True):
     """
     Enviador unificat de WhatsApp per al Taller Roig de Coure:
@@ -2112,6 +2154,14 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             sync_to_google_sheets_async('add_reserva', res_dict)
             confirm_msg = f"✅ *Gràcies per confirmar la teva assistència!*\nHem confirmat la teva reserva de *{act_res}* pel dia *{data_res}* a les *{hora_res}h*.\n\nT'esperem al taller Roig de Coure! Si necessites cap modificació, respon a aquest xat."
             send_whatsapp_whapi_async(sender_clean, confirm_msg, None, None, False, False)
+            notify_wa_reserves_group(
+                f"🔔 *Reserva CONFIRMADA per WhatsApp!*\n"
+                f"👤 *Alumne:* {res_dict.get('student_nom', '')}\n"
+                f"📞 *Tel:* +{sender_clean}\n"
+                f"📅 *Dia:* {data_res} a les {hora_res}h\n"
+                f"🎨 *Activitat:* {act_res}\n"
+                f"🆔 *Codi:* {target_res_id}"
+            )
         elif is_cancel:
             cur.execute("""
                 UPDATE reserves 
@@ -2128,6 +2178,13 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
             trigger_n8n_event_async('reserva_cancelada', res_dict)
             cancel_msg = f"❌ *Reserva cancel·lada correctament.*\nHem alliberat la teva plaça pel dia *{data_res}* a les *{hora_res}h*. Esperem veure't en una altra ocasió!"
             send_whatsapp_whapi_async(sender_clean, cancel_msg, None, None, False, False)
+            notify_wa_reserves_group(
+                f"⚠️ *Reserva CANCEL·LADA per WhatsApp!*\n"
+                f"👤 *Alumne:* {res_dict.get('student_nom', '')}\n"
+                f"📞 *Tel:* +{sender_clean}\n"
+                f"📅 *Dia:* {data_res} a les {hora_res}h\n"
+                f"Plaça alliberada a la graella i Google Calendar."
+            )
 
     return {'ok': True, 'res_id': target_res_id, 'action': 'confirmat' if is_confirm else 'cancelat'}
 
@@ -4339,6 +4396,11 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(res)
                 return
 
+            elif path == '/api/whatsapp/groups':
+                res = get_wa_gateway_groups()
+                self.send_json(res)
+                return
+
             elif path == '/api/whatsapp/internal-auth-restore':
                 with get_db() as conn:
                     cursor = conn.cursor()
@@ -6386,6 +6448,15 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                     notif_rendered = render_notification('reserva_creada', reserva_dict)
                     send_whatsapp_whapi_async(telefon, notif_rendered.get('wa_missatge') or '', on_success_cb=_mark_conf_done, res_id=res_id, include_buttons=True, send_logo=True)
+
+                notify_wa_reserves_group(
+                    f"✨ *Nova reserva rebuda al Taller!*\n"
+                    f"👤 *Alumne:* {student_nom}\n"
+                    f"📞 *Tel:* +{telefon}\n"
+                    f"📅 *Dia:* {data_res} a les {hora_inici}h\n"
+                    f"🎨 *Activitat:* {activitat} ({places} places)\n"
+                    f"🆔 *Codi:* {res_id}"
+                )
 
                 # Disparar workflow automàtic a n8n Cloud (notificacions WhatsApp + Email)
                 trigger_n8n_event_async('reserva_creada', reserva_dict)
