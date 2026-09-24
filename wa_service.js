@@ -13,7 +13,7 @@ if (typeof global.crypto === 'undefined') {
   global.crypto = nodeCrypto;
 }
 
-const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, useMultiFileAuthState, fetchLatestBaileysVersion, Browsers, proto } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const QRCode = require('qrcode');
 const http = require('http');
@@ -26,6 +26,32 @@ const AUTH_DIR = path.join(__dirname, 'data', 'wa_auth');
 if (!fs.existsSync(AUTH_DIR)) {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 }
+
+class SimpleCache {
+  constructor(limit = 3000) {
+    this.map = new Map();
+    this.limit = limit;
+  }
+  get(key) {
+    return this.map.get(key);
+  }
+  set(key, val) {
+    this.map.set(key, val);
+    if (this.map.size > this.limit) {
+      const firstKey = this.map.keys().next().value;
+      this.map.delete(firstKey);
+    }
+  }
+  del(key) {
+    this.map.delete(key);
+  }
+  delete(key) {
+    this.map.delete(key);
+  }
+}
+
+const msgRetryCounterCache = new SimpleCache(5000);
+const messageStore = new SimpleCache(5000);
 
 let sock = null;
 let currentQR = null;
@@ -189,7 +215,14 @@ async function startWhatsAppSocket() {
       syncFullHistory: false,
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 10000
+      keepAliveIntervalMs: 10000,
+      msgRetryCounterCache,
+      getMessage: async (key) => {
+        const idKey = `${key.remoteJid}_${key.id}`;
+        const cached = messageStore.get(idKey);
+        if (cached) return cached;
+        return proto?.Message ? proto.Message.fromObject({}) : undefined;
+      }
     });
 
     sock.ev.on('creds.update', async () => {
@@ -243,6 +276,9 @@ async function startWhatsAppSocket() {
     // Escolta de missatges entrants (respostes de confirmació o cancel·lació)
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
       for (const msg of (messages || [])) {
+        if (msg?.key?.id && msg?.message) {
+          messageStore.set(`${msg.key.remoteJid}_${msg.key.id}`, msg.message);
+        }
         if (!msg.message || msg.key?.fromMe) continue;
 
         const rawMsg = msg.message;
@@ -392,6 +428,9 @@ const server = http.createServer(async (req, res) => {
         }
 
         const sent = await sock.sendMessage(jid, { text: data.text });
+        if (sent?.key?.id && sent?.message) {
+          messageStore.set(`${jid}_${sent.key.id}`, sent.message);
+        }
 
         res.writeHead(200);
         return res.end(JSON.stringify({
