@@ -1881,8 +1881,12 @@ def get_wa_gateway_status():
         return {'ok': True, 'connected': False, 'state': 'offline', 'error': str(e)}
 
 def disconnect_wa_gateway():
-    """Desconnecta la sessió de WhatsApp Web de Baileys"""
+    """Desconnecta la sessió de WhatsApp Web de Baileys i neteja totes les credencials antigues"""
     try:
+        with get_db() as conn:
+            conn.cursor().execute("DELETE FROM configuracio WHERE clau = 'wa_auth_bundle'")
+            conn.commit()
+        sync_to_google_sheets_async('save_config', {'wa_auth_bundle': ''})
         req = urllib.request.Request('http://127.0.0.1:3001/logout', data=b'{}', headers={'Content-Type': 'application/json'}, method='POST')
         with urllib.request.urlopen(req, timeout=5) as resp:
             return json.loads(resp.read().decode('utf-8'))

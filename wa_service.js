@@ -465,14 +465,18 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && url.pathname === '/logout') {
     try {
       if (sock) {
-        await sock.logout();
+        try { await sock.logout(); } catch (e) {}
       }
-      fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+      try {
+        fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+      } catch (e) {}
       fs.mkdirSync(AUTH_DIR, { recursive: true });
       connectionState = 'disconnected';
       connectedPhone = null;
       currentQR = null;
-      setTimeout(startWhatsAppSocket, 1500);
+      if (messageStore?.map) messageStore.map.clear();
+      if (msgRetryCounterCache?.map) msgRetryCounterCache.map.clear();
+      setTimeout(startWhatsAppSocket, 1000);
 
       res.writeHead(200);
       return res.end(JSON.stringify({ ok: true, message: 'Sessió desconnectada correctament.' }));
