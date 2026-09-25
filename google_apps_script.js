@@ -777,7 +777,7 @@ function syncCalendarEvent(r) {
     }
 
     var prefix = isConfirmed ? "🟢 " : "🟡 ";
-    var title = prefix + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "") + (tel ? " - " + tel : "");
+    var title = prefix + act + " - " + nom + (places > 1 ? " (" + places + " pl)" : "");
 
     var startTime = parseDateTimeRobust(r.data, r.hora_inici);
     var endTime = parseDateTimeRobust(r.data, r.hora_fi);
