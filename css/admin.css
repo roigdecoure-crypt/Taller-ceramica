@@ -1582,41 +1582,41 @@
   }
 
   .admin-sidebar:not(.collapsed) .sidebar-item.active {
-    background: #FDF4F2 !important;
-    border-left: 5px solid #831D1D !important;
+    background: #831D1D !important;
+    border-left: 6px solid #5E7E6F !important;
   }
   .admin-sidebar:not(.collapsed) .sidebar-item.active,
   .admin-sidebar:not(.collapsed) .sidebar-item.active *,
   .admin-sidebar:not(.collapsed) .sidebar-item.active a,
   .admin-sidebar:not(.collapsed) .sidebar-item.active span,
   .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-text {
-    color: #831D1D !important;
-    -webkit-text-fill-color: #831D1D !important;
-    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    font-weight: 700 !important;
   }
   .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-icon,
   .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-icon svg {
-    color: #831D1D !important;
-    stroke: #831D1D !important;
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
   }
 
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active {
-    background: #2D1A18 !important;
-    border-left: 5px solid #E05A47 !important;
+    background: #831D1D !important;
+    border-left: 6px solid #E05A47 !important;
   }
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active,
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active *,
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active a,
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active span,
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-text {
-    color: #FFAAA0 !important;
-    -webkit-text-fill-color: #FFAAA0 !important;
-    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    font-weight: 700 !important;
   }
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-icon,
   .admin-dark-mode .admin-sidebar:not(.collapsed) .sidebar-item.active .nav-icon svg {
-    color: #FFAAA0 !important;
-    stroke: #FFAAA0 !important;
+    color: #FFFFFF !important;
+    stroke: #FFFFFF !important;
   }
 
   .admin-sidebar:not(.collapsed) .sidebar-footer-btn {
