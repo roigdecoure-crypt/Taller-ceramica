@@ -1631,8 +1631,12 @@ function setupEventListeners() {
       const res = await Store.saveAlumne(data);
       showToast(res.message || 'Alumne desat!', 'success');
       document.getElementById('modal-alumne-backdrop').classList.remove('active');
+      const pinEl = document.getElementById('inline-student-pin');
+      if (pinEl && data.pin) {
+        pinEl.textContent = data.pin;
+      }
       await refreshStudentsList();
-      if (currentViewingStudent && currentViewingStudent.alumne.id === res.id) {
+      if (currentViewingStudent && currentViewingStudent.alumne && currentViewingStudent.alumne.id === res.id) {
         openStudentDrawer(res.id);
       }
     } catch (err) {

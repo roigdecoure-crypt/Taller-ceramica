@@ -1996,7 +1996,7 @@ def send_whatsapp_gateway(to_phone, message_text, res_id=None, include_buttons=T
     try:
         text_to_send = message_text
         if res_id:
-            text_to_send += f"\n\nPer gestionar la teva cita respon a aquest xat:\n✅ Escriu *CONFIRMAT* (o *1*) per confirmar\n❌ Escriu *CANCEL·LAR* (o *2*) per cancel·lar\nO bé fes clic a:\n👉 https://roigdecoure.cat/reserva.html?id={res_id}"
+            text_to_send += f"\n\nPer gestionar la teva cita respon a aquest xat:\n✅ Escriu *1* per confirmar\n❌ Escriu *2* per cancel·lar\nO bé fes clic a:\n👉 https://roigdecoure.cat/reserva.html?id={res_id}"
 
         payload = json.dumps({'to': phone_clean, 'text': text_to_send}, ensure_ascii=False).encode('utf-8')
         req = urllib.request.Request('http://127.0.0.1:3001/send', data=payload, headers={'Content-Type': 'application/json'}, method='POST')
@@ -2134,8 +2134,18 @@ def process_wa_inbound_message(sender_phone, text_body, msg_id=None):
     sender_clean = re.sub(r'[^0-9]', '', str(sender_phone))
     text_lower = (text_body or '').lower().strip()
 
-    is_confirm = text_lower in ('1', 'confirmar', 'confirmo', 'si', 'sí', 'ok', 'confirmat') or 'confirm' in text_lower
-    is_cancel = text_lower in ('2', 'cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré') or 'cancel' in text_lower
+    is_confirm = (
+        text_lower in ('1', '1.', '1-confirmar', '1 confirmar', 'confirmar', 'confirmo', 'si', 'sí', 'ok', 'confirmat', 'comfirmat')
+        or text_lower.startswith('1 ')
+        or 'confirm' in text_lower
+        or text_lower == '1'
+    )
+    is_cancel = (
+        text_lower in ('2', '2.', '2-cancel·lar', '2 cancel·lar', 'cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré')
+        or text_lower.startswith('2 ')
+        or 'cancel' in text_lower
+        or text_lower == '2'
+    )
 
     if not is_confirm and not is_cancel:
         return {'ok': True, 'ignored': True, 'reason': 'No és una opció 1 o 2'}
@@ -2270,8 +2280,20 @@ def sync_whapi_inbound_messages():
 
         text_body = ((m.get('text') or {}).get('body') or '').lower().strip()
 
-        is_confirm = btn_id.startswith('confirm_') or ('confirm' in btn_title) or (text_body in ('confirmar', 'confirmo', 'si, confirmo', 'sí, confirmo', 'confirmat', 'ok'))
-        is_cancel = btn_id.startswith('cancel_') or ('cancel' in btn_title) or (text_body in ('cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré'))
+        is_confirm = (
+            btn_id.startswith('confirm_')
+            or ('confirm' in btn_title)
+            or (text_body in ('1', '1.', '1-confirmar', '1 confirmar', 'confirmar', 'confirmo', 'si, confirmo', 'sí, confirmo', 'confirmat', 'comfirmat', 'ok'))
+            or text_body.startswith('1 ')
+            or 'confirm' in text_body
+        )
+        is_cancel = (
+            btn_id.startswith('cancel_')
+            or ('cancel' in btn_title)
+            or (text_body in ('2', '2.', '2-cancel·lar', '2 cancel·lar', 'cancel·lar', 'cancelar', 'anul·lar', 'anular', 'no puc venir', 'no vindré'))
+            or text_body.startswith('2 ')
+            or 'cancel' in text_body
+        )
 
         target_res_id = None
         if btn_id.startswith('confirm_'):
@@ -4380,7 +4402,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                             s['format_hms'] = format_hms(dur_sec)
 
                     clean_student = dict(student) if student else {}
-                    clean_student.pop('pin', None)
+                    # Mantenim el PIN per a la gestió d'administració (només eliminem password_hash)
                     clean_student.pop('password_hash', None)
 
                     # Carregar peces de l'alumne
@@ -5952,6 +5974,12 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                         if not pin:
                             pin = str(max_num + 1)
 
+                    if not pin and student_id:
+                        cursor.execute("SELECT pin FROM alumnes WHERE id = ?", (student_id,))
+                        r_pin = cursor.fetchone()
+                        if r_pin and r_pin['pin']:
+                            pin = r_pin['pin']
+
                     data_alta = data.get('data_alta') or get_now().strftime('%Y-%m-%dT%H:%M:%S')
 
                     cursor.execute('''
@@ -5984,7 +6012,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'data_naixement': data_naixement
                 })
 
-                self.send_json({'ok': True, 'id': student_id, 'edat': edat, 'data_naixement': data_naixement, 'message': 'Alumne desat correctament'})
+                self.send_json({'ok': True, 'id': student_id, 'pin': pin, 'edat': edat, 'data_naixement': data_naixement, 'message': 'Alumne desat correctament'})
                 return
 
             elif path == '/api/checkin':
