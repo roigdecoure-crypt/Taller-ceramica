@@ -17,24 +17,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css?v=10.1.0">
-  <link rel="stylesheet" href="css/admin.css?v=12.8.5">
+  <link rel="stylesheet" href="css/admin.css?v=12.8.6">
   <link rel="stylesheet" href="css/card.css?v=10.1.0">
   <style>
-    /* FORÇAR LLETRA BLANCA A LA PESTANYA ACTIVA DE LA BARRA LATERAL */
-    .sidebar-item.active,
-    .sidebar-item.active *,
-    .sidebar-item.active .nav-text,
-    .sidebar-item.active a,
-    .sidebar-item.active span,
-    #nav-tab-reserves.active,
-    #nav-tab-reserves.active *,
-    #nav-tab-reserves.active .nav-text {
-      color: #FFFFFF !important;
-      -webkit-text-fill-color: #FFFFFF !important;
-    }
-    .sidebar-item.active .nav-icon svg {
-      stroke: #FFFFFF !important;
-      color: #FFFFFF !important;
+    /* FORÇAR LLETRA BLANCA A LA PESTANYA ACTIVA DE LA BARRA LATERAL EN ESCRIPTORI */
+    @media (min-width: 769px) {
+      .sidebar-item.active,
+      .sidebar-item.active *,
+      .sidebar-item.active .nav-text,
+      .sidebar-item.active a,
+      .sidebar-item.active span,
+      #nav-tab-reserves.active,
+      #nav-tab-reserves.active *,
+      #nav-tab-reserves.active .nav-text {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+      }
+      .sidebar-item.active .nav-icon svg {
+        stroke: #FFFFFF !important;
+        color: #FFFFFF !important;
+      }
     }
   </style>
   <script>
@@ -1057,9 +1059,12 @@
 
         <!-- Historial Complet Organitzat en Pestanyes -->
         <div class="admin-card-box">
-          <div class="admin-tabs-nav" style="border-bottom: 1px solid #E8DDD1; margin-bottom: 16px; display: flex; gap: 8px;">
+          <div class="admin-tabs-nav" style="border-bottom: 1px solid #E8DDD1; margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="tab-btn active inline-history-tab-btn" data-history-tab="inline-history-reserves">
-              Reserves (<span id="inline-count-reserves">0</span>)
+              Reserves Actives (<span id="inline-count-reserves">0</span>)
+            </button>
+            <button type="button" class="tab-btn inline-history-tab-btn" data-history-tab="inline-history-reserves-cancel" id="tab-btn-inline-reserves-cancel">
+              Cancel·lades (<span id="inline-count-reserves-cancel">0</span>)
             </button>
             <button type="button" class="tab-btn inline-history-tab-btn" data-history-tab="inline-history-sessions">
               Sessions i Assistència (<span id="inline-count-sessions">0</span>)
@@ -1069,7 +1074,7 @@
             </button>
           </div>
 
-          <!-- Pestanya 1: Reserves -->
+          <!-- Pestanya 1: Reserves Actives -->
           <div id="inline-history-reserves" class="inline-history-pane">
             <div class="table-responsive">
               <table class="data-table">
@@ -1086,6 +1091,29 @@
                   </tr>
                 </thead>
                 <tbody id="inline-reserves-tbody">
+                  <!-- Rengleres dinàmiques -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Pestanya 1b: Reserves Cancel·lades (Apart per no embrollar) -->
+          <div id="inline-history-reserves-cancel" class="inline-history-pane" style="display: none;">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Horari</th>
+                    <th>Franja</th>
+                    <th>Activitat</th>
+                    <th>Places</th>
+                    <th>Estat</th>
+                    <th>Notes</th>
+                    <th style="text-align: right;">Estat</th>
+                  </tr>
+                </thead>
+                <tbody id="inline-reserves-cancel-tbody">
                   <!-- Rengleres dinàmiques -->
                 </tbody>
               </table>
@@ -3807,6 +3835,6 @@
   <script src="js/api-config.js?v=12.7.18"></script>
   <script src="js/store.js?v=12.7.18"></script>
   <script src="js/reserves-calendar.js?v=12.7.18"></script>
-  <script src="js/admin.js?v=12.8.5"></script>
+  <script src="js/admin.js?v=12.8.6"></script>
 </body>
 </html>

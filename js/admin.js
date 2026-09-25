@@ -469,15 +469,21 @@ async function openStudentInlineDetail(studentId) {
     const sessionsList = details.sessions || [];
     const paquetsList = details.paquets || [];
 
+    const activeReserves = reservesList.filter(r => !(r.estat && r.estat.toLowerCase().startsWith('cancel')));
+    const cancelledReserves = reservesList.filter(r => (r.estat && r.estat.toLowerCase().startsWith('cancel')));
+
     const countRes = document.getElementById('inline-count-reserves');
+    const countResCancel = document.getElementById('inline-count-reserves-cancel');
     const countSess = document.getElementById('inline-count-sessions');
     const countPacks = document.getElementById('inline-count-paquets');
-    if (countRes) countRes.textContent = reservesList.length;
+    if (countRes) countRes.textContent = activeReserves.length;
+    if (countResCancel) countResCancel.textContent = cancelledReserves.length;
     if (countSess) countSess.textContent = sessionsList.length;
     if (countPacks) countPacks.textContent = paquetsList.length;
 
     // Renderitzar taules d'historial
-    renderInlineStudentReserves(reservesList);
+    renderInlineStudentReserves(activeReserves);
+    renderInlineStudentCancelledReserves(cancelledReserves);
     renderInlineStudentSessions(sessionsList);
     renderInlineStudentPaquets(paquetsList);
 
@@ -499,13 +505,13 @@ function closeStudentInlineDetail() {
   if (heading) heading.textContent = 'Alumnes & Clients';
 }
 
-// RENDERITZAR TAULA DE RESERVES DE L'ALUMNE
+// RENDERITZAR TAULA DE RESERVES ACTIVES DE L'ALUMNE
 function renderInlineStudentReserves(reserves) {
   const tbody = document.getElementById('inline-reserves-tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
   if (!reserves || reserves.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">No hi ha cap reserva registrada per a aquest alumne.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">No hi ha cap reserva activa registrada per a aquest alumne.</td></tr>`;
     return;
   }
 
@@ -529,6 +535,35 @@ function renderInlineStudentReserves(reserves) {
           ? `<button type="button" class="btn btn-outline btn-sm btn-inline-cancel-reserva" data-id="${r.id}" style="color:var(--color-danger); border-color:var(--color-danger); padding:3px 8px;" title="Cancel·lar aquesta reserva i alliberar la plaça">Cancel·lar</button>`
           : `<span style="color:var(--color-muted); font-size:12px;">Cancel·lada</span>`
         }
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// RENDERITZAR TAULA DE RESERVES CANCEL·LADES EN PESTANYA SEPARADA
+function renderInlineStudentCancelledReserves(reserves) {
+  const tbody = document.getElementById('inline-reserves-cancel-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!reserves || reserves.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--color-muted); padding:24px; font-size:14px;">No hi ha cap reserva cancel·lada per a aquest alumne.</td></tr>`;
+    return;
+  }
+
+  reserves.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.style.opacity = '0.85';
+    tr.innerHTML = `
+      <td>${TimeUtils.formatDate(r.data)}</td>
+      <td><strong>${r.hora_inici || '-'} - ${r.hora_fi || '-'}</strong></td>
+      <td><span class="badge badge-neutral">${r.torn || 'Franja'}</span></td>
+      <td><strong>${r.activitat || 'Ceràmica'}</strong></td>
+      <td><span class="badge badge-info">${r.places || 1} plaça</span></td>
+      <td><span class="badge badge-danger">Cancel·lada</span></td>
+      <td style="font-size:12px; color:var(--color-muted); max-width:180px;">${r.notes || '-'}</td>
+      <td style="text-align: right; white-space: nowrap;">
+        <span style="color:var(--color-muted); font-size:12px;">Cancel·lada</span>
       </td>
     `;
     tbody.appendChild(tr);
