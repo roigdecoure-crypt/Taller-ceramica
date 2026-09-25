@@ -126,8 +126,45 @@ async function processCheckInOut(code, options = {}) {
     await loadStudentSelector(); // Actualitzar estat
   } catch (err) {
     SoundEngine.playWarning();
-    alert(err.message);
+    displayScanError(err.message || 'Codi no reconegut');
   }
+}
+
+// Mostrar modal gran d'error / avís clar
+function displayScanError(message) {
+  const modal = document.getElementById('scan-result-modal');
+  const box = document.getElementById('scan-result-box');
+  const badgeEl = document.getElementById('res-badge');
+  const nameEl = document.getElementById('res-student-name');
+  const detailsEl = document.querySelector('.result-details');
+  const dismissBtn = document.getElementById('btn-dismiss-result');
+
+  box.classList.remove('is-entrada', 'is-sortida');
+  box.classList.add('is-error');
+
+  badgeEl.textContent = 'AVÍS • CODI NO RECONEGUT';
+  nameEl.textContent = 'Codi no vàlid';
+  if (detailsEl) detailsEl.style.display = 'none';
+
+  let errMsgEl = document.getElementById('res-error-msg');
+  if (!errMsgEl) {
+    errMsgEl = document.createElement('div');
+    errMsgEl.id = 'res-error-msg';
+    errMsgEl.style.cssText = 'color: #FCA5A5; font-size: 15px; margin-bottom: 20px; line-height: 1.4; font-weight: 500;';
+    if (dismissBtn) box.insertBefore(errMsgEl, dismissBtn);
+  }
+  errMsgEl.textContent = message || "El codi QR escanejat no correspon a cap alumne actiu.";
+  errMsgEl.style.display = 'block';
+
+  modal.classList.add('active');
+
+  if (resultAutoCloseTimer) clearTimeout(resultAutoCloseTimer);
+  resultAutoCloseTimer = setTimeout(() => {
+    modal.classList.remove('active');
+    if (detailsEl) detailsEl.style.display = '';
+    if (errMsgEl) errMsgEl.style.display = 'none';
+    box.classList.remove('is-error');
+  }, 4000);
 }
 
 // Mostrar modal gran de feedback
@@ -145,8 +182,12 @@ function displayScanResult(res) {
 
   const rowSortida = document.getElementById('row-sortida');
   const rowDurada = document.getElementById('row-durada');
+  const detailsEl = document.querySelector('.result-details');
+  const errMsgEl = document.getElementById('res-error-msg');
 
-  box.classList.remove('is-entrada', 'is-sortida');
+  if (detailsEl) detailsEl.style.display = '';
+  if (errMsgEl) errMsgEl.style.display = 'none';
+  box.classList.remove('is-entrada', 'is-sortida', 'is-error');
 
   nameEl.textContent = `${res.alumne.nom} ${res.alumne.cognoms || ''}`;
   horaEntradaEl.textContent = res.horaEntrada || '--:--:--';

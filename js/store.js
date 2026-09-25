@@ -506,7 +506,25 @@ const Store = {
     }
 
     const data = this._getLocalData();
-    const cleanCode = (code || '').trim().toUpperCase();
+    const rawCode = (code || '').trim();
+    let cleanCode = rawCode.toUpperCase();
+    if (rawCode.includes('?') || rawCode.includes('/') || rawCode.includes('=')) {
+      try {
+        const urlObj = new URL(rawCode.startsWith('http') ? rawCode : `https://${rawCode}`);
+        const extracted = urlObj.searchParams.get('alumne') || urlObj.searchParams.get('id') || urlObj.searchParams.get('student') || urlObj.searchParams.get('code');
+        if (extracted) {
+          cleanCode = extracted.trim().toUpperCase();
+        } else {
+          const parts = urlObj.pathname.split('/').filter(Boolean);
+          if (parts.length > 0 && parts[parts.length - 1].length > 2 && !parts[parts.length - 1].endsWith('.html')) {
+            cleanCode = parts[parts.length - 1].toUpperCase();
+          }
+        }
+      } catch (e) {
+        const match = rawCode.match(/(?:alumne|id|student|code)=([^&#]+)/i);
+        if (match) cleanCode = decodeURIComponent(match[1]).trim().toUpperCase();
+      }
+    }
     const student = (data.alumnes || []).find(a => a.actiu !== 0 && (
       (a.id || '').toUpperCase() === cleanCode ||
       (a.pin || '') === cleanCode ||

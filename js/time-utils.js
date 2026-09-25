@@ -198,9 +198,8 @@ const TimeUtils = {
    */
   toLocalDatetimeInput(date = new Date()) {
     const d = new Date(date);
-    const offset = d.getTimezoneOffset() * 60000;
-    const local = new Date(d.getTime() - offset);
-    return local.toISOString().slice(0, 16);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   },
 
   /**

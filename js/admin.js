@@ -713,9 +713,9 @@ async function openAdminManualCheckinModal(preselectedStudentId = null, preselec
 
   // Reset hora a ara mateix
   if (customTimeInput) {
-    const nowLocal = new Date();
-    nowLocal.setMinutes(nowLocal.getMinutes() - nowLocal.getTimezoneOffset());
-    customTimeInput.value = nowLocal.toISOString().slice(0, 16);
+    customTimeInput.value = (typeof TimeUtils !== 'undefined' && TimeUtils.toLocalDatetimeInput) 
+      ? TimeUtils.toLocalDatetimeInput(new Date()) 
+      : new Date().toISOString().slice(0, 16);
     customTimeInput.style.display = 'none';
   }
 
@@ -1378,11 +1378,14 @@ function setupEventListeners() {
     document.getElementById('manual-sessio-student-name').value = `${a.nom} ${a.cognoms || ''} (${a.id})`;
 
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 3600000);
-    document.getElementById('manual-sessio-entrada').value = TimeUtils.toLocalDatetimeInput(oneHourAgo);
+    const hasActive = currentViewingStudent.sessioActiva && currentViewingStudent.sessioActiva.estat === 'oberta';
+    const entradaVal = (hasActive && currentViewingStudent.sessioActiva.entrada) 
+      ? TimeUtils.toLocalDatetimeInput(currentViewingStudent.sessioActiva.entrada) 
+      : TimeUtils.toLocalDatetimeInput(now);
+    document.getElementById('manual-sessio-entrada').value = entradaVal;
     document.getElementById('manual-sessio-sortida').value = TimeUtils.toLocalDatetimeInput(now);
     document.getElementById('manual-sessio-notes').value = '';
-    document.getElementById('manual-sessio-preview').textContent = '01:00:00';
+    document.getElementById('manual-sessio-preview').textContent = hasActive ? 'En curs' : '00:00:00';
     document.getElementById('modal-manual-sessio-backdrop').classList.add('active');
   });
 

@@ -357,6 +357,15 @@ body.show-camera-feed .scanner-discreet-btn {
   color: #FFFFFF;
 }
 
+.scan-result-box.is-error {
+  border-top: 8px solid #DC2626;
+}
+
+.is-error .result-action-badge {
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
 .result-student-name {
   font-size: 26px;
   font-weight: 800;
