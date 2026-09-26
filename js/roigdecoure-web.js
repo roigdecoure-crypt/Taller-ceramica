@@ -9,17 +9,21 @@
     phone: '34683633880',
     email: 'roigdecoure@gmail.com',
     capacities: {
-      torn: 4,
+      torn: 2,
       modelatge: 8,
       pintar: 12,
-      experiencia_torn_adult: 4,
-      experiencia_torn_infant: 4,
+      experiencia_torn: 2,
+      experiencia_modelatge: 8,
+      experiencia_torn_adult: 2,
+      experiencia_torn_infant: 2,
       vidre: 6
     },
     names: {
       torn: 'Torn',
       modelatge: 'Modelatge',
       pintar: 'Pintar Ceràmica',
+      experiencia_torn: 'Experiència al torn',
+      experiencia_modelatge: 'Experiència modelatge',
       experiencia_torn_adult: 'Experiència al torn adults',
       experiencia_torn_infant: 'Experiència al torn menors 12 anys',
       vidre: 'Fusió de Vidre'

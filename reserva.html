@@ -1207,6 +1207,92 @@
       return `${y}-${m}-${dd}`;
     }
 
+    // Informació i detalls de cada activitat per al popup
+    const ACTIVITATS_INFO = {
+      'torn': {
+        badge: 'Classe / Pràctica',
+        title: 'Torn de terrissaire',
+        desc: 'Sessions dedicades a la creació i perfeccionament de peces al torn elèctric de ceràmica. Ideal per a alumnes habituals o continuïtat de peces (pastar el fang, centrar, donar forma, tornejar o desbastar).',
+        includes: '• Ús del torn elèctric individual.<br>• Eines de terrissaire (retorçadors, espàtules, fils de tall).<br>• Assessorament i acompanyament del professor.',
+        price: 'Segons abonament d’hores o quota d’alumne'
+      },
+      'modelatge': {
+        badge: 'Classe / Pràctica',
+        title: 'Modelatge ceràmic manual',
+        desc: 'Creació de peces ceràmiques utilitzant tècniques manuals: pessic, xurros, planxes, buidat i textures. Una tècnica molt expressiva i lliure sense necessitat de torn.',
+        includes: '• Fang ceràmic de qualitat.<br>• Eines de modelat, corrons, fustes i textures manuals.<br>• Assessorament tècnic del mestre ceramista.',
+        price: 'Segons abonament d’hores o quota d’alumne'
+      },
+      'pintar': {
+        badge: 'Taller Creatiu',
+        title: 'Pintar ceràmica (Esmaltat sobre biscuit)',
+        desc: 'Tria una peça artesanal de biscuit feta al nostre taller (com una tassa, un bol, un plat o una figura) i gaudeix decorant-la i pintant-la amb esmalts ceràmics. Un cop acabada, nosaltres l’enfornem a alta temperatura perquè quedi brillant, resistent i apta per a ús alimentari.',
+        includes: '• Peça ceràmica en biscuit a triar al taller.<br>• Pintures, esmalts especials, pinzells, esponges i materials.<br>• Enfornat i cocció final al forn ceràmic.',
+        price: 'Segons la peça triada (a partir de 15 €)'
+      },
+      'experiencia_torn': {
+        badge: 'Experiència de 2 hores',
+        title: 'Experiència al torn',
+        desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ. Aprendràs a preparar el fang, pastar, centrar la pella sobre el plat giratori, obrir i aixecar les parets per crear les teves primeres peces ceràmiques (com bols o tasses).',
+        includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Retoc, assecat i primera cocció (biscuit) de la teva peça al forn ceràmic perquè te la puguis endur a casa un cop cuita.',
+        price: '50,00 € (Tot inclòs)'
+      },
+      'experiencia_modelatge': {
+        badge: 'Experiència de 2 hores',
+        title: 'Experiència modelatge ceràmic',
+        desc: 'Una sessió creativa de 2 hores dedicada a la construcció manual de peces amb fang: pessic, xurros, planxes i relleus. Ideal per gaudir en solitari, parella o grup descobrint la plasticitat del fang al teu propi ritme.',
+        includes: '• Espai ampli de treball i eines manuals de modelatge.<br>• Fang ceràmic de qualitat i assessorament continu.<br>• Cocció al forn ceràmic de les peces elaborades.',
+        price: '40,00 € (Tot inclòs)'
+      },
+      'experiencia_torn_adult': {
+        badge: 'Experiència de 2 hores',
+        title: 'Experiència al torn',
+        desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ.',
+        includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Cocció al forn ceràmic.',
+        price: '50,00 € (Tot inclòs)'
+      },
+      'experiencia_torn_infant': {
+        badge: 'Experiència de 2 hores',
+        title: 'Experiència al torn',
+        desc: 'Una experiència sensorial i creativa de 2 hores al torn de terrissaire.',
+        includes: '• Torn elèctric durant 2 hores.<br>• Fang especial suau, davantal i eines.<br>• Guia constant i atenció personalitzada.<br>• Cocció de la peça al forn.',
+        price: '50,00 € (Tot inclòs)'
+      }
+    };
+
+    function selectActivity(actId) {
+      if (!actId) return;
+      state.activitatId = actId;
+
+      if (actId === 'torn' || actId === 'experiencia_torn' || actId === 'experiencia_torn_adult' || actId === 'experiencia_torn_infant') {
+        state.activitatCapMax = 2;
+      } else if (actId === 'modelatge' || actId === 'experiencia_modelatge') {
+        state.activitatCapMax = 8;
+      } else if (actId === 'pintar') {
+        state.activitatCapMax = 12;
+      }
+
+      document.querySelectorAll('.act-card').forEach(c => {
+        const isSelected = (c.dataset.id === actId);
+        c.classList.toggle('active', isSelected);
+        if (isSelected) {
+          const titleEl = c.querySelector('.act-title');
+          if (titleEl) state.activitatNom = titleEl.textContent.trim();
+        }
+      });
+
+      document.querySelectorAll('.btn-val-act').forEach(b => {
+        const isSelected = (b.dataset.act === state.activitatId);
+        b.classList.toggle('active', isSelected);
+        b.style.border = isSelected ? '2px solid var(--primary)' : '1.5px solid #D6C7BC';
+        b.style.color = isSelected ? 'var(--primary)' : 'var(--dark)';
+        b.style.fontWeight = isSelected ? '700' : '600';
+        b.style.background = isSelected ? '#FFF8F6' : '#FFF';
+      });
+
+      checkAvailability();
+    }
+
     // Carregar activitats, preus i capacitats des de l'API / Base de dades
     async function loadActivitatsConfig() {
       try {
@@ -1312,13 +1398,15 @@
       slotsContainer.innerHTML = '';
 
       const franja = (data.franges && data.franges[0]) ? data.franges[0] : {};
-      const actObj = (franja.activitats || data.activitats || []).find(a => a.id === state.activitatId);
+      const lookupId = (state.activitatId === 'experiencia_torn' || state.activitatId === 'experiencia_torn_adult' || state.activitatId === 'experiencia_torn_infant') ? 'torn'
+        : (state.activitatId === 'experiencia_modelatge' ? 'modelatge' : state.activitatId);
+      const actObj = (franja.activitats || data.activitats || []).find(a => a.id === state.activitatId || a.id === lookupId);
 
       if (actObj && actObj.bloquejada) {
         slotsContainer.innerHTML = `
           <div style="grid-column: 1 / -1; background: #FFFBEB; border: 1.5px solid #FCD34D; color: #92400E; padding: 14px 16px; border-radius: 8px; font-size: 13.5px; text-align: center; line-height: 1.4;">
             <strong>Activitat no disponible per a aquesta data:</strong><br>
-            El taller de <strong>${actObj.nom || state.activitat}</strong> no es pot impartir el dia seleccionat ${actObj.motiuBloqueig ? `(${actObj.motiuBloqueig})` : ''}.<br>
+            El taller de <strong>${actObj.nom || state.activitatNom}</strong> no es pot impartir el dia seleccionat ${actObj.motiuBloqueig ? `(${actObj.motiuBloqueig})` : ''}.<br>
             <span style="font-size: 12.5px; color: #B45309; margin-top: 4px; display: inline-block;">Si us plau, tria una altra data o un altre dels nostres tallers.</span>
           </div>
         `;
@@ -1326,7 +1414,8 @@
         return;
       }
 
-      const lliuresAct = actObj ? actObj.placesDisponibles : (franja.placesLliures !== undefined ? franja.placesLliures : 12);
+      const defaultCap = (lookupId === 'torn' ? 2 : (lookupId === 'modelatge' ? 8 : (franja.placesLliures !== undefined ? franja.placesLliures : 12)));
+      const lliuresAct = actObj ? actObj.placesDisponibles : Math.min(defaultCap, (franja.placesLliures !== undefined ? franja.placesLliures : defaultCap));
       const isComplet = lliuresAct <= 0;
 
       if (state.isValRegal) {
@@ -1693,8 +1782,9 @@
     }
 
     // Gestió d'esdeveniments
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadActivitatsConfig();
+    document.addEventListener('DOMContentLoaded', () => {
+      // Carregar configuració d'activitats en segon pla sense bloquejar la UI
+      loadActivitatsConfig().catch(e => console.warn('Config activitats fallback:', e));
 
       const dateInput = document.getElementById('booking-date');
       const todayISO = getNextOpenDate();
@@ -1749,59 +1839,7 @@
       updateSelectedDateDisplay(todayISO);
       renderInlineCalendar(calCurrentYear, calCurrentMonth);
 
-      // Informació i detalls de cada activitat per al popup
-      const ACTIVITATS_INFO = {
-        'torn': {
-          badge: 'Classe / Pràctica',
-          title: 'Torn de terrissaire',
-          desc: 'Sessions dedicades a la creació i perfeccionament de peces al torn elèctric de ceràmica. Ideal per a alumnes habituals o continuïtat de peces (pastar el fang, centrar, donar forma, tornejar o desbastar).',
-          includes: '• Ús del torn elèctric individual.<br>• Eines de terrissaire (retorçadors, espàtules, fils de tall).<br>• Assessorament i acompanyament del professor.',
-          price: 'Segons abonament d’hores o quota d’alumne'
-        },
-        'modelatge': {
-          badge: 'Classe / Pràctica',
-          title: 'Modelatge ceràmic manual',
-          desc: 'Creació de peces ceràmiques utilitzant tècniques manuals: pessic, xurros, planxes, buidat i textures. Una tècnica molt expressiva i lliure sense necessitat de torn.',
-          includes: '• Fang ceràmic de qualitat.<br>• Eines de modelat, corrons, fustes i textures manuals.<br>• Assessorament tècnic del mestre ceramista.',
-          price: 'Segons abonament d’hores o quota d’alumne'
-        },
-        'pintar': {
-          badge: 'Taller Creatiu',
-          title: 'Pintar ceràmica (Esmaltat sobre biscuit)',
-          desc: 'Tria una peça artesanal de biscuit feta al nostre taller (com una tassa, un bol, un plat o una figura) i gaudeix decorant-la i pintant-la amb esmalts ceràmics. Un cop acabada, nosaltres l’enfornem a alta temperatura perquè quedi brillant, resistent i apta per a ús alimentari.',
-          includes: '• Peça ceràmica en biscuit a triar al taller.<br>• Pintures, esmalts especials, pinzells, esponges i materials.<br>• Enfornat i cocció final al forn ceràmic.',
-          price: 'Segons la peça triada (a partir de 15 €)'
-        },
-        'experiencia_torn': {
-          badge: 'Experiència de 2 hores',
-          title: 'Experiència al torn',
-          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ. Aprendràs a preparar el fang, pastar, centrar la pella sobre el plat giratori, obrir i aixecar les parets per crear les teves primeres peces ceràmiques (com bols o tasses).',
-          includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Retoc, assecat i primera cocció (biscuit) de la teva peça al forn ceràmic perquè te la puguis endur a casa un cop cuita.',
-          price: '50,00 € (Tot inclòs)'
-        },
-        'experiencia_modelatge': {
-          badge: 'Experiència de 2 hores',
-          title: 'Experiència modelatge ceràmic',
-          desc: 'Una sessió creativa de 2 hores dedicada a la construcció manual de peces amb fang: pessic, xurros, planxes i relleus. Ideal per gaudir en solitari, parella o grup descobrint la plasticitat del fang al teu propi ritme.',
-          includes: '• Espai ampli de treball i eines manuals de modelatge.<br>• Fang ceràmic de qualitat i assessorament continu.<br>• Cocció al forn ceràmic de les peces elaborades.',
-          price: '40,00 € (Tot inclòs)'
-        },
-        'experiencia_torn_adult': {
-          badge: 'Experiència de 2 hores',
-          title: 'Experiència al torn',
-          desc: 'Una experiència d’iniciació immersiva al torn de terrissaire de 2 hores. Pensada per a qui vulgui provar el torn sense necessitat de cap coneixement previ.',
-          includes: '• Torn elèctric individual durant tota la sessió (2 hores).<br>• Tot el fang necessari, eines del taller i davantal.<br>• Acompanyament personalitzat pas a pas del mestre ceramista.<br>• Cocció al forn ceràmic.',
-          price: '50,00 € (Tot inclòs)'
-        },
-        'experiencia_torn_infant': {
-          badge: 'Experiència de 2 hores',
-          title: 'Experiència al torn',
-          desc: 'Una experiència sensorial i creativa de 2 hores al torn de terrissaire.',
-          includes: '• Torn elèctric durant 2 hores.<br>• Fang especial suau, davantal i eines.<br>• Guia constant i atenció personalitzada.<br>• Cocció de la peça al forn.',
-          price: '50,00 € (Tot inclòs)'
-        }
-      };
-
+      // Modal d'informació de l'activitat
       const infoModal = document.getElementById('act-info-modal');
       let currentModalActId = null;
 
@@ -1825,6 +1863,7 @@
       document.querySelectorAll('.btn-act-info').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
+          e.preventDefault();
           const actId = btn.dataset.act;
           openActInfoModal(actId);
         });
@@ -1846,29 +1885,31 @@
       if (btnSelectFromModal) {
         btnSelectFromModal.addEventListener('click', () => {
           if (currentModalActId) {
-            const targetCard = document.querySelector(`.act-card[data-id="${currentModalActId}"]`);
-            if (targetCard) targetCard.click();
+            selectActivity(currentModalActId);
           }
           closeActInfoModal();
         });
       }
 
-      // Selecció d'activitats
+      // Delegació d'esdeveniments al contenidor de targetes d'activitat
+      const actContainer = document.getElementById('activities-container');
+      if (actContainer) {
+        actContainer.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-act-info')) return;
+          const card = e.target.closest('.act-card');
+          if (card && card.dataset.id) {
+            selectActivity(card.dataset.id);
+          }
+        });
+      }
+
+      // Selecció d'activitats directa per a cada targeta
       document.querySelectorAll('.act-card').forEach(card => {
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.act-card').forEach(c => c.classList.remove('active'));
-          card.classList.add('active');
-          state.activitatId = card.dataset.id;
-          state.activitatNom = card.querySelector('.act-title').textContent.trim();
-          document.querySelectorAll('.btn-val-act').forEach(b => {
-            const isSelected = b.dataset.act === state.activitatId;
-            b.classList.toggle('active', isSelected);
-            b.style.border = isSelected ? '2px solid var(--primary)' : '1.5px solid #D6C7BC';
-            b.style.color = isSelected ? 'var(--primary)' : 'var(--dark)';
-            b.style.fontWeight = isSelected ? '700' : '600';
-            b.style.background = isSelected ? '#FFF8F6' : '#FFF';
-          });
-          checkAvailability();
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.btn-act-info')) return;
+          if (card.dataset.id) {
+            selectActivity(card.dataset.id);
+          }
         });
       });
 
@@ -2218,6 +2259,8 @@
           inputCodiVal.value = valParam.trim().toUpperCase();
           setTimeout(validarCodiValRegal, 300);
         }
+      }
+
       // Gestió d'enllaços de cancel·lació des de Correu o WhatsApp (?accio=cancel&id=...)
       const accioParam = urlParams.get('accio');
       const cancelId = urlParams.get('id') || urlParams.get('cancel');
