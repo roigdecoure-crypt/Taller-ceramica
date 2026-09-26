@@ -571,7 +571,46 @@
   }
   window.canviarModalitatRegal = canviarModalitatRegal;
 
-  function seleccionarExperienciaRegal(articleId, scrollDown) {
+  var ARTICLES_INFO = {
+    'art_torn_adult': {
+      title: 'Experiència Torn (Adult)',
+      detail: 'Val regal per a 1 adult (sessió de 2 hores) • Tots els materials i cuita inclosos',
+      price: '50,00 €',
+      mode: 'experiencia'
+    },
+    'art_torn_infant': {
+      title: 'Experiència Torn (Infantil)',
+      detail: 'Val regal per a menor de 12 anys (sessió de 2 hores) • Acompanyament 100% tutoritzat',
+      price: '45,00 €',
+      mode: 'experiencia'
+    },
+    'art_modelatge_adult': {
+      title: 'Modelatge & Escultura (Adult)',
+      detail: 'Val regal per a 1 adult (sessió de 2 hores) • Pessic, xurros, plaques i texturitzat',
+      price: '50,00 €',
+      mode: 'experiencia'
+    },
+    'art_modelatge_infant': {
+      title: 'Modelatge Infantil (Menors de 12 anys)',
+      detail: 'Val regal infantil (sessió de 2 hores) • Creativitat i psicomotricitat amb fang',
+      price: '45,00 €',
+      mode: 'experiencia'
+    },
+    'art_pintar_ceramica': {
+      title: 'Pintar Ceràmica (Tots els públics)',
+      detail: 'Val regal per a 1 persona (sessió de 2 hores) • Peça bescuitada i segona cuita incloses',
+      price: '30,00 €',
+      mode: 'experiencia'
+    },
+    'pack_hores_taller': {
+      title: 'Pack d\'Hores de Taller Lliure',
+      detail: 'Paquet d\'hores amb descompte progressiu per trams • Ús d\'instal·lacions i eines',
+      price: 'Des de 13,00 €/h',
+      mode: 'hores'
+    }
+  };
+
+  function seleccionarExperienciaRegal(articleId, obrirModal) {
     document.querySelectorAll('.val-experience-card').forEach(function(card) {
       if (card.dataset.articleId === articleId) {
         card.classList.add('is-selected');
@@ -580,7 +619,9 @@
       }
     });
 
-    if (articleId === 'art_pack_hores') {
+    var info = ARTICLES_INFO[articleId] || ARTICLES_INFO['art_torn_adult'];
+
+    if (info.mode === 'hores' || articleId === 'pack_hores_taller' || articleId === 'art_pack_hores') {
       canviarModalitatRegal('hores');
     } else {
       canviarModalitatRegal('experiencia');
@@ -590,32 +631,60 @@
       }
     }
 
+    var tEl = document.getElementById('val-selected-title');
+    var dEl = document.getElementById('val-selected-detail');
+    var pEl = document.getElementById('val-selected-price');
+    if (tEl) tEl.textContent = info.title;
+    if (dEl) dEl.textContent = info.detail;
+    if (pEl) pEl.textContent = info.price;
+
     actualitzarPreviewRegal();
 
-    if (scrollDown) {
-      var customizer = document.getElementById('gift-customizer-anchor');
-      if (customizer) {
-        customizer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
+    if (obrirModal) {
+      obrirModalValRegal(articleId);
     }
   }
   window.seleccionarExperienciaRegal = seleccionarExperienciaRegal;
 
+  function obrirModalValRegal(articleId) {
+    if (articleId) {
+      seleccionarExperienciaRegal(articleId, false);
+    }
+    var modal = document.getElementById('modal-val-regal');
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  window.obrirModalValRegal = obrirModalValRegal;
+
+  function tancarModalValRegal() {
+    var modal = document.getElementById('modal-val-regal');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+  window.tancarModalValRegal = tancarModalValRegal;
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      tancarModalValRegal();
+    }
+  });
+
   function filtrarCatalegRegalWeb(filtre) {
     document.querySelectorAll('.val-filter-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.filter === filtre);
+      var bf = btn.dataset.valFilter || btn.dataset.filter || '';
+      btn.classList.toggle('is-active', bf === filtre);
     });
 
     document.querySelectorAll('.val-experience-card').forEach(function(card) {
-      var cat = card.dataset.category || 'tots';
-      if (filtre === 'tots') {
+      var cat = card.dataset.valCat || card.dataset.category || '';
+      if (filtre === 'all' || filtre === 'tots') {
         card.style.display = 'flex';
-      } else if (filtre === 'adult') {
-        card.style.display = (cat === 'adult' || cat === 'tots') ? 'flex' : 'none';
-      } else if (filtre === 'infant') {
-        card.style.display = (cat === 'infant' || cat === 'tots') ? 'flex' : 'none';
-      } else if (filtre === 'hores') {
-        card.style.display = (cat === 'hores') ? 'flex' : 'none';
+      } else {
+        card.style.display = (cat.indexOf(filtre) !== -1) ? 'flex' : 'none';
       }
     });
   }

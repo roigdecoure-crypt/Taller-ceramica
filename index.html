@@ -174,7 +174,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/roigdecoure-web.css?v=5.3">
+  <link rel="stylesheet" href="css/roigdecoure-web.css?v=5.4">
   <style>
     /* Graella compacta de 3 columnes garantida (2 files de 3 activitats) */
     .activities-grid-showcase {
@@ -880,163 +880,15 @@
 
       </div>
 
-      <!-- Banner de Resum d'Experiència Seleccionada i Pas al Formulari -->
-      <div id="gift-customizer-anchor" style="scroll-margin-top: 100px;"></div>
-      <div class="val-selected-banner" id="val-selected-banner">
-        <div class="val-selected-info">
-          <div class="val-selected-tag">Has triat</div>
-          <div class="val-selected-title" id="val-selected-title">Experiència Torn (Adult)</div>
-          <div class="val-selected-detail" id="val-selected-detail">Val regal per a 1 adult (sessió de 2 hores) &bull; Tots els materials i cuita inclosos</div>
+      <!-- Caixa per consultar un val existent o saldo a la pàgina principal -->
+      <div class="reveal" style="margin-top: 36px; max-width: 640px; margin-left: auto; margin-right: auto; background: #FFF; border: 1.5px solid #EFEAE4; border-radius: 8px; padding: 22px 24px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+        <h4 style="margin: 0 0 6px 0; font-size: 15px; color: var(--dark); font-weight: 700;">Ja tens un val regal o pack d'hores?</h4>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">Comprova la validesa i el saldo d'hores restants del teu codi:</p>
+        <div style="display: flex; gap: 8px; max-width: 440px; margin: 0 auto;">
+          <input type="text" id="web-cerca-val" placeholder="Ex: REGAL-8X92-23KL" style="flex: 1; padding: 9px 12px; border: 1.5px solid #D1D5DB; border-radius: 6px; font-family: monospace; font-size: 13.5px; text-transform: uppercase; font-weight: 700;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="consultarValWeb();">Consultar</button>
         </div>
-        <div class="val-selected-price" id="val-selected-price">50,00 €</div>
-      </div>
-
-      <div class="gift-grid">
-        <div class="reveal-left gift-form-card" style="padding: 26px;">
-          <!-- Selector de modalitat: Experiència vs Hores -->
-          <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #F3ECE4; padding: 4px; border-radius: 0;">
-            <button type="button" id="tab-val-exp" class="gift-tab-btn active" onclick="canviarModalitatRegal('experiència')">
-              Val d'Experiència
-            </button>
-            <button type="button" id="tab-val-hores" class="gift-tab-btn" onclick="canviarModalitatRegal('hores')">
-              Pack d'Hores (Tarifa per Trams)
-            </button>
-          </div>
-
-          <!-- PANELL 1: EXPERIÈNCIES -->
-          <div id="panel-regal-exp">
-            <div class="form-group">
-              <label class="form-label" for="gift-exp-select">Tria l'experiència</label>
-              <select class="form-select" id="gift-exp-select" style="font-size: 14px; padding: 12px;" onchange="actualitzarPreviewRegal();">
-                <option value="art_torn_adult" data-price="50" data-hours="2" data-title="Experiència Torn (Adult)">Experiència Torn (Adult, 2h) — 50,00 €</option>
-                <option value="art_torn_infant" data-price="45" data-hours="2" data-title="Experiència Torn (Menor de 12 anys)">Experiència Torn (Menor de 12 anys, 2h) — 45,00 €</option>
-                <option value="art_modelatge_adult" data-price="50" data-hours="2" data-title="Experiència Modelatge (Adult)">Experiència Modelatge (Adult, 2h) — 50,00 €</option>
-                <option value="art_modelatge_infant" data-price="45" data-hours="2" data-title="Experiència Modelatge (Menor de 12 anys)">Experiència Modelatge (Menor de 12 anys, 2h) — 45,00 €</option>
-                <option value="art_pintar_ceramica" data-price="30" data-hours="2" data-title="Pintar ceràmica (Tots els públics)">Pintar ceràmica (Tots els públics, 2h) — 30,00 €</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- PANELL 2: COMPRAR HORES AMB TRAMS -->
-          <div id="panel-regal-hores" style="display: none;">
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label">Edat del participant</label>
-              <div style="display: flex; gap: 10px;">
-                <label class="radio-pill-btn active" id="lbl-hores-adult">
-                  <input type="radio" name="hores-edat" value="adult" checked onchange="actualitzarCalculHoresWeb();"> Adult
-                </label>
-                <label class="radio-pill-btn" id="lbl-hores-infant">
-                  <input type="radio" name="hores-edat" value="infant" onchange="actualitzarCalculHoresWeb();"> Menor de 12 anys
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 14px;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-                <label class="form-label" for="input-web-hores" style="margin-bottom: 0;">Quantitat d'hores</label>
-                <span style="font-size: 11.5px; font-weight: 700; color: #831D1D; background: #FDF2F2; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 0;">Compra mínima: 4 hores</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <input type="number" id="input-web-hores" min="4" max="100" value="10" style="width: 80px; padding: 8px; font-size: 16px; font-weight: 800; text-align: center; border: 1.5px solid #C4A482; border-radius: 0;" oninput="actualitzarCalculHoresWeb();" onchange="if(this.value<4) this.value=4; actualitzarCalculHoresWeb();">
-                <span style="font-weight: 600; font-size: 14px;">hores</span>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(4);">4h</button>
-                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(6);">6h</button>
-                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(10);">10h</button>
-                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(20);">20h</button>
-                </div>
-              </div>
-
-              <!-- Trams de preu visuals (Mínim 4h) -->
-              <div id="web-trams-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11.5px; text-align: center; margin-bottom: 10px;"></div>
-
-              <div style="background: #FDFBF7; border: 1px solid #E2D7CC; border-radius: 0; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <span style="font-size: 11.5px; color: #6B7280;">Franja de preu:</span>
-                  <strong id="web-tarifa-txt" style="display: block; font-size: 13.5px; color: var(--secondary);">14,00 € / h</strong>
-                </div>
-                <div style="text-align: right;">
-                  <span style="font-size: 11.5px; color: #6B7280;">Total hores:</span>
-                  <strong id="web-total-hores-txt" style="display: block; font-size: 17px; font-weight: 800; color: var(--primary);">140,00 €</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- DADES DE PERSONALITZACIÓ DIRECTES A LA WEB -->
-          <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 16px;">
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label class="form-label" for="regal-web-destinatari">Nom de qui rep el regal (Destinatari) *</label>
-              <input type="text" id="regal-web-destinatari" class="form-input" placeholder="Ex: Maria Valls" required oninput="actualitzarPreviewRegal();" style="font-size: 14px; padding: 10px;">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="regal-web-comprador">De part de qui?</label>
-                <input type="text" id="regal-web-comprador" class="form-input" placeholder="Ex: Marc i amics" oninput="actualitzarPreviewRegal();" style="font-size: 14px; padding: 10px;">
-              </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="regal-web-email">El teu correu *</label>
-                <input type="email" id="regal-web-email" class="form-input" placeholder="correu@exemple.cat" required style="font-size: 14px; padding: 10px;">
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label class="form-label" for="regal-web-missatge">Dedicatòria (opcional)</label>
-              <textarea id="regal-web-missatge" class="form-input" rows="2" placeholder="Escriu una dedicatòria que s'imprimirà al val..." oninput="actualitzarPreviewRegal();" style="font-size: 13.5px; padding: 10px; resize: vertical;"></textarea>
-            </div>
-
-            <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-final-square-pay" onclick="iniciarPagamentFinalSquare();">
-              Pagar ara amb Square (50,00 €)
-            </button>
-            <p style="font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 8px; margin-bottom: 0;">
-              Passarel·la segura per a pagament final amb Square. Rebràs el val regal immediatament.
-            </p>
-          </div>
-        </div>
-
-        <!-- TARGETA DE PREVISUALITZACIÓ DEL VAL REGAL EN VIU -->
-        <div class="reveal-right">
-          <div class="gift-preview-card float-anim" style="min-height: 280px;">
-            <div class="gift-badge-brand">Roig de Coure</div>
-            <p style="font-size: 11px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Taller de Ceràmica &mdash; Olot</p>
-            <div class="gift-voucher-title" style="font-size: 24px;">Val Regal</div>
-            <div class="gift-voucher-exp" id="preview-gift-exp" style="font-size: 16px; font-weight: 700; color: var(--primary); margin: 10px 0;">Taller de torn (Adult)</div>
-            
-            <div id="preview-gift-dest" style="font-size: 15px; font-weight: 600; color: #2D2421; margin-bottom: 4px; display: none;">
-              Per a: <span id="preview-gift-dest-nom" style="color: var(--primary);"></span>
-            </div>
-            <div id="preview-gift-from" style="font-size: 13px; color: #6B7280; margin-bottom: 12px; display: none;">
-              De part de: <span id="preview-gift-from-nom"></span>
-            </div>
-            
-            <p class="gift-voucher-notes" id="preview-gift-dedicatoria" style="margin: 12px 0 0; font-style: italic; font-size: 13px; color: #555;">
-              Una experiència artesanal única per gaudir i crear amb les mans.
-            </p>
-            
-            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px dashed rgba(131,29,29,0.25); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--secondary);">
-              <span>Validesa: 6 mesos</span>
-              <strong id="preview-gift-preu-badge" style="font-size: 15px; color: var(--primary);">50,00 €</strong>
-            </div>
-          </div>
-
-          <!-- Caixa per consultar un val existent o anar a la botiga -->
-          <div style="margin-top: 20px; background: #FFF; border: 1.5px solid #E5E7EB; border-radius: 0; padding: 18px;">
-            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: var(--dark); font-weight: 700;">Ja tens un val regal?</h4>
-            <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 12px;">Comprova la validesa i hores restants del teu codi:</p>
-            <div style="display: flex; gap: 8px;">
-              <input type="text" id="web-cerca-val" placeholder="Ex: REGAL-8X92-23KL" style="flex: 1; padding: 8px 12px; border: 1.5px solid #D1D5DB; border-radius: 0; font-family: monospace; font-size: 13px; text-transform: uppercase; font-weight: 700;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="consultarValWeb();">Consultar</button>
-            </div>
-            <div id="web-cerca-val-resultat" style="display: none; margin-top: 10px; font-size: 12.5px; padding: 10px; border-radius: 0;"></div>
-            
-            <div style="margin-top: 14px; text-align: center; border-top: 1px solid #F3F4F6; padding-top: 10px;">
-              <a href="#val-cards-catalog" style="font-size: 13px; font-weight: 700; color: var(--primary); text-decoration: none;">
-                &uarr; Explorar totes les experiències del catàleg
-              </a>
-            </div>
-          </div>
-        </div>
+        <div id="web-cerca-val-resultat" style="display: none; margin-top: 12px; font-size: 13px; padding: 10px; border-radius: 6px;"></div>
       </div>
     </div>
   </section>
@@ -1228,6 +1080,164 @@
     </div>
   </div>
 
+  <!-- MODAL POPUP VAL REGAL & BOTIGA -->
+  <div class="modal-overlay" id="modal-val-regal" onclick="if(event.target===this) tancarModalValRegal();">
+    <div class="modal-val-card">
+      
+      <!-- Capçalera del Popup -->
+      <div class="modal-val-header">
+        <div>
+          <span style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--primary);">Botiga &amp; Vals Regal</span>
+          <h3 style="font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: #2D2421; margin: 2px 0 0 0;">Personalitzar el teu Val Regal</h3>
+        </div>
+        <button type="button" class="modal-close-btn" onclick="tancarModalValRegal();" aria-label="Tancar finestra">&times;</button>
+      </div>
+
+      <!-- Banner de Resum d'Experiència Seleccionada -->
+      <div class="val-selected-banner" id="val-selected-banner">
+        <div class="val-selected-info">
+          <div class="val-selected-tag">Has triat</div>
+          <div class="val-selected-title" id="val-selected-title">Experiència Torn (Adult)</div>
+          <div class="val-selected-detail" id="val-selected-detail">Val regal per a 1 adult (sessió de 2 hores) &bull; Tots els materials i cuita inclosos</div>
+        </div>
+        <div class="val-selected-price" id="val-selected-price">50,00 €</div>
+      </div>
+
+      <!-- Contingut en 2 Columnes: Formulari + Live Preview -->
+      <div class="modal-val-grid">
+        <div class="gift-form-card" style="padding: 20px; border: 1.5px solid #EFEAE4; background: #FFF;">
+          <!-- Selector de modalitat: Experiència vs Hores -->
+          <div style="display: flex; gap: 8px; margin-bottom: 18px; background: #F3ECE4; padding: 4px; border-radius: 0;">
+            <button type="button" id="tab-val-exp" class="gift-tab-btn active" onclick="canviarModalitatRegal('experiència')">
+              Val d'Experiència
+            </button>
+            <button type="button" id="tab-val-hores" class="gift-tab-btn" onclick="canviarModalitatRegal('hores')">
+              Pack d'Hores (Tarifa per Trams)
+            </button>
+          </div>
+
+          <!-- PANELL 1: EXPERIÈNCIES -->
+          <div id="panel-regal-exp">
+            <div class="form-group">
+              <label class="form-label" for="gift-exp-select">Tria l'experiència</label>
+              <select class="form-select" id="gift-exp-select" style="font-size: 14px; padding: 11px;" onchange="actualitzarPreviewRegal();">
+                <option value="art_torn_adult" data-price="50" data-hours="2" data-title="Experiència Torn (Adult)">Experiència Torn (Adult, 2h) — 50,00 €</option>
+                <option value="art_torn_infant" data-price="45" data-hours="2" data-title="Experiència Torn (Menor de 12 anys)">Experiència Torn (Menor de 12 anys, 2h) — 45,00 €</option>
+                <option value="art_modelatge_adult" data-price="50" data-hours="2" data-title="Experiència Modelatge (Adult)">Experiència Modelatge (Adult, 2h) — 50,00 €</option>
+                <option value="art_modelatge_infant" data-price="45" data-hours="2" data-title="Experiència Modelatge (Menor de 12 anys)">Experiència Modelatge (Menor de 12 anys, 2h) — 45,00 €</option>
+                <option value="art_pintar_ceramica" data-price="30" data-hours="2" data-title="Pintar ceràmica (Tots els públics)">Pintar ceràmica (Tots els públics, 2h) — 30,00 €</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PANELL 2: COMPRAR HORES AMB TRAMS -->
+          <div id="panel-regal-hores" style="display: none;">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Edat del participant</label>
+              <div style="display: flex; gap: 10px;">
+                <label class="radio-pill-btn active" id="lbl-hores-adult">
+                  <input type="radio" name="hores-edat" value="adult" checked onchange="actualitzarCalculHoresWeb();"> Adult
+                </label>
+                <label class="radio-pill-btn" id="lbl-hores-infant">
+                  <input type="radio" name="hores-edat" value="infant" onchange="actualitzarCalculHoresWeb();"> Menor de 12 anys
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+                <label class="form-label" for="input-web-hores" style="margin-bottom: 0;">Quantitat d'hores</label>
+                <span style="font-size: 11.5px; font-weight: 700; color: #831D1D; background: #FDF2F2; border: 1px solid #FECACA; padding: 2px 8px; border-radius: 0;">Compra mínima: 4 hores</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <input type="number" id="input-web-hores" min="4" max="100" value="10" style="width: 80px; padding: 8px; font-size: 16px; font-weight: 800; text-align: center; border: 1.5px solid #C4A482; border-radius: 0;" oninput="actualitzarCalculHoresWeb();" onchange="if(this.value<4) this.value=4; actualitzarCalculHoresWeb();">
+                <span style="font-weight: 600; font-size: 14px;">hores</span>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(4);">4h</button>
+                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(6);">6h</button>
+                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(10);">10h</button>
+                  <button type="button" class="btn-quick-h" onclick="fixarHoresWeb(20);">20h</button>
+                </div>
+              </div>
+
+              <!-- Trams de preu visuals (Mínim 4h) -->
+              <div id="web-trams-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11.5px; text-align: center; margin-bottom: 10px;"></div>
+
+              <div style="background: #FDFBF7; border: 1px solid #E2D7CC; border-radius: 0; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span style="font-size: 11.5px; color: #6B7280;">Franja de preu:</span>
+                  <strong id="web-tarifa-txt" style="display: block; font-size: 13.5px; color: var(--secondary);">14,00 € / h</strong>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 11.5px; color: #6B7280;">Total hores:</span>
+                  <strong id="web-total-hores-txt" style="display: block; font-size: 17px; font-weight: 800; color: var(--primary);">140,00 €</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DADES DE PERSONALITZACIÓ DIRECTES A LA WEB -->
+          <div style="border-top: 1px solid #E5E7EB; padding-top: 16px; margin-top: 16px;">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label" for="regal-web-destinatari">Nom de qui rep el regal (Destinatari) *</label>
+              <input type="text" id="regal-web-destinatari" class="form-input" placeholder="Ex: Maria Valls" required oninput="actualitzarPreviewRegal();" style="font-size: 14px; padding: 10px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="regal-web-comprador">De part de qui?</label>
+                <input type="text" id="regal-web-comprador" class="form-input" placeholder="Ex: Marc i amics" oninput="actualitzarPreviewRegal();" style="font-size: 14px; padding: 10px;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="regal-web-email">El teu correu *</label>
+                <input type="email" id="regal-web-email" class="form-input" placeholder="correu@exemple.cat" required style="font-size: 14px; padding: 10px;">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label class="form-label" for="regal-web-missatge">Dedicatòria (opcional)</label>
+              <textarea id="regal-web-missatge" class="form-input" rows="2" placeholder="Escriu una dedicatòria que s'imprimirà al val..." oninput="actualitzarPreviewRegal();" style="font-size: 13.5px; padding: 10px; resize: vertical;"></textarea>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-final-square-pay" onclick="iniciarPagamentFinalSquare();">
+              Pagar ara amb Square (50,00 €)
+            </button>
+            <p style="font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 8px; margin-bottom: 0;">
+              Passarel·la segura per a pagament final amb Square. Rebràs el val regal immediatament per correu.
+            </p>
+          </div>
+        </div>
+
+        <!-- TARGETA DE PREVISUALITZACIÓ DEL VAL REGAL EN VIU -->
+        <div>
+          <div class="gift-preview-card" style="min-height: 280px; position: sticky; top: 10px;">
+            <div class="gift-badge-brand">Roig de Coure</div>
+            <p style="font-size: 11px; font-weight: 600; color: var(--secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Taller de Ceràmica &mdash; Olot</p>
+            <div class="gift-voucher-title" style="font-size: 24px;">Val Regal</div>
+            <div class="gift-voucher-exp" id="preview-gift-exp" style="font-size: 16px; font-weight: 700; color: var(--primary); margin: 10px 0;">Taller de torn (Adult)</div>
+            
+            <div id="preview-gift-dest" style="font-size: 15px; font-weight: 600; color: #2D2421; margin-bottom: 4px; display: none;">
+              Per a: <span id="preview-gift-dest-nom" style="color: var(--primary);"></span>
+            </div>
+            <div id="preview-gift-from" style="font-size: 13px; color: #6B7280; margin-bottom: 12px; display: none;">
+              De part de: <span id="preview-gift-from-nom"></span>
+            </div>
+            
+            <p class="gift-voucher-notes" id="preview-gift-dedicatoria" style="margin: 12px 0 0; font-style: italic; font-size: 13px; color: #555;">
+              Una experiència artesanal única per gaudir i crear amb les mans.
+            </p>
+            
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px dashed rgba(131,29,29,0.25); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--secondary);">
+              <span>Validesa: 6 mesos</span>
+              <strong id="preview-gift-preu-badge" style="font-size: 15px; color: var(--primary);">50,00 €</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- MODAL DE CONFIRMACIO -->
   <div class="modal-overlay" id="booking-modal">
     <div class="modal-card" style="position: relative; border-radius: 0;">
@@ -1245,6 +1255,6 @@
   </div>
 
   <script src="js/api-config.js?v=7.5"></script>
-  <script src="js/roigdecoure-web.js?v=5.3"></script>
+  <script src="js/roigdecoure-web.js?v=5.4"></script>
 </body>
 </html>
