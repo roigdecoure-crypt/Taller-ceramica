@@ -458,8 +458,11 @@ async function renderReservationsSection(studentId) {
       containerId: 'student-reserves-calendar-mount',
       isAdmin: false,
       currentStudent: currentStudent,
-      onBookingSuccess: async () => {
+      onBookingSuccess: async (reservaObj) => {
+        const modalReservar = document.getElementById('modal-reservar-sessio');
+        if (modalReservar) closeModal(modalReservar);
         await loadStudentBookings(studentId);
+        showToast('Reserva confirmada correctament!', 'success');
       }
     });
     await studentReservesCalendar.init();
@@ -500,6 +503,9 @@ async function openReservarModal() {
   if (!modalReservar) return;
   openModal(modalReservar);
   if (studentReservesCalendar) {
+    if (typeof studentReservesCalendar.setStudent === 'function') {
+      studentReservesCalendar.setStudent(currentStudent);
+    }
     await studentReservesCalendar.refresh();
   }
 }

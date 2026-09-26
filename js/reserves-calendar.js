@@ -1007,11 +1007,12 @@ class ReservesCalendar {
         }
       } else {
         // Mode alumne
-        if (this.currentStudent && this.currentStudent.alumne) {
-          studentId = this.currentStudent.alumne.id;
-          studentNom = `${this.currentStudent.alumne.nom} ${this.currentStudent.alumne.cognoms || ''}`.trim();
-          studentTel = this.currentStudent.alumne.telefon || '';
-          studentEmail = this.currentStudent.alumne.email || '';
+        const s = (this.currentStudent && this.currentStudent.alumne) ? this.currentStudent.alumne : this.currentStudent;
+        if (s && s.id) {
+          studentId = s.id;
+          studentNom = `${s.nom || ''} ${s.cognoms || ''}`.trim() || s.id;
+          studentTel = s.telefon || '';
+          studentEmail = s.email || '';
         } else {
           studentId = 'ALUMNE';
           studentNom = 'Alumne Roig de Coure';
@@ -1020,10 +1021,10 @@ class ReservesCalendar {
 
       const notes = modalBackdrop.querySelector('#input-booking-notes')?.value?.trim() || '';
 
-      // Demanar permís de notificació si està en 'default' durant el gest de fer clic a Confirmar
+      // Demanar permís de notificació de forma asíncrona no bloquejant
       if ('Notification' in window && Notification.permission === 'default') {
         try {
-          await Notification.requestPermission();
+          Notification.requestPermission().catch(() => {});
         } catch (e) {}
       }
 
@@ -1053,6 +1054,17 @@ class ReservesCalendar {
         if (res.ok) {
           closeModal();
           const reservaObj = res.reserva || res;
+
+          // En portal de l'alumne, tancar el modal pare de calendari perquè no quedi atrapat darrere
+          const parentModal = document.getElementById('modal-reservar-sessio');
+          if (parentModal) {
+            if (typeof window.closeModal === 'function') {
+              window.closeModal(parentModal);
+            } else {
+              parentModal.classList.remove('active');
+              parentModal.style.setProperty('display', 'none', 'important');
+            }
+          }
 
           // 1. Enviar Notificació Push al dispositiu
           ReservesCalendar.sendBookingPush(reservaObj);
@@ -1092,6 +1104,11 @@ class ReservesCalendar {
               });
               if (resRetry && resRetry.ok) {
                 closeModal();
+                const parentModal = document.getElementById('modal-reservar-sessio');
+                if (parentModal) {
+                  if (typeof window.closeModal === 'function') window.closeModal(parentModal);
+                  else { parentModal.classList.remove('active'); parentModal.style.setProperty('display', 'none', 'important'); }
+                }
                 const reservaObj = resRetry.reserva || resRetry;
                 ReservesCalendar.sendBookingPush(reservaObj);
                 if (typeof SoundEngine !== 'undefined') SoundEngine.playCheckin();
@@ -1195,6 +1212,16 @@ class ReservesCalendar {
 
     const closeSuccess = () => {
       backdrop.remove();
+      const parentModal = document.getElementById('modal-reservar-sessio');
+      if (parentModal) {
+        if (typeof window.closeModal === 'function') {
+          window.closeModal(parentModal);
+        } else {
+          parentModal.classList.remove('active');
+          parentModal.style.setProperty('display', 'none', 'important');
+        }
+      }
+      document.body.style.overflow = '';
     };
 
     backdrop.querySelector('#btn-close-success-modal')?.addEventListener('click', closeSuccess);
