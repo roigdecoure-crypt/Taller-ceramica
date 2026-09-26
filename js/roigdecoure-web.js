@@ -1274,9 +1274,11 @@
       reserveBtn.onclick = function(e) {
         if (e) e.preventDefault();
         closeActInfoModal();
-        var sec = document.getElementById('reserves');
-        if (sec) {
-          sec.scrollIntoView({ behavior: 'smooth' });
+        if (typeof window.obrirModalReserves === 'function') {
+          window.obrirModalReserves();
+        } else {
+          var sec = document.getElementById('reserves');
+          if (sec) sec.scrollIntoView({ behavior: 'smooth' });
         }
       };
     }
@@ -1290,6 +1292,35 @@
     if (modal) modal.classList.remove('active');
   }
   window.closeActInfoModal = closeActInfoModal;
+
+  function obrirModalReserves(act) {
+    var modal = document.getElementById('modal-reserves');
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      if (act && typeof selectActivity === 'function') {
+        selectActivity(act);
+      }
+    }
+  }
+  window.obrirModalReserves = obrirModalReserves;
+
+  function tancarModalReserves() {
+    var modal = document.getElementById('modal-reserves');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+  window.tancarModalReserves = tancarModalReserves;
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      tancarModalReserves();
+      if (typeof tancarModalValRegal === 'function') tancarModalValRegal();
+      closeActInfoModal();
+    }
+  });
 
   function initActivitatsInfoPopups() {
     loadActivitatsInfo();
