@@ -1,14 +1,29 @@
 DirectoryIndex index.html index.php
 
 RewriteEngine On
-RewriteCond %{ENV:HTTPS} !on
-RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# URLs netes per a Instagram i xarxes
+# 1. Redirecció canònica 301: www -> no-www
+RewriteCond %{HTTP_HOST} ^www\.roigdecoure\.cat$ [NC]
+RewriteRule ^(.*)$ https://roigdecoure.cat/$1 [R=301,L]
+
+# 2. Forçar HTTPS
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{ENV:HTTPS} !on
+RewriteRule ^(.*)$ https://roigdecoure.cat/$1 [R=301,L]
+
+# 3. URLs netes per a Instagram i xarxes
 RewriteRule ^links/?$ links.html [L]
 RewriteRule ^bio/?$ bio.html [L]
 
-# Caching per a fitxers estatics
-<FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|js|css|swf|webp)$">
+# 4. Suport d'URLs netes per a les pàgines d'activitats (sense necessitat de barra final)
+RewriteRule ^torn-ceramica-olot/?$ torn-ceramica-olot/index.html [L]
+RewriteRule ^modelatge-ceramic-olot/?$ modelatge-ceramic-olot/index.html [L]
+RewriteRule ^pintar-ceramica-olot/?$ pintar-ceramica-olot/index.html [L]
+RewriteRule ^activitats-ceramica-families-grups-olot/?$ activitats-ceramica-families-grups-olot/index.html [L]
+RewriteRule ^val-regal-ceramica-olot/?$ val-regal-ceramica-olot/index.html [L]
+
+# 5. Caching per a fitxers estatics
+<FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|js|css|swf|webp|woff|woff2)$">
     Header set Cache-Control "max-age=604800, public"
 </FilesMatch>
+

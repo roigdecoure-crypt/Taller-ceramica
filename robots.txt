@@ -8,4 +8,4 @@ Disallow: /api/
 Disallow: /data/
 Disallow: /tests/
 
-Sitemap: https://www.roigdecoure.cat/sitemap.xml
+Sitemap: https://roigdecoure.cat/sitemap.xml
