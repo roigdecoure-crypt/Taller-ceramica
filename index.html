@@ -27,16 +27,20 @@
   <meta name="twitter:image" content="https://www.roigdecoure.cat/img/web/classes-torn-modelatge.webp">
 
   <!-- Dades Estructurades Schema.org (JSON-LD) -->
+  <!-- Dades Estructurades Schema.org (JSON-LD) per a Google & Motors de Cerca IA (GEO / ChatGPT / Gemini) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": ["LocalBusiness", "ArtStudio"],
+        "@type": ["LocalBusiness", "ArtStudio", "EducationalOrganization"],
         "@id": "https://www.roigdecoure.cat/#localbusiness",
         "name": "Roig de Coure",
-        "alternateName": "Roig de Coure - Taller de Ceràmica Olot",
-        "description": "Taller de ceràmica a Olot (La Garrotxa). Classes de torn, modelatge, pintura sobre ceràmica, tallers per a grups, famílies i parelles, monogràfics, casals i vals regal.",
+        "alternateName": [
+          "Roig de Coure - Taller de Ceràmica Olot",
+          "Taller de Ceràmica Roig de Coure Olot"
+        ],
+        "description": "Taller i espai de creació ceràmica a Olot (La Garrotxa, Girona). Experiències creatives per a parelles i famílies, classes de torn de terrissaire, modelatge manual, pintura de peces ceràmiques, tallers per a grups, monogràfics i vals regal.",
         "url": "https://www.roigdecoure.cat/",
         "logo": "https://www.roigdecoure.cat/img/web/logo-simbol.webp",
         "image": [
@@ -47,6 +51,8 @@
         "telephone": "+34683633880",
         "email": "roigdecoure@gmail.com",
         "priceRange": "€€",
+        "currenciesAccepted": "EUR",
+        "paymentAccepted": "Efectiu, Targeta de crèdit, Bizum",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Plaça Rector Ferrer, 15",
@@ -60,6 +66,22 @@
           "latitude": 42.1808,
           "longitude": 2.4887
         },
+        "areaServed": [
+          { "@type": "City", "name": "Olot" },
+          { "@type": "AdministrativeArea", "name": "La Garrotxa" },
+          { "@type": "AdministrativeArea", "name": "Girona" },
+          { "@type": "AdministrativeArea", "name": "Catalunya" }
+        ],
+        "knowsAbout": [
+          "Ceràmica artesanal",
+          "Torn de terrissaire",
+          "Modelatge en fang",
+          "Esmaltat ceràmic a alta temperatura",
+          "Experiències ceràmiques per a parelles a la Garrotxa",
+          "Tallers de fang i ceràmica a Olot",
+          "Activitats per a famílies i grups a Olot",
+          "Vals regal d'activitats creatives a Girona"
+        ],
         "openingHoursSpecification": [
           {
             "@type": "OpeningHoursSpecification",
@@ -76,22 +98,30 @@
         ],
         "hasOfferCatalog": {
           "@type": "OfferCatalog",
-          "name": "Activitats i Tallers de Ceràmica",
+          "name": "Activitats i Tallers de Ceràmica Roig de Coure",
           "itemListElement": [
             {
               "@type": "Offer",
               "itemOffered": {
                 "@type": "Service",
-                "name": "Taller de Torn a Olot",
-                "description": "Taller pràctic de ceràmica al torn de terrissaire (a partir de 4 hores)."
+                "name": "Experiència de Ceràmica per a Parelles o Duos",
+                "description": "Sessió creativa per a dues persones combinant torn de terrissaire o modelatge a mà en un entorn acollidor a Olot."
               }
             },
             {
               "@type": "Offer",
               "itemOffered": {
                 "@type": "Service",
-                "name": "Modelatge Ceràmic a mà",
-                "description": "Tècniques manuals de pessic, xurros i planxes per crear peces funcionals i escultures."
+                "name": "Taller de Torn de Terrissaire a Olot",
+                "description": "Classes pràctiques d'iniciació o perfeccionament al torn elèctric: centrat, alçat de peces, perfilat i acabats."
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Taller de Modelatge Ceràmic a mà",
+                "description": "Tècniques manuals de construcció en fang (pessic, xurros, planxes i texturitzat) per crear peces funcionals i decoratives."
               }
             },
             {
@@ -99,26 +129,54 @@
               "itemOffered": {
                 "@type": "Service",
                 "name": "Pintar Ceràmica",
-                "description": "Més de 50 models de peces ceràmiques cuites a escollir per decorar i pintar lliurement."
+                "description": "Més de 50 models de peces ceràmiques cuites a escollir per pintar lliurement amb engalbes i esmalts ceràmics."
               }
             },
             {
               "@type": "Offer",
               "itemOffered": {
                 "@type": "Service",
-                "name": "Tallers per a Grups i Famílies",
-                "description": "Experiències creatives per a aniversaris, trobades familiars o teambuilding a Olot."
+                "name": "Tallers per a Grups, Aniversaris i Famílies",
+                "description": "Experiències creatives en grup per a celebracions, trobades familiars o teambuilding d'empresa a La Garrotxa."
               }
             },
             {
               "@type": "Offer",
               "itemOffered": {
                 "@type": "Service",
-                "name": "Val Regal Ceràmica",
-                "description": "Targeta regal personalitzable bescanviable per experiències o packs d'hores al taller."
+                "name": "Val Regal Ceràmica Roig de Coure",
+                "description": "Val regal personalitzable bescanviable per tallers, experiències o packs d'hores de torn i modelatge amb lliurament immediat."
               }
             }
           ]
+        }
+      },
+      {
+        "@type": "Course",
+        "@id": "https://www.roigdecoure.cat/#curs-torn",
+        "name": "Taller d'Iniciació al Torn de Terrissaire",
+        "description": "Aprèn els fonaments del torn de ceràmica: preparació del fang, centrat a la roda, aixecament de cilindres i bols, i tècniques de perfilat.",
+        "provider": {
+          "@id": "https://www.roigdecoure.cat/#localbusiness"
+        },
+        "hasCourseInstance": {
+          "@type": "CourseInstance",
+          "courseMode": "OnSite",
+          "location": "Roig de Coure - Plaça Rector Ferrer 15, Olot"
+        }
+      },
+      {
+        "@type": "Course",
+        "@id": "https://www.roigdecoure.cat/#curs-modelatge",
+        "name": "Taller de Modelatge Ceràmic i Tècniques Manuals",
+        "description": "Taller pràctic de creació escultòrica i funcional en fang mitjançant pessic, planxes, buidat i decoració amb engalbes.",
+        "provider": {
+          "@id": "https://www.roigdecoure.cat/#localbusiness"
+        },
+        "hasCourseInstance": {
+          "@type": "CourseInstance",
+          "courseMode": "OnSite",
+          "location": "Roig de Coure - Plaça Rector Ferrer 15, Olot"
         }
       },
       {
@@ -134,34 +192,82 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Cal tenir experiència prèvia per fer els tallers?",
+            "name": "Cal tenir experiència prèvia per fer els tallers de torn o modelatge?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "No, cap ni una! Tots els nostres tallers estan pensats tant per a persones que toquen el fang per primer cop com per a qui ja en sap i vol continuar creant."
+              "text": "No, cap ni una! Tots els nostres tallers d'iniciació estan pensats per a persones que toquen el fang per primer cop. T'acompanyem pas a pas tant al torn com en modelatge manual perquè marxis amb les teves pròpies peces fetes."
             }
           },
           {
             "@type": "Question",
-            "name": "Què inclou el preu de cada activitat?",
+            "name": "Busco una activitat original per fer en parella o per regalar a La Garrotxa o Olot. Què em recomaneu?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "El preu inclou tots els materials (fang, engalbes, esmalts), les eines del taller, la fornejada de bescuit i la cuita final a més de 1000 graus de les teves peces."
+              "text": "L'Experiència de Ceràmica per a Parelles és una de les activitats més sol·licitades: permet compartir una sessió relaxada i divertida creant peces al torn o modelant a mà. També disposem de Vals Regal personalitzables amb lliurament immediat, ideals per a aniversaris o sorpreses."
             }
           },
           {
             "@type": "Question",
-            "name": "Quan puc recollir les peces acabades?",
+            "name": "Què inclou el preu de cada activitat o taller?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Les peces necessiten un procés d'assecatge lent d'uns quants dies i dues cuites al forn a alta temperatura. Normalment estan a punt per recollir en un termini de 2 a 3 setmanes."
+              "text": "El preu és tot inclòs: la pasta ceràmica (fang), l'ús del torn i totes les eines del taller, els engalbes i esmalts de colors, així com les dues fornejades a alta temperatura (primera cuita de bescuit i cuita final esmaltada a més de 1000 °C)."
             }
           },
           {
             "@type": "Question",
-            "name": "Com funcionen els Vals Regal?",
+            "name": "Quan podré recollir les meves peces cuites?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Pots comprar un val regal per a qualsevol de les nostres activitats o un pack d'hores. La persona que el rebi només haurà d'entrar a la web per triar el dia i l'hora que li vagi millor per gaudir de la seva sessió."
+              "text": "La ceràmica requereix un assecatge natural lent de diversos dies i dues cuites al forn professional. Normalment estan a punt per recollir en un termini de 2 a 4 setmanes. T'avisem directament per WhatsApp quan estiguin llestes."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Les peces que creem són aptes per al rentavaixelles i el microones?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí! Les peces cuites a alta temperatura amb esmalts ceràmics lliures de tòxics són completament aptes per a ús alimentari diari, rentavaixelles i microones."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Com puc comprar o bescanviar un Val Regal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pots comprar el teu val regal directament des de la nostra web o botiga en línia. Rebràs un codi únic al moment. La persona beneficiària només haurà d'entrar a la secció de reserves de la web, introduir el codi i triar el dia i hora que millor li vagi."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Com he de venir vestit/da al taller?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Recomanem venir amb roba còmoda que no et faci res embrutar i calçat pla. Al taller facilitem davantals de cotó, i el fang i els pigments surten fàcilment rentant-los amb aigua."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Organitzeu activitats per a grups, aniversaris, comiats de soltera o empreses?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "I tant! Organitzem sessions tancades i tallers a mida per a grups de més de 4 persones, teambuilding d'empresa, aniversaris i trobades familiars. Contacta'ns per WhatsApp al 683 633 880 per organitzar-ho."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Què és el Portal de l'Alumne i com funcionen els packs d'hores regulars?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "És l'espai digital exclusiu per als alumnes que practiquen regularment: permet consultar el saldo d'hores en temps real, comprar packs d'hores amb descomptes, gestionar reserves autònomament i disposar d'un carnet digital QR per accedir al taller."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "On està ubicat el taller a Olot i on es pot aparcar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Som a la Plaça Rector Ferrer, 15, al centre d'Olot (La Garrotxa). Hi ha zones d'aparcament públic gratuït i de pagament a menys de 3 minuts a peu (com l'aparcament de l'Hospital Vell o els pàrquings del centre)."
             }
           }
         ]
@@ -932,28 +1038,44 @@
       </div>
       <div class="faq-accordion reveal-right">
         <div class="faq-item">
-          <button class="faq-question" type="button">Cal experiència prèvia per venir al taller?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">No! Totes les activitats estan pensades tant per a principiants com per a persones amb experiència. T'acompanyem en cada pas del procés.</div>
+          <button class="faq-question" type="button">Cal tenir experiència prèvia per fer els tallers de torn o modelatge?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">No, cap ni una! Tots els nostres tallers d'iniciació estan pensats per a persones que toquen el fang per primer cop. T'acompanyem pas a pas tant al torn com en modelatge manual perquè aprenguis la tècnica i marxis amb les teves pròpies peces fetes.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Com he de venir vestit/da?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Vine amb roba còmoda que no et faci res embrutar. Proporcionem davantals, però el fang i els esmalts poden esquitxar.</div>
+          <button class="faq-question" type="button">Busco una activitat original per fer en parella o per regalar a La Garrotxa o Olot. Què em recomaneu?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">L'<strong>Experiència de Ceràmica per a Parelles o Duos</strong> és la nostra opció més popular: permet gaudir d'una sessió íntima i creativa combinant torn de terrissaire i modelatge. A més, disposem de <strong>Vals Regal personalitzables</strong> amb recepció immediata, ideals per a aniversaris, Nadal o ocasions especials.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Quan podré recollir les meves peces cuites?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">El procés requereix dues fornejades (bescuit i esmaltada). Normalment les peces estan llestes entre 2 i 4 setmanes. T'avisarem per WhatsApp.</div>
+          <button class="faq-question" type="button">Què inclou el preu de cada activitat o taller?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">El preu és tot inclòs: fang o pasta ceràmica, ús dels torns elèctrics i eines de l'obrador, engalbes i esmalts ceràmics, i les dues fornejades professionals a alta temperatura (primera cuita de bescuit i cuita final esmaltada a més de 1000 °C).</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Les peces són aptes per al rentavaixelles i el microones?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Sí! Les peces cuites amb esmalts ceràmics a més de 1000 graus són completament aptes per a ús alimentari, rentavaixelles i microones.</div>
+          <button class="faq-question" type="button">Quan podré recollir les meves peces acabades?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">La ceràmica artesanal requereix un assecatge natural lent de diversos dies i dues cuites al forn. Normalment estan a punt per recollir en un termini de 2 a 4 setmanes. T'avisem directament per WhatsApp tan bon punt surten del forn.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Com funcionen les reserves per a grups?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Per a grups de més de 4 persones o aniversaris, contacta'ns per WhatsApp i prepararem una sessió personalitzada.</div>
+          <button class="faq-question" type="button">Les peces que creem són aptes per al rentavaixelles i el microones?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Sí! Totes les peces cuites a alta temperatura amb els nostres esmalts no tòxics són completament segures per a ús alimentari diari, aptes per a rentavaixelles i aptes per a microones.</div>
         </div>
         <div class="faq-item">
-          <button class="faq-question" type="button">Què és el Portal de l'Alumne?<span class="faq-indicator">+</span></button>
-          <div class="faq-answer">Un espai digital per als alumnes regulars: consulta el saldo d'hores en temps real, carnet QR per al mòbil, comprar hores, fer reserves i consultar l'historial de sessions.</div>
+          <button class="faq-question" type="button">Com puc comprar o bescanviar un Val Regal?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Pots comprar el teu val regal directament des de la nostra web. Rebràs un codi únic al moment per compartir o imprimir. Per bescanviar-lo, la persona beneficiària només ha d'entrar a la secció de reserves, introduir el seu codi i escollir el dia i torn que millor li convingui.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Com he de venir vestit/da al taller?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Vine amb roba còmoda que no et faci res embrutar i calçat pla. Al taller facilitem davantals de cotó, i tant el fang com els pigments ceràmics marxen fàcilment de la roba amb una rentada convencional d'aigua.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Organitzeu activitats per a grups, aniversaris, comiats o empreses?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">I tant! Preparem sessions privades i a mida per a grups d'amics, comiats, trobades familiars o teambuilding d'empresa a La Garrotxa. Escriu-nos per WhatsApp al <a href="https://wa.me/34683633880" target="_blank" style="color: var(--primary); font-weight: 700; text-decoration: underline;">683 633 880</a> i adaptarem la data i l'activitat al vostre grup.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">Què és el Portal de l'Alumne i com funcionen els packs d'hores regulars?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Un espai digital exclusiu per als alumnes que practiquen regularment: consulta de saldo d'hores en temps real, compra de nous packs amb descomptes progressius, gestió àgil de reserves i carnet QR digital per registrar l'entrada al taller.</div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-question" type="button">On està ubicat el taller a Olot i on es pot aparcar?<span class="faq-indicator">+</span></button>
+          <div class="faq-answer">Som a la Plaça Rector Ferrer, 15, al centre històric d'Olot (La Garrotxa). Hi ha zones d'aparcament públic a menys de 3 minuts a peu, com l'aparcament de l'Hospital Vell o els aparcaments del centre.</div>
         </div>
       </div>
     </div>
