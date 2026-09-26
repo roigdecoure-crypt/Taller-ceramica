@@ -16,7 +16,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="css/styles.css?v=7.4">
-  <link rel="stylesheet" href="css/scanner.css?v=9.1">
+  <link rel="stylesheet" href="css/scanner.css?v=10.0">
   <style>
     @font-face {
       font-family: 'Buffalo';
@@ -75,7 +75,7 @@
   <!-- MODAL DE RESULTAT D'ESCANEIG (ENTRADA / SORTIDA) -->
   <div class="scan-result-overlay" id="scan-result-modal">
     <div class="scan-result-box" id="scan-result-box">
-      <div class="result-icon" id="res-icon" style="display:none;"></div>
+      <div class="result-icon" id="res-icon">✓</div>
       <div class="result-action-badge" id="res-badge">ENTRADA REGISTRADA</div>
       <div class="result-student-name" id="res-student-name">Maria Garcia Font</div>
 
@@ -92,15 +92,19 @@
           <span class="lbl">Temps de la Sessió:</span>
           <span class="val" id="res-durada-sessio">00:00:00</span>
         </div>
-        <div class="result-detail-row" style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+        <div class="result-detail-row" style="margin-top: 6px; border-top: 1.5px dashed #D1D5DB; padding-top: 10px;">
           <span class="lbl">Saldo d'Hores Restant:</span>
           <span class="val" id="res-saldo-restant">00:00:00</span>
         </div>
       </div>
 
-      <button class="btn btn-outline btn-block" id="btn-dismiss-result" style="border-color: rgba(255,255,255,0.3); color:#FFF;">
-        D'acord (o toca per continuar)
+      <button type="button" class="btn btn-block" id="btn-dismiss-result" style="background: #F3F4F6; border: 1.5px solid #D1D5DB; color: #1F2937; font-weight: 700; border-radius: 12px; padding: 12px; font-size: 15px; cursor: pointer; width: 100%;">
+        D'acord (toca per continuar)
       </button>
+
+      <div class="scan-progress-bar-container">
+        <div class="scan-progress-bar" id="scan-progress-bar"></div>
+      </div>
     </div>
   </div>
 

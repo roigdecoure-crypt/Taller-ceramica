@@ -164,7 +164,7 @@ function displayScanError(message) {
     if (detailsEl) detailsEl.style.display = '';
     if (errMsgEl) errMsgEl.style.display = 'none';
     box.classList.remove('is-error');
-  }, 4000);
+  }, 6500);
 }
 
 // Mostrar modal gran de feedback
@@ -196,14 +196,14 @@ function displayScanResult(res) {
   if (res.action === 'entrada') {
     SoundEngine.playCheckin();
     box.classList.add('is-entrada');
-    iconEl.textContent = '';
+    if (iconEl) iconEl.innerHTML = '✓';
     badgeEl.textContent = 'BENVINGUT/DA • ENTRADA';
     rowSortida.style.display = 'none';
     rowDurada.style.display = 'none';
   } else {
     SoundEngine.playCheckout();
     box.classList.add('is-sortida');
-    iconEl.textContent = '';
+    if (iconEl) iconEl.innerHTML = '⏱️';
     badgeEl.textContent = 'FINS AVIAT • SORTIDA';
     rowSortida.style.display = 'flex';
     rowDurada.style.display = 'flex';
@@ -211,12 +211,21 @@ function displayScanResult(res) {
     duradaEl.textContent = res.duradaHms || '00:00:00';
   }
 
+  // Reiniciar l'animació de la barra de compte enrere
+  const progressBar = document.getElementById('scan-progress-bar');
+  if (progressBar) {
+    progressBar.style.animation = 'none';
+    void progressBar.offsetHeight; // Forçar reflow per reiniciar animació CSS
+    progressBar.style.animation = 'scanProgressCountdown 6.5s linear forwards';
+  }
+
   modal.classList.add('active');
 
+  // Romandre 6.5 segons visible per a lectura còmoda de l'alumne
   if (resultAutoCloseTimer) clearTimeout(resultAutoCloseTimer);
   resultAutoCloseTimer = setTimeout(() => {
     modal.classList.remove('active');
-  }, 4000);
+  }, 6500);
 }
 
 // Carregar selector d'alumnes per a suport manual indicant si són al taller
