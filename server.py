@@ -3584,24 +3584,28 @@ def get_val_regal_db(codi):
 def crear_val_regal_db(titol_experiencia, hores, activitat_id, nom_destinatari,
                        nom_comprador='', email_comprador='', telefon_comprador='', email_destinatari='',
                        missatge='', preu_pagat=0.0, metode_pagament='manual',
-                       transaccio_id='', article_id=None, dies_validesa=180):
+                       transaccio_id='', article_id=None, dies_validesa=180, codi=None):
     """Crea un nou val regal amb codi únic i data de caducitat a 6 mesos (180 dies) per defecte."""
-    codi = generar_codi_val_regal()
+    if codi:
+        codi = str(codi).strip().upper()
+    else:
+        codi = generar_codi_val_regal()
     now_dt = get_now()
     data_creacio = now_dt.strftime('%Y-%m-%d %H:%M:%S')
     data_caducitat = (now_dt + timedelta(days=dies_validesa)).strftime('%Y-%m-%d')
     
     with get_db() as conn:
         cursor = conn.cursor()
-        # Verificar que el codi no existeixi
-        while True:
-            cursor.execute('SELECT codi FROM vals_regal WHERE codi = ?', (codi,))
-            if not cursor.fetchone():
-                break
-            codi = generar_codi_val_regal()
+        # Verificar que el codi no existeixi si s'ha generat aleatòriament
+        if not codi or codi.startswith('REGAL-'):
+            while True:
+                cursor.execute('SELECT codi FROM vals_regal WHERE codi = ?', (codi,))
+                if not cursor.fetchone():
+                    break
+                codi = generar_codi_val_regal()
         
         cursor.execute('''
-            INSERT INTO vals_regal (
+            INSERT OR REPLACE INTO vals_regal (
                 codi, article_id, titol_experiencia, hores, activitat_id,
                 nom_comprador, email_comprador, telefon_comprador, nom_destinatari, email_destinatari,
                 missatge, preu_pagat, data_creacio, data_caducitat, estat,
@@ -5004,6 +5008,7 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                 metode = (data.get('metode_pagament') or 'efectiu_tpv_taller').strip()
                 article_id = (data.get('article_id') or None)
                 dies = int(data.get('dies_validesa') or 180)
+                codi_personalitzat = (data.get('codi') or data.get('codi_val') or '').strip().upper() or None
 
                 if not nom_destinatari:
                     self.send_json({'ok': False, 'error': 'Cal indicar el nom de la persona que rebrà el regal'}, 400)
@@ -5022,7 +5027,8 @@ class CeramicsRequestHandler(http.server.SimpleHTTPRequestHandler):
                     preu_pagat=preu,
                     metode_pagament=metode,
                     article_id=article_id,
-                    dies_validesa=dies
+                    dies_validesa=dies,
+                    codi=codi_personalitzat
                 )
 
                 self.send_json({
