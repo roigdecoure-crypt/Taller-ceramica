@@ -939,62 +939,102 @@ img { max-width: 100%; height: auto; display: block; }
 .val-experience-card.is-selected .val-card-selected-tag {
   display: block;
 }
+.val-card-body,
 .val-card-content {
-  padding: 20px;
+  padding: 22px 22px 20px 22px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   flex: 1;
+  background: #FFFFFF;
+  box-sizing: border-box;
+}
+.val-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 .val-card-title {
-  font-size: 18px;
+  font-size: 17.5px;
   font-weight: 800;
   color: #1A1615;
-  margin: 0 0 6px 0;
+  margin: 0;
   line-height: 1.3;
 }
-.val-card-meta {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--secondary);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.val-card-price {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
 }
 .val-card-desc {
-  font-size: 13px;
+  font-size: 13.5px;
   color: #6B625E;
-  line-height: 1.5;
+  line-height: 1.55;
+  margin: 0 0 16px 0;
+}
+.val-card-features {
+  list-style: none;
+  padding: 0;
   margin: 0 0 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
   flex: 1;
+}
+.val-card-features li {
+  font-size: 12.5px;
+  color: #5C5450;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+}
+.val-card-features li::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #EEF6F2;
+  color: #2E7D32;
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 .val-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #F4EFEA;
+  border-top: 1px solid #F0EAE4;
   padding-top: 14px;
+  margin-top: auto;
 }
-.val-card-price {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--primary);
+.val-card-duration {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #787069;
 }
 .val-card-btn {
   background: var(--primary);
   color: #FFFFFF;
   border: none;
-  border-radius: 8px;
-  padding: 9px 16px;
-  font-size: 13px;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 6px rgba(131,29,29,0.2);
 }
 .val-card-btn:hover {
   background: #6B1616;
-  transform: scale(1.02);
+  transform: translateY(-1px);
 }
 .val-selected-banner {
   background: #FDF7F5;
