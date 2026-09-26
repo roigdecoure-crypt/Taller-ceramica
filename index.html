@@ -174,7 +174,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/roigdecoure-web.css?v=5.1">
+  <link rel="stylesheet" href="css/roigdecoure-web.css?v=5.3">
   <style>
     /* Graella compacta de 3 columnes garantida (2 files de 3 activitats) */
     .activities-grid-showcase {
@@ -246,8 +246,7 @@
             </ul>
           </li>
           <li><a href="#reserves" class="nav-link">Reservar</a></li>
-          <li><a href="#val-regal" class="nav-link">Val regal</a></li>
-          <li><a href="botiga.html" class="nav-link" style="color: var(--primary); font-weight: 700;">Botiga</a></li>
+          <li><a href="#val-regal" class="nav-link" style="color: var(--primary); font-weight: 700;">Botiga &amp; Vals Regal</a></li>
           <li><a href="#contacte" class="nav-link">Contacte</a></li>
           <li><a href="alumne.html" class="nav-link">Alumnes</a></li>
           <li class="nav-mobile-action-item">
@@ -719,15 +718,177 @@
   <section class="gift-section" id="val-regal">
     <div class="container">
       <div class="section-header reveal">
-        <span class="eyebrow">Regala o Compra Experiències</span>
-        <h2>Val Regal & Hores de Taller</h2>
-        <p>Tria una experiència artesanal o compra un paquet d'hores amb preu ajustat per franges. Targeta llesta per regalar i pagament segur.</p>
+        <span class="eyebrow">Experiències &amp; Botiga Oficial</span>
+        <h2>Botiga &amp; Vals Regal</h2>
+        <p>Tria una experiència artesanal o compra un paquet d'hores al taller amb tarifa reduïda per trams. Targeta llesta per regalar, enviament instantani per email i pagament segur.</p>
       </div>
 
       <!-- Banner Avís Vals anteriors al 15/09/2026 -->
-      <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 0; padding: 14px 18px; margin-bottom: 26px; display: flex; align-items: center; gap: 12px; color: #92400E; font-size: 13.5px;">
+      <div style="background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 0; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #92400E; font-size: 13.5px;">
         <span style="font-weight: 700; background: #F59E0B; color: #FFF; padding: 3px 8px; border-radius: 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Avís Important</span>
         <span>Si el teu val és d'abans del <strong>15/09/2026</strong>, si us plau passeu pel taller a actualitzar-lo i reservar hora. Els vals tenen una validesa de 6 mesos.</span>
+      </div>
+
+      <!-- Filtres del Catàleg Visual -->
+      <div class="val-catalog-controls reveal">
+        <button type="button" class="val-filter-btn is-active" data-val-filter="all" onclick="filtrarCatalegRegalWeb('all')">Totes les experiències</button>
+        <button type="button" class="val-filter-btn" data-val-filter="adult" onclick="filtrarCatalegRegalWeb('adult')">Adults</button>
+        <button type="button" class="val-filter-btn" data-val-filter="infant" onclick="filtrarCatalegRegalWeb('infant')">Menors de 12 anys</button>
+        <button type="button" class="val-filter-btn" data-val-filter="pack" onclick="filtrarCatalegRegalWeb('pack')">Packs d'Hores</button>
+      </div>
+
+      <!-- Graella de Targetes d'Experiències amb Fotos Reals -->
+      <div class="val-cards-grid reveal" id="val-cards-catalog">
+        
+        <!-- Targeta 1: Torn Adult -->
+        <article class="val-experience-card is-selected" data-val-cat="adult" data-article-id="art_torn_adult" onclick="seleccionarExperienciaRegal('art_torn_adult', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/torn-banner.jpg" alt="Experiència al Torn per a Adults" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-adult">Adult &bull; 2h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Experiència Torn (Adult)</h3>
+              <div class="val-card-price">50<span style="font-size: 15px; font-weight: 600;">,00 €</span></div>
+            </div>
+            <p class="val-card-desc">Sessió individualitzada per dominar el centrat, obrir la pella i aixecar les teves primeres peces al torn de terrisser.</p>
+            <ul class="val-card-features">
+              <li>Inclou fang, forn i esmaltat final</li>
+              <li>Validesa de 6 mesos amb canvi flexible</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Durada: 2 hores</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('art_torn_adult', true);">Personalitzar &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Targeta 2: Torn Infantil -->
+        <article class="val-experience-card" data-val-cat="infant" data-article-id="art_torn_infant" onclick="seleccionarExperienciaRegal('art_torn_infant', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/classes-torn-modelatge.webp" alt="Experiència Torn Menors de 12 anys" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-infant">Menors 12 anys &bull; 2h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Experiència Torn (Infantil)</h3>
+              <div class="val-card-price">45<span style="font-size: 15px; font-weight: 600;">,00 €</span></div>
+            </div>
+            <p class="val-card-desc">Una primera presa de contacte màgica amb la roda de ceràmica, adaptada al ritme i creativitat dels més joves.</p>
+            <ul class="val-card-features">
+              <li>Acompanyament tutoritzat al 100%</li>
+              <li>Peces cuites i a punt per endur-se</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Durada: 2 hores</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('art_torn_infant', true);">Personalitzar &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Targeta 3: Modelatge Adult -->
+        <article class="val-experience-card" data-val-cat="adult" data-article-id="art_modelatge_adult" onclick="seleccionarExperienciaRegal('art_modelatge_adult', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/modelatge-escultura.webp" alt="Modelatge i Escultura per a Adults" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-adult">Adult &bull; 2h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Modelatge &amp; Escultura</h3>
+              <div class="val-card-price">50<span style="font-size: 15px; font-weight: 600;">,00 €</span></div>
+            </div>
+            <p class="val-card-desc">Tècniques de pessic, xurros, plaques i texturitzat lliure per crear peces funcionals o escultures úniques.</p>
+            <ul class="val-card-features">
+              <li>Tots els materials i cuita inclosos</li>
+              <li>Ambient relaxat i creativitat total</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Durada: 2 hores</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('art_modelatge_adult', true);">Personalitzar &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Targeta 4: Modelatge Infantil -->
+        <article class="val-experience-card" data-val-cat="infant" data-article-id="art_modelatge_infant" onclick="seleccionarExperienciaRegal('art_modelatge_infant', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/IMG_0222.JPG" alt="Modelatge Ceràmica Infantil" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-infant">Menors 12 anys &bull; 2h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Modelatge Infantil</h3>
+              <div class="val-card-price">45<span style="font-size: 15px; font-weight: 600;">,00 €</span></div>
+            </div>
+            <p class="val-card-desc">Estimula la imaginació i la psicomotricitat modelant animals, figures i bols amb les pròpies mans.</p>
+            <ul class="val-card-features">
+              <li>A partir de 4 anys amb atenció personal</li>
+              <li>Pintat amb engalbes de colors vius</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Durada: 2 hores</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('art_modelatge_infant', true);">Personalitzar &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Targeta 5: Pintar Ceràmica -->
+        <article class="val-experience-card" data-val-cat="adult infant" data-article-id="art_pintar_ceramica" onclick="seleccionarExperienciaRegal('art_pintar_ceramica', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/pintar-ceramica-original.webp" alt="Pintar Ceràmica Tots els Públics" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-tots">Tots els públics &bull; 2h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Pintar Ceràmica</h3>
+              <div class="val-card-price">30<span style="font-size: 15px; font-weight: 600;">,00 €</span></div>
+            </div>
+            <p class="val-card-desc">Tria peces artesanals prèviament bescuitades (tasses, plats, bols) i decora-les amb esmalts i engalbes de colors.</p>
+            <ul class="val-card-features">
+              <li>Peça de bescuit inclosa per persona</li>
+              <li>Segona cuita a alta temperatura inclosa</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Durada: 2 hores</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('art_pintar_ceramica', true);">Personalitzar &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Targeta 6: Pack d'Hores de Taller -->
+        <article class="val-experience-card" data-val-cat="pack adult infant" data-article-id="pack_hores_taller" onclick="seleccionarExperienciaRegal('pack_hores_taller', true)">
+          <div class="val-card-img-wrap">
+            <img src="img/web/eines-taller.png" alt="Pack d'Hores de Taller Lliure" loading="lazy" class="val-card-img">
+            <span class="val-card-badge badge-pack">Tarifa per Trams &bull; Des de 13€/h</span>
+          </div>
+          <div class="val-card-body">
+            <div class="val-card-header">
+              <h3 class="val-card-title">Pack d'Hores Taller</h3>
+              <div class="val-card-price">Des de 13<span style="font-size: 15px; font-weight: 600;">,00 €/h</span></div>
+            </div>
+            <p class="val-card-desc">Compra un paquet d'hores amb descompte progressiu per venir al taller al teu ritme i gaudir de l'espai creatiu.</p>
+            <ul class="val-card-features">
+              <li>Descomptes a partir de 5h, 10h i 20h</li>
+              <li>Consumible en sessions al teu gust</li>
+            </ul>
+            <div class="val-card-footer">
+              <span class="val-card-duration">Flexibilitat horària</span>
+              <button type="button" class="val-card-btn" onclick="event.stopPropagation(); seleccionarExperienciaRegal('pack_hores_taller', true);">Calcular &rarr;</button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- Banner de Resum d'Experiència Seleccionada i Pas al Formulari -->
+      <div id="gift-customizer-anchor" style="scroll-margin-top: 100px;"></div>
+      <div class="val-selected-banner" id="val-selected-banner">
+        <div class="val-selected-info">
+          <div class="val-selected-tag">Has triat</div>
+          <div class="val-selected-title" id="val-selected-title">Experiència Torn (Adult)</div>
+          <div class="val-selected-detail" id="val-selected-detail">Val regal per a 1 adult (sessió de 2 hores) &bull; Tots els materials i cuita inclosos</div>
+        </div>
+        <div class="val-selected-price" id="val-selected-price">50,00 €</div>
       </div>
 
       <div class="gift-grid">
@@ -870,8 +1031,8 @@
             <div id="web-cerca-val-resultat" style="display: none; margin-top: 10px; font-size: 12.5px; padding: 10px; border-radius: 0;"></div>
             
             <div style="margin-top: 14px; text-align: center; border-top: 1px solid #F3F4F6; padding-top: 10px;">
-              <a href="botiga.html" style="font-size: 13px; font-weight: 700; color: var(--primary); text-decoration: none;">
-                Veure tot el Catàleg i la Botiga Online &rarr;
+              <a href="#val-cards-catalog" style="font-size: 13px; font-weight: 700; color: var(--primary); text-decoration: none;">
+                &uarr; Explorar totes les experiències del catàleg
               </a>
             </div>
           </div>
@@ -1018,8 +1179,7 @@
           <h5>Serveis</h5>
           <ul>
             <li><a href="#reserves">Reserves en Línia</a></li>
-            <li><a href="#val-regal">Val Regal</a></li>
-            <li><a href="botiga.html">Botiga</a></li>
+            <li><a href="#val-regal">Botiga &amp; Vals Regal</a></li>
             <li><a href="alumne.html">Portal Alumne</a></li>
           </ul>
         </div>
@@ -1085,6 +1245,6 @@
   </div>
 
   <script src="js/api-config.js?v=7.5"></script>
-  <script src="js/roigdecoure-web.js?v=3.8"></script>
+  <script src="js/roigdecoure-web.js?v=5.3"></script>
 </body>
 </html>

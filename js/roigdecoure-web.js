@@ -549,13 +549,13 @@
   var modalitatRegal = 'experiencia'; // 'experiencia' o 'hores'
 
   function canviarModalitatRegal(mode) {
-    modalitatRegal = mode;
+    modalitatRegal = (mode === 'hores') ? 'hores' : 'experiencia';
     var btnExp = document.getElementById('tab-val-exp');
     var btnHores = document.getElementById('tab-val-hores');
     var panelExp = document.getElementById('panel-regal-exp');
     var panelHores = document.getElementById('panel-regal-hores');
 
-    if (mode === 'experiencia') {
+    if (modalitatRegal === 'experiencia') {
       if (btnExp) btnExp.classList.add('active');
       if (btnHores) btnHores.classList.remove('active');
       if (panelExp) panelExp.style.display = 'block';
@@ -570,6 +570,56 @@
     actualitzarPreviewRegal();
   }
   window.canviarModalitatRegal = canviarModalitatRegal;
+
+  function seleccionarExperienciaRegal(articleId, scrollDown) {
+    document.querySelectorAll('.val-experience-card').forEach(function(card) {
+      if (card.dataset.articleId === articleId) {
+        card.classList.add('is-selected');
+      } else {
+        card.classList.remove('is-selected');
+      }
+    });
+
+    if (articleId === 'art_pack_hores') {
+      canviarModalitatRegal('hores');
+    } else {
+      canviarModalitatRegal('experiencia');
+      var expSel = document.getElementById('gift-exp-select');
+      if (expSel) {
+        expSel.value = articleId;
+      }
+    }
+
+    actualitzarPreviewRegal();
+
+    if (scrollDown) {
+      var customizer = document.getElementById('gift-customizer-anchor');
+      if (customizer) {
+        customizer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+  window.seleccionarExperienciaRegal = seleccionarExperienciaRegal;
+
+  function filtrarCatalegRegalWeb(filtre) {
+    document.querySelectorAll('.val-filter-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.filter === filtre);
+    });
+
+    document.querySelectorAll('.val-experience-card').forEach(function(card) {
+      var cat = card.dataset.category || 'tots';
+      if (filtre === 'tots') {
+        card.style.display = 'flex';
+      } else if (filtre === 'adult') {
+        card.style.display = (cat === 'adult' || cat === 'tots') ? 'flex' : 'none';
+      } else if (filtre === 'infant') {
+        card.style.display = (cat === 'infant' || cat === 'tots') ? 'flex' : 'none';
+      } else if (filtre === 'hores') {
+        card.style.display = (cat === 'hores') ? 'flex' : 'none';
+      }
+    });
+  }
+  window.filtrarCatalegRegalWeb = filtrarCatalegRegalWeb;
 
   function fixarHoresWeb(h) {
     var inp = document.getElementById('input-web-hores');
