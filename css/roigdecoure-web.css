@@ -818,35 +818,59 @@ img { max-width: 100%; height: auto; display: block; }
 /* Catàleg Visual Integrat de Vals Regal a la Pàgina Central */
 .val-catalog-controls {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-bottom: 24px;
-}
-.val-filter-group {
-  display: inline-flex;
+  gap: 6px;
+  margin: 0 auto 34px auto;
   background: #F3ECE4;
-  border-radius: 30px;
-  padding: 4px;
-  gap: 4px;
-  flex-wrap: wrap;
+  border: 1.5px solid #E8DFD5;
+  border-radius: 40px;
+  padding: 6px;
+  width: fit-content;
+  max-width: 100%;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
 .val-filter-btn {
   background: transparent;
   border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 13px;
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-size: 14px;
   font-weight: 700;
   color: #6B625E;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.val-filter-btn.active {
-  background: #FFFFFF;
+.val-filter-btn:hover {
   color: var(--primary);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: rgba(255, 255, 255, 0.65);
+}
+.val-filter-btn.active,
+.val-filter-btn.is-active {
+  background: #FFFFFF !important;
+  color: var(--primary) !important;
+  font-weight: 800;
+  box-shadow: 0 3px 12px rgba(131, 29, 29, 0.12), 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid rgba(131, 29, 29, 0.08);
+}
+@media (max-width: 640px) {
+  .val-catalog-controls {
+    border-radius: 16px;
+    padding: 6px;
+    gap: 6px;
+    width: 100%;
+  }
+  .val-filter-btn {
+    flex: 1 1 calc(50% - 10px);
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
 }
 .val-cards-grid {
   display: grid;
